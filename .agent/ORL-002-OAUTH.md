@@ -1,0 +1,11 @@
+# ORL-002 OAuth subscription configuration
+
+READY. Base main 43101e95e31806777d741c8c4db5b10005c6fe00, private nrsandoval1231-oss/orloom. Owner selected OAuth/subscription instead of API-key billing; preceding commit/push authorization applies to this foundation correction. Focused bounded packet; one Luna, independent Sol review for auth boundary.
+
+Allowed: packages/config/src/config.ts, packages/adapters/src/providers.ts, packages/adapters/src/codex-sdk.ts, tests/config-adapters.test.ts, .env.example, .gitignore, .dockerignore, README.md, docs/security.md, docs/deployment.md. Add .agent/OAUTH-COMPLETION.json only. No other repos/global config/real credentials. No cloud provisioning, model calls or login execution yet.
+
+Implement subscription-only Codex adapter: replace worker CODEX_API_KEY requirement with explicit dedicated CODEX_HOME; no API-key fallback. Reject API-key env settings for the subscription adapter, configure SDK forced_login_method='chatgpt', preserve explicit env isolation and real SDK typings. No home auto-discovery or copying desktop auth. CODEX_HOME must be absolute and outside job workspace (both POSIX and Windows paths deterministic tests). Validate config without reading auth files or printing values. Structural presence does not prove OAuth login; docs make login status a separate gate. Update template to blank CODEX_HOME, remove API key placeholder. Ignore auth.json and .codex credentials in Git/Docker. Document official codex login --device-auth on actual dedicated worker, owner enters code in provider UI, auth cache permission/secret store and refresh persistence, no repository/job/artifact/log exposure, no key minting, no promise unlimited usage, no live success. Remain fail-closed worker.
+
+Sources verified https://developers.openai.com/codex/auth: ChatGPT subscription sign-in, device-auth for headless, CODEX_HOME auth cache, forced_login_method='chatgpt'. Installed @openai/codex-sdk 0.162.1 accepts explicit env/config.
+
+Acceptance: focused tests for subscription-without-key, key rejection, explicit home required/outside workspace, SDK options; full npm typecheck/test/build/validate. No provisioning/push by builder. Retry two distinct bounded attempts. Return completion evidence, exact changed files; controller reruns and review freezes. Don't touch controller state/graph/old evidence.

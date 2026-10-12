@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "scope": "ORL-002 OAuth subscription configuration only",
+  "candidate_manifest_sha256": "bd41d1ff1d5b7b857d8217dac9291855cd02f682c294e87ef8ca3bf61706f8e4",
+  "base_sha": "43101e95e31806777d741c8c4db5b10005c6fe00",
+  "independent_reviewer": "Sol",
+  "controller_validation": {"typecheck": 0, "test": 0, "tests_passed": 11, "build": 0, "validate": 0, "diff_check": 0},
+  "final_gate_duration_seconds": 8.8105887,
+  "tokens": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "audit_duration": "UNKNOWN",
+  "live_oauth_login": false,
+  "api_key_created": false,
+  "cloud_provisioned": false,
+  "retained_findings": ["First FIX: canonical paths, actual adapter enforcement and both API-key vars", "Second FIX: actual SDK workingDirectory must be checked too", "Final PASS: all file hashes verified, both directory boundaries enforced before SDK construction"],
+  "lesson": "Validate actual execution arguments at adapter boundary, not only declared configuration; candidate lesson, not promoted",
+  "next_direction": "PUBLISH owner-authorized correction; secure cloud setup awaits dedicated worker and spending approval"
+}

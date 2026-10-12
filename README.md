@@ -30,7 +30,7 @@ There is no run/shell endpoint. The worker entrypoint exits because no isolated 
 
 `db/migrations/001_initial.sql` defines PostgreSQL state and constraints. `SqlJobStore` uses a small query interface and is exercised on embedded PGlite, which runs PostgreSQL-compatible SQL in-process. Cloud mode deliberately refuses startup until a persistent PostgreSQL adapter is wired; it must never silently fall back to memory.
 
-The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment and working directory. Provider request boundaries are injectable and locally tested; no live call has been made or proven. Worker-to-control-plane lease protocol remains future work.
+The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. Worker configuration rejects API-key billing. OAuth cache presence is not proof of a completed login; no live call has been made or proven. Worker-to-control-plane lease protocol remains future work. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
 
 ## Intended deployment topology
 

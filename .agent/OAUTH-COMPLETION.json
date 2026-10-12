@@ -1,0 +1,29 @@
+{
+  "packet": "ORL-002",
+  "status": "PASS",
+  "changed_files": [
+    ".dockerignore",
+    ".env.example",
+    ".gitignore",
+    "README.md",
+    "docs/deployment.md",
+    "docs/security.md",
+    "packages/adapters/src/providers.ts",
+    "packages/config/src/config.ts",
+    "tests/config-adapters.test.ts"
+  ],
+  "checks": {
+    "npm run typecheck": 0,
+    "npm test": 0,
+    "npm run build": 0,
+    "npm run validate": 0,
+    "git diff --check": 0,
+    "independent_review_repair_attempt_1": "path alias/SDK adapter checks: initial fixtures failed; corrected, full gates passed",
+    "independent_review_repair_attempt_2": "fixed parent-segment boundary, path flavor mismatch, ..cache case; full gates pass",
+    "independent_review_repair_attempt_3": "validated CODEX_HOME against actual SDK workingDirectory as well as configured job directory; runtime mismatch and relative workingDirectory rejected; full gates pass"
+  },
+  "notes": [
+    "OAuth configuration and adapter remain structural; no login, credential read, provisioning, or live provider call performed.",
+    "No commit or push performed."
+  ]
+}

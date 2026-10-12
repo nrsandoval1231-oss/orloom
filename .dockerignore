@@ -16,3 +16,5 @@ artifacts
 *.credential
 credentials.json
 service-account*.json
+auth.json
+.codex

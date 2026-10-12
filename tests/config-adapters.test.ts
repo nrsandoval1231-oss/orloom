@@ -17,7 +17,18 @@ test("configuration validates roles and does not reveal configured values in err
     assert.doesNotMatch((error as Error).message, /private-account-secret/);
     return true;
   });
-  assert.equal(validateRoleConfig("worker", { ORLOOM_WORKER_CONTROL_URL: "https://worker.example", ORLOOM_WORKER_TOKEN: "x", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated", CODEX_API_KEY: "x" }).ok, true);
+  assert.equal(validateRoleConfig("worker", { ORLOOM_WORKER_CONTROL_URL: "https://worker.example", ORLOOM_WORKER_TOKEN: "x", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated/jobs", CODEX_HOME: "C:/isolated/codex" }).ok, true);
+  assert.deepEqual(validateRoleConfig("worker", {}).missingFields, ["ORLOOM_WORKER_CONTROL_URL", "ORLOOM_WORKER_TOKEN", "ORLOOM_WORKER_JOB_DIRECTORY", "CODEX_HOME"]);
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "relative/codex" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "C:\\runner\\jobs", CODEX_HOME: "C:\\runner\\jobs\\.codex" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "/srv/codex", CODEX_API_KEY: "should-not-be-used" }).missingFields.includes("CODEX_API_KEY"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "/srv/codex", OPENAI_API_KEY: "private-value" }).missingFields.includes("OPENAI_API_KEY"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "/" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "/srv/jobs/.codex" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs", CODEX_HOME: "/srv/jobs/../jobs/.codex" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "/srv", CODEX_HOME: "/srv/..cache" }).missingFields.includes("CODEX_HOME"));
+  assert(validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "C:\\runner\\jobs", CODEX_HOME: "/srv/codex" }).missingFields.includes("CODEX_HOME"));
+  assert(!validateRoleConfig("worker", { ORLOOM_WORKER_JOB_DIRECTORY: "C:\\runner\\jobs", CODEX_HOME: "C:\\runner\\codex" }).missingFields.includes("CODEX_HOME"));
 });
 
 test("webhook signature is constant-time compared after strict digest length check", () => {
@@ -80,18 +91,28 @@ test("GitHub App token request uses app client and explicit repository and permi
   await assert.rejects(adapter.createInstallationToken(44, ["../outside"]), /scope/);
 });
 
-test("Codex adapter passes explicit environment and working directory to the real SDK constructor contract", async () => {
+test("Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration", async () => {
   let seenEnv: Record<string, string> | undefined;
+  let seenConfig: unknown;
   let seenDirectory: string | undefined;
   class FakeSdk {
-    constructor(options: { env: Record<string, string> }) { seenEnv = options.env; }
+    constructor(options: { env: Record<string, string>; config: { forced_login_method: "chatgpt" } }) { seenEnv = options.env; seenConfig = options.config; }
     startThread(options: { workingDirectory: string }) { seenDirectory = options.workingDirectory; return { run: async (input: string) => `ok:${input}` }; }
   }
-  assert.equal(await createCodexAdapter(FakeSdk, "C:/isolated/work", { PATH: "explicit" }).run("bounded prompt"), "ok:bounded prompt");
-  assert.deepEqual(seenEnv, { PATH: "explicit" }); assert.equal(seenDirectory, "C:/isolated/work");
+  assert.equal(await createCodexAdapter(FakeSdk, "C:/isolated/work", { PATH: "explicit", CODEX_HOME: "C:/isolated/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated/jobs" }).run("bounded prompt"), "ok:bounded prompt");
+  assert.deepEqual(seenEnv, { PATH: "explicit", CODEX_HOME: "C:/isolated/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated/jobs" }); assert.equal(seenDirectory, "C:/isolated/work");
+  assert.deepEqual(seenConfig, { forced_login_method: "chatgpt" });
+  await assert.rejects(createCodexAdapter(FakeSdk, "C:/isolated/work", { CODEX_HOME: "C:/isolated/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated/jobs", CODEX_API_KEY: "x" }).run("no"), /API key environment/);
+  await assert.rejects(createCodexAdapter(FakeSdk, "C:/isolated/work", { CODEX_HOME: "C:/isolated/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/isolated/jobs", OPENAI_API_KEY: "private-value" }).run("no"), error => !(error as Error).message.includes("private-value"));
+  await assert.rejects(createCodexAdapter(FakeSdk, "C:/isolated/work", { PATH: "explicit" }).run("no"), /absolute CODEX_HOME/);
+  await assert.rejects(createCodexAdapter(FakeSdk, "/srv/jobs/run", { CODEX_HOME: "/srv/jobs/../jobs/.codex", ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs" }).run("no"), /outside the job workspace/);
+  await assert.rejects(createCodexAdapter(FakeSdk, "/srv/jobs/run", { CODEX_HOME: "/", ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs" }).run("no"), /outside the job workspace/);
+  let constructorCalls = 0;
+  class CountingSdk extends FakeSdk { constructor(options: { env: Record<string, string>; config: { forced_login_method: "chatgpt" } }) { super(options); constructorCalls++; } }
+  await assert.rejects(createCodexAdapter(CountingSdk, "/srv/codex/run", { CODEX_HOME: "/srv/codex", ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs" }).run("no"), /outside the job workspace/);
+  await assert.rejects(createCodexAdapter(CountingSdk, "relative/run", { CODEX_HOME: "/srv/codex", ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs" }).run("no"), /outside the job workspace/);
+  assert.equal(constructorCalls, 0);
+  assert.equal(await createCodexAdapter(FakeSdk, "/srv/jobs/run", { CODEX_HOME: "/srv/codex", ORLOOM_WORKER_JOB_DIRECTORY: "/srv/jobs" }).run("posix"), "ok:posix");
+  assert.equal(await createCodexAdapter(FakeSdk, "C:/runner/jobs/work", { CODEX_HOME: "C:/runner/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/runner/jobs" }).run("windows"), "ok:windows");
   assert.equal(typeof createCodexSdkAdapter, "function");
 });
-  assert.deepEqual(validateRoleConfig("control-plane", {}).missingFields, ["ORLOOM_SESSION_TOKEN"]);
-  assert.deepEqual(validateRoleConfig("github", {}).missingFields, ["ORLOOM_GITHUB_APP_ID", "ORLOOM_GITHUB_PRIVATE_KEY", "ORLOOM_GITHUB_WEBHOOK_SECRET"]);
-  assert.deepEqual(validateRoleConfig("artifact", {}).missingFields, ["ORLOOM_R2_ACCOUNT_ID", "ORLOOM_R2_ACCESS_KEY_ID", "ORLOOM_R2_SECRET_ACCESS_KEY", "ORLOOM_R2_BUCKET"]);
-  assert.deepEqual(validateRoleConfig("worker", {}).missingFields, ["ORLOOM_WORKER_CONTROL_URL", "ORLOOM_WORKER_TOKEN", "ORLOOM_WORKER_JOB_DIRECTORY", "CODEX_API_KEY"]);

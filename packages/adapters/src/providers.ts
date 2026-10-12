@@ -1,6 +1,8 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { App } from "@octokit/app";
+import type { CodexOptions } from "@openai/codex-sdk";
+import { validCodexHome } from "../../config/src/config.js";
 
 export function verifyWebhookSignature(rawBody: Buffer, signature: string | undefined, secret: string): boolean {
   if (!signature || !/^sha256=[0-9a-f]{64}$/i.test(signature) || !secret) return false;
@@ -111,14 +113,19 @@ export interface CodexClient {
 }
 
 export interface CodexSdkConstructor {
-  new(options: { env: Record<string, string> }): CodexClient;
+  new(options: Omit<CodexOptions, "env" | "config"> & {
+    env: Record<string, string>;
+    config: NonNullable<CodexOptions["config"]> & { forced_login_method: "chatgpt" };
+  }): CodexClient;
 }
 
 export function createCodexAdapter(Sdk: CodexSdkConstructor, workingDirectory: string, env: Record<string, string>) {
   const isolatedEnv = Object.freeze({ ...env });
   return {
     async run(input: string) {
-      const codex = new Sdk({ env: isolatedEnv });
+      if (!validCodexHome(isolatedEnv.CODEX_HOME, isolatedEnv.ORLOOM_WORKER_JOB_DIRECTORY) || !validCodexHome(isolatedEnv.CODEX_HOME, workingDirectory)) throw new Error("Codex subscription requires an absolute CODEX_HOME outside the job workspace");
+      if (isolatedEnv.CODEX_API_KEY || isolatedEnv.OPENAI_API_KEY) throw new Error("Codex subscription does not accept API key environment settings");
+      const codex = new Sdk({ env: isolatedEnv, config: { forced_login_method: "chatgpt" } });
       const thread = codex.startThread({ workingDirectory });
       return thread.run(input);
     }
