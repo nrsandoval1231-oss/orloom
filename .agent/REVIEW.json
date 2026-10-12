@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "scope": "ORL-001 foundation only",
+  "candidate_manifest_sha256": "3cf947265f3eea6ff26a0cf281dbecf096ada9e53ed4938c9d0c2a5c386e1d76",
+  "candidate_scope": "All Git-eligible implementation files except .agent evidence bookkeeping",
+  "base_sha": null,
+  "reviewer": "independent Sol",
+  "finished_utc": "2026-10-12T22:23:06.4088999Z",
+  "controller_gates": [
+    "npm ci: exit 0, 0 known vulnerabilities",
+    "npm run typecheck: exit 0",
+    "npm test: exit 0, 11 passed",
+    "npm run build: exit 0",
+    "npm run validate: exit 0",
+    "git diff --check: exit 0; empty-base untracked-file limitation",
+    "git check-ignore: expected private credential paths ignored"
+  ],
+  "runtime_proof": "Local HTTP and real child process; embedded PGlite SQL",
+  "deployment": false,
+  "remote_pushed": false,
+  "live_provider_calls": false,
+  "container_proof": "UNKNOWN: Docker daemon unavailable",
+  "next_direction": "COMPLETE bounded foundation; request owner authority before publication/cloud work",
+  "deployment_prerequisites": [
+    "Use repository-scoped token for check publishing",
+    "Implement production Postgres wiring and authenticated worker lease API",
+    "Prove worker isolation and trusted Forge CI runner",
+    "Secure owner-approved provider connection setup"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "packet": "ORL-001",
+  "lane": "single builder",
+  "base_sha": null,
+  "candidate": "ORL-001-R1 uncommitted working tree; no commit created",
+  "status": "ORL-001-R1 implementation complete; controller validation and independent re-review pending",
+  "started_utc": "UNKNOWN",
+  "finished_utc": "2026-10-12T22:09:05Z",
+  "planning_duration": "UNKNOWN",
+  "build_duration": "UNKNOWN",
+  "validation_duration": "UNKNOWN",
+  "audit_duration": "UNKNOWN",
+  "repair_count": 2,
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "changed_files": [
+    ".dockerignore",
+    ".env.example",
+    ".gitignore",
+    "README.md",
+    "apps/control-plane/src/main.ts",
+    "apps/control-plane/src/server.ts",
+    "apps/worker/Dockerfile",
+    "apps/worker/src/main.ts",
+    "db/migrations/001_initial.sql",
+    "docs/FINISH_CONTRACT.md",
+    "docs/adr/0001-foundation-boundaries.md",
+    "docs/deployment.md",
+    "docs/security.md",
+    "forge/CI_CONTRACT.md",
+    "package-lock.json",
+    "package.json",
+    "packages/adapters/src/codex-sdk.ts",
+    "packages/adapters/src/providers.ts",
+    "packages/config/src/config.ts",
+    "packages/contracts/src/job.ts",
+    "packages/contracts/src/memory-store.ts",
+    "packages/contracts/src/sql-store.ts",
+    "scripts/clean.mjs",
+    "scripts/validate.mjs",
+    "tests/config-adapters.test.ts",
+    "tests/http.test.ts",
+    "tests/jobs.test.ts",
+    "tests/startup.test.ts",
+    "tsconfig.json"
+  ],
+  "controller_files_preserved": [
+    ".agent/CURRENT_STATE.md",
+    ".agent/ORL-001.md",
+    ".agent/TRIBUNAL.md",
+    ".agent/WORK_GRAPH.md"
+  ],
+  "validation": [
+    { "command": "npm ci", "exit_code": 0 },
+    { "command": "npm run typecheck", "exit_code": 0 },
+    { "command": "npm test", "exit_code": 0, "evidence": "7 tests passed; HTTP runtime and PGlite PostgreSQL-compatible SQL behavior included" },
+    { "command": "npm run build", "exit_code": 0 },
+    { "command": "npm run validate", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "limitations": [
+    "No commit, push, merge, provisioning, spending, deployment, or live provider call was made.",
+    "Docker CLI exists but Docker Linux engine endpoint was unavailable; container isolation and image runtime remain UNKNOWN.",
+    "Cloud PostgreSQL adapter, durable cloud mode, production session design, worker lease API and isolated worker execution are not implemented.",
+    "GitHub App, R2, and Codex adapters are wired to pinned SDK packages but were not called; live connectivity is UNKNOWN.",
+    "Forge CI contract is documentation only; no scheduler or trusted external CI runtime was implemented.",
+    "Local mode uses volatile memory storage and binds to loopback."
+  ],
+  "review_repair": {
+    "packet": "ORL-001-R1",
+    "base_review_manifest_sha256": "f0a711d2721ef55d03f4b60d2d112cc20a1b056ae86d5a98bcae473c7a0dabfc",
+    "frozen_manifest_sha256": "27aadf534a8b3a85a3d9511144689bf3e48ed9f53e5d9c2527f143bb72366c35",
+    "finished_utc": "2026-10-12T22:20:20Z",
+    "repair_attempts": 1,
+    "review_findings_addressed": [
+      "GitHub App token request uses app client and explicit repository plus contents:read/checks:write permissions; injected request regression verifies the exact request.",
+      "npm start loads .env through Node 24 --env-file-if-exists; child-process smoke authenticates using a temporary env file without printing its value.",
+      "Unexpected HTTP failures return fixed generic 500; known input/size failures return explicit safe 400/413; secret reflection regression passes.",
+      "Field-name-only role validators cover control-plane, GitHub, artifact, and worker configuration.",
+      "Git and Docker ignore rules cover private key formats, credentials, secret folders, and local state.",
+      "R2 request boundary tests conditional digest-keyed PUT, scoped bucket/key, verified GET digest, malformed key, and altered bytes."
+    ],
+    "additional_packet_requirements": [
+      "Webhook HMAC rejects malformed and trailing non-hex digest characters.",
+      "README and finish contract describe implemented but unproven R2 adapter and eventual frontend/control-plane, managed PostgreSQL, separate DigitalOcean worker, R2, external Forge check-publisher topology.",
+      "Blank worker-only CODEX_API_KEY placeholder and worker role requirements are documented; no credential configured."
+    ],
+    "validation": [
+      { "command": "npm ci", "exit_code": 0 },
+      { "command": "npm run typecheck", "exit_code": 0 },
+      { "command": "npm test", "exit_code": 0, "evidence": "11 tests passed, including HTTP failure redaction, role validation, S3/GitHub request construction, and child-process env-file startup" },
+      { "command": "npm run build", "exit_code": 0 },
+      { "command": "npm run validate", "exit_code": 0 },
+      { "command": "git diff --check", "exit_code": 0 }
+    ],
+    "live_calls": false,
+    "controller_and_prior_completion_history_preserved": true
+  }
+}

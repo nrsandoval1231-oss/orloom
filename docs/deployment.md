@@ -1,0 +1,9 @@
+# Deployment prerequisites
+
+There is no deployment target configured. Before any deployment is authorized, implement and review the production PostgreSQL adapter, external authenticated session management, TLS and origin protections, restricted GitHub App installation credentials, R2 least-privilege access, isolated disposable workers, network egress policy, artifact retention, audit events, monitoring/alerts, backup/restore, and operator handling for `unknown` jobs. Prove that worker jobs cannot reach control-plane credentials, host sockets, unrelated repositories, or each other. Define resource, timeout, cancellation, and cleanup limits.
+
+The intended topology is a frontend with the control-plane service, managed PostgreSQL, a separate DigitalOcean worker, R2 evidence storage, and an external Forge service that runs trusted validation and publishes GitHub checks. Forge must keep its policy outside the target repository checkout. There are no GitHub Actions workflows, and none should be added as part of the external worker design.
+
+Cloud mode currently refuses startup because a cloud database adapter is absent. No Docker image build or runtime isolation claim was established for this foundation. A Docker CLI was present during implementation, while its Linux engine endpoint was unavailable; container behavior remains unknown.
+
+Suggested later secret-entry order is in [security.md](security.md). Do not paste credentials into chat or commit them. Do not use GitHub Actions environment secrets as runtime storage for an external Forge worker; GitHub documents those secrets in the Actions workflow execution context, while an independently hosted worker needs a dedicated runtime secret store.

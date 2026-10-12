@@ -1,0 +1,110 @@
+[
+  {
+    "path": ".env.example",
+    "sha256": "a7af448d458815ea1d6f06e13bf6aa4fdda4218258c5a2414dfafa726bb7dd58"
+  },
+  {
+    "path": ".gitignore",
+    "sha256": "16b1964f414cb63b9e91d23244c7f615b195bd57191c8bf29341d07605865f06"
+  },
+  {
+    "path": "apps/control-plane/src/main.ts",
+    "sha256": "ac5ea9f9cddcb9dbbc01eeb7866b866aff491204f2eca9c2880b8be5558c1932"
+  },
+  {
+    "path": "apps/control-plane/src/server.ts",
+    "sha256": "c99a75e12e07106e72e4e449fe561d24b33215a95f69caca827eed7651df0ac3"
+  },
+  {
+    "path": "apps/worker/Dockerfile",
+    "sha256": "7cdea4d6c0f324e8627f134dfb1788b37aaad6d3606e166ead9ed915a840537f"
+  },
+  {
+    "path": "apps/worker/src/main.ts",
+    "sha256": "c8cff8976a0d964a178778d2b850390587dd8a08a9071e1ec47935731acf6010"
+  },
+  {
+    "path": "db/migrations/001_initial.sql",
+    "sha256": "1240cb8af48ced5f678bfe5cef2d004c53a1964ee0b0e2721614dc81051741f4"
+  },
+  {
+    "path": "docs/adr/0001-foundation-boundaries.md",
+    "sha256": "b5346807ce2a00d99eb6bc271c35e54e5a4365cc1060cc07e187e15b8f7b25ca"
+  },
+  {
+    "path": "docs/deployment.md",
+    "sha256": "4ac7805ba6c0a832b705a9e369dbf89a1fe1677ee7dbb51044751a81891d62b9"
+  },
+  {
+    "path": "docs/FINISH_CONTRACT.md",
+    "sha256": "d491beafae1b68355afbf2aaea0ce970a18f3733d6bfdd64c85cd162ad384ab8"
+  },
+  {
+    "path": "docs/security.md",
+    "sha256": "b3ce9ee0e725143fa637fd83749ec41ba6d372ab47a9478502565cfa65c75098"
+  },
+  {
+    "path": "forge/CI_CONTRACT.md",
+    "sha256": "e1ca1234ea818fdfc94eba545161edce7707b535a7b05eb149e90d0c91e63311"
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "c885ff3b6b2e867dc2d890dd11e7c962f86d3c0295c4643d30420b3bd82fba34"
+  },
+  {
+    "path": "package.json",
+    "sha256": "7746fcec818a69ef04cd012f6f9ce374658814a024866ca913cb3751b9a33e44"
+  },
+  {
+    "path": "packages/adapters/src/codex-sdk.ts",
+    "sha256": "70e403c382fa862e93a42b624bd66191b582fde7373ed03b4d75b5a18832cf90"
+  },
+  {
+    "path": "packages/adapters/src/providers.ts",
+    "sha256": "f01626bf1446380a9f36e02e31ebc07bd1efaa3b51edf7b15b8de21683596e15"
+  },
+  {
+    "path": "packages/config/src/config.ts",
+    "sha256": "179a080b87c6e6b9163e18a9380072b16230a721c4a309721fa897aa9f200183"
+  },
+  {
+    "path": "packages/contracts/src/job.ts",
+    "sha256": "18d7c389060732987bd34588292bec6825bc36317c773628333608b0ee0105d8"
+  },
+  {
+    "path": "packages/contracts/src/memory-store.ts",
+    "sha256": "27da17c5beb8951f4d86c988a97531370dcd3ff00cd99573bec8ed40c3abf9b6"
+  },
+  {
+    "path": "packages/contracts/src/sql-store.ts",
+    "sha256": "301f7e0914cdd5445244bf0106fc10bf3db1427bd232281e92a425e15c50ead2"
+  },
+  {
+    "path": "README.md",
+    "sha256": "a049f4c771b072f760efdc38fa49305975c5c80e49557ad6caa463b755e9cc0b"
+  },
+  {
+    "path": "scripts/clean.mjs",
+    "sha256": "fd8e5309df8d065c4d53427839cf945e69c9679248f6febd41869b1df392d20f"
+  },
+  {
+    "path": "scripts/validate.mjs",
+    "sha256": "2ceb990e81af601da2e67acb39f14d7a001e26c7a8f87c014b1ebfcba3f3992b"
+  },
+  {
+    "path": "tests/config-adapters.test.ts",
+    "sha256": "53bbef895d8a48d3fd89a3e658c4694c8cd4f4c0ec8ad54815371cfd65408980"
+  },
+  {
+    "path": "tests/http.test.ts",
+    "sha256": "3a00addbae219cb0484768b157ebe91bda45e3be2942705e5fa18e23acc8a389"
+  },
+  {
+    "path": "tests/jobs.test.ts",
+    "sha256": "ab6185a27605d5cc26764d262b98a321d4d46c7d70b308a756feb1de2db978b9"
+  },
+  {
+    "path": "tsconfig.json",
+    "sha256": "49083b5f4c70cde408cf018a41980cf4ff977b357af5c49ef6d47222e34d204c"
+  }
+]

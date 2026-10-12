@@ -1,0 +1,26 @@
+{
+  "baseline_observed_utc": "2026-10-12T22:00:48.6793047Z",
+  "finished_utc": "2026-10-12T22:23:06.4088999Z",
+  "lane": "full; one Luna builder",
+  "builder_model": "gpt-6-luna",
+  "reviewer_model": "gpt-6-sol",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "planning_duration": "UNKNOWN",
+  "build_duration": "UNKNOWN",
+  "validation_duration": "Final repeated checks 8.596 seconds measured; installation preceding this unchanged lockfile passed separately",
+  "audit_duration": "UNKNOWN",
+  "elapsed_to_accepted": "UNKNOWN; exact acceptance timestamp not instrumented",
+  "repair_count": 3,
+  "repair_attribution": "Builder reported 2 initial repairs plus 1 independent-review remediation packet",
+  "state": "empty private repo",
+  "decision": "Build foundation with disabled live execution",
+  "outcome": "11 tests and independent PASS",
+  "retained_failures": [
+    "Initial review FIX despite green 7-test gates",
+    "Deployment doc drift detected during first R1 freeze; re-frozen and revalidated"
+  ],
+  "candidate_lesson": "Require terminal builder handoff before hashing candidate; provider request tests catch gaps hidden by interface-only tests",
+  "lesson_status": "candidate only, not promoted",
+  "authority": "No push, provisioning, credentials, deployment or other repository edits"
+}
