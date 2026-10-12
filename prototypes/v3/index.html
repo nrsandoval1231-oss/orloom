@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a1012">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Forge — The Living Loom / 003</title>
+<style>:root{color-scheme:dark;--bg:#0a1012;--panel:#101719;--ivory:#eee7db;--muted:#84928f;--dim:#586762;--gold:#c4a570;--line:rgba(174,191,178,.14);--accent:#d5bd8f;font-family:Arial,Helvetica,sans-serif;font-synthesis:none}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--ivory);overflow:hidden}body{height:100dvh;-webkit-tap-highlight-color:transparent}button,select,input{font:inherit}button,select{color:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.5}button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--gold);outline-offset:4px}button{touch-action:manipulation}button,a{-webkit-user-select:none;user-select:none}button{border:0;background:none}button:hover{color:#fff}a{color:inherit;text-decoration:none}[hidden]{display:none!important}.sr-only{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden}
+.topbar{position:absolute;inset:0 0 auto;height:82px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);z-index:5;background:var(--bg)}.brand{display:flex;align-items:center;gap:13px;letter-spacing:4px;font-size:15px}.brand-symbol{position:relative;font-family:Georgia,serif;font-weight:bold;font-size:29px;font-style:italic;color:var(--gold);line-height:1}.brand-symbol span{position:absolute;width:14px;height:1px;background:var(--gold);left:5px;bottom:0}.edition{font:9px 'Courier New',monospace;color:#aab2a9;letter-spacing:1.7px;margin-left:72px}.edition span{color:var(--dim);margin:0 12px}.top-actions{display:flex;align-items:center;gap:19px}.synthetic{font:9px 'Courier New',monospace;letter-spacing:1.3px;border:1px solid #3d4439;border-radius:30px;padding:9px 11px;color:#c9bea6;white-space:nowrap;display:flex;align-items:center;gap:7px}.synthetic i{height:5px;width:5px;border-radius:50%;background:var(--gold)}.icon-button{width:32px;height:32px;font-size:22px;color:#a2afa5}.eyebrow{font:9px 'Courier New',monospace;letter-spacing:1.8px;color:#a9b4a7}.sim-mini{font:8px 'Courier New',monospace;color:#7d8777;letter-spacing:1px}.mission-panel{position:absolute;top:117px;left:32px;width:212px;z-index:3}.mission-panel h1{font:normal 41px/1.1 Georgia,'Times New Roman',serif;letter-spacing:-1.4px;margin:19px 0 15px}.mission-panel h1 em{font-weight:normal;color:#cdb58e}.mission-copy{color:var(--muted);font-size:11px;line-height:1.8;margin:0 0 27px}.verified-block .eyebrow{font-size:8px;letter-spacing:1.05px;display:flex;justify-content:space-between}.number{font:normal 64px/1.1 Georgia,serif;font-variant-numeric:lining-nums tabular-nums;letter-spacing:-3px;margin:13px 0 9px}.number small{font:22px Georgia,serif;letter-spacing:0;color:#948c79;margin-left:5px}.progress-track{height:2px;background:#26312c;overflow:hidden}.progress-track span{display:block;width:62%;height:100%;background:#baa37b;transition:width .35s}.verification-caption{display:flex;justify-content:space-between;font-size:9px;color:#7b8a80;margin-top:10px}.verification-caption span:first-child{font-family:'Courier New',monospace;color:#b3bdaf}.sector-section{margin-top:33px}.section-heading{display:flex;align-items:center;justify-content:space-between;min-height:20px}.text-button{font:9px Arial;color:#bca882;padding:3px}.sector-item{position:relative;width:100%;display:grid;grid-template-columns:10px 1fr auto;align-items:center;text-align:left;padding:11px 0;border-bottom:1px solid rgba(174,191,178,.08);gap:9px;font-size:11px;color:#bac4b8}.sector-item i{width:4px;height:4px;transform:rotate(45deg);background:var(--sector)}.sector-item .sector-value{font:10px 'Courier New',monospace;color:#9ea897}.sector-item.active{color:#fff}.sector-item.active:before{content:'';position:absolute;inset:4px -9px;background:rgba(216,190,137,.05);border-left:1px solid var(--gold)}.sector-item .sector-meter{position:absolute;bottom:0;height:1px;background:var(--sector);opacity:.28;left:0;transition:width .3s}.fabric-note{font-size:9px;line-height:1.55;color:#65766e;margin-top:13px}.mission-foot{font-size:9px;color:#78877c;display:flex;gap:10px;align-items:center;margin-top:24px}.small-diamond{width:4px;height:4px;background:#b89e71;transform:rotate(45deg)}
+.stage{position:absolute;top:102px;bottom:171px;left:246px;right:249px;overflow:hidden}#loom{width:100%;height:100%;display:block;touch-action:none;cursor:grab;background:var(--bg)}#loom:active{cursor:grabbing}.agent-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}.agent-tag{position:absolute;display:flex;flex-direction:column;align-items:center;min-width:95px;text-align:center;transform:translate(-50%,-50%);font-size:10px;color:#c4cbbd;white-space:nowrap;line-height:1.5;transition:opacity .4s}.agent-tag .tag-id{font:7px 'Courier New',monospace;color:#77877c;letter-spacing:1.3px}.agent-tag.active{color:#f2e6ce}.agent-tag.active .tag-id{color:#c6ac7c}.nucleus-label{position:absolute;transform:translate(-50%,-50%);text-align:center;pointer-events:none;width:180px;padding-top:66px}.nucleus-label span{font:7px 'Courier New',monospace;letter-spacing:2px;color:#9b9e88}.nucleus-label strong{display:block;font:17px Georgia,serif;letter-spacing:4px;margin:9px 0 8px;padding-left:4px;color:#ece1c8}.nucleus-label small{display:block;font-size:8px;color:#7c8a7d}.stage-caption{position:absolute;top:10px;left:16px;right:16px;display:flex;gap:13px;align-items:center;font:8px 'Courier New',monospace;letter-spacing:1px;color:#879887;pointer-events:none}.stage-index{color:#ccaf7a;font-size:8px}.stage-rule{height:1px;background:var(--line);flex:1;margin-left:10px}.camera-controls{position:absolute;bottom:18px;right:15px;display:flex;background:#0e1618dd;border:1px solid #2a3430;border-radius:5px}.camera-controls button{width:31px;height:29px;font-size:18px;color:#b3b8a7}.camera-controls button+button{border-left:1px solid #24312b}.stage-help{position:absolute;left:0;right:0;bottom:27px;font:7px 'Courier New',monospace;letter-spacing:1px;color:#62766c;text-align:center;pointer-events:none}.stage-help span{padding:0 5px}.render-error{position:absolute;inset:20%;background:var(--panel);border:1px solid var(--line);padding:25px;display:flex;justify-content:center;flex-direction:column;z-index:20;text-align:center;font-size:13px;line-height:1.6}.render-error p{color:var(--muted)}.render-error button{padding:10px;border:1px solid var(--gold)}
+.harness-panel{position:absolute;top:119px;right:31px;width:191px;z-index:3}.agent-count{font:10px 'Courier New',monospace;color:#a59066}.aside-intro{font-size:10px;color:#7a8b7d;margin:8px 0 18px}.agent-row{padding:13px 0;border-top:1px solid rgba(167,186,170,.09);display:grid;grid-template-columns:25px 1fr 8px;align-items:center;gap:8px}.agent-avatar{width:24px;height:24px;display:grid;place-items:center;border:1px solid #36433b;color:#a89b7f;border-radius:50%;font:8px 'Courier New',monospace}.agent-row.active .agent-avatar{border-color:#826f4f;background:#ad96620b;color:#e5ce9e}.agent-name{font-size:11px;color:#c3cabb}.agent-role{font-size:9px;color:#6c8173;margin-top:5px;line-height:1.2}.agent-row.active .agent-role{color:#aaad90}.agent-status{width:4px;height:4px;border:1px solid #4d6555;border-radius:50%}.agent-row.active .agent-status{background:#c5ab76;border:0;box-shadow:0 0 6px #d9b36855}.journal-heading{margin-top:30px;display:flex;justify-content:space-between;align-items:center}.journal{margin-top:16px;min-height:100px;max-height:172px;overflow:hidden}.journal-item{font-size:9px;line-height:1.65;padding:0 0 12px 12px;border-left:1px solid #2f3b30;position:relative;color:#899b8a}.journal-item:before{content:'';position:absolute;left:-2px;top:4px;width:3px;height:3px;background:#7c8267}.journal-item:first-child{color:#c0c5ac}.journal-item span{display:block;font:7px 'Courier New',monospace;color:#6b806f;letter-spacing:.4px;margin-bottom:4px}.learning-note{border-top:1px solid var(--line);padding-top:13px;margin-top:17px}.learning-note>span{font:8px 'Courier New',monospace;color:#b0a78e;letter-spacing:1.2px}.learning-note p{font-size:9px;line-height:1.7;color:#728779;margin:7px 0 0}
+.inspector{position:absolute;right:246px;bottom:205px;width:244px;background:#10191bef;border:1px solid #3b453b;padding:17px;z-index:7;backdrop-filter:blur(16px);box-shadow:0 20px 70px #0007}.inspector h2{font:24px Georgia,serif;margin:10px 0}.inspector p{font-size:11px;line-height:1.6;color:#9aa994}.inspect-metrics{display:flex;gap:26px;padding:10px 0}.inspect-metrics b{display:block;font:23px Georgia,serif;color:#d9c29b}.inspect-metrics small{display:block;font-size:8px;color:#758c79;margin-top:7px}.inspector .inspect-evidence{border-top:1px solid var(--line);padding-top:12px;font-size:10px}.inspector>.eyebrow{font-size:7px;color:#879274;letter-spacing:1px}
+.bottom-area{position:absolute;bottom:0;left:0;right:0;padding:0 31px max(14px,env(safe-area-inset-bottom));z-index:6;background:var(--bg)}.state-line{height:42px;display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--line);font-size:9px;color:#8ea08c}.state-line>div{display:flex;align-items:center;gap:8px;font:8px 'Courier New',monospace;letter-spacing:1px;color:#c0bc9e;white-space:nowrap}.state-dot{height:4px;width:4px;background:#bbaa7c;border-radius:50%}.state-dot.warning{background:#d17b56}.state-line>span:nth-child(2){font-size:9px;color:#718674;flex:1}.render-meta{font:7px 'Courier New',monospace;letter-spacing:.7px;white-space:nowrap}.render-meta b{color:#a3b6a0;font-weight:normal;margin-left:15px}.command-dock{display:flex;align-items:center;gap:12px;padding:16px 0 13px}.primary-button{height:41px;min-width:96px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:11px;background:#c7b28a;color:#181d19;border:1px solid #d3c29e;border-radius:4px;transition:background .2s}.primary-button:hover{background:#e4d0a6;color:#101510}.primary-button>span:first-child{font-size:16px;min-width:12px}.secondary-button{height:40px;border:1px solid #303e33;border-radius:4px;padding:0 13px;font-size:10px;color:#b4bea9;white-space:nowrap}.secondary-button:hover{border-color:#62735a;background:#18201c}.timeline{flex:1;min-width:120px;padding:0 22px}.timeline-label{display:flex;justify-content:space-between;font:7px 'Courier New',monospace;letter-spacing:1.1px;color:#8c9c86}.timeline-label output{color:#c5c6a9}.timeline input{display:block;appearance:none;-webkit-appearance:none;width:100%;height:16px;cursor:pointer;background:transparent;margin:5px 0 0;touch-action:pan-x}.timeline input::-webkit-slider-runnable-track{height:2px;background:#3d4a3c;border-radius:3px}.timeline input::-moz-range-track{height:2px;background:#3d4a3c;border-radius:3px}.timeline input::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:9px;height:9px;background:#d9c196;border-radius:50%;margin-top:-3.5px;border:0}.timeline input::-moz-range-thumb{width:9px;height:9px;background:#d9c196;border-radius:50%;border:0}.timeline-milestones{display:flex;justify-content:space-between}.timeline-milestones button{font:7px 'Courier New',monospace;letter-spacing:.6px;color:#6e836e;padding:2px 0}.dock-settings{display:flex;gap:9px;align-items:center}.quality-label select{background:#121b16;border:1px solid #303e33;border-radius:4px;height:40px;padding:0 23px 0 10px;font-size:10px;color:#aaba9e}.drift-button{color:#bbad90}.drift-button.has-drift{border-color:#78523d;color:#e2b18e;background:#4c2d1a33}.bottom-note{display:flex;justify-content:space-between;align-items:center;color:#627a65;font:7px 'Courier New',monospace;letter-spacing:1.1px}.bottom-note i{font-style:normal;padding:0 9px}.bottom-note button{font-size:8px;color:#8a9d80}.mobile-tabs{display:none}.toast{position:absolute;top:95px;left:50%;transform:translateX(-50%);max-width:440px;background:#1b2620f5;border:1px solid #46543f;padding:10px 17px;font-size:11px;line-height:1.5;text-align:center;color:#d6d6b9;z-index:20;pointer-events:none;opacity:0;transition:opacity .2s}.toast.visible{opacity:1}.restore-ui{position:absolute;bottom:23px;left:50%;transform:translateX(-50%);background:#17211be8;border:1px solid #4c593f;padding:12px 20px;border-radius:30px;z-index:10;font-size:11px;color:#d8d6b7}.restore-ui kbd{font:9px monospace;margin-left:10px;color:#879c80}.cinematic .mission-panel,.cinematic .harness-panel,.cinematic .bottom-area,.cinematic .inspector,.cinematic .edition,.cinematic .stage-caption,.cinematic .stage-help,.cinematic .camera-controls{display:none!important}.cinematic .stage{inset:50px 0 0}.cinematic .topbar{height:64px;border-bottom:0;background:transparent}.cinematic #cinema{visibility:hidden}.cinematic .nucleus-label{padding-top:70px}
+@media(min-width:1500px){.mission-panel{left:45px;width:239px;top:137px}.harness-panel{right:42px;width:224px;top:139px}.stage{left:295px;right:289px;top:100px}.topbar{padding:0 44px}.bottom-area{padding-left:44px;padding-right:44px}.mission-panel h1{font-size:47px}.mission-copy{font-size:12px}.agent-row{padding:16px 0}.journal{max-height:190px}.inspector{right:288px}}
+@media(max-height:800px) and (min-width:901px){.mission-panel{top:108px}.mission-panel h1{font-size:34px;margin:13px 0}.mission-copy{margin-bottom:18px;font-size:10px}.number{font-size:52px;margin:10px 0 8px}.sector-section{margin-top:20px}.sector-item{padding:9px 0}.mission-foot{margin-top:15px}.harness-panel{top:108px}.agent-row{padding:11px 0}.journal-heading{margin-top:20px}.learning-note{margin-top:9px}.journal{max-height:140px}.stage{top:101px;bottom:166px}}
+@media(max-height:660px) and (min-width:901px){.mission-copy,.mission-foot,.fabric-note,.learning-note{display:none}.mission-panel h1{font-size:30px}.number{font-size:43px}.sector-section{margin-top:13px}.journal{max-height:83px}.stage{top:92px;bottom:150px}.topbar{height:70px}.mission-panel,.harness-panel{top:94px}.bottom-area{padding-bottom:9px}.command-dock{padding:11px 0 9px}.state-line{height:34px}}
+@media(max-width:1100px) and (min-width:901px){.mission-panel{width:173px;left:23px}.harness-panel{width:168px;right:23px}.stage{left:192px;right:192px}.mission-panel h1{font-size:34px}.edition{margin-left:20px;font-size:8px}.timeline{padding:0 5px}.secondary-button{padding:0 9px}.command-dock{gap:8px}.dock-settings{gap:6px}.bottom-area{padding-left:23px;padding-right:23px}}
+@media(max-width:900px){
+ .topbar{height:65px;padding:0 19px}.brand{font-size:13px;letter-spacing:3px;gap:10px}.brand-symbol{font-size:26px}.edition{display:none}.top-actions{gap:9px}.synthetic{font-size:8px;padding:8px 10px;letter-spacing:.8px}.topbar .icon-button{width:28px}.mission-panel{top:85px;left:21px;right:21px;width:auto;display:flex;align-items:center;justify-content:space-between;pointer-events:none}.mission-panel>.eyebrow{position:absolute;top:0;font-size:8px}.mission-panel h1{font-size:25px;line-height:1.15;margin:18px 0 0;letter-spacing:-.7px}.mission-panel h1 br{display:none}.mission-panel h1 em{margin-left:5px}.mission-copy,.mission-foot{display:none}.verified-block{width:100px;text-align:right}.verified-block .eyebrow{font-size:7px;letter-spacing:.6px;justify-content:flex-end;line-height:1.5}.verified-block .sim-mini{display:none}.number{font-size:37px;letter-spacing:-1px;margin:3px 0 3px;line-height:1}.number small{font-size:15px}.verification-caption{font-size:8px;margin-top:6px;justify-content:flex-end}.verification-caption span:last-child{display:none}.progress-track{width:75px;margin-left:auto}.stage{top:146px;left:0;right:0;bottom:205px}.stage-caption{display:none}.stage-help{bottom:7px;font-size:6px;letter-spacing:.5px}.camera-controls{bottom:28px;right:15px}.camera-controls button{width:27px;height:26px;font-size:15px}.nucleus-label{width:135px;padding-top:55px}.nucleus-label span{font-size:6px;letter-spacing:1.1px}.nucleus-label strong{font-size:14px;margin:6px 0}.nucleus-label small{font-size:7px}.agent-tag{font-size:9px;min-width:80px}.agent-tag .tag-id{font-size:6px}.harness-panel{display:none}.sector-section{display:none}.bottom-area{padding:0 16px max(12px,env(safe-area-inset-bottom))}.state-line{height:29px;font-size:8px;border:0}.state-line>div{font-size:7px;letter-spacing:.65px}.state-line>span:nth-child(2){display:none}.render-meta{margin-left:auto;font-size:6px;letter-spacing:0}.render-meta b{margin-left:8px}.command-dock{display:grid;grid-template-columns:auto auto 1fr;gap:9px;padding:9px 0 10px;border-top:1px solid var(--line)}.primary-button{height:37px;min-width:87px;font-size:10px}.secondary-button{height:36px;padding:0 9px;font-size:9px}.timeline{grid-column:1/-1;grid-row:1;padding:0 1px 5px}.timeline-label{font-size:7px}.timeline input{height:19px;margin-top:2px}.timeline-milestones button{font-size:6px;padding:3px 0}.dock-settings{justify-self:end;gap:6px}.dock-settings .quality-label{display:none}.mobile-tabs{display:flex;grid-column:1/-1;justify-content:center;gap:0}.mobile-tabs button{font-size:9px;color:#91a18a;min-width:88px;height:25px}.mobile-tabs button+button{border-left:1px solid #2c3b2c}.mobile-tabs button[aria-expanded=true]{color:#dbc095}.bottom-note{font-size:5.8px;letter-spacing:.45px}.bottom-note i{padding:0 4px}.bottom-note button{font-size:7px}.bottom-note>span{max-width:80%;line-height:1.5}.sector-section.drawer{display:block;position:fixed;bottom:212px;left:16px;right:16px;background:#10191bf7;border:1px solid #3e493c;padding:16px;z-index:12;pointer-events:auto;margin:0;max-height:calc(100dvh - 380px);overflow:auto}.sector-item{padding:13px 0}.harness-panel.drawer{display:block;position:fixed;bottom:212px;left:16px;right:16px;top:auto;width:auto;background:#10191bf7;border:1px solid #3e493c;padding:16px;z-index:12;max-height:calc(100dvh - 330px);overflow:auto}.harness-panel.drawer .agent-row{padding:10px 0}.harness-panel.drawer .journal{max-height:80px}.harness-panel.drawer .journal-heading{margin-top:15px}.harness-panel.drawer .learning-note{display:none}.harness-panel.drawer .aside-intro{margin-bottom:11px}.inspector{right:16px;left:16px;width:auto;bottom:218px;z-index:15;padding:15px}.inspector h2{font-size:21px}.inspector p{font-size:10px}.inspect-metrics{padding:4px 0}.inspector .inspect-evidence{margin-top:8px}.toast{top:72px;font-size:10px;width:calc(100% - 40px)}.render-error{inset:12% 12%;font-size:11px;padding:17px}.cinematic .stage{inset:65px 0 35px}.cinematic .topbar{padding:0 18px}
+}
+@media(max-width:420px){.mission-panel h1{font-size:22px}.number{font-size:32px}.verified-block{width:93px}.agent-tag{font-size:8px}.primary-button{min-width:78px}.command-dock{gap:7px}.secondary-button{padding:0 8px}.stage{top:144px;bottom:205px}.state-line>div{font-size:6.6px}.render-meta{font-size:5.7px}.bottom-note{font-size:5.2px}.bottom-note i{padding:0 3px}}
+@media(max-width:900px) and (max-height:540px) and (orientation:landscape){.topbar{height:49px}.mission-panel{top:61px;left:16px;right:auto;width:130px;display:block}.mission-panel h1{font-size:20px;margin:18px 0}.mission-panel h1 br{display:block}.mission-panel h1 em{margin-left:0}.verified-block{text-align:left;width:110px}.verified-block .eyebrow{justify-content:flex-start}.progress-track{margin-left:0}.verification-caption{justify-content:flex-start}.number{font-size:39px;margin-top:8px}.stage{top:49px;left:150px;right:105px;bottom:83px}.stage-help{display:none}.bottom-area{padding-bottom:5px}.state-line{display:none}.command-dock{display:flex;padding:6px 0;gap:10px}.timeline{flex:1;order:0;padding:0 6px}.timeline-label{font-size:6px}.timeline-milestones{display:none}.mobile-tabs{display:none}.bottom-note{font-size:6px}.camera-controls{bottom:4px}.agent-tag{font-size:7px}.nucleus-label{padding-top:47px}.nucleus-label strong{font-size:11px}.nucleus-label span,.nucleus-label small{font-size:5px}.render-meta{display:none}.inspector{left:auto;right:15px;width:240px;bottom:85px}.sector-section.drawer,.harness-panel.drawer{bottom:85px;max-height:calc(100dvh - 145px)}.cinematic .stage{inset:40px 0 0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+ <a class="brand" href="#" aria-label="Forge Living Loom home" id="brand"><span class="brand-symbol" aria-hidden="true">F<span></span></span><span>FORGE</span></a>
+ <div class="edition">THE LIVING LOOM <span>/</span> EXPERIMENT 003</div>
+ <div class="top-actions"><span class="synthetic"><i></i> SYNTHETIC DEMO</span><button id="cinema" class="icon-button" title="Hide interface (H)" aria-label="Enter cinematic view" aria-pressed="false">⛶</button></div>
+</header>
+<main id="workspace">
+ <section class="mission-panel" aria-label="Mission and simulated verification">
+  <div class="eyebrow">MISSION / 001</div>
+  <h1>An idea,<br><em>becoming.</em></h1>
+  <p class="mission-copy">A universal memory app.<br>From a fleeting thought to<br>something that remembers.</p>
+  <div class="verified-block"><div class="eyebrow">VERIFIED REQUIREMENTS <span class="sim-mini">SIM</span></div><div class="number"><span id="verified">62</span><small>%</small></div><div class="progress-track"><span id="coverage-fill"></span></div><div class="verification-caption"><span id="verified-count">62 / 100</span><span>Evidence, not code.</span></div></div>
+  <div id="sector-panel" class="sector-section">
+   <div class="section-heading"><span class="eyebrow">THE FABRIC</span><button id="clear-focus" class="text-button" hidden>Show all</button></div>
+   <div id="sector-list"></div>
+   <div class="fabric-note">Density encodes synthetic structural complexity. It is not progress.</div>
+  </div>
+  <div class="mission-foot"><span class="small-diamond"></span> Mission stays at the center.</div>
+ </section>
+ <section id="stage" class="stage" aria-label="Interactive three-dimensional Living Loom">
+  <canvas id="loom" aria-label="Synthetic 3D woven torus. Drag to rotate, pinch or scroll to zoom. Use sector buttons for keyboard inspection." tabindex="0"></canvas>
+  <div id="labels" class="agent-labels" aria-hidden="true"></div>
+  <div id="nucleus-label" class="nucleus-label"><span>THE ORIGINAL IDEA</span><strong>RECALL</strong><small>Memory, without friction.</small></div>
+  <div class="stage-caption"><span class="stage-index">01 — 05</span><span id="phase-caption">A mission taking shape</span><span class="stage-rule"></span></div>
+  <div class="camera-controls" aria-label="Camera controls"><button id="zoom-out" aria-label="Zoom out">−</button><button id="camera-reset" aria-label="Reset camera" title="Reset camera">↺</button><button id="zoom-in" aria-label="Zoom in">+</button></div>
+  <div class="stage-help">DRAG TO ORBIT <span>·</span> PINCH / SCROLL TO ZOOM <span>·</span> TAP A SECTOR</div>
+  <div id="render-error" class="render-error" role="alert" hidden><b>The Loom could not start.</b><p id="error-message"></p><button id="retry">Try again</button></div>
+ </section>
+ <aside id="harness-panel" class="harness-panel" aria-label="Synthetic agent harness">
+  <div class="section-heading"><span class="eyebrow">AGENT HARNESS</span><span class="agent-count">05</span></div>
+  <p class="aside-intro">Five roles. One shared purpose.</p>
+  <div id="agent-list"></div>
+  <div class="journal-heading"><span class="eyebrow">THREAD JOURNAL</span><span class="sim-mini">SIMULATED</span></div>
+  <div id="journal" class="journal" aria-label="Recent synthetic events"></div>
+  <div class="learning-note"><span>ATHENA</span><p>Observe → reflect → remember.<br>No real policy changes or actions.</p></div>
+ </aside>
+ <section id="inspector" class="inspector" aria-label="Selected sector" hidden>
+  <div class="section-heading"><span class="eyebrow">THREAD INSPECTOR</span><button id="close-inspector" class="icon-button" aria-label="Close inspector">×</button></div>
+  <h2 id="inspect-title"></h2><p id="inspect-note"></p>
+  <div class="inspect-metrics"><span><b id="inspect-count"></b><small>Verified / 20</small></span><span><b id="inspect-density"></b><small>Relative density</small></span></div>
+  <p id="inspect-evidence" class="inspect-evidence"></p><div class="eyebrow">SYNTHETIC FIXTURES ONLY</div>
+ </section>
+</main>
+<footer class="bottom-area">
+ <div class="state-line"><div><span id="state-dot" class="state-dot"></span><span id="state-title">WEAVING THE MISSION</span></div><span id="state-description">Strands settle only after independent simulated verification.</span><span class="render-meta"><span id="fiber-count">—</span> FIBERS <b>WEBGL 2</b></span></div>
+ <div class="command-dock">
+  <button id="play" class="primary-button" aria-label="Pause simulation"><span id="play-icon">Ⅱ</span><span id="play-text">Pause</span></button>
+  <button id="restart" class="secondary-button" title="Restart from the original idea">↺ <span>From idea</span></button>
+  <div class="timeline"><div class="timeline-label"><span>SCENARIO POSITION</span><output id="timeline-value" for="timeline">62 / 100</output></div><input id="timeline" type="range" min="0" max="100" step="1" value="62" aria-label="Synthetic scenario position"><div class="timeline-milestones"><button data-seek="0">IDEA</button><button data-seek="62">WEAVING</button><button data-seek="100">VERIFIED</button></div></div>
+  <div class="dock-settings"><button id="speed" class="secondary-button" title="Simulation speed" aria-label="Simulation speed: 1 times">1×</button><button id="drift" class="secondary-button drift-button" title="Withdraw two synthetic verification claims">Inject drift</button><label class="quality-label"><span class="sr-only">Rendering quality</span><select id="quality" aria-label="Rendering quality"><option value="low">Light</option><option value="balanced" selected>Balanced</option><option value="ultra">Ultra</option></select></label></div>
+  <div class="mobile-tabs"><button id="sectors-toggle" aria-expanded="false">Sectors</button><button id="agents-toggle" aria-expanded="false">Agents</button></div>
+ </div>
+ <div class="bottom-note"><span>PROTOTYPE 003 <i>•</i> ALL ACTIVITY IS SYNTHETIC <i>•</i> NO HARNESS CONNECTION</span><button id="glow" aria-pressed="true">Soft glow: on</button></div>
+</footer>
+<button id="restore-ui" class="restore-ui" hidden>Show interface <kbd>H</kbd></button>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<noscript>This interactive prototype requires JavaScript and a WebGL 2 capable browser.</noscript>
+<script>'use strict';
+const SimModule=(()=>{/** Synthetic scenario only. No network, external actions, or actual engineering evidence. */
+const SECTORS = Object.freeze([
+  {id:'interface',name:'Interface',short:'UI',color:'#d5bd8f',rgb:[.84,.69,.43],density:1.00,note:'Capture flows, navigation, and the memory workspace.'},
+  {id:'services',name:'Services',short:'API',color:'#b3cad3',rgb:[.57,.75,.81],density:1.24,note:'Application services, API contracts, and execution paths.'},
+  {id:'memory',name:'Memory',short:'DATA',color:'#afc7b3',rgb:[.60,.77,.63],density:1.12,note:'Storage, structured memory, and evidence-backed retrieval.'},
+  {id:'infrastructure',name:'Infrastructure',short:'OPS',color:'#beb7ca',rgb:[.70,.64,.77],density:.85,note:'Deployments, integration boundaries, and recovery.'},
+  {id:'verification',name:'Verification',short:'QA',color:'#e6ded0',rgb:[.90,.86,.74],density:1.05,note:'Independent scenario checks and acceptance evidence.'}
+]);
+const AGENTS = Object.freeze([
+ {name:'Architect',tag:'A01',role:'Maps the mission',color:'#d5bd8f'},
+ {name:'Builder / UI',tag:'B01',role:'Weaves the interface',color:'#b3cad3'},
+ {name:'Builder / Core',tag:'B02',role:'Weaves the system',color:'#afc7b3'},
+ {name:'Validator',tag:'V01',role:'Checks before settling',color:'#e6ded0'},
+ {name:'Athena',tag:'L01',role:'Reflects on the outcome',color:'#beb7ca'}
+]);
+const CYCLE_SECONDS = 4.6;
+const rates=[1.18,1.04,1.10,.93,.83];
+const order = Array.from({length:100},(_,i)=>({id:i,sector:Math.floor(i/20),index:i%20}))
+ .sort((a,b)=>(a.index+1)/rates[a.sector]-(b.index+1)/rates[b.sector] || a.id-b.id);
+const ID_BY_RANK = order.map(x=>x.id);
+const DRIFT_IDS = [24,27];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+
+class LoomSimulation {
+ constructor(initial=62){
+  this.verified=new Set(); this.conflicts=new Set(); this.elapsed=0; this.clock=0;
+  this.paused=false; this.speed=1; this.repair=false; this.events=[]; this.serial=0;
+  this.seek(initial);
+ }
+ emit(kind,text,actor='Forge'){
+  this.events.unshift({id:++this.serial,kind,text,actor,at:this.elapsed,synthetic:true});
+  this.events.length=Math.min(40,this.events.length);
+ }
+ seek(value){
+  if(!Number.isFinite(value)) throw new TypeError('Scenario position must be finite.');
+  const n=Math.round(clamp(value,0,100)); this.verified.clear();
+  for(const id of ID_BY_RANK.slice(0,n)) if(!this.conflicts.has(id)) this.verified.add(id);
+  this.clock=0; this.repair=false;
+  this.emit('scenario',n===0?'An idea is registered. No requirement is verified.':`Scenario positioned at ${n} of 100 requirements.`, 'Scenario');
+ }
+ setPaused(value){this.paused=Boolean(value);}
+ setSpeed(value){
+  if(!Number.isFinite(value)||value<=0||value>8) throw new RangeError('Speed must be greater than 0 and at most 8.');
+  this.speed=value;
+ }
+ injectDrift(){
+  for(const id of DRIFT_IDS){this.conflicts.add(id);this.verified.delete(id);}
+  this.clock=0;this.repair=false;
+  this.emit('drift','Service boundaries drifted. Two simulated evidence claims were withdrawn.','Validator');
+ }
+ requestRepair(){
+  if(!this.conflicts.size)return;
+  this.repair=true;this.clock=0;
+  this.emit('repair','Targeted repair queued; the validator must recheck each strand.','Architect');
+ }
+ next(){
+  if(this.repair&&this.conflicts.size)return order.find(x=>this.conflicts.has(x.id));
+  return order.find(x=>!this.verified.has(x.id)&&!this.conflicts.has(x.id))||null;
+ }
+ step(seconds){
+  if(!Number.isFinite(seconds)||seconds<0)throw new RangeError('Time step must be nonnegative and finite.');
+  if(this.paused)return;
+  let remaining=seconds*this.speed;
+  // Bounded by the finite 100-requirement scenario, irrespective of frame cadence.
+  while(remaining>1e-8){
+   const candidate=this.next();
+   if(!candidate){this.elapsed+=remaining;this.clock=0;break;}
+   const step=Math.min(remaining,CYCLE_SECONDS-this.clock);
+   const before=this.clock/CYCLE_SECONDS;
+   this.clock+=step;this.elapsed+=step;remaining-=step;
+   const after=this.clock/CYCLE_SECONDS;
+   if(before<.16&&after>=.16)this.emit('build',`Weaving ${SECTORS[candidate.sector].name.toLowerCase()} requirement ${String(candidate.id+1).padStart(3,'0')}.`,candidate.sector===0?'Builder / UI':'Builder / Core');
+   if(before<.66&&after>=.66)this.emit('check','Candidate is provisional. Independent scenario checks are running.','Validator');
+   if(this.clock+1e-8>=CYCLE_SECONDS){
+    this.verified.add(candidate.id);this.conflicts.delete(candidate.id);this.clock=0;
+    this.emit('verified',`REQ-${String(candidate.id+1).padStart(3,'0')} settled after a simulated independent check.`, 'Validator');
+    if(this.verified.size%4===0)this.emit('learn','Outcome recorded for reflection. No policy was changed.','Athena');
+    if(this.repair&&!this.conflicts.size){this.repair=false;this.emit('repaired','Service alignment restored. The repaired evidence was rechecked.','Validator');}
+    if(this.verified.size===100&&!this.conflicts.size)this.emit('complete','All 100 simulated requirements are verified. The ring is closed.','Forge');
+   }
+  }
+ }
+ snapshot(){
+  const candidate=this.next(),p=this.clock/CYCLE_SECONDS;
+  const phase=!candidate?(this.conflicts.size?'blocked':'complete'):p<.16?'plan':p<.66?'weave':p<.88?'validate':'settle';
+  const sectors=SECTORS.map((s,i)=>{
+   let verified=0; for(const id of this.verified)if(Math.floor(id/20)===i)verified++;
+   return {...s,rgb:[...s.rgb],verified,total:20,coverage:verified/20,drift:[...this.conflicts].filter(id=>Math.floor(id/20)===i).length};
+  });
+  return {synthetic:true,verified:this.verified.size,total:100,closed:this.verified.size===100&&!this.conflicts.size,
+   driftCount:this.conflicts.size,repairing:this.repair,phase,phaseProgress:p,buildFraction:clamp((p-.16)/.5,0,1),
+   candidate:candidate?{...candidate}:null,sectors,events:this.events.map(x=>({...x})),paused:this.paused,speed:this.speed,elapsed:this.elapsed};
+ }
+}
+
+return {LoomSimulation,SECTORS,AGENTS,CYCLE_SECONDS};})();
+const RenderModule=(()=>{const {SECTORS}=SimModule;/** Native WebGL 2 renderer. Everything is bundled; no third-party runtime or CDN. */
+
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function random(seed){let n=seed>>>0; return ()=>{n=(1664525*n+1013904223)>>>0;return n/4294967296;};}
+function multiply(a,b){
+ const o=new Float32Array(16);
+ for(let c=0;c<4;c++)for(let r=0;r<4;r++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];
+ return o;
+}
+function identity(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);}
+function rotation(x,y,z){
+ const X=identity(),Y=identity(),Z=identity();
+ X[5]=X[10]=Math.cos(x);X[6]=Math.sin(x);X[9]=-X[6];
+ Y[0]=Y[10]=Math.cos(y);Y[8]=Math.sin(y);Y[2]=-Y[8];
+ Z[0]=Z[5]=Math.cos(z);Z[1]=Math.sin(z);Z[4]=-Z[1];
+ return multiply(Z,multiply(Y,X));
+}
+function perspective(aspect,distance){
+ const f=1/Math.tan(40*Math.PI/360),near=.1,far=60;
+ const p=new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)/(near-far),-1,0,0,2*far*near/(near-far),0]);
+ const v=identity();v[14]=-distance;return multiply(p,v);
+}
+function projectPoint(v,m,w,h){
+ const p=[...v,1];let o=[0,0,0,0];
+ for(let r=0;r<4;r++)for(let c=0;c<4;c++)o[r]+=m[c*4+r]*p[c];
+ return {x:(o[0]/o[3]*.5+.5)*w,y:(.5-o[1]/o[3]*.5)*h,z:o[2]/o[3]};
+}
+function torus(sector,t,phi=0,r=.53){
+ const a=-Math.PI/2+(sector+t)*TAU/5;
+ return [(2.05+r*Math.cos(phi))*Math.cos(a),(2.05+r*Math.cos(phi))*Math.sin(a),r*Math.sin(phi)];
+}
+function bezier(a,b,t,lane=0){
+ const c=[a[0]*.68,a[1]*.68,a[2]+.85],d=[b[0]*1.2,b[1]*1.2,b[2]+.55],s=1-t;
+ return [0,1,2].map(i=>s*s*s*a[i]+3*s*s*t*c[i]+3*s*t*t*d[i]+t*t*t*b[i]+(i===2?Math.sin(t*Math.PI)*lane:0));
+}
+const HEADER='#version 300 es\nprecision highp float;\n';
+const FIBER_VS=HEADER+`
+layout(location=0) in vec4 aData;
+uniform mat4 uMatrix; uniform float uSector,uTime,uDrift;
+out float vT,vSeed,vShade,vDrift;
+void main(){
+ float t=aData.x,seed=aData.w;
+ float theta=-1.570796327+(uSector+t)*1.256637061;
+ float direction=step(.45,fract(seed*17.13))*2.-1.;
+ float phi=aData.y+direction*t*7.1+.035*sin(t*28.+seed*70.);
+ float r=aData.z;
+ float drift=uDrift*step(.77,fract(seed*13.7))*smoothstep(.22,.36,t)*(1.-smoothstep(.76,.96,t));
+ r+=drift*(.21+.10*sin(t*27.+seed*16.+uTime*.65));
+ theta+=drift*.055*sin(t*23.+seed*31.);
+ vec3 p=vec3((2.05+r*cos(phi))*cos(theta),(2.05+r*cos(phi))*sin(theta),r*sin(phi));
+ p.z+=drift*.32*sin(t*19.+seed*20.);
+ gl_Position=uMatrix*vec4(p,1.);
+ vT=t;vSeed=seed;vDrift=drift;
+ vShade=.45+.55*(.5+.5*sin(phi+.5));
+}
+`;
+const FIBER_FS=HEADER+`
+in float vT,vSeed,vShade,vDrift;out vec4 outColor;
+uniform vec3 uColor;uniform float uVerified,uBuilt,uFocus,uSweep,uTime,uGhost;
+void main(){
+ float settled=1.-step(uVerified+.00001,vT);
+ float provisional=(1.-settled)*(1.-step(uBuilt,vT));
+ float ghost=(1.-settled-provisional)*uGhost;
+ float alpha=(.065+.12*vSeed)*(.55+.45*vShade)*uFocus;
+ alpha*=settled+provisional*(.28+.20*sin(vT*45.+uTime*3.))+ghost*.055;
+ float wave=exp(-pow((vT-uSweep)*26.,2.))*step(0.,uSweep);
+ vec3 color=mix(uColor,vec3(1.,.89,.71),.28+vShade*.20);
+ color=mix(color,vec3(.98,.32,.16),clamp(vDrift*2.,0.,1.));
+ alpha+=wave*.12*step(vT,uBuilt)*uFocus;
+ if(alpha<.0008)discard;
+ outColor=vec4(color*(.8+wave*.65),alpha);
+}
+`;
+const BASIC_VS=HEADER+`
+layout(location=0) in vec3 aPosition;uniform mat4 uMatrix;
+void main(){gl_Position=uMatrix*vec4(aPosition,1.);}
+`;
+const BASIC_FS=HEADER+`uniform vec4 uColor;out vec4 outColor;void main(){outColor=uColor;}`;
+const FLOW_VS=HEADER+`
+layout(location=0) in vec4 aData;
+uniform mat4 uMatrix;uniform vec3 uStart,uEnd;uniform float uTime,uActivity;
+out float vAlpha;
+void main(){
+ float t=aData.x,s=1.-t,lane=aData.y;
+ vec3 c=uStart*.68; c.z=uStart.z+.85;
+ vec3 d=uEnd*1.2;d.z=uEnd.z+.55;
+ vec3 p=s*s*s*uStart+3.*s*s*t*c+3.*s*t*t*d+t*t*t*uEnd;
+ p.z+=sin(t*3.14159265)*lane;
+ p.xy+=vec2(sin(t*15.+aData.z*12.),cos(t*12.+aData.z*12.))*sin(t*3.14159)*.018;
+ gl_Position=uMatrix*vec4(p,1.);
+ float f=fract(t-uTime*(.22+.06*aData.z)+aData.z);
+ float pulse=exp(-pow((f-.11)*17.,2.));
+ vAlpha=(.009+pulse*.24)*uActivity*(.45+aData.z*.55);
+}
+`;
+const FLOW_FS=HEADER+`in float vAlpha;uniform vec3 uColor;out vec4 outColor;void main(){outColor=vec4(uColor,vAlpha);}`;
+const POINT_VS=HEADER+`
+layout(location=0) in vec4 aPosition;layout(location=1) in vec4 aColor;
+uniform mat4 uMatrix;uniform float uDpr;out vec4 vColor;
+void main(){gl_Position=uMatrix*vec4(aPosition.xyz,1.);gl_PointSize=aPosition.w*uDpr;vColor=aColor;}
+`;
+const POINT_FS=HEADER+`
+in vec4 vColor;out vec4 outColor;
+void main(){float r=length(gl_PointCoord-.5)*2.;if(r>1.)discard;
+ float a=exp(-r*r*7.)*(1.-smoothstep(.74,1.,r));
+ float core=exp(-r*r*60.);
+ outColor=vec4(vColor.rgb*(.8+core*.65),vColor.a*a);}
+`;
+const QUAD_VS=HEADER+`
+out vec2 vUv;
+void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));vUv=p;gl_Position=vec4(p*2.-1.,0.,1.);}
+`;
+const QUAD_FS=HEADER+`
+in vec2 vUv;out vec4 outColor;uniform sampler2D uScene,uBloom;uniform vec2 uDirection;uniform int uMode;uniform float uGlow;
+void main(){
+ vec3 c=texture(uScene,vUv).rgb;
+ if(uMode==0){float b=max(max(c.r,c.g),c.b);outColor=vec4(c*smoothstep(.12,.48,b),1.);}
+ else if(uMode==1){
+  vec3 s=c*.227027;
+  s+=texture(uScene,vUv+uDirection*1.384615).rgb*.316216;
+  s+=texture(uScene,vUv-uDirection*1.384615).rgb*.316216;
+  s+=texture(uScene,vUv+uDirection*3.230769).rgb*.070270;
+  s+=texture(uScene,vUv-uDirection*3.230769).rgb*.070270;
+  outColor=vec4(s,1.);
+ }else{
+  vec3 b=texture(uBloom,vUv).rgb;
+  c+=b*uGlow;
+  c=vec3(1.)-exp(-c*1.2);
+  float vignette=1.-.38*pow(length((vUv-.5)*1.28),2.);
+  vec3 background=vec3(10./255.,16./255.,18./255.);
+  vec3 baseline=vec3(1.)-exp(-vec3(.023,.031,.034)*1.2);
+  outColor=vec4(background+max(c-baseline,vec3(0.))*vignette,1.);
+ }
+}
+`;
+
+class LoomRenderer {
+ constructor(canvas,{quality='balanced',onStatus=()=>{}}={}){
+  this.canvas=canvas;this.onStatus=onStatus;this.quality=quality;this.glow=true;this.lost=false;
+  this.pitch=-.31;this.yaw=.16;this.roll=-.08;this.zoom=1;this.orbit=true;this.selected=-1;
+  this.time=0;this.width=1;this.height=1;this.matrix=identity();this.resources=[];this.targets=[];
+  this.agentPositions=Array.from({length:5},(_,i)=>{
+   const a=-Math.PI/2+i*TAU/5;
+   return [Math.cos(a)*3.36,Math.sin(a)*3.36,Math.sin(a*2)*.13];
+  });
+  this.gl=canvas.getContext('webgl2',{antialias:false,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:false});
+  if(!this.gl)throw new Error('WebGL 2 is unavailable. Open this file in a browser with WebGL enabled.');
+  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;onStatus('lost');});
+  canvas.addEventListener('webglcontextrestored',()=>{
+   try{this.resources=[];this.targets=[];this.sectorBuffers=null;this.lost=false;this.initialize();this.resize(this.width,this.height,true);onStatus('restored');}
+   catch(e){onStatus('error',e);}
+  });
+  this.initialize();this.resize(canvas.clientWidth||800,canvas.clientHeight||600);
+ }
+ program(vs,fs){
+  const g=this.gl, shaders=[];
+  for(const [type,text] of [[g.VERTEX_SHADER,vs],[g.FRAGMENT_SHADER,fs]]){
+   const s=g.createShader(type);g.shaderSource(s,text);g.compileShader(s);
+   if(!g.getShaderParameter(s,g.COMPILE_STATUS)){const error=g.getShaderInfoLog(s);g.deleteShader(s);throw new Error('WebGL shader compilation: '+error);}
+   shaders.push(s);
+  }
+  const p=g.createProgram();shaders.forEach(s=>g.attachShader(p,s));g.linkProgram(p);
+  shaders.forEach(s=>g.deleteShader(s));
+  if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error('WebGL linking: '+g.getProgramInfoLog(p));
+  this.resources.push(['program',p]);return {p,uniforms:new Map()};
+ }
+ uniform(p,name){if(!p.uniforms.has(name))p.uniforms.set(name,this.gl.getUniformLocation(p.p,name));return p.uniforms.get(name);}
+ f(p,n,x){this.gl.uniform1f(this.uniform(p,n),x);}
+ v3(p,n,x){this.gl.uniform3fv(this.uniform(p,n),x);}
+ matrixUniform(p){this.gl.uniformMatrix4fv(this.uniform(p,'uMatrix'),false,this.matrix);}
+ buffer(data,components=4){
+  const g=this.gl,v=g.createVertexArray(),b=g.createBuffer();
+  g.bindVertexArray(v);g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array(data),g.STATIC_DRAW);
+  g.enableVertexAttribArray(0);g.vertexAttribPointer(0,components,g.FLOAT,false,0,0);g.bindVertexArray(null);
+  return {vao:v,buffer:b,count:data.length/components};
+ }
+ destroyBuffer(b){if(!b)return;this.gl.deleteBuffer(b.buffer);this.gl.deleteVertexArray(b.vao);}
+ initialize(){
+  const g=this.gl;
+  this.fiber=this.program(FIBER_VS,FIBER_FS);this.basic=this.program(BASIC_VS,BASIC_FS);
+  this.flow=this.program(FLOW_VS,FLOW_FS);this.points=this.program(POINT_VS,POINT_FS);this.quad=this.program(QUAD_VS,QUAD_FS);
+  this.buildFibers();
+  const path=[];const rand=random(32);
+  for(let j=0;j<26;j++){
+   const lane=(rand()-.5)*.19,seed=rand();
+   for(let k=0;k<44;k++)for(let d=0;d<2;d++)path.push((k+d)/44,lane,seed,0);
+  }
+  this.flowBuffer=this.buffer(path);
+  const orbit=[];
+  for(let j=0;j<192;j++){const a=j/192*TAU,b=(j+1)/192*TAU;for(const q of[a,b])orbit.push(Math.cos(q)*3.36,Math.sin(q)*3.36,Math.sin(q*2)*.13);}
+  this.orbitBuffer=this.buffer(orbit,3);
+  const rings=[];
+  for(let n=0;n<3;n++)for(let j=0;j<80;j++)for(let d=0;d<2;d++){
+   const a=(j+d)/80*TAU,r=.18+n*.075;
+   rings.push(n===1?r*Math.sin(a):r*Math.cos(a),n===2?r*Math.sin(a):r*Math.cos(a),r*Math.sin(a));
+  }
+  this.seedBuffer=this.buffer(rings,3);
+  this.pointVAO=g.createVertexArray();this.pointBuffer=g.createBuffer();g.bindVertexArray(this.pointVAO);g.bindBuffer(g.ARRAY_BUFFER,this.pointBuffer);
+  g.bufferData(g.ARRAY_BUFFER,8*4*512,g.DYNAMIC_DRAW);
+  g.enableVertexAttribArray(0);g.vertexAttribPointer(0,4,g.FLOAT,false,32,0);
+  g.enableVertexAttribArray(1);g.vertexAttribPointer(1,4,g.FLOAT,false,32,16);g.bindVertexArray(null);
+  const starRand=random(2703);this.stars=Array.from({length:84},()=>{
+   const a=starRand()*TAU,r=2.9+starRand()*2.7;
+   return [Math.cos(a)*r,Math.sin(a)*r,(starRand()-.5)*2,1+starRand()*1.6,.55,.62,.62,.16+starRand()*.16];
+  });
+  this.onStatus('ready');
+ }
+ buildFibers(){
+  if(this.sectorBuffers)this.sectorBuffers.forEach(b=>this.destroyBuffer(b));
+  const base=this.quality==='ultra'?600:this.quality==='balanced'?360:175;
+  const samples=this.quality==='ultra'?90:68;this.fiberCount=0;
+  this.sectorBuffers=SECTORS.map((s,sector)=>{
+   const rand=random(842+sector*135),data=[],count=Math.round(base*s.density);this.fiberCount+=count;
+   for(let j=0;j<count;j++){
+    const phi=rand()*TAU,rad=.40+Math.pow(rand(),.42)*.22,seed=rand();
+    for(let k=0;k<samples;k++)for(let d=0;d<2;d++)data.push((k+d)/samples,phi,rad,seed);
+   }
+   return this.buffer(data);
+  });
+ }
+ setQuality(value){
+  if(!['low','balanced','ultra'].includes(value))return;
+  this.quality=value;this.buildFibers();this.resize(this.width,this.height,true);
+ }
+ setSelected(value){this.selected=value;}
+ resetCamera(){this.pitch=-.31;this.yaw=.16;this.roll=-.08;this.zoom=1;this.orbit=true;}
+ target(w,h){
+  const g=this.gl,t=g.createTexture();g.bindTexture(g.TEXTURE_2D,t);
+  g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,w,h,0,g.RGBA,g.UNSIGNED_BYTE,null);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
+  const f=g.createFramebuffer();g.bindFramebuffer(g.FRAMEBUFFER,f);g.framebufferTexture2D(g.FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,t,0);
+  if(g.checkFramebufferStatus(g.FRAMEBUFFER)!==g.FRAMEBUFFER_COMPLETE)throw new Error('WebGL framebuffer is incomplete.');
+  const v={texture:t,fbo:f,width:w,height:h};this.targets.push(v);return v;
+ }
+ resize(w,h,force=false){
+  w=Math.max(1,Math.floor(w));h=Math.max(1,Math.floor(h));
+  const dpr=Math.min(window.devicePixelRatio||1,this.quality==='ultra'?2:this.quality==='balanced'?1.5:1.25,2048/Math.max(w,h));
+  if(!force&&w===this.width&&h===this.height&&dpr===this.dpr&&this.sceneTarget)return;
+  this.width=w;this.height=h;this.dpr=dpr;
+  const pw=Math.max(1,Math.round(w*dpr)),ph=Math.max(1,Math.round(h*dpr));this.canvas.width=pw;this.canvas.height=ph;
+  if(this.lost)return;
+  const g=this.gl;for(const t of this.targets){g.deleteTexture(t.texture);g.deleteFramebuffer(t.fbo);}this.targets=[];
+  this.sceneTarget=this.target(pw,ph);this.blurA=this.target(Math.ceil(pw/2),Math.ceil(ph/2));this.blurB=this.target(Math.ceil(pw/2),Math.ceil(ph/2));
+  g.bindFramebuffer(g.FRAMEBUFFER,null);
+ }
+ bindTarget(t){const g=this.gl;g.bindFramebuffer(g.FRAMEBUFFER,t?t.fbo:null);g.viewport(0,0,t?t.width:this.canvas.width,t?t.height:this.canvas.height);}
+ line(b,color){const g=this.gl,p=this.basic;g.useProgram(p.p);this.matrixUniform(p);g.uniform4fv(this.uniform(p,'uColor'),color);g.bindVertexArray(b.vao);g.drawArrays(g.LINES,0,b.count);}
+ render(state,time){
+  if(this.lost)return;
+  this.time=time;
+  const g=this.gl,w=this.width,h=this.height,aspect=w/h;
+  const driftYaw=this.orbit?Math.sin(time*.08)*.075:0;
+  this.matrix=multiply(perspective(aspect,10.65/Math.min(1,aspect)/this.zoom),rotation(this.pitch,this.yaw+driftYaw,this.roll+(this.orbit?Math.sin(time*.035)*.06:0)));
+  this.bindTarget(this.sceneTarget);g.clearColor(.023,.031,.034,1);g.clear(g.COLOR_BUFFER_BIT);
+  g.disable(g.DEPTH_TEST);g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE);
+  this.line(this.orbitBuffer,[.55,.61,.60,.034]);this.line(this.seedBuffer,[.86,.69,.45,.22]);
+  const p=this.fiber;g.useProgram(p.p);this.matrixUniform(p);this.f(p,'uTime',time);this.f(p,'uGhost',state.verified===0?.5:1);
+  state.sectors.forEach((s,i)=>{
+   g.bindVertexArray(this.sectorBuffers[i].vao);this.v3(p,'uColor',s.rgb);this.f(p,'uSector',i);
+   this.f(p,'uVerified',s.coverage);
+   const active=state.candidate?.sector===i;
+   const built=s.coverage+(active?state.buildFraction/20:0);
+   this.f(p,'uBuilt',Math.min(1,built));this.f(p,'uDrift',s.drift?1:0);
+   this.f(p,'uFocus',this.selected<0||this.selected===i?1:.22);
+   this.f(p,'uSweep',active&&['validate','settle'].includes(state.phase)?((state.phaseProgress-.66)/.34)*1.08:-2);
+   g.drawArrays(g.LINES,0,this.sectorBuffers[i].count);
+  });
+  const pts=this.stars.flatMap(s=>s);
+  pts.push(0,0,0,49,.94,.76,.47,.67);
+  const defaultSectors=[0,0,2,4,3];
+  const col=[[.88,.72,.47],[.66,.80,.85],[.65,.81,.68],[.92,.89,.80],[.75,.70,.83]];
+  const activeAgents=state.phase==='plan'?[0]:state.phase==='weave'?[1,2]:['validate','settle'].includes(state.phase)?[3]:state.phase==='complete'?[4]:[0,3];
+  const fp=this.flow;g.useProgram(fp.p);this.matrixUniform(fp);this.f(fp,'uTime',time);g.bindVertexArray(this.flowBuffer.vao);
+  for(let i=0;i<5;i++){
+   const a=this.agentPositions[i],active=activeAgents.includes(i),s=i===1||i===2||i===3?(state.candidate?.sector??defaultSectors[i]):defaultSectors[i];
+   const endpoint=torus(s,Math.min(.99,state.sectors[s].coverage+.025),i*.72,.55);
+   this.v3(fp,'uStart',a);this.v3(fp,'uEnd',endpoint);this.v3(fp,'uColor',col[i]);
+   this.f(fp,'uActivity',state.closed?.20:active?1:.22);
+   g.drawArrays(g.LINES,0,this.flowBuffer.count);
+   pts.push(...a,active?37:28,...col[i],active?.95:.60);
+   for(let j=0;j<(active?14:4);j++){
+    const t=(time*(.18+i*.013)+j*.073+i*.12)%1;
+    const q=bezier(a,endpoint,t,Math.sin(j*43)*.09);
+    pts.push(...q,active?5.8:3.2,...col[i],active?.95:.32);
+   }
+  }
+  // Small surface glints are geometry-bound, not a screen-space particle overlay.
+  for(let i=0;i<95;i++){
+   const s=i%5,t=(i*.163+time*.015)%1;
+   if(t>state.sectors[s].coverage)continue;
+   pts.push(...torus(s,t,i*1.37+time*.07,.58),i%13===0?7:3.1,...state.sectors[s].rgb,.40);
+  }
+  const pp=this.points;g.useProgram(pp.p);this.matrixUniform(pp);this.f(pp,'uDpr',this.dpr*Math.sqrt(this.zoom));
+  g.bindVertexArray(this.pointVAO);g.bindBuffer(g.ARRAY_BUFFER,this.pointBuffer);g.bufferSubData(g.ARRAY_BUFFER,0,new Float32Array(pts));g.drawArrays(g.POINTS,0,pts.length/8);
+  g.disable(g.BLEND);g.bindVertexArray(null);
+  const qp=this.quad;g.useProgram(qp.p);g.uniform1i(this.uniform(qp,'uScene'),0);g.uniform1i(this.uniform(qp,'uBloom'),1);
+  const pass=(target,texture,mode,dx=0,dy=0)=>{
+   this.bindTarget(target);g.activeTexture(g.TEXTURE0);g.bindTexture(g.TEXTURE_2D,texture);
+   g.uniform1i(this.uniform(qp,'uMode'),mode);g.uniform2f(this.uniform(qp,'uDirection'),dx,dy);g.drawArrays(g.TRIANGLES,0,3);
+  };
+  if(this.glow){
+   g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,this.sceneTarget.texture);
+   pass(this.blurA,this.sceneTarget.texture,0);
+   pass(this.blurB,this.blurA.texture,1,1.6/this.blurA.width,0);
+   pass(this.blurA,this.blurB.texture,1,0,1.6/this.blurA.height);
+  }
+  g.activeTexture(g.TEXTURE1);g.bindTexture(g.TEXTURE_2D,this.blurA.texture);this.f(qp,'uGlow',this.glow?.8:0);
+  pass(null,this.sceneTarget.texture,2);
+ }
+ project(v){return projectPoint(v,this.matrix,this.width,this.height);}
+ pick(x,y){
+  let best=-1,distance=Infinity;
+  for(let s=0;s<5;s++)for(let k=0;k<45;k++){
+   const p=this.project(torus(s,k/45,Math.PI/2,0));const d=Math.hypot(x-p.x,y-p.y);
+   if(d<distance){distance=d;best=s;}
+  }
+  return distance<Math.min(this.width,this.height)*.125?best:-1;
+ }
+ dispose(){
+  if(this.lost)return;const g=this.gl;
+  this.sectorBuffers.forEach(b=>this.destroyBuffer(b));for(const b of[this.flowBuffer,this.orbitBuffer,this.seedBuffer])this.destroyBuffer(b);
+  g.deleteBuffer(this.pointBuffer);g.deleteVertexArray(this.pointVAO);
+  for(const [,p]of this.resources)g.deleteProgram(p);
+  for(const t of this.targets){g.deleteTexture(t.texture);g.deleteFramebuffer(t.fbo);}
+ }
+}
+
+return {LoomRenderer};})();
+(()=>{const {LoomSimulation,SECTORS,AGENTS}=SimModule;const {LoomRenderer}=RenderModule;
+
+const $=id=>document.getElementById(id);
+const canvas=$('loom'),stage=$('stage');
+const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let sim=new LoomSimulation(62),renderer=null,visualTime=0,lastTime=0,lastUI=0,selected=-1,needsRender=true,toastTimer;
+let cinema=false,drawer=null,lastEvent=-1,renderedFrames=0,lastRender=0;
+if(reducedMotion)sim.setPaused(true);
+
+$('sector-list').innerHTML=SECTORS.map((s,i)=>`<button class="sector-item" data-sector="${i}" aria-pressed="false" style="--sector:${s.color}"><i></i><span>${s.name}</span><span class="sector-value" id="sector-count-${i}"></span><span class="sector-meter" id="sector-meter-${i}"></span></button>`).join('');
+$('agent-list').innerHTML=AGENTS.map((a,i)=>`<div class="agent-row" id="agent-${i}"><span class="agent-avatar">${a.tag.slice(0,2)}</span><div><div class="agent-name">${a.name}</div><div class="agent-role" id="agent-role-${i}">${a.role}</div></div><i class="agent-status"></i></div>`).join('');
+$('labels').innerHTML=AGENTS.map((a,i)=>`<div class="agent-tag" id="label-${i}"><span class="tag-id">${a.tag}</span><span>${a.name}</span></div>`).join('');
+
+function toast(text){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3400);}
+function activeRoles(s){return s.phase==='plan'?[0]:s.phase==='weave'?[1,2]:['validate','settle'].includes(s.phase)?[3]:s.phase==='complete'?[4]:[0,3];}
+function selectSector(i){
+ selected=i;renderer?.setSelected(i);$('inspector').hidden=i<0;$('clear-focus').hidden=i<0;
+ document.querySelectorAll('[data-sector]').forEach(b=>{const active=Number(b.dataset.sector)===i;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+ if(drawer)toggleDrawer(drawer,false);
+ updateUI(true);needsRender=true;
+}
+function toggleDrawer(kind,force){
+ const next=force===false?null:drawer===kind?null:kind;drawer=next;
+ $('sector-panel').classList.toggle('drawer',next==='sectors');$('harness-panel').classList.toggle('drawer',next==='agents');
+ $('sectors-toggle').setAttribute('aria-expanded',String(next==='sectors'));$('agents-toggle').setAttribute('aria-expanded',String(next==='agents'));
+ if(next){$('inspector').hidden=true;}else if(selected>=0){$('inspector').hidden=false;}
+}
+function toggleCinema(){
+ cinema=!cinema;document.body.classList.toggle('cinematic',cinema);$('restore-ui').hidden=!cinema;
+ $('cinema').setAttribute('aria-pressed',String(cinema));$('cinema').setAttribute('aria-label',cinema?'Exit cinematic view':'Enter cinematic view');
+ needsRender=true;
+}
+function pause(value=!sim.paused){sim.setPaused(value);updateUI(true);needsRender=true;}
+function updateUI(force=false){
+ const s=sim.snapshot();
+ $('verified').textContent=s.verified;$('verified-count').textContent=`${s.verified} / 100`;
+ $('coverage-fill').style.width=s.verified+'%';
+ if(document.activeElement!==$('timeline'))$('timeline').value=s.verified;
+ $('timeline-value').textContent=`${s.verified} / 100`;
+ $('play-text').textContent=s.paused?'Play':'Pause';$('play-icon').textContent=s.paused?'▶':'Ⅱ';$('play').setAttribute('aria-label',s.paused?'Play simulation':'Pause simulation');
+ $('speed').textContent=s.speed+'×';$('speed').setAttribute('aria-label',`Simulation speed: ${s.speed} times`);
+ $('drift').textContent=s.repairing?'Repairing…':s.driftCount?'Repair drift':'Inject drift';$('drift').classList.toggle('has-drift',s.driftCount>0);$('drift').disabled=s.repairing;
+ $('drift').title=s.driftCount?'Repair and revalidate both withdrawn claims':'Withdraw two synthetic verification claims';
+ $('fiber-count').textContent=renderer?renderer.fiberCount.toLocaleString():'—';
+ const closed=s.closed,blocked=s.phase==='blocked';
+ const phaseCaptions={plan:'Mapping the mission',weave:'Agents are weaving the next strand',validate:'The validator is inspecting the weave',settle:'Verified threads are settling',blocked:'Alignment needs a repair',complete:'The circle is complete — simulated'};
+ $('phase-caption').textContent=s.paused?'The Loom is paused':phaseCaptions[s.phase];
+ $('state-title').textContent=s.paused?'SIMULATION PAUSED':closed?'SIMULATED MISSION VERIFIED':s.repairing?'REPAIRING THE WEAVE':blocked?'VERIFICATION BLOCKED':s.driftCount?'DRIFT / 02 OPEN CLAIMS':'WEAVING THE MISSION';
+ $('state-dot').classList.toggle('warning',s.driftCount>0);
+ $('state-description').textContent=closed?'100 / 100 simulated checks passed. New scope would reopen the ring.':s.driftCount?'Two evidence claims were withdrawn. Repair before the ring can close.':'Strands settle only after independent simulated verification.';
+ const act=activeRoles(s);
+ AGENTS.forEach((a,i)=>{
+  $('agent-'+i).classList.toggle('active',act.includes(i)&&!s.paused);
+  $('label-'+i).classList.toggle('active',act.includes(i)&&!s.paused);
+  const actions=['Mapping requirements','Weaving candidate fibers','Weaving service fibers','Checking candidate evidence','Reflecting on the outcome'];
+  $('agent-role-'+i).textContent=s.paused?'Scenario paused':act.includes(i)?actions[i]:i===4?'Retaining outcome context':'Standing by';
+ });
+ s.sectors.forEach((v,i)=>{
+  $('sector-count-'+i).textContent=`${v.verified} / 20`;
+  $('sector-meter-'+i).style.width=(v.coverage*100)+'%';
+ });
+ if(lastEvent!==(s.events[0]?.id??0)||force){
+  lastEvent=s.events[0]?.id??0;const journal=$('journal');journal.replaceChildren();
+  s.events.slice(0,3).forEach(e=>{
+   const item=document.createElement('div');item.className='journal-item';const label=document.createElement('span');
+   label.textContent=`${e.actor.toUpperCase()} · SIM ${Math.floor(e.at/60).toString().padStart(2,'0')}:${Math.floor(e.at%60).toString().padStart(2,'0')}`;
+   item.append(label,document.createTextNode(e.text));journal.append(item);
+  });
+ }
+ if(selected>=0){
+  const v=s.sectors[selected];$('inspect-title').textContent=v.name;$('inspect-note').textContent=v.note;
+  $('inspect-count').textContent=String(v.verified);$('inspect-density').textContent=v.density.toFixed(2)+'×';
+  $('inspect-evidence').textContent=v.drift?'Two scenario claims are conflicted. The displaced copper strands remain unverified until repaired.':v.verified===20?'This sector has 20 simulated evidence receipts. No real repository, code, or tests were inspected.':`${20-v.verified} requirements remain unverified here. Faint scaffolding is planned scope; incoming bright threads are provisional.`;
+ }
+}
+
+function showError(message){$('error-message').textContent=message;$('render-error').hidden=false;sim.setPaused(true);updateUI(true);}
+try{
+ const quality=innerWidth<=900?'low':'balanced';$('quality').value=quality;
+ renderer=new LoomRenderer(canvas,{quality,onStatus:(status,error)=>{
+  if(status==='lost'){pause(true);showError('The graphics context was interrupted. The scenario is paused; the view will recover if the browser restores graphics.');}
+  else if(status==='restored'){$('render-error').hidden=true;needsRender=true;toast('Graphics restored. Press Play to continue the paused scenario.');}
+  else if(status==='error')showError(error?.message||'The graphics engine could not recover.');
+ }});
+ const observer=new ResizeObserver(()=>{renderer.resize(stage.clientWidth,stage.clientHeight);needsRender=true;});observer.observe(stage);
+}catch(error){showError(error.message);}
+
+$('play').addEventListener('click',()=>pause());
+$('restart').addEventListener('click',()=>{sim=new LoomSimulation(0);lastEvent=-1;visualTime=0;selectSector(-1);renderer?.resetCamera();updateUI(true);toast('From the original idea. All verification will now be simulated from zero.');});
+$('timeline').addEventListener('input',e=>{sim.seek(Number(e.target.value));updateUI(true);needsRender=true;});
+$('timeline').addEventListener('change',()=>{$('timeline').blur();updateUI(true);});
+for(const b of document.querySelectorAll('[data-seek]'))b.addEventListener('click',()=>{sim.seek(Number(b.dataset.seek));updateUI(true);needsRender=true;});
+for(const b of document.querySelectorAll('[data-sector]'))b.addEventListener('click',()=>selectSector(selected===Number(b.dataset.sector)?-1:Number(b.dataset.sector)));
+$('clear-focus').addEventListener('click',()=>selectSector(-1));$('close-inspector').addEventListener('click',()=>selectSector(-1));
+$('speed').addEventListener('click',()=>{const speeds=[.5,1,2,4];sim.setSpeed(speeds[(speeds.indexOf(sim.speed)+1)%speeds.length]);updateUI(true);});
+$('drift').addEventListener('click',()=>{if(sim.snapshot().driftCount){sim.requestRepair();toast('Repair is queued. Two simulated validation cycles must pass.');}else{sim.injectDrift();toast('Drift injected. Two verification claims have been withdrawn.');}updateUI(true);needsRender=true;});
+$('quality').addEventListener('change',e=>{try{renderer?.setQuality(e.target.value);updateUI(true);needsRender=true;}catch(error){showError(error.message);}});
+$('glow').addEventListener('click',()=>{if(!renderer)return;renderer.glow=!renderer.glow;$('glow').setAttribute('aria-pressed',String(renderer.glow));$('glow').textContent='Soft glow: '+(renderer.glow?'on':'off');needsRender=true;});
+$('camera-reset').addEventListener('click',()=>{renderer?.resetCamera();needsRender=true;});
+function zoom(f){if(renderer){renderer.zoom=Math.max(.65,Math.min(1.85,renderer.zoom*f));needsRender=true;}}
+$('zoom-in').addEventListener('click',()=>zoom(1.1));$('zoom-out').addEventListener('click',()=>zoom(1/1.1));
+$('cinema').addEventListener('click',toggleCinema);$('restore-ui').addEventListener('click',toggleCinema);
+$('brand').addEventListener('click',e=>{e.preventDefault();renderer?.resetCamera();selectSector(-1);});
+$('sectors-toggle').addEventListener('click',()=>toggleDrawer('sectors'));$('agents-toggle').addEventListener('click',()=>toggleDrawer('agents'));
+$('retry').addEventListener('click',()=>location.reload());
+
+const pointers=new Map();let dragOrigin=null,lastPointer=null,pinchDistance=0,hadPinch=false;
+canvas.addEventListener('pointerdown',e=>{
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});canvas.setPointerCapture(e.pointerId);
+ if(pointers.size===1){dragOrigin={x:e.clientX,y:e.clientY};lastPointer=dragOrigin;hadPinch=false;}
+ if(pointers.size===2){const [a,b]=[...pointers.values()];pinchDistance=Math.hypot(a.x-b.x,a.y-b.y);hadPinch=true;}
+});
+canvas.addEventListener('pointermove',e=>{
+ if(!pointers.has(e.pointerId)||!renderer)return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pointers.size===2){const[a,b]=[...pointers.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(pinchDistance>0)zoom(d/pinchDistance);pinchDistance=d;lastPointer=null;}
+ else if(lastPointer){renderer.yaw+=(e.clientX-lastPointer.x)*.005;renderer.pitch=Math.max(-1.15,Math.min(1.15,renderer.pitch+(e.clientY-lastPointer.y)*.005));renderer.orbit=false;needsRender=true;}
+ lastPointer={x:e.clientX,y:e.clientY};
+});
+function endPointer(e,cancel=false){
+ if(!cancel&&!hadPinch&&dragOrigin&&pointers.size===1&&Math.hypot(e.clientX-dragOrigin.x,e.clientY-dragOrigin.y)<7&&renderer){
+  const r=canvas.getBoundingClientRect();const pick=renderer.pick(e.clientX-r.left,e.clientY-r.top);selectSector(pick===selected?-1:pick);
+ }
+ pointers.delete(e.pointerId);if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+ if(!pointers.size){dragOrigin=null;lastPointer=null;pinchDistance=0;}else{lastPointer=[...pointers.values()][0];}
+}
+canvas.addEventListener('pointerup',e=>endPointer(e));canvas.addEventListener('pointercancel',e=>endPointer(e,true));
+canvas.addEventListener('lostpointercapture',e=>{pointers.delete(e.pointerId);if(!pointers.size){lastPointer=null;dragOrigin=null;}});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.exp(-Math.max(-160,Math.min(160,e.deltaY))*.0018));},{passive:false});
+canvas.addEventListener('dblclick',()=>{renderer?.resetCamera();needsRender=true;});
+document.addEventListener('keydown',e=>{
+ if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+ if(e.code==='Space'&&e.target.tagName!=='BUTTON'){e.preventDefault();pause();}
+ if(e.key.toLowerCase()==='h')toggleCinema();
+ if(e.key==='Escape'){if(cinema)toggleCinema();selectSector(-1);if(drawer)toggleDrawer(drawer,false);}
+ if(e.target===canvas&&renderer){
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){renderer.yaw+=e.key==='ArrowLeft'?-.09:.09;renderer.orbit=false;e.preventDefault();needsRender=true;}
+  if(e.key==='ArrowUp'||e.key==='ArrowDown'){renderer.pitch=Math.max(-1.15,Math.min(1.15,renderer.pitch+(e.key==='ArrowUp'?-.09:.09)));renderer.orbit=false;e.preventDefault();needsRender=true;}
+  if(e.key==='+'||e.key==='=')zoom(1.1);if(e.key==='-')zoom(1/1.1);
+ }
+});
+document.addEventListener('visibilitychange',()=>{lastTime=0;needsRender=true;});
+window.addEventListener('pagehide',()=>sim.setPaused(true));
+function placeLabels(){
+ if(!renderer)return;const center=renderer.project([0,0,0]);
+ $('nucleus-label').style.left=center.x+'px';$('nucleus-label').style.top=center.y+'px';
+ renderer.agentPositions.forEach((p,i)=>{
+  const v=renderer.project(p),dx=v.x-center.x,dy=v.y-center.y,l=Math.hypot(dx,dy)||1;
+  const offset=innerWidth<=900?24:29;
+  const x=Math.max(49,Math.min(renderer.width-49,v.x+dx/l*offset)),y=Math.max(18,Math.min(renderer.height-52,v.y+dy/l*offset));
+  const label=$('label-'+i);label.style.left=x+'px';label.style.top=y+'px';
+ });
+}
+function frame(now){
+ const dt=lastTime?Math.min(.10,(now-lastTime)/1000):0;lastTime=now;
+ if(!document.hidden&&renderer&&!renderer.lost){
+  if(!sim.paused){visualTime+=dt*sim.speed;sim.step(dt);}
+  if(!sim.paused||needsRender||now-lastRender>1000){
+   try{renderer.render(sim.snapshot(),visualTime);placeLabels();renderedFrames++;lastRender=now;needsRender=false;}
+   catch(error){showError(error.message);renderer.lost=true;}
+  }
+  if(now-lastUI>160){updateUI();lastUI=now;}
+ }
+ requestAnimationFrame(frame);
+}
+updateUI(true);requestAnimationFrame(frame);
+// Read-only diagnostics for local verification; no production hooks or external endpoints.
+window.__loom=Object.freeze({getState:()=>sim.snapshot(),getDiagnostics:()=>({webgl:!!renderer&&!renderer.lost,frames:renderedFrames,fibers:renderer?.fiberCount??0,quality:renderer?.quality??'none',width:renderer?.width,height:renderer?.height,canvasWidth:canvas.width,canvasHeight:canvas.height,selected,cinematic:cinema,camera:renderer?{pitch:renderer.pitch,yaw:renderer.yaw,zoom:renderer.zoom}:null,synthetic:true})});
+
+})();</script>
+</body>
+</html>
