@@ -115,7 +115,14 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         const id=decodeURIComponent(missionRoute[1]!);
         if(missionRoute[2]==="events"){const after=Number(new URL(req.url!,"http://local").searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));return send(res,200,JSON.stringify(await governor.events(id,after)));}
         if(missionRoute[2]==="lessons"){return send(res,200,JSON.stringify(await governor.lessons(id)));}
-        if(missionRoute[2]==="loom"){const record=await governor.get(id);if(!record)return send(res,404,JSON.stringify({error:"Not found"}));const events=await governor.events(id,0);const projection=projectLoom(record.mission,record.slices,events,{stale:events.length>=1000});return send(res,200,JSON.stringify({projection,events,overflow:events.length>=1000}));}
+        if(missionRoute[2]==="loom"){
+          const record=await governor.get(id);if(!record)return send(res,404,JSON.stringify({error:"Not found"}));
+          const url=new URL(req.url!,"http://local"),after=Number(url.searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));
+          const limit=10_000,pageSize=1_000,deadline=Date.now()+8_000,events=[] as Awaited<ReturnType<typeof governor.events>>;let cursor=0,invalid=false,overflow=false;
+          try{while(events.length<=limit){if(Date.now()>=deadline)throw new Error("Loom history read deadline exceeded");let timer:ReturnType<typeof setTimeout>|undefined;let page:Awaited<ReturnType<typeof governor.events>>;try{page=await Promise.race([governor.events(id,cursor),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error("Loom history read deadline exceeded")),Math.max(1,deadline-Date.now()));})]);}finally{if(timer)clearTimeout(timer);}if(!Array.isArray(page)||page.length>pageSize)throw new Error("Invalid mission event page");if(!page.length)break;for(const event of page){if(event.missionId!==id||!Number.isSafeInteger(event.cursor)||event.cursor<=cursor){invalid=true;break;}cursor=event.cursor;events.push(event);if(events.length>limit){overflow=true;break;}}if(invalid||overflow)break;if(page.length<pageSize)break;}}
+          catch{return send(res,503,JSON.stringify({error:"Mission history is unavailable; refresh to reconnect"}));}
+          if(events.length>limit){events.length=limit;overflow=true;}const projection=projectLoom(record.mission,record.plan,record.slices,events,{stale:overflow||invalid});const page=events.filter(event=>event.cursor>after).slice(0,pageSize);const hasMore=events.some(event=>event.cursor>(page.at(-1)?.cursor??after));return send(res,200,JSON.stringify({projection,events:page,overflow,hasMore,nextCursor:page.at(-1)?.cursor??after}));
+        }
         const record=await governor.get(id);return record?send(res,200,JSON.stringify(record)):send(res,404,JSON.stringify({error:"Not found"}));
       }
       const certificateRoute=req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)\/slices\/([^/?]+)\/checks\/([^/?]+)\/certificate$/);

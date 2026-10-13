@@ -1,8 +1,8 @@
 {
   "packet": "C5-LOOM-001",
-  "baseSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "baseSha": "19abb354ad01433689a57e71e716ea1afca069c9",
   "branch": "feat/live-loom",
-  "result": "SOURCE_HANDOFF_READY",
+  "result": "SOURCE_HANDOFF_READY_REPAIR_1",
   "changedFiles": [
     "apps/control-plane/src/server.ts",
     "apps/control-plane/src/loom-page.ts",
@@ -12,19 +12,41 @@
     ".agent/C5-LOOM-001-COMPLETION.json"
   ],
   "implementation": [
-    "Owner-cookie-authenticated /loom page with per-response nonce CSP, same-origin credentialed read polling, 10-second abort timeout, bounded exponential backoff, and historical-only disconnected presentation.",
-    "Static WebGL2 torus renderer adapted from V4 torus geometry, status palette, and restrained 3D rotation; accessible inspector, responsive layout, reduced-motion support, visible open seam unless typed projection proves closure, and labeled SVG fallback.",
-    "Authenticated read-only GET /api/missions/:id/loom uses shared typed projection over mission snapshot and bounded durable event history; 1,000-row overflow is UNKNOWN.",
-    "Closure binds the verified mission and all planned verified slices to current candidate SHA, lease epoch, each certified check ID, exact pending certificate IDs and SHA-256 digests, and integrated candidate/tree/review bindings. Contradictory events after integration invalidate closure.",
-    "Named event rows cover mission/plan/slice/check, recovery/Governor, scheduling, and lesson evidence. Untrusted text uses textContent; certificate links are constructed only from validated same-origin mission, slice, and check identifiers."
+    "Adapted the preserved V4 circular woven-fiber geometry, five restrained sector tones and central mission nucleus to the current mission slice list and durable slice states. The rendered geometry is deterministic and never measures progress.",
+    "Added drag rotation, wheel and button zoom, arrow-key camera inspection, reset, keyboard focus, an explicit SVG-only WebGL fallback and a mobile-flow collapsible inspector; mobile notices, status and camera controls stay outside the scrollable inspector.",
+    "The owner-cookie authenticated, read-only Loom route now reads the approved plan and paginates mission-local event history in 1,000-row cursor pages. It enforces an 8-second read deadline and 10,000-event overall evidence cap; exactly 1,000 rows does not itself mean overflow.",
+    "The shared typed projector requires complete unique approved-plan slice membership and matching objective, ownership, checks and dependencies. Closure binds each current candidate and lease epoch to all exact certified check IDs, pending intent certificate IDs and SHA-256 digests, then a strictly later integration with matching candidate, tree and review digest; contradictory checks and durable UNKNOWN keep it open.",
+    "The browser catches up using after-cursor pages, permits global cursor gaps while checking strict monotonicity, bounds requests and event history, uses a 5-second success poll and bounded exponential failure backoff, and shows stale history without implying live completion.",
+    "Named inspector rows cover scheduling decisions, recovery, and lesson candidate/promoted/withdrawn evidence; untrusted labels remain textContent and certificate links are validated same-origin URLs."
   ],
   "validation": [
-    { "command": "npm run build", "exitCode": 0 },
-    { "command": "node --test dist/tests/loom-projection.test.js dist/tests/loom-http.test.js", "exitCode": 0, "passed": 7, "failed": 0 },
-    { "command": "npm run typecheck", "exitCode": 0 },
-    { "command": "npm run validate", "exitCode": 0, "result": "Foundation structure validation passed" },
-    { "command": "git diff --check", "exitCode": 0 },
-    { "check": "served inline browser script syntax via node:vm.Script", "exitCode": 0 }
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test dist/tests/loom-projection.test.js dist/tests/loom-http.test.js",
+      "exitCode": 0,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run validate",
+      "exitCode": 0,
+      "result": "Foundation structure validation passed"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "check": "served inline browser script syntax via node:vm.Script in focused HTTP test",
+      "exitCode": 0
+    }
   ],
   "prototypeSha256": {
     "before": {
@@ -42,11 +64,11 @@
     "unchanged": true
   },
   "work": {
-    "taskStartedAtUtc": "UNKNOWN; start was not sampled",
-    "sourceHandoffAtUtc": "2026-10-13 19:43:19 UTC",
+    "taskStartedAtUtc": "UNKNOWN; earliest task timestamp sampled at 2026-10-13 21:03:26 UTC",
+    "sourceHandoffAtUtc": "2026-10-13 21:12:13 UTC",
     "planningDuration": "UNKNOWN",
-    "implementationDuration": "UNKNOWN",
-    "focusedValidationDuration": "UNKNOWN; individual node test duration reported as 132.96 ms",
+    "implementationDuration": "UNKNOWN; observed window from earliest timestamp sample to handoff was 8m 8s, work began earlier",
+    "focusedValidationDuration": "UNKNOWN; final focused tests reported 174.9713 ms Node test duration",
     "independentAuditDuration": "PENDING",
     "repairCount": 1,
     "lane": "single primary builder",
@@ -56,8 +78,8 @@
   },
   "notCompletedHere": [
     "Exact-candidate root review and final repository gates",
-    "Real browser screenshots, responsive/keyboard/WebGL-fallback proof, and network/console evidence",
-    "PostgreSQL-backed live transition/reconnect proof"
+    "Actual browser screenshots and desktop/mobile/keyboard/WebGL fallback visual proof",
+    "PostgreSQL-backed event transition and reconnect proof"
   ],
   "commitCreated": false,
   "pushOrDeployment": false
