@@ -3,18 +3,22 @@ import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { canonicalRepository, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, ProgressReceipt, ProgressV1, RecoveryPolicyLease, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
+import { canonicalRepository, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const newSecret = () => randomBytes(32).toString("base64url");
+const isTerminalRecoveryProgress=(p:RecoveryProgress)=>p.status==="failed"||p.status==="passed";
 export class MemoryMissionStore implements MissionStore {
   async createVerificationAttempt():Promise<void>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot issue certification attempts");}
   async submitVerification():Promise<never>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot certify receipts");}
+  async createRecoveryAttempt(_binding:RecoveryAttemptBinding):Promise<void>{throw new MissionConflictError("Trusted recovery requires PostgreSQL; memory store cannot create trusted attempts");}
+  async submitRecoveryVerification():Promise<never>{throw new MissionConflictError("Trusted recovery requires PostgreSQL; memory store cannot accept receipts");}
+  async getTrustedAttempt():Promise<null>{return null;}
   async getCertificate():Promise<null>{return null;}
   async getCertificateRequest():Promise<null>{return null;}
   async awaitingVerification():Promise<never[]>{return[];}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private slots = new Map<number, { digest: string; expires: string; enabled: boolean }>(); private occupied = new Map<string, number>();
-  private progress = new Map<string, ProgressV1>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
+  private progress = new Map<string, RecoveryProgress>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
   async configureCapacity(count:number,digest:string|null,expires:string|null){for(let i=1;i<=6;i++){if(i<=count&&digest&&expires)this.slots.set(i,{digest,expires,enabled:true});else{const old=this.slots.get(i);if(old)this.slots.set(i,{...old,enabled:false});}}}
   private event(id: string, type: string, data: Record<string, unknown>) { this.eventsLog.push({ cursor: ++this.cursor, missionId: id, type, data, createdAt: new Date().toISOString() }); }
   async submit(input: MissionInput) { const id = randomUUID(), now = new Date().toISOString(); const m = { ...input, repository: canonicalRepository(input.repository), acceptance: [...input.acceptance], id, status: "planning" as const, reservedCents: 0, createdAt: now }; this.missions.set(id, m); this.event(id, "mission.submitted", { repository: m.repository, baseSha: input.baseSha }); return m; }
@@ -39,7 +43,8 @@ export class MemoryMissionStore implements MissionStore {
   async complete(missionId:string,id: string, epoch: number, token: string, cap: string, candidateSha: string, evidenceRefs: string[]) { const s = this.mustRunning(missionId,id,epoch,token,cap), m = this.missions.get(s.missionId)!; s.status = "awaiting_verification"; s.candidateSha = candidateSha; s.evidenceRefs=[...evidenceRefs]; s.leaseToken=null; s.leaseExpiresAt=null; this.occupied.delete(`${s.missionId}:${s.id}`);m.status=this.missionStatus(missionId); this.event(m.id,"slice.awaiting_verification",{sliceId:s.id,candidateSha,evidenceRefs}); return { ...s }; }
   async integrate(_missionId:string,_id:string,_candidateSha:string,_policyDigest:string,_evidenceRefs:string[],_integrationEvidenceRef:string,_verifierId:string):Promise<MissionSlice>{throw new MissionConflictError("Independent verifier is unavailable; verification gate remains closed");}
   async reportOutcome(missionId:string,id:string,epoch:number,token:string,cap:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]){const s=this.mustRunning(missionId,id,epoch,token,cap);s.status=outcome==="BLOCKED"?"blocked":"unknown";s.leaseToken=null;s.leaseExpiresAt=null;this.missions.get(missionId)!.status=this.missionStatus(missionId);this.event(missionId,`slice.${outcome.toLowerCase()}`,{sliceId:id,epoch,reasonCode,evidenceRefs});return{...s};}
-  async recordProgress(p:ProgressV1,token:string,cap:string,strategies:Record<string,TrustedStrategyPolicy>,judge?:(snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>):Promise<ProgressReceipt>{
+  async recordProgress(p:RecoveryProgress,token:string,cap:string,strategies:Record<string,TrustedStrategyPolicy>,judge?:(snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>):Promise<ProgressReceipt>{
+    if(isTerminalRecoveryProgress(p))throw new MissionConflictError("Trusted recovery requires persisted PostgreSQL attempt evidence");
     // Authenticate before looking up an event ID so a stale or foreign lease
     // cannot use the replay path to read another worker's decision receipt.
     this.mustRunning(p.missionId,p.sliceId,p.leaseEpoch,token,cap);
@@ -89,7 +94,7 @@ export class MemoryMissionStore implements MissionStore {
       throw new MissionConflictError("Judgment fence changed; lease remains quarantined");
     }
     const chosen=judgment.strategyId?strategies[judgment.strategyId]!:strategy;
-    const action:GovernorActionV1={version:"orloom.governor-action.v1",eventId:p.eventId,revision:ordinal,action:judgment.answer,strategyId:judgment.strategyId,checkId:judgment.checkId,expectedSignal:chosen.expectedSignal,policyVersion:judgment.policyVersion,policyDigest:judgment.policyDigest,lessonIds:snapshot.lessonIds};
+    const action:GovernorActionV1={version:"orloom.governor-action.v1",eventId:p.eventId,revision:ordinal,action:judgment.answer,strategyId:judgment.strategyId,checkId:judgment.checkId,expectedSignal:chosen.expectedSignal,policyVersion:judgment.policyVersion,policyDigest:judgment.policyDigest,lessonIds:snapshot.lessonIds,lessonBindings:snapshot.lessonBindings};
     this.progress.set(p.eventId,p);this.receipts.set(p.eventId,action);this.snapshots.set(p.eventId,snapshot);this.judgments.set(p.eventId,judgment);this.revisions.set(key,ordinal);this.event(p.missionId,"slice.progress",{sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId,ordinal:p.ordinal,revision:ordinal,phase:p.phase,status:p.status,reasonCode:p.reasonCode,targetCheckId:p.targetCheckId,checkId:p.checkId,strategyId:p.strategyId,evidenceRefs:p.evidenceRefs,snapshotDigest:judgment.snapshotDigest,judgmentSource:judgment.source,action:action.action,nextStrategyId:judgment.strategyId});
     if(action.action==="escalate"||action.action==="request_replan"){
       slice.status=p.status==="blocked"?"blocked":"unknown";
@@ -102,7 +107,7 @@ export class MemoryMissionStore implements MissionStore {
     if(p.status==="passed")this.maybeLesson(p,mission.repository,cohort,strategy);
     return{duplicate:false,action,snapshot,judgment};
   }
-  private maybeLesson(p:ProgressV1,repository:string,cohort:string,strategy:TrustedStrategyPolicy){
+  private maybeLesson(p:RecoveryProgress,repository:string,cohort:string,strategy:TrustedStrategyPolicy){
     const episodes=new Map<string,{failure:string;success:string}>();
     for(const[successId,success]of this.progress.entries()){
       const successMission=this.missions.get(success.missionId);
@@ -150,7 +155,7 @@ export class MemoryMissionStore implements MissionStore {
     this.lessonRows.push({id,lessonVersion:latestVersion+1,repository,cohort,fromCheckId,strategyId:p.strategyId,rule:lessonRule({fromCheckId,strategyId:p.strategyId,cohort}),metric,direction,baseline,outcome,policyVersion,policyDigest,status:"candidate",challengeDigest:challenge,evidenceEventIds:ids,proposedBy:`worker:${p.missionId}:${p.sliceId}:${p.leaseEpoch}`});
     this.event(p.missionId,"lesson.candidate",{lessonId:id,lessonVersion:latestVersion+1,cohort,fromCheckId,strategyId:p.strategyId,evidenceEventIds:ids,metric:"trusted_check_pass_rate",direction:"increase",challengeDigest:challenge});
   }
-  private quarantineUnknown(p:ProgressV1,slice:MissionSlice,mission:Mission,snapshot:DecisionSnapshotV1){
+  private quarantineUnknown(p:RecoveryProgress,slice:MissionSlice,mission:Mission,snapshot:DecisionSnapshotV1){
     this.pendingJudgments.delete(`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`);
     this.progress.set(p.eventId,p);
     this.snapshots.set(p.eventId,snapshot);
@@ -162,8 +167,9 @@ export class MemoryMissionStore implements MissionStore {
     this.event(p.missionId,"slice.judgment_unknown",{sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId});
   }
   async lessons(missionId:string){const repository=this.missions.get(missionId)?.repository;if(!repository)return[];return this.lessonRows.filter(x=>x.repository===repository).map(({proposedBy:_p,reviewer:_r,...v})=>({...v}));}
+  async getLesson(lessonId:string){const row=this.lessonRows.find(x=>x.id===lessonId);if(!row)return null;const{proposedBy:_p,reviewer:_r,...value}=row;return{...value};}
   async recoveryPolicyLease(missionId:string,id:string,epoch:number,token:string,cap:string):Promise<RecoveryPolicyLease>{const s=this.mustRunning(missionId,id,epoch,token,cap),binding=this.leaseBindings.get(`${missionId}:${id}:${epoch}`);if(!binding)throw new MissionConflictError("Recovery policy lease is unavailable");const p=this.plans.get(missionId)!;return{planDigest:binding.planDigest,trustedCheckPolicyDigest:binding.policyDigest.split(":")[0]!,recoveryPolicyDigest:binding.policyDigest.split(":")[1]??""};}
-  async promoteLesson(_id:string,_challenge:import("./mission.js").LessonValidationChallenge,_reviewer:string):Promise<LessonCandidate>{
+  async promoteLesson(_id:string,_challengeDigest:string,_reviewer:string):Promise<LessonCandidate>{
     throw new MissionConflictError("Independent lesson verification is unavailable; candidate remains unpromoted");
   }
   async expire(now = new Date(), limit = 100) { let n=0; const expired=[...this.slices.values()].filter(s=>s.status==="running"&&s.leaseExpiresAt&&new Date(s.leaseExpiresAt)<=now).sort((a,b)=>a.leaseExpiresAt!.localeCompare(b.leaseExpiresAt!)).slice(0,Math.max(1,Math.min(limit,1000))); for (const s of expired) { s.status="unknown";s.leaseToken=null;s.leaseExpiresAt=null; const m=this.missions.get(s.missionId)!;m.status=this.missionStatus(m.id);this.event(m.id,"slice.lease_expired_unknown",{sliceId:s.id,epoch:s.leaseEpoch});n++; } return n; }

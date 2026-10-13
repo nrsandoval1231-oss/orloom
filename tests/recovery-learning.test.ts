@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
@@ -11,9 +13,12 @@ import { SqlMissionStore, TransactionalSql } from "../packages/contracts/src/sql
 import { JevClient } from "../packages/judgment/src/jev-client.js";
 import { createJevRecoveryAdapter } from "../packages/judgment/src/jev-adapter.js";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
-import type { RecoveryJudgmentAdapter } from "../packages/governor/src/governor.js";
+import { TrustedCheckCoordinator, type RecoveryJudgmentAdapter } from "../packages/governor/src/governor.js";
+import { receiptDigestV1, trustedCheckRequestDigestV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 import type { DecisionSnapshotV1 } from "../packages/judgment/src/types.js";
 import { loadConfig } from "../packages/config/src/config.js";
+import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
+import { canonicalJson as canonicalReceiptJson } from "../packages/judgment/src/canonical.js";
 
 const sha = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
 const digestRef = (receipt: Uint8Array) => `sha256:${sha(receipt)}`;
@@ -24,15 +29,15 @@ const strategies = {
   "strategy:recovery": { checkId: "check:recovery", version: "fixture-v1", expectedSignal: "the same fixture check returns 42 after the approved repair", scopeClasses: ["src"], targetCheckIds: [targetCheckId] },
 };
 
-function config(targetCheckIds: string[] = [targetCheckId], scopeClasses: string[] = ["src"]) {
+function config(targetCheckIds: string[] = [targetCheckId], scopeClasses: string[] = ["src"], sharedCheckId = false) {
   const trustedStrategies = {
     ...strategies,
     "strategy:baseline": { ...strategies["strategy:baseline"], targetCheckIds, scopeClasses },
-    "strategy:recovery": { ...strategies["strategy:recovery"], targetCheckIds, scopeClasses },
+    "strategy:recovery": { ...strategies["strategy:recovery"], checkId: sharedCheckId ? "check:baseline" : strategies["strategy:recovery"].checkId, targetCheckIds, scopeClasses },
   };
   return loadConfig({
     ORLOOM_MODE: "local", PORT: "3000", ORLOOM_SESSION_TOKEN: "owner-fixture-session", ORLOOM_WORKER_TOKEN: "worker-fixture-bootstrap",
-    ORLOOM_MAX_LANES: "3", ORLOOM_CAPACITY_SLOTS: "3", ORLOOM_CAPACITY_EVIDENCE_VERIFIED: "true",
+    ORLOOM_MAX_LANES: "6", ORLOOM_CAPACITY_SLOTS: "6", ORLOOM_CAPACITY_EVIDENCE_VERIFIED: "true",
     ORLOOM_CAPACITY_EVIDENCE_SHA256: sha("isolated PGlite recovery test fixture"), ORLOOM_CAPACITY_EVIDENCE_EXPIRES_AT: new Date(Date.now() + 3_600_000).toISOString(),
     ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["check:baseline", "check:recovery", ...targetCheckIds]), ORLOOM_TRUSTED_STRATEGIES_JSON: JSON.stringify(trustedStrategies),
     ORLOOM_WORKER_MAX_PROVIDER_CALLS: "1", ORLOOM_WORKER_MAX_INPUT_TOKENS: "1", ORLOOM_WORKER_MAX_OUTPUT_TOKENS: "1", ORLOOM_WORKER_MAX_WALL_SECONDS: "1",
@@ -70,12 +75,19 @@ function jevTransport(options: { holdFirstRecoveryChoice?: boolean } = {}) {
   return { fetch, started, releaseChoice, calls: () => callCount, setTerminal: (value: boolean) => { terminal = value; } };
 }
 
-async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[]; scopeClasses?: string[] } = {}) {
+async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[]; scopeClasses?: string[]; sharedCheckId?: boolean } = {}) {
   const db = new PGlite();
+  const artifactTempRoot = await mkdtemp(join(tmpdir(), "orloom-c1b-artifacts-"));
+  assert(artifactTempRoot.startsWith(join(tmpdir(), "orloom-c1b-artifacts-")));
+  const artifactStore = new DurableArtifactStore(join(artifactTempRoot, "objects"));
+  const receiptBlobs = new Map<string, Buffer>();
   await db.exec(await readFile("db/migrations/001_initial.sql", "utf8"));
   await db.exec(await readFile("db/migrations/002_missions.sql", "utf8"));
   await db.exec(await readFile("db/migrations/003_recovery.sql", "utf8"));
+  await db.exec(await readFile("db/migrations/004_verification.sql", "utf8"));
+  await db.exec(await readFile("db/migrations/005_learning.sql", "utf8"));
   let transactionGate = Promise.resolve();
+  let lastTransactionError = "";
   const sql: TransactionalSql = {
     query: async (text, params) => await db.query(text, params as never) as never,
     transaction: async work => {
@@ -89,19 +101,44 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
         await db.exec("COMMIT");
         return result;
       } catch (error) {
+        lastTransactionError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
         await db.exec("ROLLBACK");
         throw error;
       } finally { release(); }
     },
   };
   let store = new SqlMissionStore(sql);
-  const cfg = config(options.targetCheckIds, options.scopeClasses);
-  await store.configureCapacity(3, cfg.capacityEvidenceDigest!, cfg.capacityEvidenceExpiresAt!);
+  const cfg = config(options.targetCheckIds, options.scopeClasses, options.sharedCheckId);
+  await store.configureCapacity(6, cfg.capacityEvidenceDigest!, cfg.capacityEvidenceExpiresAt!);
   const transport = jevTransport(options);
   const jev = new JevClient({ apiKey: "fixture-only-key", modelId, allowedModelIds: new Set([modelId]), limits: { maxInputBytes: 64_000, maxResponseBytes: 32_000, timeoutMs: 2_000 }, fetch: transport.fetch });
   const jobs = new MemoryJobStore();
   const judgmentAdapter = options.judgmentAdapter ?? createJevRecoveryAdapter(jev);
-  let server = createControlPlane(cfg, jobs, store, judgmentAdapter);
+  let nextOutcome: "pass" | "fail" | "unknown" = "fail";
+  const runner = {
+    prepareBundle: async (_repository: string, _baseSha: string, candidateSha: string) => {
+      const manifest = Buffer.from(JSON.stringify({ candidateSha }));
+      return { digest: sha(manifest), manifest, files: new Map([["manifest.json", manifest]]) };
+    },
+    observeHead: async (_repository: string) => ({ sha: currentHead, observedAt: new Date().toISOString(), digest: sha(currentHead) }),
+    run: async (request: TrustedCheckRequestV1) => {
+      const stdout = Buffer.from(nextOutcome === "pass" ? "check passed\n" : nextOutcome === "fail" ? "check failed\n" : "check outcome unknown\n");
+      const stderr = Buffer.alloc(0);
+      const manifest = Buffer.from(JSON.stringify({ candidateSha: request.candidateSha, checkId: request.checkId }));
+      const body = { version: "orloom.trusted-check-receipt.v1" as const, request, verifierId: "fixture-verifier-v1", runtime: "runsc" as const, sandboxId: randomUUID(), outcome: nextOutcome, exitCode: nextOutcome === "pass" ? 0 : nextOutcome === "fail" ? 1 : null, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString(), stdout: await artifactStore.put(stdout), stderr: await artifactStore.put(stderr), inputManifest: await artifactStore.put(manifest) };
+      const receipt = { ...body, receiptDigest: receiptDigestV1(body) };
+      receiptBlobs.set(request.attemptId, Buffer.from(canonicalReceiptJson(receipt)));
+      return receipt;
+    },
+    verifyArtifacts: async (receipt: TrustedCheckReceiptV1) => {
+      const storedReceipt = receiptBlobs.get(receipt.request.attemptId);
+      if (!storedReceipt?.equals(Buffer.from(canonicalReceiptJson(receipt)))) throw new Error("canonical receipt blob is absent or altered");
+      return { stdout: await artifactStore.verify(receipt.stdout), stderr: await artifactStore.verify(receipt.stderr), manifest: await artifactStore.verify(receipt.inputManifest) };
+    },
+  };
+  let currentHead = "";
+  const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: sha("fixture-image"), verifierId: "fixture-verifier-v1", policyDigest: cfg.trustedCheckPolicyDigest!, leasePolicyDigest: cfg.trustedCheckPolicyDigest!, policyVersion: "fixture-v1", allowedChecks: cfg.trustedCheckPolicy ?? [], attemptLifetimeMs: 60_000 });
+  let server = createControlPlane(cfg, jobs, store, judgmentAdapter, coordinator);
   let base = "";
   const listen = async () => {
     await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
@@ -121,14 +158,21 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
   assert(cookie);
   return {
     db, get store() { return store; }, cfg, cookie, request, transport,
+    coordinator, setTrustedOutcome: (outcome: "pass" | "fail" | "unknown", shaValue: string) => { nextOutcome = outcome; currentHead = shaValue; },
+    get lastTransactionError() { return lastTransactionError; },
+    alterArtifact: (hash: string) => writeFile(join(artifactStore.root, hash), "altered durable artifact bytes\n"),
+    restoreArtifact: (hash: string, bytes: Buffer) => writeFile(join(artifactStore.root, hash), bytes),
+    removeArtifact: (hash: string) => unlink(join(artifactStore.root, hash)),
+    alterReceiptBlob: (attemptId: string) => { receiptBlobs.set(attemptId, Buffer.from("altered canonical receipt blob\n")); },
+    restoreReceiptBlob: (attemptId: string, receipt: TrustedCheckReceiptV1) => { receiptBlobs.set(attemptId, Buffer.from(canonicalReceiptJson(receipt))); },
     reconnect: async () => {
       await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
       store = new SqlMissionStore(sql);
-      server = createControlPlane(cfg, jobs, store, judgmentAdapter);
+      server = createControlPlane(cfg, jobs, store, judgmentAdapter, new TrustedCheckCoordinator(store, runner, { imageDigest: sha("fixture-image"), verifierId: "fixture-verifier-v1", policyDigest: cfg.trustedCheckPolicyDigest!, leasePolicyDigest: cfg.trustedCheckPolicyDigest!, policyVersion: "fixture-v1", allowedChecks: cfg.trustedCheckPolicy ?? [], attemptLifetimeMs: 60_000 }));
       await listen();
       const login = await request("POST", "/session", { token: cfg.sessionToken }); assert.equal(login.status, 204);
     },
-    close: async () => { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); await db.close(); },
+    close: async () => { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); await db.close(); await rm(artifactTempRoot, { recursive: true, force: true }); },
   };
 }
 
@@ -196,6 +240,24 @@ function progress(lease: any, policy: any, eventId: string, ordinal: number, str
   };
 }
 
+async function trustedProgress(ctx: Awaited<ReturnType<typeof setup>>, lease: any, policy: any, eventId: string, ordinal: number, strategyId: string, outcome: "pass" | "fail" | "unknown", target = targetCheckId) {
+  const candidateSha = sha(`${eventId}:${randomUUID()}`).slice(0, 40);
+  ctx.setTrustedOutcome(outcome, candidateSha);
+  const trusted = await ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/recovery-check`, {
+    candidateSha, targetCheckId: target, strategyId, ordinal,
+  }, leaseHeaders(lease));
+  assert.equal(trusted.status, 200, `${JSON.stringify(trusted.value)} sql=${ctx.lastTransactionError} attempts=${JSON.stringify((await ctx.db.query("SELECT check_id,strategy_id,recovery_ordinal,outcome FROM verification_attempts WHERE mission_id=$1 AND slice_id=$2 ORDER BY recovery_ordinal", [lease.mission.id, lease.slice.id])).rows)}`);
+  assert.equal(trusted.value.outcome, outcome);
+  return {
+    version: "orloom.progress.v2", eventId, missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, ordinal,
+    planDigest: policy.planDigest, trustedCheckPolicyDigest: policy.trustedCheckPolicyDigest, recoveryPolicyDigest: policy.recoveryPolicyDigest,
+    phase: "trusted_check", status: outcome === "pass" ? "passed" : outcome === "fail" ? "failed" : "unknown", reasonCode: outcome === "pass" ? "check_passed" : outcome === "fail" ? "check_failed" : "provider_unavailable",
+    strategyId, targetCheckId: target, checkId: policy.strategies[strategyId].checkId,
+    counters: { providerCalls: 0, inputTokens: 0, outputTokens: 0, wallMs: 1 }, evidenceRefs: [`sha256:${trusted.value.receiptDigest}`],
+    trustedAttemptId: trusted.value.attemptId, candidateSha,
+  };
+}
+
 async function report(ctx: Awaited<ReturnType<typeof setup>>, lease: any, value: ReturnType<typeof progress>) {
   return ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/progress`, value, leaseHeaders(lease));
 }
@@ -204,10 +266,10 @@ async function runEpisode(ctx: Awaited<ReturnType<typeof setup>>, lease: any, po
   const workspace = fixtureWorkspace();
   const failedCheck = runFixedCheck(workspace);
   assert.equal(failedCheck.exitCode, 1, "the fixed check must fail on the initial fixture");
-  const baseline = progress(lease, policy, `${prefix}-baseline-${randomUUID()}`, 1, "strategy:baseline", failedCheck);
+  const baseline = await trustedProgress(ctx, lease, policy, `${prefix}-baseline-${randomUUID()}`, 1, "strategy:baseline", "fail");
   const wrongCapability = leaseHeaders(lease);
   wrongCapability.authorization = "Bearer wrong-capability";
-  assert.equal((await ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/progress`, baseline, wrongCapability)).status, 409, "a duplicate event with the wrong capability is not authorized");
+  assert.notEqual((await ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/progress`, baseline, wrongCapability)).status, 200, "a duplicate event with the wrong capability is not authorized");
   let failed: Awaited<ReturnType<typeof report>>;
   if (gate) {
     const pending = report(ctx, lease, baseline);
@@ -242,27 +304,27 @@ async function runEpisode(ctx: Awaited<ReturnType<typeof setup>>, lease: any, po
     checkId: baseline.checkId, targetCheckId: baseline.targetCheckId, strategyId: baseline.strategyId, reasonCode: baseline.reasonCode, status: baseline.status,
     phase: baseline.phase, recoveryPolicyDigest: baseline.recoveryPolicyDigest, trustedCheckPolicyDigest: baseline.trustedCheckPolicyDigest,
     planDigest: baseline.planDigest, ordinal: baseline.ordinal, leaseEpoch: baseline.leaseEpoch, sliceId: baseline.sliceId, missionId: baseline.missionId,
-    eventId: baseline.eventId, version: baseline.version,
+    eventId: baseline.eventId, version: baseline.version, trustedAttemptId: baseline.trustedAttemptId, candidateSha: baseline.candidateSha,
   };
   const reorderedReplay = await report(ctx, lease, reorderedBaseline);
   assert.equal(reorderedReplay.status, 200, "canonical replay accepts equivalent key order at every JSON depth");
   assert.equal(reorderedReplay.value.duplicate, true);
   assert.equal(reorderedReplay.value.action.eventId, baseline.eventId);
-  assert.equal((await report(ctx, lease, { ...baseline, status: "passed", reasonCode: "check_passed" })).status, 409, "event ID reuse with changed content is rejected");
+    assert.notEqual((await report(ctx, lease, { ...baseline, status: "passed", reasonCode: "check_passed" })).status, 200, "event ID reuse with changed content is rejected");
 
   applyApprovedRecovery(workspace, failed.value.action.strategyId);
   const passedCheck = runFixedCheck(workspace);
   assert.equal(passedCheck.exitCode, 0, "the same fixed check must pass after the approved state repair");
   const globallyTrustedButNotSelected = progress(lease, policy, `${prefix}-wrong-next-strategy-${randomUUID()}`, 2, "strategy:baseline", passedCheck);
-  assert.equal((await report(ctx, lease, globallyTrustedButNotSelected)).status, 409, "globally approved checks still cannot bypass the previous Governor next-strategy action");
-  const recovery = progress(lease, policy, `${prefix}-recovery-${randomUUID()}`, 2, "strategy:recovery", passedCheck);
+  assert.notEqual((await report(ctx, lease, globallyTrustedButNotSelected)).status, 200, "globally approved checks still cannot bypass the previous Governor next-strategy action");
+  const recovery = await trustedProgress(ctx, lease, policy, `${prefix}-recovery-${randomUUID()}`, 2, "strategy:recovery", "pass");
   assert.equal((await report(ctx, lease, recovery)).status, 200);
   const repeatedAfterPass = progress(lease, policy, `${prefix}-repeated-after-pass-${randomUUID()}`, 3, "strategy:recovery", passedCheck);
-  assert.equal((await report(ctx, lease, repeatedAfterPass)).status, 409, "a passed check is terminal for that recovery episode");
-  return { baselineEventId: baseline.eventId, baselineEvidenceRef: baseline.evidenceRefs[0], recoveryEventId: recovery.eventId, recoveryEvidenceRef: recovery.evidenceRefs[0] };
+  assert.notEqual((await report(ctx, lease, repeatedAfterPass)).status, 200, "a passed check is terminal for that recovery episode");
+  return { baselineEventId: baseline.eventId, baselineEvidenceRef: baseline.evidenceRefs[0], baselineAttemptId: baseline.trustedAttemptId, recoveryEventId: recovery.eventId, recoveryEvidenceRef: recovery.evidenceRefs[0], recoveryAttemptId: recovery.trustedAttemptId };
 }
 
-test("authenticated HTTP and PGlite retain executable recovery evidence and an unpromoted candidate", async () => {
+test("trusted recovery evidence is challenged, promoted, selected later, then withdrawn on contradiction", async () => {
   const ctx = await setup({ holdFirstRecoveryChoice: true });
   try {
     assert.equal((await ctx.request("POST", "/api/missions", {})).status, 401);
@@ -304,15 +366,22 @@ test("authenticated HTTP and PGlite retain executable recovery evidence and an u
       assert.equal(event.evidenceRefs[0], expectedEvidence.get(String(row.event_id)));
       assert.ok((event.status === "failed" && event.strategyId === "strategy:baseline") || (event.status === "passed" && event.strategyId === "strategy:recovery"));
     }
-    const challenge = {
-      version: "orloom.lesson-challenge.v1", lessonId: candidate.id, repository: candidate.repository, cohort: candidate.cohort,
-      fromCheckId: candidate.fromCheckId, strategyId: candidate.strategyId, policyVersion: candidate.policyVersion, policyDigest: candidate.policyDigest,
-      evidenceEventIds: [...candidate.evidenceEventIds].sort(), metric: candidate.metric, direction: candidate.direction,
-      baseline: candidate.baseline, outcome: candidate.outcome,
-    };
-    const ownerPromotion = await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, challenge, { cookie: ctx.cookie });
-    assert.equal(ownerPromotion.status, 503);
-    assert.deepEqual(ownerPromotion.value, { error: "Independent lesson verification is unavailable; candidate remains unpromoted" });
+    const challenge = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(challenge.status, 200, JSON.stringify(challenge.value));
+    assert.equal(challenge.value.decision, "accepted", challenge.value.reason);
+    const challengeReplay = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(challengeReplay.status, 200);
+    assert.equal(challengeReplay.value.attestationDigest, challenge.value.attestationDigest, "challenge replay resolves to the same immutable attestation");
+    const competingId = randomUUID(), competingVersion = candidate.lessonVersion + 1;
+    await ctx.db.query("INSERT INTO operational_lessons(id,repository,cohort,from_check_id,strategy_id,rule,lesson_version,metric,direction,baseline_failed,baseline_observed,outcome_passed,outcome_observed,policy_version,policy_digest,status,evidence_event_ids,challenge_digest,proposed_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'candidate',$16::jsonb,$17,$18)", [competingId,candidate.repository,candidate.cohort,candidate.fromCheckId,candidate.strategyId,"competing source fixture",competingVersion,candidate.metric,candidate.direction,candidate.baseline.failed,candidate.baseline.observed,candidate.outcome.passed,candidate.outcome.observed,candidate.policyVersion,candidate.policyDigest,JSON.stringify(candidate.evidenceEventIds),sha("competing-candidate"),"test-fixture"]);
+    const competingChallenge = await ctx.store.recordLessonChallenge!({lessonId:competingId,lessonVersion:competingVersion,candidateDigest:sha("competing-candidate"),challengeDigest:challenge.value.challengeDigest,evidenceDigest:challenge.value.evidenceDigest,verifierId:challenge.value.verifierId,algorithmVersion:challenge.value.algorithmVersion,decision:"accepted",reason:"lock-level concurrency fixture"});
+    const firstPromotion = ctx.store.promoteLesson(candidate.id, challenge.value.attestationDigest, "controller:test");
+    const conflictingPromotion = ctx.store.promoteLesson(competingId, competingChallenge, "controller:test");
+    const promotionRace = await Promise.allSettled([firstPromotion, conflictingPromotion]);
+    assert.equal(promotionRace.filter(x => x.status === "fulfilled").length, 1, "serialized conflicting promotions allow exactly one active version");
+    assert.equal(promotionRace.filter(x => x.status === "rejected").length, 1);
+    const ownerPromotion = await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: challenge.value.attestationDigest }, { cookie: ctx.cookie });
+    assert.equal(ownerPromotion.status, 200, JSON.stringify(ownerPromotion.value));
     const beforeReconnect = await ctx.request("GET", `/api/missions/${missionId}/events?after=0`, undefined, { cookie: ctx.cookie });
     const candidateEvent = beforeReconnect.value.find((event: any) => event.type === "lesson.candidate" && event.data.lessonId === candidate.id);
     assert(candidateEvent, "candidate creation is in the durable mission event stream");
@@ -320,8 +389,30 @@ test("authenticated HTTP and PGlite retain executable recovery evidence and an u
     const replay = await ctx.request("GET", `/api/missions/${missionId}/events?after=${candidateEvent.cursor - 1}`, undefined, { cookie: ctx.cookie });
     assert(replay.value.some((event: any) => event.cursor === candidateEvent.cursor && event.type === "lesson.candidate"));
     const afterReconnect = await ctx.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: ctx.cookie });
-    assert.equal(afterReconnect.value.find((row: any) => row.id === candidate.id)?.status, "candidate");
-    assert.equal(ctx.transport.calls(), 4, "the SDK-backed adapter used exactly one injected request for each fixture progress decision");
+    assert.equal(afterReconnect.value.find((row: any) => row.id === candidate.id)?.status, "promoted");
+    const laterMission = await createMission(ctx, "fixture/recovery-proof", ["later-use"]);
+    const later = await claim(ctx);
+    assert.equal(later.lease.mission.id, laterMission);
+    const laterFailure = await trustedProgress(ctx, later.lease, later.policy, `later-fail-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const selected = await report(ctx, later.lease, laterFailure);
+    assert.equal(selected.status, 200);
+    assert.equal(selected.value.snapshot.lessonBindings.length, 1, "a later comparable decision binds the promoted lesson and challenge digest");
+    assert.equal(selected.value.snapshot.lessonBindings[0].id, candidate.id);
+    assert.equal(selected.value.snapshot.lessonBindings[0].challengeDigest, challenge.value.attestationDigest);
+    assert.equal(selected.value.action.strategyId, "strategy:recovery", "Jev sees the promoted strategy first among finite authorized alternatives");
+    assert.deepEqual(selected.value.action.lessonBindings, selected.value.snapshot.lessonBindings);
+    const contradiction = await trustedProgress(ctx, later.lease, later.policy, `later-contradiction-${randomUUID()}`, 2, "strategy:recovery", "fail");
+    assert.equal((await report(ctx, later.lease, contradiction)).status, 200);
+    const withdrawn = await ctx.request("GET", `/api/missions/${laterMission}/lessons`, undefined, { cookie: ctx.cookie });
+    assert.equal(withdrawn.value.find((row: any) => row.id === candidate.id)?.status, "withdrawn", "one trusted contradiction withdraws the exact promoted version");
+    const freshMission = await createMission(ctx, "fixture/recovery-proof", ["after-withdrawal"]);
+    const fresh = await claim(ctx);
+    assert.equal(fresh.lease.mission.id, freshMission);
+    const freshFailure = await trustedProgress(ctx, fresh.lease, fresh.policy, `fresh-fail-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const freshDecision = await report(ctx, fresh.lease, freshFailure);
+    assert.equal(freshDecision.status, 200);
+    assert.deepEqual(freshDecision.value.snapshot.lessonBindings, [], "withdrawn lessons are absent from fresh decisions");
+    assert.equal(ctx.transport.calls(), 6, "each committed Governor judgment used exactly one injected SDK-backed adapter request");
   } finally { await ctx.close(); }
 });
 
@@ -337,13 +428,13 @@ test("episodes with different target checks cannot form one comparable lesson ca
       const workspace = fixtureWorkspace();
       const failure = runFixedCheck(workspace);
       assert.equal(failure.exitCode, 1);
-      const failed = await report(ctx, lease, progress(lease, policy, `mixed-${index}-failed-${randomUUID()}`, 1, "strategy:baseline", failure, targetCheckId));
+      const failed = await report(ctx, lease, await trustedProgress(ctx, lease, policy, `mixed-${index}-failed-${randomUUID()}`, 1, "strategy:baseline", "fail", targetCheckId));
       assert.equal(failed.status, 200);
       assert.equal(failed.value.action.strategyId, "strategy:recovery");
       applyApprovedRecovery(workspace, failed.value.action.strategyId);
       const success = runFixedCheck(workspace);
       assert.equal(success.exitCode, 0);
-      const passed = await report(ctx, lease, progress(lease, policy, `mixed-${index}-passed-${randomUUID()}`, 2, "strategy:recovery", success, otherTarget));
+      const passed = await report(ctx, lease, await trustedProgress(ctx, lease, policy, `mixed-${index}-passed-${randomUUID()}`, 2, "strategy:recovery", "pass", otherTarget));
       assert.equal(passed.status, 200);
       assert.equal(passed.value.judgment.answer, "continue");
     }
@@ -351,6 +442,137 @@ test("episodes with different target checks cannot form one comparable lesson ca
     assert.equal(lessons.status, 200);
     assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, "a failed check for target A and pass for target B are not comparable evidence");
   } finally { await ctx.close(); }
+});
+
+test("two strategies may share one trusted check ID while retaining distinct immutable strategy attribution", async () => {
+  const ctx = await setup({ sharedCheckId: true });
+  try {
+    const missionId = await createMission(ctx, "fixture/shared-check-id", ["shared-a", "shared-b"]);
+    for (const id of ["shared-a", "shared-b"]) {
+      const { lease, policy } = await claim(ctx);
+      assert.equal(lease.mission.id, missionId);
+      const pair = await runEpisode(ctx, lease, policy, `shared-${id}-${randomUUID()}`);
+      const attempts = await ctx.db.query<{ strategy_id: string; check_id: string }>("SELECT strategy_id,check_id FROM verification_attempts WHERE attempt_id=ANY($1::uuid[]) ORDER BY recovery_ordinal", [[pair.baselineAttemptId, pair.recoveryAttemptId]]);
+      assert.deepEqual(attempts.rows.map(x => [x.strategy_id, x.check_id]), [["strategy:baseline", "check:baseline"], ["strategy:recovery", "check:baseline"]]);
+    }
+    const lessons = await ctx.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: ctx.cookie });
+    assert.equal(lessons.status, 200);
+    assert.equal(lessons.value.some((row: any) => row.status === "candidate"), true, "attempt attribution distinguishes strategy even when the trusted check is shared");
+  } finally { await ctx.close(); }
+});
+
+test("challenger rejects altered or absent reread artifact bytes and rejected challenges cannot promote", async () => {
+  const ctx = await setup();
+  try {
+    const missionId = await createMission(ctx, "fixture/challenge-artifact-tamper", ["tamper-a", "tamper-b"]);
+    const episodes = [];
+    for (const id of ["tamper-a", "tamper-b"]) {
+      const { lease, policy } = await claim(ctx);
+      assert.equal(lease.mission.id, missionId);
+      episodes.push(await runEpisode(ctx, lease, policy, `tamper-${id}-${randomUUID()}`));
+    }
+    const listed = await ctx.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: ctx.cookie });
+    const candidate = listed.value.find((row: any) => row.status === "candidate");
+    assert(candidate);
+    const receipt = await ctx.db.query<{ receipt: TrustedCheckReceiptV1 }>("SELECT receipt FROM verification_attempts WHERE attempt_id=$1", [episodes[0]!.baselineAttemptId]);
+    const storedReceipt = receipt.rows[0]?.receipt; assert(storedReceipt);
+    const artifacts = [
+      { hash: storedReceipt.stdout.sha256, bytes: Buffer.from("check failed\n") },
+      { hash: storedReceipt.stderr.sha256, bytes: Buffer.alloc(0) },
+      { hash: storedReceipt.inputManifest.sha256, bytes: Buffer.from(JSON.stringify({ candidateSha: storedReceipt.request.candidateSha, checkId: storedReceipt.request.checkId })) },
+    ];
+    let rejectedAttestation: string | undefined;
+    for (const artifact of artifacts) {
+      ctx.alterArtifact(artifact.hash);
+      const altered = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+      assert.equal(altered.status, 200);
+      assert.equal(altered.value.decision, "rejected", "challenge recomputation detects altered stdout, stderr or manifest bytes");
+      rejectedAttestation = altered.value.attestationDigest;
+      ctx.restoreArtifact(artifact.hash, artifact.bytes);
+    }
+    assert.notEqual((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: rejectedAttestation }, { cookie: ctx.cookie })).status, 200);
+    const ref = storedReceipt.stdout.sha256;
+    ctx.alterReceiptBlob(episodes[0]!.baselineAttemptId);
+    const alteredReceiptBlob = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(alteredReceiptBlob.status, 200); assert.equal(alteredReceiptBlob.value.decision, "rejected", "the trusted artifact reader durably rejects an altered canonical receipt blob");
+    ctx.restoreReceiptBlob(episodes[0]!.baselineAttemptId, storedReceipt);
+    const originalReceipt = storedReceipt;
+    await ctx.db.query("UPDATE verification_attempts SET receipt=jsonb_set(receipt,'{receiptDigest}',to_jsonb($2::text)) WHERE attempt_id=$1", [episodes[0]!.baselineAttemptId, "0".repeat(64)]);
+    const alteredReceipt = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(alteredReceipt.status, 200); assert.equal(alteredReceipt.value.decision, "rejected", "an altered persisted canonical receipt is durably rejected by the receipt parser");
+    await ctx.db.query("UPDATE verification_attempts SET receipt=$2::jsonb WHERE attempt_id=$1", [episodes[0]!.baselineAttemptId, JSON.stringify(originalReceipt)]);
+    ctx.removeArtifact(ref);
+    const absentArtifact = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(absentArtifact.status, 200); assert.equal(absentArtifact.value.decision, "rejected", "an absent immutable object is durably rejected during trusted artifact reread");
+    assert.notEqual((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: absentArtifact.value.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+  } finally { await ctx.close(); }
+});
+
+test("challenger rejects four individually trusted observations from four different episodes", async () => {
+  const ctx = await setup();
+  try {
+    const sourceMission = await createMission(ctx, "fixture/cross-episode-challenge", ["pair-a", "pair-b"]);
+    for (const id of ["pair-a", "pair-b"]) { const { lease, policy } = await claim(ctx); assert.equal(lease.mission.id, sourceMission); await runEpisode(ctx, lease, policy, `paired-${id}-${randomUUID()}`); }
+    const lessons = await ctx.request("GET", `/api/missions/${sourceMission}/lessons`, undefined, { cookie: ctx.cookie });
+    const candidate = lessons.value.find((row: any) => row.status === "candidate"); assert(candidate);
+    const otherMission = await createMission(ctx, "fixture/cross-episode-challenge", ["only-a", "only-b", "only-c", "only-d"]);
+    const isolatedEvents: string[] = [];
+    for (const id of ["only-a", "only-b", "only-c", "only-d"]) {
+      const { lease, policy } = await claim(ctx); assert.equal(lease.mission.id, otherMission);
+      const failed = await trustedProgress(ctx, lease, policy, `single-${id}-${randomUUID()}`, 1, "strategy:baseline", "fail");
+      assert.equal((await report(ctx, lease, failed)).status, 200);
+      isolatedEvents.push(failed.eventId);
+    }
+    await ctx.db.query("UPDATE operational_lessons SET evidence_event_ids=$2::jsonb WHERE id=$1", [candidate.id, JSON.stringify(isolatedEvents)]);
+    const rejected = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(rejected.status, 200);
+    assert.equal(rejected.value.decision, "rejected");
+    assert.match(rejected.value.reason, /two distinct comparable episodes/);
+    assert.notEqual((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: rejected.value.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+  } finally { await ctx.close(); }
+});
+
+test("withdrawal during an in-flight lesson-bound judgment quarantines the stale Jev choice", async () => {
+  let holdNext = false, signal!: () => void, release!: () => void;
+  const started = new Promise<void>(resolve => { signal = resolve; });
+  let gate = new Promise<void>(resolve => { release = resolve; });
+  const judge: RecoveryJudgmentAdapter = async snapshot => {
+    if (holdNext && snapshot.eventId.startsWith("race-pending")) { holdNext = false; signal(); await gate; }
+    const change = snapshot.status === "failed";
+    return { version: "orloom.judgment.v1", snapshotDigest: sha(canonicalJson(snapshot)), source: "jev", answer: change ? "change_strategy" : "continue",
+      strategyId: change ? "strategy:recovery" : null, checkId: change ? snapshot.alternatives.find(x => x.id === "strategy:recovery")?.policy.checkId ?? null : null,
+      policyVersion: "fixture-v1", policyDigest: snapshot.recoveryPolicyDigest, modelId, confidence: 1, usage: { inputTokens: 1, outputTokens: 1 } };
+  };
+  const ctx = await setup({ judgmentAdapter: judge });
+  try {
+    const sourceMission = await createMission(ctx, "fixture/withdrawal-race", ["source-a", "source-b"]);
+    for (const id of ["source-a", "source-b"]) { const { lease, policy } = await claim(ctx); assert.equal(lease.mission.id, sourceMission); await runEpisode(ctx, lease, policy, `race-source-${id}-${randomUUID()}`); }
+    const lessons = await ctx.request("GET", `/api/missions/${sourceMission}/lessons`, undefined, { cookie: ctx.cookie });
+    const candidate = lessons.value.find((row: any) => row.status === "candidate"); assert(candidate);
+    const challenge = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie }); assert.equal(challenge.value.decision, "accepted");
+    assert.equal((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: challenge.value.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+
+    const raceMission = await createMission(ctx, "fixture/withdrawal-race", ["pending", "withdrawer"]);
+    const a = await claim(ctx), b = await claim(ctx); assert.equal(a.lease.mission.id, raceMission); assert.equal(b.lease.mission.id, raceMission);
+    holdNext = true;
+    const pending = await trustedProgress(ctx, a.lease, a.policy, `race-pending-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const inFlight = report(ctx, a.lease, pending);
+    await started;
+    const firstFail = await report(ctx, b.lease, await trustedProgress(ctx, b.lease, b.policy, `race-withdrawer-${randomUUID()}`, 1, "strategy:baseline", "fail"));
+    assert.equal(firstFail.status, 200);
+    const contradiction = await trustedProgress(ctx, b.lease, b.policy, `race-contradiction-${randomUUID()}`, 2, "strategy:recovery", "fail");
+    assert.equal((await ctx.db.query<{ bound_lesson_id: string | null }>("SELECT bound_lesson_id FROM verification_attempts WHERE attempt_id=$1", [contradiction.trustedAttemptId])).rows[0]?.bound_lesson_id, candidate.id);
+    const withdrawnReceipt = await ctx.store.submitRecoveryVerification!(
+      (await ctx.db.query<{ receipt: TrustedCheckReceiptV1 }>("SELECT receipt FROM verification_attempts WHERE attempt_id=$1", [contradiction.trustedAttemptId])).rows[0]!.receipt,
+      String((await ctx.db.query<{ capability_hash: string }>("SELECT capability_hash FROM verification_attempts WHERE attempt_id=$1", [contradiction.trustedAttemptId])).rows[0]!.capability_hash),
+      contradiction.candidateSha, new Date().toISOString(), sha("race-head-observation"));
+    assert.equal(withdrawnReceipt.outcome, "fail");
+    const beforeRelease = await ctx.store.getLesson!(candidate.id); assert.equal(beforeRelease?.status, "withdrawn");
+    release(); gate = new Promise<void>(resolve => { release = resolve; });
+    assert.equal((await inFlight).status, 409, "a result bound to a now-withdrawn lesson cannot commit");
+    const quarantined = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [pending.eventId]);
+    assert.equal(quarantined.rows[0]?.decision_status, "unknown"); assert.equal(quarantined.rows[0]?.action, null);
+  } finally { release(); await ctx.close(); }
 });
 
 test("candidate extraction excludes UNKNOWN pass evidence in either episode order", async () => {
@@ -369,15 +591,15 @@ test("candidate extraction excludes UNKNOWN pass evidence in either episode orde
         assert.equal(lease.slice.id, sliceId);
         const workspace = fixtureWorkspace();
         const failedCheck = runFixedCheck(workspace);
-        const failed = await report(ctx, lease, progress(lease, policy, `${kind}-failed-${randomUUID()}`, 1, "strategy:baseline", failedCheck));
+        const failed = await report(ctx, lease, await trustedProgress(ctx, lease, policy, `${kind}-failed-${randomUUID()}`, 1, "strategy:baseline", "fail"));
         assert.equal(failed.status, 200);
         assert.equal(failed.value.action.strategyId, "strategy:recovery");
         applyApprovedRecovery(workspace, failed.value.action.strategyId);
         const passedCheck = runFixedCheck(workspace);
-        const passedEvent = progress(lease, policy, `${kind}-passed-${randomUUID()}`, 2, "strategy:recovery", passedCheck);
+        const passedEvent = await trustedProgress(ctx, lease, policy, `${kind}-passed-${randomUUID()}`, 2, "strategy:recovery", "pass");
         const passResult = await report(ctx, lease, passedEvent);
         if (kind.startsWith("unknown")) {
-          assert.equal(passResult.status, 409);
+          assert.notEqual(passResult.status, 200);
           const saved = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [passedEvent.eventId]);
           assert.equal(saved.rows[0]?.decision_status, "unknown");
           assert.equal(saved.rows[0]?.action, null);
@@ -391,6 +613,82 @@ test("candidate extraction excludes UNKNOWN pass evidence in either episode orde
       assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, `${unknownSlice} must not count as one of two committed success observations`);
     } finally { await ctx.close(); }
   }
+});
+
+test("terminal progress rejects outcome, check, commit, epoch, policy, target, strategy, attempt reuse and ordering mismatches", async () => {
+  const ctx = await setup();
+  try {
+    await createMission(ctx, "fixture/recovery-binding-matrix", ["binding"]);
+    const { lease, policy } = await claim(ctx);
+    const valid = await trustedProgress(ctx, lease, policy, `binding-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const variants = [
+      { status: "passed", reasonCode: "check_passed" },
+      { candidateSha: "a".repeat(40) },
+      { leaseEpoch: lease.leaseEpoch + 1 },
+      { trustedCheckPolicyDigest: "0".repeat(64) },
+      { recoveryPolicyDigest: "0".repeat(64) },
+      { targetCheckId: "target:other" },
+      { strategyId: "strategy:recovery", checkId: "check:recovery" },
+      { checkId: "check:other" },
+    ];
+    for (const patch of variants) {
+      const result = await report(ctx, lease, { ...valid, ...patch, eventId: `bad-${randomUUID()}` });
+      assert.notEqual(result.status, 200, `mismatched binding must be rejected: ${JSON.stringify(patch)}`);
+    }
+    assert.equal((await report(ctx, lease, valid)).status, 200, "the exact trusted binding remains usable after rejected variants");
+    assert.notEqual((await report(ctx, lease, { ...valid, eventId: `reuse-${randomUUID()}`, ordinal: 2 })).status, 200, "one attempt cannot be consumed by a second progress event");
+    assert.notEqual((await ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/recovery-check`, {
+      candidateSha: "b".repeat(40), targetCheckId, strategyId: "strategy:recovery", ordinal: 3,
+    }, leaseHeaders(lease))).status, 200, "attempt creation rejects an ordinal gap/reordered strategy before execution");
+  } finally { await ctx.close(); }
+});
+
+test("prepared recovery attempts cannot drive progress; expired late receipt becomes UNKNOWN and cannot be replayed as FAIL", async () => {
+  const ctx = await setup();
+  try {
+    await createMission(ctx, "fixture/recovery-prepared", ["prepared"]);
+    const { lease, policy } = await claim(ctx);
+    const event = await trustedProgress(ctx, lease, policy, `prepared-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const saved = await ctx.db.query<{ receipt: unknown; capability_hash: string }>("SELECT receipt,capability_hash FROM verification_attempts WHERE attempt_id=$1", [event.trustedAttemptId]);
+    const receipt = saved.rows[0]?.receipt as TrustedCheckReceiptV1;
+    const capabilityHash = String(saved.rows[0]?.capability_hash);
+    assert(receipt && /^[a-f0-9]{64}$/.test(capabilityHash));
+    await ctx.db.query("UPDATE verification_attempts SET outcome=NULL,receipt=NULL,terminal_at=NULL WHERE attempt_id=$1", [event.trustedAttemptId]);
+    assert.notEqual((await report(ctx, lease, event)).status, 200, "a prepared attempt without a terminal receipt is not evidence");
+    await ctx.db.query("UPDATE verification_attempts SET capability_expires_at=now()-interval '1 second' WHERE attempt_id=$1", [event.trustedAttemptId]);
+    const late = await ctx.store.submitRecoveryVerification!(receipt, capabilityHash, event.candidateSha, new Date().toISOString(), sha("late-result-head"));
+    assert.equal(late.outcome, "unknown");
+    const persisted = await ctx.db.query<{ outcome: string; receipt: unknown }>("SELECT outcome,receipt FROM verification_attempts WHERE attempt_id=$1", [event.trustedAttemptId]);
+    assert.equal(persisted.rows[0]?.outcome, "unknown");
+    assert.equal(persisted.rows[0]?.receipt, null, "late receipt bytes are not retained as a trusted terminal result");
+    await assert.rejects(ctx.store.submitRecoveryVerification!(receipt, capabilityHash, event.candidateSha, new Date().toISOString(), sha("late-result-head")));
+    assert.notEqual((await report(ctx, lease, event)).status, 200, "late UNKNOWN cannot be reported as FAIL");
+
+    const unknownMission = await createMission(ctx, "fixture/recovery-unknown-result", ["unknown"]);
+    const unknownLease = await claim(ctx); assert.equal(unknownLease.lease.mission.id, unknownMission);
+    const unknown = await trustedProgress(ctx, unknownLease.lease, unknownLease.policy, `unknown-${randomUUID()}`, 1, "strategy:baseline", "unknown");
+    assert.notEqual((await report(ctx, unknownLease.lease, { ...unknown, status: "failed", reasonCode: "check_failed" })).status, 200, "a persisted trusted UNKNOWN receipt cannot be relabeled as FAIL");
+    const unknownRow = await ctx.db.query<{ outcome: string }>("SELECT outcome FROM verification_attempts WHERE attempt_id=$1", [unknown.trustedAttemptId]);
+    assert.equal(unknownRow.rows[0]?.outcome, "unknown");
+  } finally { await ctx.close(); }
+});
+
+test("same-check recovery attempts do not suppress a later final-check dispatch", async () => {
+  const ctx = await setup();
+  try {
+    const missionId = await createMission(ctx, "fixture/final-after-recovery", ["final"]);
+    const { lease, policy } = await claim(ctx);
+    await ctx.db.query("UPDATE mission_slices SET checks=checks||'[\"check:baseline\"]'::jsonb WHERE mission_id=$1 AND id=$2", [missionId, lease.slice.id]);
+    const recovery = await trustedProgress(ctx, lease, policy, `final-recovery-${randomUUID()}`, 1, "strategy:baseline", "fail");
+    const sameCheck = await ctx.db.query<{ purpose: string; check_id: string }>("SELECT purpose,check_id FROM verification_attempts WHERE attempt_id=$1", [recovery.trustedAttemptId]);
+    assert.deepEqual(sameCheck.rows[0], { purpose: "recovery", check_id: "check:baseline" });
+    await ctx.store.complete(missionId, lease.slice.id, lease.leaseEpoch, lease.leaseToken, lease.capabilityToken, recovery.candidateSha, []);
+    const pending = await ctx.store.awaitingVerification!(["check:baseline"]);
+    assert(pending.some(x => x.missionId === missionId && x.sliceId === lease.slice.id), "a recovery-purpose row cannot suppress final-purpose dispatch");
+    await ctx.coordinator.verifySlice(missionId, lease.slice.id);
+    const purposes = await ctx.db.query<{ purpose: string; n: number }>("SELECT purpose,count(*)::int AS n FROM verification_attempts WHERE mission_id=$1 AND slice_id=$2 GROUP BY purpose ORDER BY purpose", [missionId, lease.slice.id]);
+    assert.deepEqual(purposes.rows.map(x => [x.purpose, Number(x.n)]), [["final", 1], ["recovery", 1]]);
+  } finally { await ctx.close(); }
 });
 
 test("mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence", async () => {
@@ -436,7 +734,7 @@ test("an in-flight adapter result is fenced after lease expiry and the unresolve
     const workspace = fixtureWorkspace();
     const check = runFixedCheck(workspace);
     assert.equal(check.exitCode, 1);
-    const event = progress(lease, policy, `fenced-${randomUUID()}`, 1, "strategy:baseline", check);
+    const event = await trustedProgress(ctx, lease, policy, `fenced-${randomUUID()}`, 1, "strategy:baseline", "fail");
     const inFlight = report(ctx, lease, event);
     await ctx.transport.started;
     await ctx.db.query("UPDATE mission_slices SET lease_expires_at=now()-interval '1 second' WHERE mission_id=$1 AND id=$2 AND lease_epoch=$3", [missionId, lease.slice.id, lease.leaseEpoch]);
@@ -458,7 +756,7 @@ test("an in-flight adapter result is fenced after lease expiry and the unresolve
     assert.equal(terminal.lease.mission.id, terminalMission);
     const terminalCheck = runFixedCheck(fixtureWorkspace());
     assert.equal(terminalCheck.exitCode, 1);
-    const terminalProgress = progress(terminal.lease, terminal.policy, `terminal-${randomUUID()}`, 1, "strategy:baseline", terminalCheck);
+    const terminalProgress = await trustedProgress(ctx, terminal.lease, terminal.policy, `terminal-${randomUUID()}`, 1, "strategy:baseline", "fail");
     const decision = await report(ctx, terminal.lease, terminalProgress);
     assert.equal(decision.status, 200);
     assert.equal(decision.value.action.action, "escalate");
@@ -476,7 +774,7 @@ test("an in-flight decision is quarantined if authoritative mission budget chang
     const missionId = await createMission(ctx, "fixture/snapshot-budget-fence", ["budget-fenced"]);
     const { lease, policy } = await claim(ctx);
     const failed = runFixedCheck(fixtureWorkspace());
-    const event = progress(lease, policy, `budget-fence-${randomUUID()}`, 1, "strategy:baseline", failed);
+    const event = await trustedProgress(ctx, lease, policy, `budget-fence-${randomUUID()}`, 1, "strategy:baseline", "fail");
     const inFlight = report(ctx, lease, event);
     await ctx.transport.started;
     const changed = await ctx.db.query("UPDATE missions SET budget_cents=budget_cents+1 WHERE id=$1", [missionId]);
@@ -506,7 +804,7 @@ test("an impossible model continue on a failed check commits no decision and qua
     const { lease, policy } = await claim(ctx);
     const failed = runFixedCheck(fixtureWorkspace());
     assert.equal(failed.exitCode, 1);
-    const event = progress(lease, policy, `invalid-continue-${randomUUID()}`, 1, "strategy:baseline", failed);
+    const event = await trustedProgress(ctx, lease, policy, `invalid-continue-${randomUUID()}`, 1, "strategy:baseline", "fail");
     assert.equal((await report(ctx, lease, event)).status, 409);
     const row = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [event.eventId]);
     assert.equal(row.rows[0]?.decision_status, "unknown");

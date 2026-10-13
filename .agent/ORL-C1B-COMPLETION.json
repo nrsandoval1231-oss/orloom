@@ -1,0 +1,83 @@
+{
+  "packet": "ORL-C1B-01",
+  "status": "BUILDER_HANDOFF_LOCAL_SOURCE_GATES_PASS_INDEPENDENT_REVIEW_AND_RUNTIME_OPEN",
+  "repository": "work/orloom-learning",
+  "branch": "feat/evidence-learning",
+  "baseCommit": "663af2c3e97852c28e06433baf39ac811dccf0ba",
+  "workingCandidateIdentitySha256": "b8aef987f823af1332e5e71de15d70bcbbc3249d563195fdc91b70a24166baa4",
+  "candidateIdentityMethod": "SHA-256 of sorted relative-path, NUL, per-file SHA-256, newline records for the listed changed/new source and test files; completion artifact excluded",
+  "changedFiles": [
+    ".agent/ORL-C1B-01.md",
+    "apps/control-plane/src/server.ts",
+    "db/migrations/005_learning.sql",
+    "packages/contracts/src/memory-mission-store.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/postgres-store.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/governor/src/governor.ts",
+    "packages/judgment/src/jev-adapter.ts",
+    "packages/judgment/src/types.ts",
+    "packages/learning/src/challenger.ts",
+    "tests/missions.test.ts",
+    "tests/recovery-learning.test.ts",
+    "tests/verification-certification.test.ts"
+  ],
+  "validation": [
+    {
+      "command": "npm run typecheck",
+      "exit": 0
+    },
+    {
+      "command": "npm run build",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "result": "15 passed, 0 failed",
+      "command": "node --test --test-reporter=spec dist/tests/recovery-learning.test.js"
+    },
+    {
+      "exit": 0,
+      "result": "2 passed, 0 failed",
+      "command": "node --test --test-reporter=spec dist/tests/verification-certification.test.js"
+    },
+    {
+      "exit": 0,
+      "result": "4 passed, 0 failed",
+      "command": "node --test --test-reporter=spec --test-name-pattern='memory|worker-attributed|terminal ProgressV1' dist/tests/missions.test.js"
+    },
+    {
+      "exit": 0,
+      "result": "81 passed, 0 failed",
+      "command": "npm test"
+    },
+    {
+      "exit": 0,
+      "result": "Foundation structure validation passed",
+      "command": "npm run validate"
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0
+    }
+  ],
+  "behavioralFixture": {
+    "result": "PASS",
+    "scenario": "two isolated PGlite episodes with coordinator-submitted trusted fixture FAIL then PASS receipts; independent challenge rereads receipt and artifact bytes; controller promotion binds accepted attestation digest; reconnect; later comparable decision binds exact promoted lesson and Jev chooses its finite authorized recovery strategy; trusted contradictory FAIL withdraws the version; fresh decision has no lesson binding",
+    "scope": "Deterministic source fixture only; does not prove real PostgreSQL, real runner/artifact store, live Jev, cloud CI, deployment, or operational improvement"
+  },
+  "independentReview": "PENDING_CONTROLLER_REVIEW",
+  "runtimeAcceptance": "NOT_RUN",
+  "promotionActivation": "CLOSED",
+  "deployment": "NOT_PERFORMED",
+  "uncoveredAdversarialCases": [
+    "Real PostgreSQL startup migration and reconnect with controller process restart; PGlite source fixtures are not operational proof.",
+    "Multiple real PostgreSQL connections/processes racing challenge replay and conflicting promotion; deterministic PGlite lock serialization is source evidence only.",
+    "Live Jev/provider, cloud CI on exact integrated candidate, host/runtime, deployment and measured operational improvement remain UNKNOWN/open."
+  ],
+  "limitations": [
+    "Source lifecycle and adversarial authority boundaries pass deterministic PGlite/HTTP fixtures; no real PostgreSQL instance or multi-connection runtime proof was run.",
+    "No live provider or host actions, live Jev call, external spend, commit, push, merge, deployment, or cloud CI were performed.",
+    "Source acceptance leaves runtime acceptance, operational learning activation and C3 full-suite certification open."
+  ]
+}

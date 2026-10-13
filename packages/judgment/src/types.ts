@@ -27,7 +27,7 @@ export interface DecisionSnapshotV1 {
   triedStrategies: string[];
   alternatives: Array<{ id: string; policy: TrustedStrategyPolicy }>;
   lessonIds: string[];
-  lessonBindings: Array<{ id: string; lessonVersion: number; policyDigest: string; strategyId: string }>;
+  lessonBindings: Array<{ id: string; lessonVersion: number; challengeDigest: string; policyDigest: string; strategyId: string }>;
   preferredStrategyId: string | null;
 }
 

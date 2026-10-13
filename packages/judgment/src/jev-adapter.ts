@@ -28,7 +28,8 @@ export function createJevRecoveryAdapter(client: JevClient): RecoveryJudgmentAda
           escalate: "Stop this recovery episode and retain its uncertainty.",
         };
     const labels = new Map<string, typeof snapshot.alternatives[number]>();
-    snapshot.alternatives.forEach((alternative, index) => {
+    const orderedAlternatives = [...snapshot.alternatives].sort((a,b) => Number(b.id === snapshot.preferredStrategyId) - Number(a.id === snapshot.preferredStrategyId));
+    orderedAlternatives.forEach((alternative, index) => {
       const label = `strategy_${index + 1}`;
       labels.set(label, alternative);
       choices[label] = `Use approved strategy ${alternative.id}, which maps to trusted check ${alternative.policy.checkId}; expected signal: ${alternative.policy.expectedSignal}`;

@@ -1,14 +1,15 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CheckCertificateV1, parseTrustedCheckRequestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
+import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
 
 export interface TrustedCheckRunner {
   prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
   observeHead(repository:string):Promise<{sha:string;observedAt:string;digest:string}>;
   run(request:TrustedCheckRequestV1,bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}):Promise<TrustedCheckReceiptV1>;
-  verifyArtifacts(receipt:TrustedCheckReceiptV1):Promise<unknown>;
+  verifyArtifacts(receipt:TrustedCheckReceiptV1):Promise<{stdout:Buffer;stderr:Buffer;manifest:Buffer}>;
 }
 export class TrustedCheckCoordinator implements TrustedCheckService {
   private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}}>();
@@ -16,19 +17,27 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     if(!Number.isSafeInteger(settings.attemptLifetimeMs)||settings.attemptLifetimeMs<1||settings.attemptLifetimeMs>TRUSTED_CHECK_LIMITS.maxLifetimeMs)throw new Error("trusted check attempt lifetime is outside contract bounds");
   }
   async prepare(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1>{
+    return this.prepareShared({missionId,sliceId,checkId,purpose:"final"});
+  }
+  private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string}):Promise<TrustedCheckRequestV1>{
     if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
-    if(!this.settings.allowedChecks.includes(checkId))throw new MissionConflictError("Check is outside trusted operator policy");
-    const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);
-    if(!record||!slice||slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(checkId)||!record.plan?.approvedAt)throw new MissionConflictError("Mission slice is not ready for trusted verification");
+    if(!this.settings.allowedChecks.includes(input.checkId))throw new MissionConflictError("Check is outside trusted operator policy");
+    const record=await this.store.getMission(input.missionId),slice=record?.slices.find(x=>x.id===input.sliceId);
+    if(!record||!slice||!record.plan?.approvedAt)throw new MissionConflictError("Mission slice is not ready for trusted verification");
+    if(input.purpose==="final"&& (slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(input.checkId)))throw new MissionConflictError("Mission slice is not ready for final trusted verification");
+    if(input.purpose==="recovery"&&(slice.status!=="running"||slice.leaseEpoch!==input.epoch||!slice.checks.includes(input.strategyId)||!/^[a-f0-9]{40}$/i.test(input.candidateSha)))throw new MissionConflictError("Mission slice is not ready for recovery trusted verification");
+    if(input.purpose==="recovery")await this.store.recoveryPolicyLease(input.missionId,input.sliceId,input.epoch,input.leaseToken,input.capabilityToken);
     let bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};
-    try{bundle=await this.runner.prepareBundle(record.mission.repository,record.mission.baseSha,slice.candidateSha);}catch{await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
+    const candidateSha=input.purpose==="final"?slice.candidateSha!:input.candidateSha;
+    try{bundle=await this.runner.prepareBundle(record.mission.repository,record.mission.baseSha,candidateSha);}catch{if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
     let head:{sha:string;observedAt:string;digest:string};
-    try{head=await this.runner.observeHead(record.mission.repository);}catch{await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
-    if(head.sha!==slice.candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
+    try{head=await this.runner.observeHead(record.mission.repository);}catch{if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
+    if(head.sha!==candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
     const now=this.clock(),expires=new Date(now.getTime()+this.settings.attemptLifetimeMs),attemptId=randomUUID();
-    const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId,sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha:slice.candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
+    const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId:input.missionId,sliceId:input.sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId:input.checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
     const capability=randomBytes(32).toString("base64url");
-    await this.store.createVerificationAttempt({request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest});
+    const binding={request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest};
+    if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}
     this.pending.set(attemptId,{capability,bundle});return request;
   }
   async run(value:TrustedCheckRequestV1):Promise<TrustedCheckReceiptV1>{
@@ -44,6 +53,39 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
       if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
       return await this.store.submitVerification!(receipt,createHash("sha256").update(capability).digest("hex"),head.sha,head.observedAt,head.digest,randomUUID());
     }finally{this.pending.delete(request.attemptId);}
+  }
+  async runRecoveryAttempt(input:{missionId:string;sliceId:string;epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;checkId:string;ordinal:number;recoveryPolicyDigest:string}){
+    if(!this.store.createRecoveryAttempt||!this.store.submitRecoveryVerification)throw new MissionConflictError("Trusted recovery is disabled without the PostgreSQL attempt store");
+    const request=await this.prepareShared({...input,purpose:"recovery"}),pending=this.pending.get(request.attemptId);
+    if(!pending)throw new MissionConflictError("Trusted recovery capability was lost");
+    let receipt:TrustedCheckReceiptV1;
+    try{receipt=await this.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted recovery execution is unavailable; attempt remains UNKNOWN until expiry");}
+    try{
+      await this.runner.verifyArtifacts(receipt);const head=await this.runner.observeHead(request.repository);
+      if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
+      return await this.store.submitRecoveryVerification(receipt,createHash("sha256").update(pending.capability).digest("hex"),head.sha,head.observedAt,head.digest);
+    }finally{this.pending.delete(request.attemptId);}
+  }
+  async challengerEvidence(attemptIds:string[]){
+    if(!this.store.getTrustedAttempt||attemptIds.length!==4||new Set(attemptIds).size!==4)throw new MissionConflictError("Challenger evidence is unavailable or malformed");
+    const evidence=[];
+    for(const attemptId of attemptIds){const attempt=await this.store.getTrustedAttempt(attemptId);if(!attempt||attempt.purpose!=="recovery"||attempt.outcome===null||!attempt.receipt)throw new MissionConflictError("Challenge requires persisted terminal recovery attempts");const artifacts=await this.runner.verifyArtifacts(attempt.receipt);evidence.push({attempt,...artifacts});}
+    return evidence;
+  }
+  async challengeLesson(lessonId:string){
+    if(!this.store.lessonChallengeEvidence||!this.store.recordLessonChallenge)throw new MissionConflictError("Independent lesson challenge storage is unavailable");
+    const candidate=await this.store.getLesson?.(lessonId);if(!candidate)throw new MissionConflictError("Lesson candidate is unavailable");
+    const provenance={repository:candidate.repository,cohort:candidate.cohort,fromCheckId:candidate.fromCheckId,strategyId:candidate.strategyId,policyVersion:candidate.policyVersion,policyDigest:candidate.policyDigest,evidenceEventIds:candidate.evidenceEventIds,metric:candidate.metric,direction:candidate.direction,baseline:candidate.baseline,outcome:candidate.outcome};
+    const persistRejected=async(evidence:unknown)=>{const rejected=rejectTrustedLessonReadback({verifierId:"controller:orloom.lesson-challenger.v1",provenance,evidence,reason:"persisted trusted receipt or artifact readback failed"});const attestationDigest=await this.store.recordLessonChallenge!({lessonId,lessonVersion:candidate.lessonVersion,candidateDigest:candidate.challengeDigest,challengeDigest:rejected.challengeDigest,evidenceDigest:rejected.evidenceDigest,verifierId:rejected.verifierId,algorithmVersion:rejected.algorithmVersion,decision:rejected.decision,reason:rejected.reason});return{...rejected,attestationDigest};};
+    let source:Awaited<ReturnType<NonNullable<MissionStore["lessonChallengeEvidence"]>>>;
+    try{source=await this.store.lessonChallengeEvidence(lessonId)??null;}catch{return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,evidenceEventIds:candidate.evidenceEventIds});}
+    if(!source)return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,evidenceEventIds:candidate.evidenceEventIds,attempts:[]});
+    const attempts:ChallengedAttempt[]=[];
+    try{for(const item of source.attempts){if(!item.receipt||!item.receiptDigest||!item.outcome)return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,eventId:item.eventId,attemptId:item.attemptId,receiptDigest:item.receiptDigest});const verified=await this.runner.verifyArtifacts(item.receipt);attempts.push({attemptId:item.attemptId,eventId:item.eventId,observation:item.observation,outcome:item.outcome,candidateSha:item.candidateSha,checkId:item.checkId,requestDigest:item.requestDigest,receiptDigest:item.receiptDigest,artifacts:[item.receipt.stdout,item.receipt.stderr,item.receipt.inputManifest].map(x=>({sha256:x.sha256,bytes:x.bytes})),request:item.receipt.request,receipt:item.receipt,stdout:verified.stdout,stderr:verified.stderr,manifest:verified.manifest});}}catch{return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,attempts:source.attempts.map(item=>({eventId:item.eventId,attemptId:item.attemptId,requestDigest:item.requestDigest,receiptDigest:item.receiptDigest}))});}
+    const lesson=source.lesson;
+    const challenge=challengeTrustedLesson({verifierId:"controller:orloom.lesson-challenger.v1",provenance,attempts,expectedPolicyDigest:this.settings.leasePolicyDigest,expectedTrustedRunnerPolicyDigest:this.settings.policyDigest,expectedCheckIds:new Set(this.settings.allowedChecks)});
+    const attestationDigest=await this.store.recordLessonChallenge({lessonId,lessonVersion:lesson.lessonVersion,candidateDigest:lesson.challengeDigest,challengeDigest:challenge.challengeDigest,evidenceDigest:challenge.evidenceDigest,verifierId:challenge.verifierId,algorithmVersion:challenge.algorithmVersion,decision:challenge.decision,reason:challenge.reason});
+    return{...challenge,attestationDigest};
   }
   async verifySlice(missionId:string,sliceId:string){
     const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);if(!slice)return;
@@ -92,16 +134,22 @@ export class MissionGovernor {
     if (!/^[0-9a-f]{40}$/i.test(candidateSha) || !Array.isArray(evidenceRefs) || evidenceRefs.length > 100 || evidenceRefs.some(x => typeof x !== "string" || !x || x.length > 2048)) throw new Error("Invalid candidate result");
     return this.store.complete(missionId,id, epoch, token, capability, candidateSha, evidenceRefs);
   }
+  async runTrustedRecoveryAttempt(coordinator:TrustedCheckCoordinator,input:{missionId:string;sliceId:string;epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number}){
+    const strategy=this.config.trustedStrategies?.[input.strategyId];
+    if(!strategy||!this.config.trustedCheckPolicy?.includes(strategy.checkId)||!this.config.trustedCheckPolicy.includes(input.targetCheckId)||!strategy.targetCheckIds.includes(input.targetCheckId)||!this.config.recoveryPolicyDigest||!Number.isSafeInteger(input.ordinal)||input.ordinal<1)throw new MissionValidationError("recovery attempt is outside the trusted strategy policy");
+    return coordinator.runRecoveryAttempt({...input,checkId:strategy.checkId,recoveryPolicyDigest:this.config.recoveryPolicyDigest});
+  }
   reportOutcome(missionId:string,id:string,epoch:number,token:string,capability:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]){
     const allowed=new Set(["dependency_missing","provider_unavailable","budget_exhausted","scope_conflict","other"]);
     if(!allowed.has(reasonCode)||!Array.isArray(evidenceRefs)||evidenceRefs.length>100||evidenceRefs.some(x=>typeof x!=="string"||!x||x.length>2048))throw new MissionValidationError("invalid worker outcome");
     return this.store.reportOutcome(missionId,id,epoch,token,capability,outcome,reasonCode,evidenceRefs);
   }
-  async recordProgress(progress: ProgressV1, leaseToken: string, capabilityToken: string): Promise<ProgressReceipt> {
+  async recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string): Promise<ProgressReceipt> {
     const progressFields = [
       "version", "eventId", "missionId", "sliceId", "leaseEpoch", "ordinal", "planDigest",
       "trustedCheckPolicyDigest", "recoveryPolicyDigest", "phase", "status", "reasonCode",
       "strategyId", "targetCheckId", "checkId", "counters", "evidenceRefs",
+      ...(progress?.version==="orloom.progress.v2"?["trustedAttemptId","candidateSha"]:[]),
     ];
     const counterFields = ["providerCalls", "inputTokens", "outputTokens", "wallMs"];
     const limits = this.config.progressLimits ?? { maxProviderCalls: 0, maxInputTokens: 0, maxOutputTokens: 0, maxWallSeconds: 0 };
@@ -113,7 +161,7 @@ export class MissionGovernor {
       && progress.counters.outputTokens <= limits.maxOutputTokens
       && progress.counters.wallMs <= limits.maxWallSeconds * 1000;
     if (!exactKeys(progress, progressFields) || !validCounters
-      || progress.version !== "orloom.progress.v1"
+      || !(progress.version === "orloom.progress.v1" || progress.version === "orloom.progress.v2")
       || !/^[-a-zA-Z0-9_.:]{1,128}$/.test(progress.eventId)
       || !/^[-a-zA-Z0-9_]{1,64}$/.test(progress.missionId)
       || !/^[-a-zA-Z0-9_]{1,64}$/.test(progress.sliceId)
@@ -132,6 +180,8 @@ export class MissionGovernor {
       || progress.evidenceRefs.some((ref) => typeof ref !== "string" || !/^sha256:[a-f0-9]{64}$/.test(ref))) {
       throw new MissionValidationError("invalid typed recovery progress");
     }
+    if ((progress.status==="failed"||progress.status==="passed")&&progress.version!=="orloom.progress.v2")throw new MissionValidationError("terminal recovery progress requires a trusted attempt");
+    if(progress.version==="orloom.progress.v2"&&(!/^[0-9a-f-]{36}$/i.test(progress.trustedAttemptId)||!/^[a-f0-9]{40}$/.test(progress.candidateSha)))throw new MissionValidationError("invalid trusted recovery attempt binding");
     if ((progress.status === "failed" && progress.reasonCode !== "check_failed")
       || (progress.status === "passed" && progress.reasonCode !== "check_passed")) {
       throw new MissionValidationError("progress reason does not match its status");
@@ -151,8 +201,11 @@ export class MissionGovernor {
     }
     return this.store.recordProgress(progress, leaseToken, capabilityToken, this.config.trustedStrategies ?? {}, this.judgmentAdapter);
   }  lessons(missionId:string):Promise<LessonCandidate[]>{return this.store.lessons(missionId);}
-  promoteLesson(_id:string,_challenge:LessonValidationChallenge):never {
-    throw new MissionConflictError("Independent lesson verification is unavailable; candidate remains unpromoted");
+  async promoteLesson(id:string,challengeDigest:string){
+    if(!/^[a-f0-9]{64}$/.test(challengeDigest))throw new MissionValidationError("invalid lesson challenge digest");
+    const lesson=await this.store.getLesson?.(id);const strategy=lesson&&this.config.trustedStrategies?.[lesson.strategyId];
+    if(!lesson||lesson.status==="withdrawn"||!strategy||strategy.version!==lesson.policyVersion||!strategy.targetCheckIds.includes(lesson.fromCheckId)||!this.config.recoveryPolicyDigest||lesson.policyDigest!==this.config.recoveryPolicyDigest)throw new MissionConflictError("Lesson is outside the current Governor policy");
+    return this.store.promoteLesson(id,challengeDigest,"controller:lesson-governor");
   }
   async recoveryPolicy(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string){const binding=await this.store.recoveryPolicyLease(missionId,sliceId,epoch,leaseToken,capabilityToken);const mission=await this.store.getMission(missionId),slice=mission?.slices.find(x=>x.id===sliceId);if(!slice)throw new MissionConflictError("Slice unavailable");const cohort=slice.scopes.slice().sort()[0]?.split("/")[0]?.toLowerCase();const strategies=Object.fromEntries(slice.checks.filter(id=>{const p=this.config.trustedStrategies?.[id];return p&&p.targetCheckIds.length&&p.scopeClasses.some(x=>x==="*"||x===cohort);}).map(id=>[id,this.config.trustedStrategies![id]!]));return{version:"orloom.recovery-policy.v1",missionId,sliceId,leaseEpoch:epoch,...binding,strategies};}
   get(id: string) { return this.store.getMission(id); }

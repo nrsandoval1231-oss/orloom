@@ -83,12 +83,9 @@ test("memory recovery fences terminal judgments and excludes cross-target lesson
   const leaseA=leases[0],leaseB=leases[1];if(!leaseA||!leaseB)throw new Error("expected two independent memory leases");
   for(const [index,lease] of [leaseA,leaseB].entries()){
     const failed=makeProgress(lease,`fail-${index}`,1,"strategy:baseline","failed","target:a","check_failed");
-    const action=await store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies);
-    assert.equal(action.action.strategyId,"strategy:recovery");
-    const passed=makeProgress(lease,`pass-${index}`,2,"strategy:recovery","passed","target:b","check_passed");
-    await store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies);
+    await assert.rejects(store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies),MissionConflictError,"memory storage cannot authorize worker-asserted terminal observations");
   }
-  assert.deepEqual(await store.lessons(m.id),[],"passes for target B cannot form lessons from target A failures");
+  assert.deepEqual(await store.lessons(m.id),[],"untrusted terminal worker reports cannot create memory lesson candidates");
 
   const terminalStore=new MemoryMissionStore();await terminalStore.configureCapacity(1,evidenceDigest,future());
   const terminalMission=await terminalStore.submit({repository:"owner/terminal",baseSha,objective:"terminal reports",acceptance:["quarantine"],budgetCents:100});
@@ -146,7 +143,7 @@ test("memory lesson candidates require two committed same-cohort episodes",async
     "strategy:baseline":{checkId:"check:baseline",version:"v1",expectedSignal:"baseline",scopeClasses:["*"],targetCheckIds:["target:unit"]},
     "strategy:recovery":{checkId:"check:recovery",version:"v1",expectedSignal:"recovery",scopeClasses:["*"],targetCheckIds:["target:unit"]},
   };
-  const run=async(scopes:string[][],unknownAt:number|null)=>{
+  const run=async(scopes:string[][])=>{
     const store=new MemoryMissionStore();await store.configureCapacity(scopes.length,evidenceDigest,future());
     const mission=await store.submit({repository:"owner/lesson",baseSha,objective:"cohort eligibility",acceptance:["committed comparable episodes"],budgetCents:1000});
     const inputs:SliceInput[]=scopes.map((paths,index)=>({id:`slice-${index}`,objective:`slice ${index}`,dependencies:[],owner:"core",scopes:paths,checks:["strategy:baseline","strategy:recovery"],budgetCents:100}));
@@ -162,29 +159,18 @@ test("memory lesson candidates require two committed same-cohort episodes",async
     for(let index=0;index<leases.length;index++){
       const lease=leases[index];assert(lease);
       const failed=makeProgress(lease,`failure-${index}`,1,"strategy:baseline","failed");
-      const failureReceipt=await store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies);
-      assert.equal(failureReceipt.action.strategyId,"strategy:recovery");
+      await assert.rejects(store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies),MissionConflictError);
       const passed=makeProgress(lease,`success-${index}`,2,"strategy:recovery","passed");
-      if(index===unknownAt){
-        const invalidJudge=async(snapshot:DecisionSnapshotV1):Promise<JudgmentV1>=>({
-          version:"orloom.judgment.v1",snapshotDigest:"0".repeat(64),source:"deterministic",answer:"continue",
-          strategyId:null,checkId:null,policyVersion:"v1",policyDigest:recoveryDigest,modelId:null,confidence:null,usage:null,
-        });
-        await assert.rejects(store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies,invalidJudge),MissionConflictError);
-        assert.equal((await store.getMission(mission.id))!.slices.find((slice)=>slice.id===lease.slice.id)?.status,"unknown");
-      }else{
-        await store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies);
-      }
+      await assert.rejects(store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies),MissionConflictError,"a worker-reported PASS cannot create a candidate, even for a same-cohort pair");
     }
     return store.lessons(mission.id);
   };
 
-  assert.deepEqual(await run([["src/unknown.ts"],["src/valid.ts"]],0),[]);
-  assert.deepEqual(await run([["src/valid.ts"],["src/unknown.ts"]],1),[]);
-  assert.deepEqual(await run([["src/one.ts"],["docs/two.md"]],null),[]);
-  const sameCohort=await run([["src/z","docs/a"],["docs/b","src/y"]],null);
-  assert.equal(sameCohort.length,1);
-  assert.equal(sameCohort[0]?.cohort,"docs");
+  assert.deepEqual(await run([["src/unknown.ts"],["src/valid.ts"]]),[]);
+  assert.deepEqual(await run([["src/valid.ts"],["src/unknown.ts"]]),[]);
+  assert.deepEqual(await run([["src/one.ts"],["docs/two.md"]]),[]);
+  const sameCohort=await run([["src/z","docs/a"],["docs/b","src/y"]]);
+  assert.deepEqual(sameCohort,[],"in-memory test data cannot substitute for trusted terminal attempts to create candidates");
 });
 
 test("lesson episode count deduplicates epochs but pairs evidence only within one epoch",()=>{
