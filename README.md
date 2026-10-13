@@ -1,6 +1,6 @@
 # Orloom
 
-Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. It does not include a worker runtime, live provider adapter, trusted CI executor, or deployed verification service.
+Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. The worker branch contains a broker, bounded DeepSeek tool protocol, exact-SHA GitHub checkout, and stdin-only credential-free `runsc` runtime path. Those modules are not proof of an installed pinned sandbox image, a live worker, a provider call, trusted CI acceptance, or a deployed verifier.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ npm start
 - `POST /api/jobs` requires that cookie and accepts `{"repository":"owner/name","task":"..."}`. Repository is limited to 256 characters and task to 20,000 characters. A created job is queued only.
 - `GET /api/jobs/{id}` requires the same cookie.
 
-There is no run/shell endpoint. The worker entrypoint exits because no isolated execution provider is configured. Interrupted work that had entered `running` becomes `unknown`; an expired lease that had not started may return to `queued`. The lease token fences stale starts and completions. No external side effect is automatically replayed.
+There is no public run/shell endpoint. The worker entrypoint is a separate broker process (`npm run start:worker`) and requires operator-supplied secrets and reviewed pinned sandbox configuration. It fails closed when those settings are absent. Interrupted work that had entered `running` becomes `unknown`; an expired lease that had not started may return to `queued`. The lease token fences stale starts and completions. No external side effect is automatically replayed.
 
 ## Mission API
 
@@ -34,17 +34,29 @@ Worker claims use `POST /api/worker/claim` with the separately configured `ORLOO
 
 There is no verifier or integration endpoint in this slice. Builder results remain `awaiting_verification`, and dependent slices remain `waiting_dependency` until a later independently reviewed verifier implementation supplies trusted evidence. Arbitrary evidence references cannot advance the gate.
 
-Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. This feature branch has not been deployed or exercised against real PostgreSQL or a live worker/verifier.
+Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. The B worker implementation has not been deployed, run on the DO worker, exercised with real PostgreSQL or DeepSeek, or accepted by an independent verifier.
+
+## ORL-005B worker prerequisites
+
+The broker reads `ORLOOM_DEEPSEEK_API_KEY` (prefer `ORLOOM_DEEPSEEK_API_KEY_FILE`), the narrow GitHub App installation token settings, private R2 credentials, and the existing worker bootstrap/control-plane settings. `ORLOOM_WORKER_CONCURRENCY` bounds simultaneous claim loops from one process; it defaults to one and accepts at most six. Set it no higher than enabled A capacity slots or independently measured host capacity. A remains the global atomic lease arbiter, and every claimed lease gets a separate workspace/container identity. The configured ceiling is not evidence that the host can safely sustain that many builds. Secrets stay in the broker process; the sandbox receives no provider, GitHub, R2, Codex, or owner-session credential. Protected secret files must be private to the service account. Never enter secrets in chat or commit a `.env` file.
+
+Before starting the worker, an operator must provide an exact allowed model, a fresh model-specific pricing snapshot (`ORLOOM_WORKER_PRICING_SNAPSHOT_FILE`) with source/version/capture/expiry and input/output/reasoning rates, and trusted check IDs mapped to fixed argv in `ORLOOM_WORKER_CHECK_COMMANDS_FILE`. The complete worst-case price at the configured call/token ceilings must fit the slice reservation with the required safety margin. A missing/stale/unpriced policy disables execution. `/models` proves model identity only; the worker separately performs a bounded forced function-call probe and checks the exact model in responses. Reasoning is explicitly disabled and excluded from model context.
+
+Build the sandbox image only from an operator-verified digest-pinned Node base using `apps/worker/Dockerfile.sandbox`, then configure its exact local Docker image ID (`sha256:<digest>`) or pinned GHCR image digest in `ORLOOM_WORKER_SANDBOX_IMAGE_REF`. The broker starts only that immutable reference with fixed `runsc`, no network, nonroot UID, read-only rootfs, dropped capabilities, and separate bounded tmpfs. It transfers a bounded regular-file snapshot through stdin; it does not use `docker cp` or mount the checkout. Repository symlinks and secret-like inputs fail closed. Representative build capacity and six sustained slots remain UNKNOWN; the existing two-container smoke does not establish either.
+
+A candidate handoff includes a verified Git bundle containing the candidate commit relative to its immutable base, plus a bounded diff and usage/evidence references. The bundle is stored immutably before the worker submits the candidate SHA; checkout cleanup therefore does not destroy the candidate object needed by a later trusted verifier. This still does not integrate or certify the candidate.
+
+The current durable worker progress sink stores digest-addressed R2 records and checks readback. It does not yet consult a mission-bound active recovery/policy continuation service; the dependent C packet must add that control-plane decision before claiming active recovery. Candidate callbacks carry only candidate SHA and evidence references to `awaiting_verification`; no worker or owner route can integrate/certify them.
 
 ## Storage and adapters
 
 `db/migrations/001_initial.sql` defines PostgreSQL state and constraints. `SqlJobStore` uses a small query interface and is exercised on embedded PGlite, which runs PostgreSQL-compatible SQL in-process. Cloud mode deliberately refuses startup until a persistent PostgreSQL adapter is wired; it must never silently fall back to memory.
 
-The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. Worker configuration rejects API-key billing. OAuth cache presence is not proof of a completed login; no live call has been made or proven. Worker-to-control-plane lease protocol remains future work. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
+The adapters implement narrow repository-only GitHub checkout tokens separately from check-write installation tokens, webhook HMAC verification, and conditional hash-addressed R2 operations. A typed Codex SDK constructor remains isolated from the DeepSeek worker path. The worker never reads the owner desktop OAuth cache. No actual provider/GitHub/R2 call, remote sandbox run, sustained build, or live acceptance has been performed. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker setup.
 
 ## Intended deployment topology
 
-The eventual topology is a frontend served with the control-plane service, managed PostgreSQL for durable state, a separate isolated DigitalOcean worker, R2 for evidence objects, and an external Forge service that validates candidates and publishes GitHub checks. The browser never holds provider credentials. GitHub Actions workflows are intentionally absent; GitHub installation permissions and external runtime secrets belong to the server-side Forge/control-plane boundary. This topology is documented only; cloud deployment and worker isolation are not implemented.
+The intended topology is a frontend served with the control-plane service, managed PostgreSQL for durable state, a separate isolated DigitalOcean broker/worker, R2 for evidence objects, and a trusted verifier/Forge service that validates candidates and publishes GitHub checks. The browser never holds provider credentials. GitHub Actions workflows are intentionally absent; GitHub installation permissions and external runtime secrets stay in broker/verifier boundaries. The B runtime source is implemented, but image build/pinning, remote job proof, representative capacity, verifier, and deployment remain open.
 
 ## Trust boundaries
 

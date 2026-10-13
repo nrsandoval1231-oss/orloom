@@ -19,3 +19,8 @@ credentials.json
 service-account*.json
 auth.json
 .codex/
+
+__pycache__/
+*.pyc
+work/worker-runtime-proof/candidate-context/
+work/worker-runtime-proof/candidate-context-proof.json

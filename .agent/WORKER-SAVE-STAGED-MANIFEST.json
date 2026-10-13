@@ -1,0 +1,211 @@
+{
+  "purpose": "Owner-requested draft checkpoint; staged Git blob hashes, excluding this manifest itself",
+  "base": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "validation": {
+    "typecheck": "PASS",
+    "build": "PASS",
+    "tests": 39,
+    "structure": "PASS",
+    "stagedDiff": "PASS",
+    "liveRuntime": "NOT RUN",
+    "providerCalls": 0
+  },
+  "files": [
+    {
+      "path": ".agent/CURRENT_STATE.md",
+      "sha256": "e50ced5786a9af16cbebb15af92a7cbe06cc88130f29b111961dbb5d6bd01d18"
+    },
+    {
+      "path": ".agent/GITHUB-CHECKOUT-TOKEN-COMPLETION.json",
+      "sha256": "17c58aaa3f5241e4d7f1d4371a18fec60b16bb68f0b41f9295f4833b9e978ded"
+    },
+    {
+      "path": ".agent/GITHUB-CHECKOUT-TOKEN-PACKET.json",
+      "sha256": "7bd473d604ed85a6c4f7c24677b5ce3248e4a7177482ed754e7999cccc255831"
+    },
+    {
+      "path": ".agent/RECOVERY-LEARNING-ORL005C.md",
+      "sha256": "c1f60721f3b663edcb391b4cfe1525c8afbcdf893aa7e54f0718dc83c64f161f"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-COMPLETION.json",
+      "sha256": "7f7d4ec5843f75d709d7023cfc3e433978ac3eddc33d247185630d51d622ffd8"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-MANIFEST.json",
+      "sha256": "84b51389a9851fb844e7507312376dc357a04a9057619f4ab7258b5c8daac9ac"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-MANIFEST.sha256",
+      "sha256": "9b498da49ede5c742ca89b33fd5ebe294368a0ad6f70f0542b56d21113461a36"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-REPAIR1-REVIEW.json",
+      "sha256": "247f0baf6c539012c2a754b749c9945fd2d4eb1dfea6e54e614756be67ba885c"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-REVIEW.json",
+      "sha256": "b8fc26b0fd72524dfbcf2168892e51aee70879df150498fed759ab88381240fc"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B.md",
+      "sha256": "dc0e483951b2533ad7a34b14c0168ddd088ea7f8ee00c1085923e5a560ca1b00"
+    },
+    {
+      "path": ".agent/WORK_GRAPH.md",
+      "sha256": "6af50339a2adfaee78c9b0e72a61c568558bf011212b29f02cfd3b3be4730df2"
+    },
+    {
+      "path": ".agent/archive/CURRENT_STATE-before-B-review.md",
+      "sha256": "63379eb65925fd1af432d8e51562c0d3d406c0f461113a6920b173642f78c1d6"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/COMPLETION.json",
+      "sha256": "a2b4d3ff029c53d305d07b3821932b5af8aa669dbd10c1eb21cde97def602c83"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/MANIFEST.json",
+      "sha256": "da144f117029174998ea499e89a13817f43ef28a21bed72c5e5051646aafc26f"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/REVIEW.json",
+      "sha256": "b8fc26b0fd72524dfbcf2168892e51aee70879df150498fed759ab88381240fc"
+    },
+    {
+      "path": ".agent/archive/WORKER-ORL-005B-builder-checkpoint.md",
+      "sha256": "dc1a3a5b5bb7cb2d0c048ec281003292a7a9e9a9af5211455ed783ed99824dea"
+    },
+    {
+      "path": ".agent/archive/WORK_GRAPH-before-B-review.md",
+      "sha256": "8945f814c4038d13d5bdff2b9ceea1f3bd616958ede699c3a305ab82ddf9e604"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "73731ba936864bdd215f0ca5401c9fef0e3df34addea93eac96de922d8e30ec9"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "d9aa3edc920bd6ee30d2bf774868408c39a4d066de3271020984d76f5c95f00c"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c897f5d53f7bc27a80ed188d3a8e8d17b67413173ee2a72b9399a018034b382f"
+    },
+    {
+      "path": "apps/worker/Dockerfile.sandbox",
+      "sha256": "395d4515c3ab66110067187cfdf5983eb2d0ded829ffc343e0247750113889c6"
+    },
+    {
+      "path": "apps/worker/src/docker-runtime.ts",
+      "sha256": "6a4c8d455df3bcebdc9a75a8d9c7da319e3f2a9b93db375a55bf03e6a95e1404"
+    },
+    {
+      "path": "apps/worker/src/main.ts",
+      "sha256": "21d1d1e6678bd986d131a47465e5036c9698f253be8202e7b74bb739ab505351"
+    },
+    {
+      "path": "apps/worker/src/poll-pool.ts",
+      "sha256": "7d8c751301af01c8cd6ff6983fcd9bce5cbb36b3675c8e380982374a3b1d98ca"
+    },
+    {
+      "path": "apps/worker/src/sandbox-entry.ts",
+      "sha256": "679be3a47b1ddaa64ae9bd58adcc92f0a518265cd014651faa4afd75434ad364"
+    },
+    {
+      "path": "docs/FINISH_CONTRACT.md",
+      "sha256": "4554bcf5080851f4ac785164d926986a5b9f161dc10ee7d01ac30069949abb69"
+    },
+    {
+      "path": "docs/checkpoints/CLOUD_SETUP_HISTORICAL.md",
+      "sha256": "4ec76fb2598e1670de7753e14220e46934ffd1d81fd0c74fccd9651a830ecf50"
+    },
+    {
+      "path": "docs/checkpoints/REFERENCE_AUDIT.md",
+      "sha256": "b87dc3be2c58a3906ec3bce06f8198bdfc78751e5f8c391f43aa2e831414ba86"
+    },
+    {
+      "path": "docs/checkpoints/WORKER_SAVE_CHECKPOINT.md",
+      "sha256": "bce70a28408e6e1711ee40500dee330ffeb012a667349f8ef80ed3aea436dd5e"
+    },
+    {
+      "path": "infra/secret-bootstrap/README.md",
+      "sha256": "ad91e875bcc648063439693e4eeaf6f20d8e1cb808cf3f7504d59d7d4bb666dc"
+    },
+    {
+      "path": "infra/secret-bootstrap/bootstrap.py",
+      "sha256": "674b32a93fbd4d27df74091f236fb1572ce5aea5c0b86c1202b7cab129db17e9"
+    },
+    {
+      "path": "package.json",
+      "sha256": "a193ab06eee0681eb356dce12125cc50f314c41a925206d2b28602851378d03b"
+    },
+    {
+      "path": "packages/adapters/src/providers.ts",
+      "sha256": "2d675cdfc2b811653abfe4130a9f1c657daf7e009867397e0e2b613c27f34f19"
+    },
+    {
+      "path": "packages/agents/src/github-checkout.ts",
+      "sha256": "06756766e2bcda5f14c0723783500c97ac0e3acab1b8c3aab5a162658eb696e2"
+    },
+    {
+      "path": "packages/agents/src/worker.ts",
+      "sha256": "c4d8af56d6b3b580307278cb18971c23855a7abb26f916180776c35829ac74b3"
+    },
+    {
+      "path": "tests/github-checkout-token.test.ts",
+      "sha256": "50efe5298f53de19c472eb4b4c2315f9c8a6a99c9acf84909d848557d150e270"
+    },
+    {
+      "path": "tests/worker-broker.test.ts",
+      "sha256": "b91865ec8897040a79a20e4ab638fcb4ce2753e051f66d42920cc5bffe775082"
+    },
+    {
+      "path": "tests/worker-candidate-bundle.test.ts",
+      "sha256": "c7be8da29ec63a7fa984ca2042896975edd3c9f4b04588e8d09413935b665e01"
+    },
+    {
+      "path": "tests/worker-git-checkout.test.ts",
+      "sha256": "43b7539288a2c58d17f7345c9b42b1b7c60f7a40bd486f985ef18a145f3a1193"
+    },
+    {
+      "path": "tests/worker-pool.test.ts",
+      "sha256": "aba7be2d5dacdb442e7a2b3a2140d7f6f884d795e68416faa8d286820d1d195b"
+    },
+    {
+      "path": "work/worker-runtime-proof/COMPLETION.json",
+      "sha256": "5cedf23e50d62975eb07f1edef0d5412d8aceebd7e7ef7bc2e6164a9bf648d3b"
+    },
+    {
+      "path": "work/worker-runtime-proof/PACKET.json",
+      "sha256": "69f2ed8aad6e753207c50d14c2ff2b710d5ea4dc47078d708d1541bf4c25d822"
+    },
+    {
+      "path": "work/worker-runtime-proof/README.md",
+      "sha256": "b4def4af52a84b9a1aba4801c8f77b91476219a5e8e357e67e664a479d3e10bf"
+    },
+    {
+      "path": "work/worker-runtime-proof/RUNTIME-SEAM.md",
+      "sha256": "776f2c418e00284de21219c723a890586d125dc716e5407be442accfce06be9c"
+    },
+    {
+      "path": "work/worker-runtime-proof/build_candidate.sh",
+      "sha256": "10b8d477c5271d8b318f9b2959dfa94b96aad9cda25c0de2d02e989c115d8a6f"
+    },
+    {
+      "path": "work/worker-runtime-proof/cleanup_owned.sh",
+      "sha256": "da4fa3732428d03eb5926840ab5e639478308915b7d6dbeaf701a9dc4de8bb60"
+    },
+    {
+      "path": "work/worker-runtime-proof/fixtures/concurrent-workspaces.json",
+      "sha256": "4727b5031a089d8322574007cf08c094ad24bf9761980d3209aee675c90a854a"
+    },
+    {
+      "path": "work/worker-runtime-proof/prepare_context.py",
+      "sha256": "31e0ef5c6945e5630efb17b0296fbebd6a7aaededd1ab79d49f6b766c7cfcaaf"
+    },
+    {
+      "path": "work/worker-runtime-proof/run_proof.py",
+      "sha256": "857b492abeaa9882b3c0d6187880b14267624adc74e2520d25032a729c2ccb9f"
+    }
+  ]
+}

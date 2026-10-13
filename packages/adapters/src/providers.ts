@@ -65,6 +65,7 @@ export class LocalArtifactStore implements ArtifactStore {
 
 export interface GitHubInstallationClient {
   createInstallationToken(installationId: number, repositories: string[]): Promise<string>;
+  createCheckoutToken(installationId: number, repository: string): Promise<string>;
   createCheckRun(installationId: number, repository: string, headSha: string, name: string, conclusion: "success" | "failure"): Promise<void>;
 }
 
@@ -94,6 +95,19 @@ export function createGitHubAppAdapter(config: { appId: number; privateKey: stri
       });
       if (!created.data.token) throw new Error("GitHub did not return an installation token");
       return created.data.token;
+    },
+    async createCheckoutToken(installationId, repository) {
+      if (!Number.isSafeInteger(installationId) || installationId < 1 || typeof repository !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/.test(repository) || repository === "." || repository === "..") {
+        throw new Error("Installation and repository scope are required");
+      }
+      const created = await appRequests.request("POST /app/installations/{installation_id}/access_tokens", {
+        installation_id: installationId,
+        repositories: [repository],
+        permissions: { contents: "read" }
+      });
+      const token = created.data.token;
+      if (typeof token !== "string" || token.trim().length === 0) throw new Error("GitHub did not return an installation token");
+      return token;
     },
     async createCheckRun(installationId, repository, headSha, name, conclusion) {
       const [owner, repo] = repository.split("/");

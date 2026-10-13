@@ -1,0 +1,24 @@
+{
+  "purpose": "Protocol-level disposable fixture only; does not use a checkout, GitHub, DeepSeek, R2, or production credentials.",
+  "image": {
+    "base": "node:24-bookworm-slim@sha256:51b1100cc2a83d370c6a60952e3f2989c8a43159d0e38586e090f3b3326efefd",
+    "platform": "linux/amd64",
+    "runtime": "runsc",
+    "user": "65532:65532",
+    "network": "none"
+  },
+  "concurrency": 2,
+  "files": [
+    { "path": "fixture.txt", "text": "lane={{lane}} initial\n" },
+    { "path": "src/check.js", "text": "export const marker = '{{lane}}';\n" }
+  ],
+  "checkPolicies": {
+    "verify-fixture": { "executable": "node", "args": ["-e", "const fs=require('node:fs'); if (!fs.readFileSync('fixture.txt','utf8').includes('updated-{{lane}}')) process.exit(7); process.stdout.write('verified-{{lane}}')"], "timeoutSeconds": 5 },
+    "oversized-output": { "executable": "node", "args": ["-e", "process.stdout.write('x'.repeat(70000))"], "timeoutSeconds": 5 },
+    "timeout": { "executable": "node", "args": ["-e", "setTimeout(()=>process.stdout.write('late'),5000)"], "timeoutSeconds": 1 },
+    "make-symlink": { "executable": "node", "args": ["-e", "require('node:fs').symlinkSync('/etc/passwd','escape')"], "timeoutSeconds": 5 }
+  },
+  "positiveSequence": ["init", "read_file", "replace_text", "run_check", "snapshot"],
+  "adversarialCases": ["path traversal rejected", "symlink read rejected", "oversized check output remains bounded", "timeout kills check and close reaps container"],
+  "limitations": ["No provider/API behavior", "No broker/job lifecycle", "No complete worker-lane capacity claim"]
+}

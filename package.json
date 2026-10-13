@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env dist/apps/control-plane/src/main.js",
+    "start:worker": "node --env-file-if-exists=.env dist/apps/worker/src/main.js",
     "clean": "node scripts/clean.mjs",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
