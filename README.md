@@ -4,6 +4,8 @@ Orloom is a single-operator engineering harness being developed into the platfor
 
 PR #2 and its DeepSeek worker broker are frozen at `8bbcfffbf631e5ad2972e34b41284198afc566e2`. Development on this branch proceeds independently; it does not modify or depend on that broker. The [work graph](.agent/WORK_GRAPH.md) records current implementation and open acceptance gates.
 
+Draft PR #3 adds the optional typed Jev gateway, fenced progress decisions, bounded recovery and durable lesson candidates. Source `545279c` passed 51 tests and a controlled real PostgreSQL recovery/reconnect proof; [retained evidence](docs/evidence/c1a-runtime/EVIDENCE.md) includes independent source review and prior failed attempts. Lesson promotion remains disabled until independent verification exists. No live Jev calls, learning improvement, or production rollout is claimed.
+
 ## Run locally
 
 Requires Node.js 24. Copy `.env.example` to `.env` only in a private local working directory and set a long random `ORLOOM_SESSION_TOKEN`; the checked-in template is intentionally blank. Install and run:
@@ -76,4 +78,4 @@ Historical standalone visual experiments are archived in [prototypes/v1](prototy
 
 **Visual north star:** The owner begins with an idea; specialist agents visibly weave a five-sector 3D torus around a central mission. The ring closes only when versioned requirements are independently verified. Source bundles, dependency links, drift, and decisions must be inspectable and evidence-backed.
 
-**Execution north star:** GitHub is source control, **not GitHub Actions CI**. Orloom-owned isolated workers and trusted Forge validation enforce acceptance. Athena and Jev may advise or select bounded strategies, but deterministic host policy owns authorization and irreversible actions.
+**Execution north star:** GitHub is source control, **not GitHub Actions CI**. Orloom-owned isolated workers and trusted Orloom verification policies enforce acceptance. Athena and Jev may advise or select bounded strategies, but deterministic host policy owns authorization and irreversible actions.

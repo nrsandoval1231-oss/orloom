@@ -1,0 +1,9 @@
+ORL-005C1A C1a real PostgreSQL HTTP proof — failed attempt 1
+Time: 2026-10-13T06:53Z (time captured immediately after command; seconds UNKNOWN)
+Exact command: ssh codex-dark-peak-5042 'bash /var/lib/orloom/c1a-pg-proof-20261013/staging/run-proof.sh'
+Exit: 1
+Output:
+C1_REAL_POSTGRES_HTTP_PROOF=FAIL stage=bootstrap details_suppressed=true
+runtime_exit=1
+
+Resources remain for diagnosis; no retry or cleanup. Disposable DB ID 5bad5efd9fa38990585d319d17a40c0dafbd5569175831851a9265d055acabb7; test ID 4559a5efd42682f81b9365f036ebfc69411e19569dcc2a29c260a67e49e84698; internal network ID fdba65968353e6a78af722de4a7ac2499e9432f717b7e5f97f33e6e53893614a. Protected codex-universal prior/post check unchanged at full ID 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67, StartedAt 2026-10-12T23:51:46.164222792Z, restart count 0, runtime runc, running.
