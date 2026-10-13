@@ -1,0 +1,58 @@
+{
+  "packet": "ORL-005A",
+  "repair": "ORL-005A repair 1",
+  "repairCount": 1,
+  "branch": "feat/canonical-mission-execution",
+  "baseSha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "headSha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "candidateState": "frozen working-tree candidate; no commit",
+  "repairStartedAtUtc": "UNKNOWN (dispatch timestamp not captured; independent FIX review completed 2026-10-13T02:10:14Z)",
+  "frozenAtUtc": "2026-10-13T02:26:25.520Z",
+  "model": "UNKNOWN (runtime model identity not exposed)",
+  "lane": "single builder: mission_builder",
+  "tokenUsage": "UNKNOWN (usage telemetry not exposed)",
+  "priorCandidate": {
+    "manifestSha256": "6a2d67c1cf82ba242a819bd82db4755ec00d9a376a304fd231c4c3e09c2eb15b",
+    "manifestArchive": ".agent/archive/MISSION-ORL-005A-MANIFEST-before-repair1.sha256",
+    "completionArchive": ".agent/archive/MISSION-ORL-005A-COMPLETION-before-repair1.json",
+    "reviewArchive": ".agent/archive/MISSION-REVIEW-ORL-005A-FIX-before-repair1.json"
+  },
+  "manifest": {
+    "path": ".agent/MISSION-ORL-005A-MANIFEST.sha256",
+    "sha256": "c418a11e1e616eda7d1005c45a317082013d2c9923883f9dd58ed92bf414b287",
+    "files": 24
+  },
+  "findingsClosed": [
+    "A-001 dependency waiting is distinct and does not reserve/quarantine scope or block overlapping parent claims",
+    "A-002 repository identity is case-folded for cross-mission scope checks",
+    "A-003 mission aggregate keeps pending candidate as awaiting_verification absent real BLOCKED/UNKNOWN",
+    "A-004 bounded startup/periodic/pre-claim expiry reconciliation emits durable UNKNOWN and preserves reservation/quarantine"
+  ],
+  "validation": {
+    "npm run typecheck": "PASS (exit 0)",
+    "npm test": "PASS (exit 0; 21/21 tests)",
+    "npm run build": "PASS (exit 0)",
+    "npm run validate": "PASS (exit 0)",
+    "git diff --check": "PASS (exit 0)",
+    "ORL-ISO-001 evidence manifest": "PASS (7/7 byte hashes unchanged)"
+  },
+  "focusedTests": [
+    "dependency wait does not block overlapping parent and mixed-case repositories still serialize",
+    "PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart",
+    "PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity",
+    "mission migration allows explicit dependency wait and is idempotent",
+    "HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed"
+  ],
+  "openEvidence": [
+    "Independent PostgreSQL pool/concurrency proof on this replacement candidate pending hostinger_builder",
+    "Independent canonical re-review pending",
+    "No worker runtime/verifier/integration endpoint; candidate remains awaiting_verification and dependency slices waiting_dependency",
+    "Production migration rollout and remote/browser acceptance not performed"
+  ],
+  "authority": {
+    "commit": false,
+    "push": false,
+    "deploy": false,
+    "externalEffects": false
+  }
+}

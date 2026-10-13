@@ -1,0 +1,8 @@
+{
+  "sourceManifest": "c418a11e1e616eda7d1005c45a317082013d2c9923883f9dd58ed92bf414b287",
+  "helperSha256": "cc9fe8755b8dfd3aa0492c74b4367f40dff70dcfa311ac3971af2147b2ef3c1a",
+  "exitCode": 0,
+  "wallSeconds": 6.3547455,
+  "output": "source_manifest=c418a11e1e616eda7d1005c45a317082013d2c9923883f9dd58ed92bf414b287 bundle_manifest=5840ff1f91c4c4c9b2757a24e2956ffb9fadc693662d59e6b86a8ad0ffb6de97\ndisposable_db_schema_reset=ok\nPASS PostgreSQL migrations and readiness\nPASS real concurrent PostgreSQL sessions=8\nPASS concurrent claims are distinct and capped at six\nPASS event history and migrations persist across pool reconnect\nPASS same slice cannot be claimed twice concurrently\nPASS dependency-waiting child does not quarantine its ready overlapping parent\nPASS mixed-case repository names share canonical scope exclusion\nPASS failed recommendation rolls back all plan, slice, and event writes\nPASS expiry marks UNKNOWN, retains reservation, and quarantines its slot and scope\nPOSTGRES_MISSION_PROOF=PASS\n",
+  "qualification": "Real PostgreSQL store proof only; no provider, production migration or full harness acceptance."
+}

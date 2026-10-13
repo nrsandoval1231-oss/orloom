@@ -1,5 +1,6 @@
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 
 export interface Config {
   mode: "local" | "cloud";
@@ -8,6 +9,19 @@ export interface Config {
   databaseUrl?: string;
   publicOrigin?: string;
   host?: string;
+  workerToken?: string;
+  maxLanes?: number;
+  capacitySlots?: number;
+  capacityEvidenceDigest?: string | null;
+  capacityEvidenceExpiresAt?: string | null;
+  trustedCheckPolicy?: string[];
+  trustedCheckPolicyDigest?: string | null;
+  workerMaxProviderCalls?: number;
+  workerMaxInputTokens?: number;
+  workerMaxOutputTokens?: number;
+  workerMaxWallSeconds?: number;
+  workerAllowedProviders?: string[];
+  workerAllowedModels?: string[];
 }
 export type ConfigRole = "control-plane" | "github" | "artifact" | "worker";
 export interface RoleConfigCheck { ok: boolean; missingFields: string[] }
@@ -82,10 +96,35 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   if (mode === "cloud") assertRoleConfig("control-plane", resolvedEnv);
   const publicOrigin = value("ORLOOM_PUBLIC_ORIGIN");
   const databaseUrl = value("ORLOOM_DATABASE_URL");
+  const capacitySlots = Number(env.ORLOOM_CAPACITY_SLOTS ?? "0");
+  const maxLanes = Number(env.ORLOOM_MAX_LANES?.trim() || "6");
+  if (!Number.isInteger(maxLanes) || maxLanes < 1 || maxLanes > 6) throw new Error("ORLOOM_MAX_LANES must be between 1 and 6");
+  if (!Number.isInteger(capacitySlots) || capacitySlots < 0 || capacitySlots > maxLanes) throw new Error("ORLOOM_CAPACITY_SLOTS must be between 0 and ORLOOM_MAX_LANES");
+  const capacityEvidenceDigest = value("ORLOOM_CAPACITY_EVIDENCE_SHA256") ?? null;
+  const capacityEvidenceExpiresAt = value("ORLOOM_CAPACITY_EVIDENCE_EXPIRES_AT") ?? null;
+  if (capacitySlots > 0 && (env.ORLOOM_CAPACITY_EVIDENCE_VERIFIED !== "true" || !capacityEvidenceDigest || !/^[a-f0-9]{64}$/i.test(capacityEvidenceDigest) || !capacityEvidenceExpiresAt || !Number.isFinite(Date.parse(capacityEvidenceExpiresAt)) || Date.parse(capacityEvidenceExpiresAt) <= Date.now())) throw new Error("Enabled capacity requires verified, unexpired isolation evidence binding");
+  let trustedCheckPolicy: string[] = [];
+  if (env.ORLOOM_TRUSTED_CHECK_POLICY_JSON) {
+    try { const parsed: unknown = JSON.parse(env.ORLOOM_TRUSTED_CHECK_POLICY_JSON); if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > 100 || parsed.some(x => typeof x !== "string" || !x.trim() || x.length > 1000)) throw new Error(); trustedCheckPolicy = parsed; }
+    catch { throw new Error("ORLOOM_TRUSTED_CHECK_POLICY_JSON must be a non-empty array of trusted check identifiers"); }
+  }
+  const trustedCheckPolicyDigest = trustedCheckPolicy.length ? createHash("sha256").update(JSON.stringify(trustedCheckPolicy)).digest("hex") : null;
+  const workerMaxProviderCalls=Number(env.ORLOOM_WORKER_MAX_PROVIDER_CALLS??"0"),workerMaxInputTokens=Number(env.ORLOOM_WORKER_MAX_INPUT_TOKENS??"0"),workerMaxOutputTokens=Number(env.ORLOOM_WORKER_MAX_OUTPUT_TOKENS??"0"),workerMaxWallSeconds=Number(env.ORLOOM_WORKER_MAX_WALL_SECONDS??"0");
+  if([workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds].some(x=>!Number.isSafeInteger(x)||x<0))throw new Error("Worker execution limits must be nonnegative integers");
+  let workerAllowedProviders:string[]=[];try{const parsed:unknown=JSON.parse(env.ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON?.trim()||"[]");if(!Array.isArray(parsed)||parsed.some(x=>typeof x!=="string"||! /^[a-zA-Z0-9_.:-]{1,128}$/.test(x)))throw new Error();workerAllowedProviders=parsed;}catch{throw new Error("ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON must be an array of provider identifiers");}
+  let workerAllowedModels:string[]=[];try{const parsed:unknown=JSON.parse(env.ORLOOM_WORKER_ALLOWED_MODELS_JSON?.trim()||"[]");if(!Array.isArray(parsed)||parsed.some(x=>typeof x!=="string"||! /^[a-zA-Z0-9_.:/-]{1,160}$/.test(x)))throw new Error();workerAllowedModels=parsed;}catch{throw new Error("ORLOOM_WORKER_ALLOWED_MODELS_JSON must be an array of exact model identifiers");}
   return {
     mode,
     port,
     sessionToken: value("ORLOOM_SESSION_TOKEN") ?? "",
+    workerToken: value("ORLOOM_WORKER_TOKEN") ?? "",
+    maxLanes,
+    capacitySlots,
+    capacityEvidenceDigest: capacitySlots ? capacityEvidenceDigest : null,
+    capacityEvidenceExpiresAt: capacitySlots ? new Date(capacityEvidenceExpiresAt!).toISOString() : null,
+    trustedCheckPolicy,
+    trustedCheckPolicyDigest,
+    workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds,workerAllowedProviders,workerAllowedModels,
     ...(publicOrigin ? { publicOrigin } : {}),
     ...(env.ORLOOM_HOST ? { host: env.ORLOOM_HOST.toLowerCase() } : {}),
     ...(databaseUrl ? { databaseUrl } : {})

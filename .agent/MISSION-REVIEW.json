@@ -1,0 +1,28 @@
+{
+  "packet": "ORL-005A",
+  "verdict": "PASS",
+  "reviewed_at_utc": "2026-10-13T03:23:30Z",
+  "base_sha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "branch": "feat/canonical-mission-execution",
+  "candidate_state": "frozen working-tree candidate; no commit",
+  "candidate_manifest": ".agent/MISSION-ORL-005A-MANIFEST.sha256",
+  "candidate_manifest_sha256": "c418a11e1e616eda7d1005c45a317082013d2c9923883f9dd58ed92bf414b287",
+  "candidate_files_verified": 24,
+  "repair_count": 1,
+  "findings": [],
+  "prior_findings_closed": [
+    "A-001: dependency-waiting slices no longer quarantine scope or prevent an overlapping ready parent claim",
+    "A-002: owner/repository identity is case-folded for mission scope exclusion",
+    "A-003: ordinary dependency wait no longer changes a pending parent candidate's aggregate status to BLOCKED or UNKNOWN",
+    "A-004: bounded startup, periodic, and pre-claim expiry reconciliation persists UNKNOWN and retains budget, slot, and scope quarantine"
+  ],
+  "independent_evidence": [
+    "Frozen manifest SHA-256 and all 24 listed file hashes reverified independently",
+    "Controller reran typecheck, npm test (21/21), build, validate, and git diff --check with exit 0 on the frozen candidate",
+    "Independent real PostgreSQL controller repeat exited 0; work/mission-postgres-proof/CONTROLLER-REPEAT.json binds source manifest c418a11, bundle manifest 5840ff1, and helper hash cc9fe875",
+    "PostgreSQL proof used eight concurrent backend connections and showed six distinct claims with no seventh, single-claim race, dependency and mixed-case scope exclusion, transactional rollback, persisted events after reconnect, and expiry quarantine",
+    "Owner routes retain session and cloud Origin/Host checks; worker callbacks use bootstrap bearer and fenced lease/capability; no verifier HTTP route accepts arbitrary integration evidence",
+    "Awaiting-verification scopes remain held while capacity is released; dependent slices remain waiting until independent trusted integration supplies an execution base"
+  ],
+  "qualification": "PASS is limited to ORL-005A mission persistence, admission, scheduling, and fail-closed candidate handoff on the exact 24-file candidate. PostgreSQL evidence is a disposable real-database proof, not production migration or six-live-worker capacity. There is no live DeepSeek provider, worker runtime, independent verifier, integrated execution-base advancement, GitHub PR, or Loom proof. No commit, push, merge, or deployment is certified."
+}

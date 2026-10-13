@@ -1,0 +1,23 @@
+{
+  "node": "ORL-ISO-001",
+  "verdict": "PASS",
+  "scope": "Two concurrent credential-free gVisor sandbox smoke/isolation checkpoint only",
+  "reviewed_at_utc": "2026-10-13T01:54:49Z",
+  "candidate_manifest": "MANIFEST.sha256",
+  "candidate_manifest_sha256": "8a8769d242a3a1ce66844ff24369d8d7adf961446596c375ed5ffff6ac2f76b6",
+  "independent_evidence": [
+    "All seven local candidate files match MANIFEST.sha256; REVIEW.json is outside the manifest",
+    "Host launch, smoke, inspect, and negative-test bytes match the frozen local hashes; the earlier stale remote test file was corrected before this review",
+    "Read-only host inspection confirms runsc 20261005.0, /usr/bin/runsc SHA-256 210b437a9cfae51e8f8c9074ed19b8b5e59477178e2e391a18117d8d6b924f7a, Docker default runc, and pinned image ID sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304",
+    "Launcher fixes runsc, no network, nonroot UID 65532, read-only rootfs, dropped capabilities, no-new-privileges, PID/memory/CPU limits, two private tmpfs mounts, no bind mounts, fixed image and command, and empty Docker client config",
+    "Frozen exact-candidate evidence records 3 passing negative tests and a two-container smoke with host-side Docker inspect plus in-container network, rootfs, scratch separation, OAuth-path, and socket denial probes",
+    "Independent final host inspection shows only protected codex-universal running, ID 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67, original StartedAt 2026-10-12T23:51:46.164222792Z, restartCount 0, runtime runc",
+    "OAuth directory remains orloom:orloom mode 0700; contents were not inspected"
+  ],
+  "limitations": [
+    "The reviewer did not launch new containers or rerun the mutating smoke; the frozen builder and controller smoke evidence plus read-only host checks support this bounded verdict",
+    "This does not prove representative build capacity, two sustained build lanes, six live lanes, adversarial escape resistance, safe output ingestion, provider execution, GitHub integration, or product completion",
+    "WORKER-CONTRACT.md specifies future copy/exec behavior; those operations were not implemented or proven by this checkpoint"
+  ],
+  "next_direction": "Keep live worker dispatch closed; use the reviewed fixed launcher as a dependency for bounded broker implementation and separately measure representative workload capacity"
+}

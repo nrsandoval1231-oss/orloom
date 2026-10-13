@@ -1,0 +1,39 @@
+{
+  "packet": "ORL-005A",
+  "branch": "feat/canonical-mission-execution",
+  "baseSha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "headSha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "candidateState": "frozen working-tree candidate; no commit",
+  "frozenAtUtc": "2026-10-13T02:07:46.169Z",
+  "manifest": {
+    "path": ".agent/MISSION-ORL-005A-MANIFEST.sha256",
+    "sha256": "6a2d67c1cf82ba242a819bd82db4755ec00d9a376a304fd231c4c3e09c2eb15b",
+    "files": 21
+  },
+  "validation": {
+    "npm ci": "PASS (exit 0)",
+    "npm run typecheck": "PASS (exit 0)",
+    "npm test": "PASS (exit 0; 18/18 tests)",
+    "npm run build": "PASS (exit 0)",
+    "npm run validate": "PASS (exit 0)",
+    "git diff --check": "PASS (exit 0)"
+  },
+  "focusedTests": [
+    "HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed",
+    "memory governor allows six disjoint same-owner slices and keeps verification/dependency gates closed",
+    "scope ancestors and globs serialize; expired UNKNOWN retains budget and quarantines slot and scope",
+    "PostgreSQL mission SQL supports durable replay and only emits candidates while integration is unavailable"
+  ],
+  "openEvidence": [
+    "Real PostgreSQL multi-connection/pool concurrency, rollback, and reconnect proof pending independent controller run",
+    "No worker runtime/provider metering/verifier/integration endpoint; candidate remains awaiting_verification and dependencies blocked",
+    "Production migration rollout and remote/browser runtime acceptance not performed",
+    "Independent Sol review pending"
+  ],
+  "authority": {
+    "commit": false,
+    "push": false,
+    "deploy": false,
+    "externalEffects": false
+  }
+}

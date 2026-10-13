@@ -2,6 +2,8 @@
 
 This stack hosts only the Orloom web control plane and PostgreSQL queue. It has no worker, provider credentials, job lease loop, or execution route. A healthy queue does not establish product readiness or authorize a job to run. The separate DigitalOcean worker, OAuth, R2 credentials, Forge checks, evidence verification, and full Finish Contract remain independent gates.
 
+The ORL-005A feature branch adds mission tables and broker routes but has not been deployed to the existing Hostinger stack. The running ORL-004 service remains the queue-only release until an explicitly authorized rollout and migration validation. Do not set `ORLOOM_CAPACITY_SLOTS` above zero without operator-verified isolation evidence, trusted checks, provider/model allowlists, and positive spend/time ceilings. No live worker or verifier is provided by this branch, and the verification gate has no integration endpoint.
+
 ## One-time setup
 
 Run on the Docker host from the repository checkout, with Docker Compose v2, OpenSSL, and the existing external Traefik network. This stack uses project name `orloom`, services `app` and `db`, and the private volume `postgres_data`. It only joins `${TRAEFIK_NETWORK}`, which defaults to `n8n_default`, for edge routing; PostgreSQL has no published port. Router hostname, entrypoint, resolver, and public origin are explicit configuration and must agree with DNS/TLS.
