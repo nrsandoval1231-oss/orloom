@@ -35,3 +35,5 @@ Checkpoint 2026-10-13: combined source8f271de passed97 local tests and independe
 C4 checkpoint: local direct-child integration source5856fd5 and scratch fixture repair6406393 composed with cdad evidence. Final source gates/review pending on the frozen successor; production remains closed and actual full-suite cloud acceptance remains FAIL/zero certificates on prior8f. C5 may begin after C4 source acceptance and ownership release. PR2 external head639bff is excluded; owner-frozen baseline8bb remains protected.
 
 Latest C4: exact078ed12 source98testPASS/independentPASS after f669 FIX, evidence docs/evidence/c4-source. C5 source READY/active on feat/live-loom from078; realPG proof preparation independent. Operational integration and cloud certification remain OPEN.
+
+C5 source3d1be84 implemented; final gates/browser/independent review pending on composition with C4 evidence037. No operational or PostgreSQL acceptance. Delivery core proceeds on a separate branch and waits for serialized server route integration.
