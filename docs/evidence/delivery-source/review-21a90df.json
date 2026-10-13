@@ -1,0 +1,38 @@
+{
+  "format": "orloom.independent-source-review.v1",
+  "candidate": "21a90dfa7b1123c12b8f7d2e7739049472accd8f",
+  "repository": "work/orloom-delivery",
+  "verdict": "FIX",
+  "scope": "Combined C4 replay, C5 source, delivery core and owner route; source-only independent review",
+  "findings": [
+    {
+      "id": "DELIVERY-COMPOSITION-GATE-01",
+      "severity": "P1 acceptance gate",
+      "location": "tests/config-adapters.test.ts:92",
+      "evidence": "The exact candidate's full controller gate completed 133 pass, 1 fail. After createInstallationToken, createCheckRun now invokes scopedInstallation, which makes a second POST /app/installations/{installation_id}/access_tokens before the token-bound POST /repos/{owner}/{repo}/check-runs. The test incorrectly expects the Check POST at calls[1]. This assertion also exists at the bdd8dc base, but it remains a failing exact-candidate gate.",
+      "repair": "Update the adapter boundary test to assert the second app-level token request has the intended installation, single repository and contents:read/checks:write permissions; assert the subsequent Check POST uses the installation client minted from that token. Re-freeze a new candidate and rerun mandatory final gates. Do not merely shift the array index without proving the authority boundary."
+    }
+  ],
+  "reviewedPositiveBoundaries": [
+    "Delivery accepts exactly one integration:<observed SHA> and one review:<retained digest> only after matching an integrated durable intent; other non-SHA refs fail, and SHA refs retain artifact digest readback.",
+    "New delivery-c4-flow.test.ts goes through submit, approved plan, claim/complete, persisted final PASS, Governor integrateVerifiedSlice with bare Git, then controlled delivery; it does not directly update verified status or integration intent.",
+    "Concurrent C4 replay retains fresh repository identity, approved plan/policy, ref/tree, retained review, and SQL final-certificate fences. The completed path delegates to finishIntegrationIntent rather than returning solely from a stale mission read.",
+    "Delivery retains durable per-effect claims before Check and PR creates, exact App/commit Check GET readback, exact open draft PR GET readback, pinned remote/base checks, and UNKNOWN on ambiguous writes.",
+    "Owner-authenticated /api/delivery accepts command fields only; controller policy and authority are injected, and absent injection returns 503. Startup intentionally does not activate delivery in this packet."
+  ],
+  "installedSdkCheck": "Installed @octokit/app 16.1.4 constructs its app client from options.Octokit || OctokitCore; installed @octokit/core constructs token authentication when passed {auth: token} without authStrategy. Thus app.octokit.constructor used by scopedInstallation is the token-auth OctokitCore in this installation. This is a source inspection, not a network call or live SDK acceptance.",
+  "deterministicEvidence": {
+    "log": "work/delivery-controller-gates-2026-10-13T23-14-33-878Z.log",
+    "buildTypecheckDiffChecks": "PASS according to log",
+    "testSummary": "134 tests, 133 pass, 1 fail",
+    "failedTest": "GitHub App token request uses app client and explicit repository and permission scope",
+    "affectedFlowTests": "Delivery C4 controlled flow, delivery effects, owner route, adapter delivery, and C4 replay race tests passed in the same run"
+  },
+  "limits": [
+    "This is source and controlled-adapter review only; no real PostgreSQL delivery scenario has been accepted for this combined candidate yet.",
+    "No live GitHub App, R2, remote Git or publication result is claimed.",
+    "Startup wiring is a documented closed implementation node C4-COMPOSE-01, outside this packet and not an operational success claim.",
+    "The red mandatory gate blocks exact-candidate acceptance despite positive affected-flow tests."
+  ],
+  "direction": "One bounded adapter test repair, new exact candidate, full gates, then independent delta review and separately controlled real-PostgreSQL delivery proof."
+}

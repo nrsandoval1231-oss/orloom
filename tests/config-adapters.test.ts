@@ -79,18 +79,42 @@ test("R2 adapter sends immutable digest-addressed PUT and verifies GET bytes thr
 });
 
 test("GitHub App token request uses app client and explicit repository and permission scope", async () => {
-  const calls: Array<{ route: string; parameters: Record<string, unknown> }> = [];
+  const calls: Array<{ client: "app" | "installation"; route: string; parameters: Record<string, unknown> }> = [];
+  const mintedInstallations: Array<{ id: number; token: string }> = [];
+  let tokenMintCount = 0;
   const adapter = createGitHubAppAdapter({ appId: 123, privateKey: "fake-key-for-injected-boundary" }, {
-    app: { async request(route, parameters) { calls.push({ route, parameters }); return { data: { token: "fake-install-token" } }; } },
-    async installation() { return { async request(route, parameters) { calls.push({ route, parameters }); return { data: {} }; } }; }
+    app: { async request(route, parameters) {
+      calls.push({ client: "app", route, parameters });
+      const token = tokenMintCount++ === 0 ? "general-install-token" : "scoped-check-token";
+      return { data: { token } };
+    } },
+    async installation(id, token) {
+      assert(token);
+      mintedInstallations.push({ id, token });
+      return { async request(route, parameters) { calls.push({ client: "installation", route, parameters }); return { data: {} }; } };
+    }
   });
-  assert.equal(await adapter.createInstallationToken(44, ["allowed-repo"]), "fake-install-token");
+  assert.equal(await adapter.createInstallationToken(44, ["allowed-repo"]), "general-install-token");
   assert.equal(calls[0]?.route, "POST /app/installations/{installation_id}/access_tokens");
+  assert.equal(calls[0]?.client, "app");
+  assert.equal(calls[0]?.parameters.installation_id, 44);
   assert.deepEqual(calls[0]?.parameters.repositories, ["allowed-repo"]);
   assert.deepEqual(calls[0]?.parameters.permissions, { contents: "read", checks: "write" });
-  await adapter.createCheckRun(44, "owner/repo", "a".repeat(40), "Forge", "success");
-  assert.equal(calls[1]?.route, "POST /repos/{owner}/{repo}/check-runs");
+  const headSha = "a".repeat(40);
+  await adapter.createCheckRun(44, "owner/repo", headSha, "Forge", "success");
+  assert.equal(calls[1]?.client, "app");
+  assert.equal(calls[1]?.route, "POST /app/installations/{installation_id}/access_tokens");
+  assert.equal(calls[1]?.parameters.installation_id, 44);
+  assert.deepEqual(calls[1]?.parameters.repositories, ["repo"]);
+  assert.deepEqual(calls[1]?.parameters.permissions, { contents: "read", checks: "write" });
+  assert.deepEqual(mintedInstallations, [{ id: 44, token: "scoped-check-token" }], "Check operation binds the exact scoped token to its installation client");
+  assert.equal(calls[2]?.client, "installation");
+  assert.equal(calls[2]?.route, "POST /repos/{owner}/{repo}/check-runs");
+  assert.deepEqual(calls[2]?.parameters, { owner: "owner", repo: "repo", head_sha: headSha, name: "Forge", status: "completed", conclusion: "success" });
+  assert.equal(calls.filter(call => call.client === "app" && call.route === "POST /repos/{owner}/{repo}/check-runs").length, 0, "Check POST is executed only by the token-bound installation client");
+  const countBeforeInvalidScope = calls.length;
   await assert.rejects(adapter.createInstallationToken(44, ["../outside"]), /scope/);
+  assert.equal(calls.length, countBeforeInvalidScope, "invalid repository scope is rejected before token minting");
 });
 
 test("Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration", async () => {
