@@ -1,0 +1,13 @@
+# Trusted learning: bounded source acceptance
+
+Exact source `34727251d201fb79765a1081394d1ae7017615f3` integrates learning implementation `c5aa177` with verifier evidence base `7fb97aa`. Controller checks passed: typecheck, clean build, 82 tests with zero failures/skips, foundation validation, JavaScript/shell syntax and diff checks. Independent source review: PASS in `independent-review.json`. This evidence checkpoint does not certify its own later commit or any cloud outcome.
+
+Recovery checks reuse `verification_attempts`; purpose and ordered observations separate running-lease recovery from final certification. Immutable request, strategy, target, epoch, candidate, policy, receipt and artifact bindings fence terminal progress. Recovery attempts never issue final certificates or suppress final check dispatch. Migration 005 registers in the existing startup path and replaces the legacy final-only uniqueness constraint with purpose-specific indexes.
+
+A separate controller challenger reopens trusted receipt/artifact bytes from two comparable failure-to-approved-recovery-to-pass episodes. The Governor alone promotes the challenged version. Later finite judgment binds its exact lesson version and challenge digest; a fresh transactional check rejects withdrawal during an in-flight decision. Trusted contradictory failure can withdraw the promoted version. Missing or altered evidence produces a durable rejected attestation.
+
+Deterministic fixtures demonstrate the full learning decision path and reject forged/legacy terminal progress, wrong identities/policies/outcomes, prepared/expired/UNKNOWN or reused/reordered attempts, same-check attribution confusion, missing/altered artifacts, cross-episode/cohort claims, challenge replay, conflicting promotion and stale lesson use. The focused source suite exposed and repaired the PostgreSQL-truncated legacy constraint-name bug and missing durable rejection on artifact readback failure.
+
+These are local PGlite/HTTP fixtures with controlled verifier/provider inputs. They do not prove live Jev, independently executed recovery checks, real PostgreSQL multi-connection races/restarts, cloud certification, measured improvement, activation or deployment. Real PostgreSQL plus authentic runner/artifact evidence remains required before operational acceptance. Current C3 full-suite cloud evidence remains UNKNOWN after sandbox OOM. The source gate was deliberately separated from that runtime dependency so independent implementation could proceed; the earlier architecture review's runtime condition remains an acceptance requirement.
+
+PR #2 is unchanged at `8bbcfffbf631e5ad2972e34b41284198afc566e2`. No worker broker, provider call, new infrastructure or main-branch change is part of this slice.

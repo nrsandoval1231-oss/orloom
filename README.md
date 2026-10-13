@@ -8,6 +8,8 @@ Draft PR #3 adds the optional typed Jev gateway, fenced progress decisions, boun
 
 Draft PR #5 extends the trusted verifier with an offline repository suite and bounded per-file diagnostics. Source `4d1dd56` passed 75 local tests and independent review, but its real isolated run ran out of memory during `jobs.test.js` and remains UNKNOWN with zero certificates. [The diagnostic evidence](docs/evidence/c3-suite-memory/EVIDENCE.md) records exact-container measurements, retained failures and verified cleanup. Full cloud CI and the end-to-end platform remain incomplete.
 
+The evidence-learning branch implements trusted recovery observations, independent lesson challenge, Governor-controlled promotion, later exact-version use and contradiction withdrawal. Source `34727251` passed 82 local tests and independent source review. [Its acceptance record](docs/evidence/c1b-source/EVIDENCE.md) distinguishes the controlled learning fixtures from the still-required real PostgreSQL, executable verifier, cloud and provider proof. It makes no measured learning-benefit or deployment claim.
+
 ## Run locally
 
 Requires Node.js 24. Copy `.env.example` to `.env` only in a private local working directory and set a long random `ORLOOM_SESSION_TOKEN`; the checked-in template is intentionally blank. Install and run:

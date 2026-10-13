@@ -1,0 +1,24 @@
+{
+  "verdict": "PASS",
+  "candidate": "34727251d201fb79765a1081394d1ae7017615f3",
+  "integratedBase": "7fb97aac",
+  "scope": "Independent C1b source review only; no real PostgreSQL, production runner, live Jev, cloud CI, activation, deployment, or product completion claim",
+  "evidence": {
+    "git": "Exact candidate HEAD clean at review; diff from 7fb97aac contains the bounded learning packet, migration, contracts, Governor, challenger, adapter and focused tests.",
+    "controllerGates": "work/learning-controller-gates-2026-10-13T13-36-30-701Z.log: typecheck, clean build, 82 tests passed with zero failures/skips, foundation validation, JS and shell syntax, and diff checks exit 0.",
+    "packet": ".agent/ORL-C1B-01.md and .agent/ORL-C1B-COMPLETION.json reviewed against docs/architecture/CANONICAL_HARNESS.md and docs/FINISH_CONTRACT.md."
+  },
+  "reviewedBoundaries": [
+    "db/migrations/005_learning.sql:1-42 adds purpose-specific final/recovery attempt uniqueness, immutable recovery ordinal/target/strategy fields, unique progress-attempt binding, challenge records and one active lesson per scope. packages/contracts/src/postgres-store.ts registers migration 005 in startup. Existing rows default to final.",
+    "packages/contracts/src/sql-mission-store.ts:42-61 rejects terminal ProgressV1 and transactionally joins a terminal recovery attempt by ID to exact outcome, candidate, mission/slice/epoch, ordinal, check, target, strategy, plan, policy and head observation; lines 204-218 bind initial or previously authorized next strategy before creating that attempt. The memory store refuses trusted terminal progress and cannot issue recovery attempts.",
+    "packages/governor/src/governor.ts:22-72 reuses the existing finite runner, private capability, local-head and artifact-verification path for recovery while retaining separate final prepare/submit/certificate semantics. packages/contracts/src/sql-mission-store.ts:270-274 filters certificate readers and final dispatch by purpose so same-check recovery rows cannot certify or suppress final checks.",
+    "packages/learning/src/challenger.ts:25-84 recomputes four distinct persisted receipt/artifact observations into two comparable fail-to-pass episodes. The controller reads artifacts again and persists rejected readback attestations; promotion requires the accepted attestation under the Governor lock. Tests cover forged/mismatched attempts, altered or absent artifacts and receipts, challenge replay, and conflicting promotions.",
+    "packages/contracts/src/sql-mission-store.ts:82-119 binds a promoted lesson's ID/version/challenge/recovery-policy digest into a later comparable snapshot and action, then rechecks current promotion before judgment commit. The Jev gateway only reorders finite authorized alternatives; deterministic fallback already uses the preference. Lines 242-263 withdraw the exact bound version on a subsequent trusted contradictory FAIL, while UNKNOWN does not withdraw.",
+    "tests/recovery-learning.test.ts exercises the HTTP/PGlite fixture through promotion, later strategy authorization and contradiction withdrawal, including same-check strategy attribution, stale in-flight judgment, final dispatch after recovery and adversarial progress. Fixture runner outcomes are injected and are accurately labeled as source evidence only."
+  ],
+  "openAcceptanceGates": [
+    "Real PostgreSQL startup migration, reconnect and multi-connection serialization have not been proved by PGlite's single-process transaction gate.",
+    "Actual trusted runner and executable FAIL/PASS artifacts, live Jev/provider availability, C3 full-suite exact-candidate cloud certification, promotion activation and measured learning benefit remain open. PR2 and its broker are unchanged."
+  ],
+  "findings": []
+}

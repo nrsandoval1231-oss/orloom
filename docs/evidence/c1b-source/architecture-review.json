@@ -1,0 +1,29 @@
+{
+  "verdict": "PASS",
+  "scope": "Read-only pre-implementation architecture challenge of the C1b trusted recovery lesson loop; serial C3 cloud acceptance remains a prerequisite",
+  "revisedDecisionSha256": "0cf97658e4f3ed996dce773a45a3b13a7ff668964179a372c8d9c415a7e27e7c",
+  "direction": "Proceed with the revised one-Luna packet only after the C3 cloud dependency is satisfied. Keep one common verification_attempts ledger and the proposed promotion-to-later-use-to-withdrawal loop; no new framework or authority is needed.",
+  "resolvedCorrections": [
+    {
+      "id": "C1B-01",
+      "issue": "The required exact lesson ID/version/challenge digest cannot be represented in DecisionSnapshotV1.lessonBindings as currently typed; packages/judgment/src/types.ts owns that type but is omitted from the allowed implementation files. Its existing policyDigest is the recovery policy digest, not the lesson challenge digest.",
+      "evidence": "packages/judgment/src/types.ts defines lessonBindings as id, lessonVersion, policyDigest, strategyId; the decision packet requires exact lesson ID/version/digest in the snapshot and action.",
+      "correction": "The revised packet now allows packages/judgment/src/types.ts and binds the immutable accepted challenge digest separately from recovery policyDigest in snapshots and committed Governor actions."
+    },
+    {
+      "id": "C1B-02",
+      "issue": "Adding only purpose and ordinal to verification_attempts cannot prove that a recovery receipt was executed for the target check and strategy asserted by later worker progress. The trusted request/receipt binds checkId and candidate but has no targetCheckId or strategyId; approved strategies can share a checkId.",
+      "evidence": "packages/contracts/src/verification.ts TrustedCheckRequestV1 fields and packages/contracts/src/mission.ts ProgressV1/TrustedStrategyPolicy separate strategyId, targetCheckId, and checkId.",
+      "correction": "The revised packet now requires a Governor-authored initial or previously authorized next strategy and immutable target_check_id and strategy_id (or equivalent canonical binding) on the recovery attempt row, joined by progress, challenge, and contradiction."
+    },
+    {
+      "id": "C1B-03",
+      "issue": "A recovery attempt in the common table can suppress later final verification dispatch for the same mission/slice/epoch/check because awaitingVerification currently treats any attempt as final.",
+      "evidence": "packages/contracts/src/sql-mission-store.ts awaitingVerification NOT EXISTS verification_attempts predicate lacks purpose filtering.",
+      "correction": "The revised packet now requires purpose='final' on final dispatch reads and an audit of other final-only attempt/certificate queries, while preserving default-final migration and final uniqueness. Recovery rows never create certificates."
+    }
+  ],
+  "acceptedArchitecture": "A trusted running-lease check may persist terminal FAIL/PASS/UNKNOWN receipts and artifact digests in verification_attempts without issuing a recovery certificate. Two distinct comparable fail-to-authorized-strategy-to-pass episodes can produce a candidate; a separate controller-identified challenger verifies the four actual attempts/artifacts and commits an immutable challenge; the Governor alone promotes a version, places its exact binding in a later fresh decision snapshot, rechecks it after Jev or deterministic selection, commits an authorized changed strategy, and withdraws that version on a later trusted contradictory FAIL. Worker status is never evidence authority, and UNKNOWN cannot promote or withdraw.",
+  "authorityBoundary": "The challenger must run under an authenticated controller identity distinct from worker lease and verifier submission capability; a free-form reviewer string, owner-echoed report, or provider-local Jev simulation cannot establish independent challenge or live-provider availability.",
+  "runtimeBoundary": "The C1b build is not READY for acceptance until exact C3 serial suite cloud proof passes or the controller explicitly revises that graph dependency. Real PostgreSQL and actual trusted-runner/artifact FAIL/PASS checks plus later selection and withdrawal remain required; local tests alone cannot certify the loop."
+}
