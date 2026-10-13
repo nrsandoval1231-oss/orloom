@@ -45,15 +45,27 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   const mission=await store.getMission(command.missionId);
   const slice=mission?.slices.find(item=>item.id===command.sliceId);
   if(!mission||!slice||!mission.plan?.approvedAt||slice.status!=="verified"||slice.leaseEpoch!==command.leaseEpoch||slice.candidateSha!==command.integratedSha||canonicalJson([...slice.checks].sort())!==canonicalJson([...policy.checkIds].sort()))throw new MissionConflictError("Delivery does not match a verified, approved integrated slice");
-  for(const reference of slice.evidenceRefs){
-    const match=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
-    if(!match)throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence");
-    const bytes=await authority.artifacts.get("sha256/"+match[1]);
-    if(hash(bytes)!==match[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");
-  }
   const checkIds=[...policy.checkIds].sort();
   const integration=await store.getIntegratedIntent(command.missionId,command.sliceId,command.leaseEpoch);
   if(!integration||integration.state!=="integrated"||integration.observedIntegrationSha!==command.integratedSha||integration.candidateSha!==command.integratedSha||integration.treeSha!==command.treeSha||integration.reviewArtifactId!==command.reviewArtifactId||integration.reviewArtifactDigest!==command.reviewArtifactDigest||canonicalJson([...integration.requiredCheckIds].sort())!==canonicalJson(checkIds))throw new MissionConflictError("Integrated intent does not retain the exact commit, tree, review, and check set");
+  const integrationMarker=`integration:${integration.observedIntegrationSha}`;
+  const reviewMarker=`review:${integration.reviewArtifactDigest}`;
+  const seenMarkers=new Set<string>();
+  for(const reference of slice.evidenceRefs){
+    const match=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
+    if(match){
+      const bytes=await authority.artifacts.get("sha256/"+match[1]);
+      if(hash(bytes)!==match[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");
+      continue;
+    }
+    if(reference===integrationMarker||reference===reviewMarker){
+      if(seenMarkers.has(reference))throw new MissionConflictError("Integrated slice contains duplicate C4 attribution metadata");
+      seenMarkers.add(reference);
+      continue;
+    }
+    throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution");
+  }
+  if(!seenMarkers.has(integrationMarker)||!seenMarkers.has(reviewMarker))throw new MissionConflictError("Integrated slice lacks exact durable C4 attribution markers");
   if(await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration ref moved after integration");
   const inspected=await authority.integrator.inspect({expectedRefSha:integration.expectedIntegrationSha,candidateSha:command.integratedSha,scopes:slice.scopes});
   if(inspected.candidateSha!==command.integratedSha||inspected.treeSha!==command.treeSha||await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration tree changed after integration");

@@ -76,7 +76,7 @@ export interface MissionStore {
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;
   createIntegrationIntent?(request:IntegrationRequestV1,treeSha:string,certificateIds:string[],certificateDigests:string[],binding:{planDigest:string;policyDigest:string}):Promise<IntegrationIntentV1>;
   getIntegrationIntent?(request:IntegrationRequestV1):Promise<IntegrationIntentV1|null>;
-  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string):Promise<MissionSlice>;
+  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string,binding:{planDigest:string;policyDigest:string}):Promise<MissionSlice>;
   markIntegrationUnknown?(request:IntegrationRequestV1,observedSha:string|null,reason:string):Promise<void>;
   getIntegratedIntent?(missionId:string,sliceId:string,leaseEpoch:number):Promise<IntegrationIntentV1|null>;
   createDeliveryIntent?(request:DeliveryRequestV1):Promise<DeliveryIntentV1>;

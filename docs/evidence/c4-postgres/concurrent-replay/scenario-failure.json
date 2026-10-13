@@ -1,0 +1,5 @@
+{
+  "scenario": "post-cas-reconnect-duplicates",
+  "errorCode": "MissionConflictError",
+  "message": "A required final trusted certificate is missing or stale"
+}

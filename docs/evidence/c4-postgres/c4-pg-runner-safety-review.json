@@ -1,0 +1,36 @@
+{
+  "reviewType": "pre-execution source and safety review",
+  "verdict": "FIX_BEFORE_EXECUTION",
+  "runnerSafety": "PASS_WITH_VERSION_GUARD_HARDENING",
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "sourceCheckout": "work/orloom-c4-proof-source; clean HEAD verified",
+  "scenarioSha256": "fd8b168cc40322d725fbfc99ae770d43a87facbfa8fca60f0fb898bb52828d8",
+  "syntax": "node --check passed for runner and frozen scenario",
+  "compiledManifest": "51 listed JavaScript hashes matched existing source dist files; complete inventory check remains for authorized runner execution",
+  "executionBlockers": [
+    {
+      "severity": "P1",
+      "location": "work/c4-postgres-proof/scenario.mjs:25,76",
+      "finding": "The scenario destructures Pool from the ESM namespace of pg/lib/index.js. That file is CommonJS and exports `new PG(...)`, with Pool assigned dynamically to the instance. Node's static CommonJS named-export detection is not a reliable way to expose Pool, so new Pool may fail before any proof runs.",
+      "repair": "Read Pool from the CommonJS default export: `const pgModule = await import(...); const { Pool } = pgModule.default;` and verify it is a function. Keep the module path bound to the frozen source checkout."
+    },
+    {
+      "severity": "P2",
+      "location": "work/c4-postgres-proof/scenario.mjs:249-255",
+      "finding": "Both concurrent replay callers use services bound to reconnectPool. The original pool remains alive but does not race, so the run does not prove replay across two independent SQL pools as requested.",
+      "repair": "Use one service/store on the original pool and one on reconnectPool for Promise.all, retaining both verified results and the one CAS/one integration-event assertions."
+    }
+  ],
+  "runnerObservations": [
+    "run.mjs checks explicit authorization, exact clean HEAD, full dist JavaScript inventory and hashes, installed dependency/binaries, and loopback 15437 availability before cluster creation.",
+    "The password and connection file are written after the generated runtime root has inheritance removed and owner access granted; credentials are not emitted by the runner. Initial evidence directory creation precedes ACL tightening but contains no credential at that point.",
+    "The runner creates a unique disposable cluster and stops only after marker, data path, PID, port, and loopback-address checks. Failed identity reconciliation remains UNKNOWN and does not trigger an unverified stop. No recursive cleanup occurs.",
+    "The installed postgres.exe file metadata currently reports 18.6. The runner records `postgres --version` after startup but does not assert 18.6 before initdb; add an explicit version gate if this proof may be rerun after the installed binary changes."
+  ],
+  "scenarioObservations": [
+    "Each case uses its own bare fixture repository and distinct owner/c4-<case> identity; the positive released child is claimed and completed to awaiting_verification before the next case.",
+    "The held connection check proves two distinct PostgreSQL backend PIDs. The final mutation hooks assert exactly one injection and no integrated event or dependent release.",
+    "Controlled receipt and review fixtures are labeled in the scenario and packet; this cannot establish authentic verifier or independent-review validity."
+  ],
+  "reviewLimit": "Read, syntax, metadata, and hash checks only. No PostgreSQL cluster, scenario, provider, or external service was started."
+}

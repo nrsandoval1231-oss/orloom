@@ -1,0 +1,59 @@
+{
+  "packet": "C4-PG-LOCAL-01-scenario-reconstruction",
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "execution": "CURRENT_HASH_NOT_EXECUTED; PRIOR_SCENARIO_HASH_FAILED_DURING_FIRST_GIT_CLONE",
+  "timing": {
+    "startedAtUtc": "UNKNOWN",
+    "finishedAtUtc": "2026-10-13 22:44:21 UTC",
+    "modelConfiguration": "UNKNOWN",
+    "tokenUsage": "UNKNOWN"
+  },
+  "files": {
+    "scenario.mjs": {
+      "sha256": "DBEB8980F69B6A19B20DEC20874178A70BD3C2EA3E2B9E38E8301D6E6471E2C3",
+      "role": "Scenario corrections: default namespace pg Pool; independent original/reconnected stores; compact per-case fixture paths with a measured Git object-path bound; bounded local Git stderr diagnostics"
+    },
+    "failed-preparation/source-builder-reconstruction.mjs": {
+      "sha256": "4E177704D65DC259AFC247B775DFA39A29D3682CFFCE65C12F9267B9553A217B",
+      "role": "Byte-identical preserved copy of the pre-reconstruction scenario"
+    },
+    "failed-preparation/source-builder-reconstruction-v2.mjs": {
+      "sha256": "B0133CF16767CCE15B5D0A74BF8BB69ECA2A5D51EEBDF5681B2661BBA55B59D9",
+      "role": "Byte-identical preserved copy of the scenario before this bounded correction"
+    },
+    "failed-preparation/source-builder-reconstruction-v3.mjs": {
+      "sha256": "FD8B168CC40322D725FBFC99AE770D43A87FACCFBA8FCA60F0FB898BB52828D8",
+      "role": "Byte-identical preserved copy of the scenario before the final pre-execution correction"
+    },
+    "failed-preparation/source-builder-reconstruction-v4.mjs": {
+      "sha256": "78D77C5DB5BC093C0B72AA403F65BA3B76B46E6340D2272816504907AE7141A9",
+      "role": "Byte-identical preserved copy of the scenario before compact-path/Git-diagnostic repair"
+    }
+  },
+  "validation": [
+    { "command": "node --check work/c4-postgres-proof/scenario.mjs", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/scenario.mjs -Algorithm SHA256", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/failed-preparation/source-builder-reconstruction-v2.mjs -Algorithm SHA256", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/failed-preparation/source-builder-reconstruction-v3.mjs -Algorithm SHA256", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/failed-preparation/source-builder-reconstruction-v4.mjs -Algorithm SHA256", "exitCode": 0 },
+    { "command": "node --input-type=module -e pg default namespace Pool constructor preflight (no connection)", "exitCode": 0 },
+    { "command": "node --input-type=module -e compact fixture object-path length guard against retained runtime root", "exitCode": 0 }
+  ],
+  "scenarioCoveragePrepared": [
+    "Apply migrations 001 through 006 to the runner's fresh PostgreSQL database and hold distinct pooled backend connections concurrently.",
+    "Ordinary exact candidate integration, one integrated event, and dependent release; fixture claims assert returned grant belongs to the just-created mission and parent slice.",
+    "Create durable pending intent after actual bare-Git CAS interruption; reconnect with a new pg Pool, SqlMissionStore, coordinator, and governor; concurrent exact duplicate calls are split between the original and reconnected store/governor paths, both resolve verified with one measured ref advance and one integration event.",
+    "After a separate pending post-CAS intent, move the actual fixed bare-Git integration ref to a different third SHA; exact retry marks intent UNKNOWN, leaves slice unverified and dependent blocked, and later retry is rejected.",
+    "Separate pending cases mutate persisted final request verifierImageDigest, inputBundleDigest, or policyVersion through PostgreSQL at the final readback hook; each is rejected with no event or dependency release.",
+    "Separate pending case mutates parent dependency state with an actual PostgreSQL query at final readback; finalization rejects and releases no child; every expected race mutation asserts its readback hook executed exactly once.",
+    "After positive cases, the supported claim/complete path leases only the fixture's released child and moves it to awaiting_verification, preventing global ready-work claims from contaminating the next scenario without asserting a fabricated verification result.",
+    "Main scenario failures write scenario-failure.json (or a unique sibling if one already exists), with scenario name, bounded code/message, and generated database password redaction; local Git process stderr tail is added in a bounded/redacted field; the original error is rethrown.",
+    "Fixture repositories and retained review bytes use short numbered physical paths below C4_PG_RUNTIME/f (or dirname(C4_PG_EVIDENCE)/f), while mission repository identities retain the logical scenario names; the longest representative bare/source object path is checked at runtime against 230 characters before fixture creation.",
+    "Git subprocesses have a timeout and bounded output; pools and held clients close in finally paths."
+  ],
+  "trustAndLimitations": [
+    "Runner receipts and retained review artifacts are controlled fixtures passed through production coordinator interfaces; no C3 cloud/runtime, CI, provider, or authentic independent-review result is claimed.",
+    "The preserved prior scenario hash 78d77c5 was executed by the controller against local PostgreSQL: migrations and three distinct connections passed, then the first ordinary-positive fixture failed during git clone with exit 128 before integration assertions. The current repaired scenario hash was not executed; root review and explicit run authorization remain required.",
+    "Database schema is applied directly to the runner-created fresh cluster; this helper does not claim validation of production database startup wiring."
+  ]
+}

@@ -47,6 +47,7 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
   await sql.query("UPDATE mission_slices SET status='verified',lease_epoch=1,candidate_sha=$3 WHERE mission_id=$1 AND id=$2",[mission.id,command.sliceId,sha]);
   await sql.query("UPDATE missions SET status='verified' WHERE id=$1",[mission.id]);
   await sql.query("INSERT INTO mission_integration_intents(mission_id,slice_id,lease_epoch,request,plan_digest,policy_digest,tree_sha,certificate_ids,certificate_digests,review_digest,state,observed_integration_sha) VALUES($1,$2,1,$3::jsonb,$4,$5,$6,$7::jsonb,$8::jsonb,$9,'integrated',$10)",[mission.id,command.sliceId,canonicalJson(integrationRequest),planDigest(plan),policy.policyDigest,tree,canonicalJson([certificate.certificateId]),canonicalJson([hash(canonicalJson(certificate))]),command.reviewArtifactDigest,sha]);
+  await sql.query("UPDATE mission_slices SET evidence_refs=$2::jsonb WHERE mission_id=$1 AND id=$3",[mission.id,canonicalJson([`integration:${sha}`,`review:${command.reviewArtifactDigest}`]),command.sliceId]);
   const artifacts=new Map<string,Buffer>([[ref(out).key,out],[ref(err).key,err],[ref(manifest).key,manifest]]);
   const store=Object.create(sqlStore) as MissionStore;
   store.getIntegratedCertificate=async(_m,_s,_e,id)=>id===certificate.checkId?certificate:null;
@@ -91,6 +92,23 @@ test("positive delivery persists one exact Check GET readback and an open unmerg
   const f=await setup();try{
     const result=await deliver(f);assert.equal(result.state,"pr_created");assert.equal(result.appId,policy.appId);assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);assert.equal(f.counts().checkReads,1);assert.equal(f.counts().prReads,1);
     const replay=await deliver(f);assert.equal(replay.state,"pr_created");assert.deepEqual(f.counts(),{checkPosts:1,prPosts:1,checkReads:2,prReads:2});
+  }finally{await f.db.close();}
+});
+
+test("delivery rejects duplicate, mismatched, and unknown C4 metadata before any external effect",async()=>{
+  const f=await setup();
+  try{
+    const setRefs=async(refs:string[])=>f.db.query("UPDATE mission_slices SET evidence_refs=$2::jsonb WHERE mission_id=$1 AND id=$3",[f.missionId,canonicalJson(refs),command.sliceId]);
+    const rejectRefs=async(refs:string[])=>{await setRefs(refs);await assert.rejects(deliver(f),/C4 attribution|content-addressed|artifact unavailable/);assert.deepEqual(f.counts(),{checkPosts:0,prPosts:0,checkReads:0,prReads:0});};
+    const integrationRef=`integration:${command.integratedSha}`,reviewRef=`review:${command.reviewArtifactDigest}`;
+    await rejectRefs([integrationRef,integrationRef,reviewRef]);
+    await rejectRefs([integrationRef,reviewRef,reviewRef]);
+    await rejectRefs([`integration:${"f".repeat(40)}`,reviewRef]);
+    await rejectRefs([integrationRef,`review:${"f".repeat(64)}`]);
+    await rejectRefs([integrationRef,reviewRef,"worker:asserted-verified"]);
+    await rejectRefs([integrationRef,reviewRef,`sha256/${"a".repeat(64)}`]);
+    await setRefs([integrationRef,reviewRef]);
+    assert.equal((await deliver(f)).state,"pr_created");
   }finally{await f.db.close();}
 });
 

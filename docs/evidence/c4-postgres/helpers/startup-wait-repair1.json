@@ -1,0 +1,45 @@
+{
+  "packet": "C4-PG-LOCAL-01-runner-startup-wait-repair1",
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "sourceExecution": "NOT_RUN_BY_BUILDER",
+  "timing": {
+    "startedAtUtc": "UNKNOWN",
+    "finishedAtUtc": "2026-10-13 22:40:07 UTC",
+    "modelConfiguration": "UNKNOWN",
+    "tokenUsage": "UNKNOWN"
+  },
+  "files": {
+    "run.mjs": {
+      "sha256": "946AEDDE9C39D9D2D27261A09AE7EF469DC62173BA70982EBC63E0164B311D1A",
+      "role": "Bounded pg_ctl startup/shutdown subprocess wait repair and startup-phase failure recording"
+    },
+    "failed-preparation/run-before-startup-wait-repair.mjs": {
+      "sha256": "B450FAB994691429D8B6C5EA407C1221A00155E5E94997F7FC0A287AF67EC14B",
+      "role": "Byte-identical preserved pre-repair runner"
+    }
+  },
+  "triggerEvidence": {
+    "evidenceDirectory": "runtime/1791930947205-067ddc64-ac07-49ee-aa78-168ad8b6ee1f/evidence",
+    "outcome": "FAIL",
+    "cleanup": "STOPPED_OWNED_CLUSTER",
+    "postgresReadyAtUtc": "2026-10-13T22:35:51.955Z",
+    "runnerFinishedAtUtc": "2026-10-13T22:36:31.949Z",
+    "interpretation": "The database became ready but no preflight or scenario evidence was produced. The 35-second runner deadline plus 5-second termination wait, with successful owned cleanup, supports an inherited-pipe close wait during pg_ctl start; this is a diagnosis, not proof of database behavior."
+  },
+  "changes": [
+    "Captured commands retain stdout/stderr capture and close-event completion semantics.",
+    "pg_ctl start and stop use ignored stdio and wait for the spawned command exit code, avoiding inherited daemon pipe handles while retaining bounded deadlines.",
+    "pg_ctl timeout terminates only its direct child, never recursively taskkills a possibly started PostgreSQL process; ambiguous cleanup remains UNKNOWN behind the existing private ownership marker and PID/path/port/loopback checks.",
+    "Startup rejects an unexpected preexisting postmaster.pid, verifies the newly created PID-file data path/port/loopback identity, and confirms the loopback listener within a bounded retry window before writing connection credentials.",
+    "The final evidence manifest now records failedPhase plus bounded failure code/message without stack or environment data."
+  ],
+  "validation": [
+    { "command": "node --check work/c4-postgres-proof/run.mjs", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/run.mjs -Algorithm SHA256", "exitCode": 0 },
+    { "command": "Get-FileHash work/c4-postgres-proof/failed-preparation/run-before-startup-wait-repair.mjs -Algorithm SHA256", "exitCode": 0 }
+  ],
+  "limitations": [
+    "No PostgreSQL runner/database execution was performed after this repair; root must review and execute under the original authorization contract.",
+    "This addresses the observed launcher wait/diagnostic gap only and does not assert scenario or database behavior PASS."
+  ]
+}

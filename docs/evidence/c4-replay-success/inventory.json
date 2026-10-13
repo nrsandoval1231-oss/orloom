@@ -1,0 +1,55 @@
+{
+  "candidate": "2a0260614585ff14d07f24e7b1d72be57b2061a2",
+  "files": [
+    {
+      "file": "manifest.json",
+      "sha256": "13e65e66b849536f0c493acc353900503ad10ba1aed77a502d959aa54c7374ff",
+      "bytes": 350
+    },
+    {
+      "file": "preflight.json",
+      "sha256": "84c3d4c19d70d56bc2bb79c6d186926c7bcfb186f04ca73155f56b644c66d921",
+      "bytes": 5919
+    },
+    {
+      "file": "runner.jsonl",
+      "sha256": "a75b9ac7933f5db30424f8e1c993d3f02fb9e7ab928888da6483e436ff1b8ac2",
+      "bytes": 208
+    },
+    {
+      "file": "scenario.jsonl",
+      "sha256": "2a72bbda91fc3417283cb46c2b3a4553ba4ff5060a09baa6884a773d563fab5a",
+      "bytes": 3007
+    },
+    {
+      "file": "scenario-summary.json",
+      "sha256": "9ba446b549824d38923c006514833bf1a6daa60c68f021dae1a23ab2354e26fe",
+      "bytes": 4647
+    },
+    {
+      "file": "postgres.log",
+      "sha256": "9828ac720d7f43fe1b3ff6cef17e5a1631890477f32d1a794250ceaa1cb4da93",
+      "bytes": 1213
+    },
+    {
+      "file": "source-review.json",
+      "sha256": "33c611da03194e18be764f06a122110c377ecceec490f063ea16d105d84484c1",
+      "bytes": 1612
+    },
+    {
+      "file": "runtime-review.json",
+      "sha256": "4d35029c379df504213ec0abd9bf2fede097ed40aef6d519511bfef7329f6dbb",
+      "bytes": 1908
+    },
+    {
+      "file": "controller-gates.log",
+      "sha256": "3b39a7c4839a83270a29db50ae5b15ce0dd09b0025096dbd1001b7f67c31c1d6",
+      "bytes": 12420
+    },
+    {
+      "file": "compiled-manifest.json",
+      "sha256": "7268aa70b3568e48ce322c754a576933f4cf4516b15e4a73addf83087062095c",
+      "bytes": 6007
+    }
+  ]
+}

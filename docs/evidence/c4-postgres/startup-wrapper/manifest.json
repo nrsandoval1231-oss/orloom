@@ -1,0 +1,9 @@
+{
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "cleanup": "STOPPED_OWNED_CLUSTER",
+  "outcome": "FAIL",
+  "startedUtc": "2026-10-13T22:35:47.255Z",
+  "finishedUtc": "2026-10-13T22:36:31.949Z",
+  "execution": "EXECUTED",
+  "limitations": "Controlled fixtures only."
+}

@@ -1,0 +1,27 @@
+{
+  "review": "C4-REPLAY-RACE-01-RUNTIME",
+  "verdict": "PASS_SOURCE_AND_DATABASE_BEHAVIOR_ONLY",
+  "candidateSha": "2a0260614585ff14d07f24e7b1d72be57b2061a2",
+  "sourceReview": "work/c4-replay-review-2a02606.json",
+  "runtimeEvidence": "work/c4-postgres-proof/runtime/1791932633798-6e272f05-7fe1-45de-b526-f0ca30464367/evidence",
+  "findings": [],
+  "identity": {
+    "gitHead": "2a0260614585ff14d07f24e7b1d72be57b2061a2",
+    "worktree": "clean",
+    "compiledManifest": "compiled-2a02606.json",
+    "compiledJsFiles": 52,
+    "hashMismatchesAgainstCompiledAndPreflight": 0,
+    "missingOrExtraCompiledJs": 0,
+    "runHelperSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "scenarioHelperSha256": "dbeb8980f69b6a19b20dec20874178a70bd3c2ea3e2b9e38e8301d6e6471e2c3"
+  },
+  "databaseProof": [
+    "PostgreSQL 18.6 started on owned loopback cluster; six migrations applied and separate held backend PIDs observed.",
+    "Ordinary exact integration produced verified parent, ready child, and one integration event.",
+    "Post-CAS recovery through a new SQL pool with two concurrent exact callers returned verified results with one successful ref advance, one integrated event, and ready child.",
+    "Unexpected third ref marked pending intent UNKNOWN; retry rejected with parent awaiting and child blocked on dependency.",
+    "Final verifier image, input bundle, policy version, and dependency mutations each rejected finalization with zero integration events and no child release.",
+    "Manifest reports PASS_DATABASE_BEHAVIOR_ONLY and STOPPED_OWNED_CLUSTER; runner log records scenario_passed then finished; PostgreSQL log records clean shutdown."
+  ],
+  "boundary": "Controlled receipt/review fixtures prove only local database and bare-Git behavior. No authentic CI, independent external review, provider, deployment, or parent Finish Contract completion is claimed."
+}
