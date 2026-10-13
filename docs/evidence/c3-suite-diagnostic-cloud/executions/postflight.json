@@ -1,0 +1,8 @@
+{
+  "command": "test ! -e /var/lib/orloom/verifier/state && flock -n /run/orloom-verifier-lock/slot.lock /usr/bin/true && test -z \"$(docker ps -aq --filter label=orloom.packet=ORL-C3)\" && docker inspect --format \"{{.Id}}|{{.State.Status}}|{{.State.StartedAt}}|{{.RestartCount}}|{{.HostConfig.Runtime}}\" 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+  "startedUtc": "2026-10-13T10:50:47.607Z",
+  "finishedUtc": "2026-10-13T10:50:49.597Z",
+  "exit": 0,
+  "stdout": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67|running|2026-10-12T23:51:46.164222792Z|0|runc\n",
+  "stderr": ""
+}

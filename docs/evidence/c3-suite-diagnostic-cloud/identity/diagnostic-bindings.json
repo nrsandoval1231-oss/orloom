@@ -1,0 +1,10 @@
+{
+  "baseSha": "691d36d9a625ba17e6366d6ec7ca15130a5ecf18",
+  "candidateSha": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+  "approvedRef": "refs/heads/feat/trusted-verification-suite",
+  "sourceManifestSha256": "581fe76db816406d2dda86d921128eb9bdbdc5785768d0a4eff4b14a91b4c674",
+  "runtimePayloadSha256": "deada7f5accb35261e93db178fc91bea69db6ca4a6bdd33d1f4a8f7573d64d9f",
+  "image": "sha256:3845c569b8d60ed81fdd676eea1066d3b7895d31388a6528214239b184dbc357",
+  "imageDigest": "3845c569b8d60ed81fdd676eea1066d3b7895d31388a6528214239b184dbc357",
+  "protectedContainerId": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67"
+}

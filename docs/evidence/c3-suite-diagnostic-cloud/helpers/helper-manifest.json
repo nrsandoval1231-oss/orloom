@@ -1,0 +1,17 @@
+{
+  "format": "orloom.c3-suite-diagnostic.helpers.v1",
+  "sourceCandidate": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+  "sourceManifestSha256": "581fe76db816406d2dda86d921128eb9bdbdc5785768d0a4eff4b14a91b4c674",
+  "files": {
+    "README.md": "c8d54f9f849099dd55017c001ebd42e4df11b0e0d52ad5f8877ee8a256d126f9",
+    "stage-diagnostic.sh": "eb7d58900e634c9d42dbbacd3a31013293f67b387efde283a75eb26738327d06",
+    "build-image.sh": "6d5b536bd2c401075756bfcc2c0c4107fcd4fd935903358a888deee9ce4817a8",
+    "bind-image.sh": "475b6573296db5e4448a5411446f37bb1aa33480513a11f53de21e881b427807",
+    "run-diagnostic.mjs": "ef988ab3ae67871bcb7c2f0d2d3d847d750640297affa81901a3eaa4fc01054d",
+    "run-diagnostic.sh": "92293951cd30b3d7946990d55dc8eef56017b6f87db9822122c70e29082402b0",
+    "prepare-local-transfer.mjs": "aecb4360981a9d9327556236e49f152d9e17625e5fc58843c50a7c5196e44237",
+    "verify-local-transfer.mjs": "9ec282ff3caeb5def2bfe3bae2e44299f05ad750f9ad936de0c0f2b479c09463"
+  },
+  "omittedDraftHistory": ["launch-diagnostic.sh", "cleanup-exact-cid.sh"],
+  "validation": ["bash -n selected shell helpers", "node --check selected modules", "real local extractCandidateBundle against staged bare bundle"]
+}
