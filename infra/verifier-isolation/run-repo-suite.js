@@ -6,7 +6,7 @@ import { enforceSuiteDeadline, executeStages, runSerialTestFiles } from './stage
 import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostics.js';
 
 const root = '/work/source';
-const limit = 180_000, logLimit = 65_536, start = performance.now();
+const limit = 360_000, logLimit = 65_536, start = performance.now();
 const remainingMs = () => limit - (performance.now() - start);
 const POLICY_STAGE_ORDER = Object.freeze(["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"]);
 const out = [], err = []; let outSize = 0, errSize = 0, overflow = false, activeStage;

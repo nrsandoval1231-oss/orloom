@@ -1,0 +1,7 @@
+{
+  "format": "orloom-c3-acceptance-runtime-v1",
+  "candidate": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceManifestSha256": "09f99677a6dfbf7f060a65180671cadf243182c62b1bf372e547d544c1fbceeb",
+  "fileCount": 152,
+  "payloadManifestSha256": "c60c8a0b82a41166ad949dd9f3fea5e6e8fa314438c1e9e206459922b30f9ff8"
+}

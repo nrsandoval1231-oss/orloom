@@ -1,12 +1,13 @@
-# ORL integrated C1b/C2/PR7 source packet
+# ORL integrated C1b/C2/PR7/C3 source packet
 
-Node: integrated-source-stage-1 (serialized source integration)
+Node: integrated-source, serial merge stages 1 and 2.
 
-Repository/worktree: `work/orloom-integrated`, branch `feat/integrated-harness`.
-Base: C2 evidence head `a4064ebe1073562991d220722944b58763a94bda`. Active merge head: PR7 `aa63a12736e82e145c0e162145683823edcd39e4`.
+Repository/worktree: `work/orloom-integrated`, branch `feat/integrated-harness`. Stage-one integration commit: `c5d39375dbdc0928841c1f3d5b43686eddc3cf86`; stage-two C3 deadline source head being merged: `6716d2520eff2d1e06fb7925f98d634275fd43ab`.
 
-Objective: resolve the approved PR7 merge while preserving C2 scheduler argument positions, PR7's default-closed learning activation, and automatic SQL/contract changes from both parents. Append learning activation after existing scheduling-adapter positions; update PR7 fixtures and add a behavioral regression proving both dependencies operate independently.
+Objective: retain C1b learning authority, C2 scheduler lease/claim behavior, PR7 fail-closed activation and durable impact evidence, and C3's bounded syntax/full-suite verifier behavior through serialized integration. Resolve only the approved `.agent/CURRENT_STATE.md` conflict, reconcile state and graph, verify content against both parents, and add no parallel execution authority.
 
-Allowed: integrated merged source, affected tests, compact packet/completion, and merge evidence/state reconciliation in this worktree only. Excluded: C3 integration until controller-frozen source arrives; production activation/configuration, worker protocol, migrations, provider/host calls, commits, push, PR edits, merge completion, or deployment.
+Scope: integrated branch source/evidence, affected tests, integration packet/completion, `.agent/CURRENT_STATE.md`, `.agent/WORK_GRAPH.md`. Root owns C3 merged-manifest refresh, freeze/commit, final full gates, and independent review. Do not edit root's `docs/evidence/c3-measured-source/` addition.
 
-Validation: `npm run typecheck`; `npm run build`; focused scheduling, recovery-learning, activation, and HTTP tests; `git diff --check`; inspect merged SQL/contract capabilities for both scheduling and lesson-impact methods. Local fixture evidence only. Parent controller owns exact-candidate freeze, final gates, independent review, and next C3 serial integration.
+Boundaries: keep PR2 frozen; no runtime/provider/model/host/spend/PR/deployment actions. C3 `617c378` actual 2 GiB attempt remains UNKNOWN (184,619 ms, zero certificates; no OOM observed). Deadline source `6716d252` is source-reviewed only and has no runtime attempt. Do not transfer earlier source/runtime evidence to the integrated candidate.
+
+Validation: typecheck, build, focused scheduling/recovery/activation/verifier/jobs tests, `git diff --check`, and inspect the resulting source against both merge parents. No full suite in this packet; root runs mandatory exact-candidate gates after manifest refresh and freeze.

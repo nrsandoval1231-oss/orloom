@@ -1,0 +1,10 @@
+{
+  "format": "orl-c3-suite-acceptance-transfer-v1",
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "baseSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "sourceRef": "refs/heads/feat/trusted-verification-suite",
+  "suiteManifestSha256": "09f99677a6dfbf7f060a65180671cadf243182c62b1bf372e547d544c1fbceeb",
+  "suiteFileCount": 117,
+  "bundleSha256": "75fc217f4f3c1209d04c2b6e21a22997c481fb2910fb31ad92731e8e8913b002",
+  "payloadManifestSha256": "c60c8a0b82a41166ad949dd9f3fea5e6e8fa314438c1e9e206459922b30f9ff8"
+}

@@ -1,0 +1,71 @@
+{
+  "review": "ORL-C3-JOBS-PROBE pre-execution independent review",
+  "reviewedAtUtc": "2026-10-13T13:58:16Z",
+  "verdict": "FIX",
+  "controllerDirection": "REDIRECT",
+  "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "reviewedDrafts": [
+    "work/c3-jobs-probe/jobs-probe.mjs",
+    "work/c3-jobs-probe/jobs-probe-entry.mjs",
+    "work/c3-jobs-probe/cgroup-observer.mjs",
+    "work/c3-jobs-probe/packet.json",
+    "work/c3-jobs-probe/README.md",
+    "work/c3-jobs-probe/VALIDATION.md"
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "blocking",
+      "evidence": "jobs-probe.mjs creates an independent Docker lifecycle without acquiring the canonical /run/orloom-verifier-lock/slot.lock flock. Its launcher-state file is private to this draft, so it cannot serialize with or reconcile the production verifier slot."
+    },
+    {
+      "id": "F2",
+      "severity": "blocking",
+      "evidence": "The draft clones and checks out a candidate Git bundle, then tars the checkout including .git. It verifies rows in a separate source SHA list, but does not use the reviewed raw-blob extractCandidateBundle manifest path, the image's run-check.js per-file rehash, or suite-policy admitSuiteInput. Its entry checks only package and lock hashes, so the claimed equivalent admission is false."
+    },
+    {
+      "id": "F3",
+      "severity": "blocking",
+      "evidence": "The guest entry does not symlink the image-baked /opt/orloom-verifier/node_modules or prepare/freeze /work/source as run-repo-suite.js does. The candidate transfer's precompiled payload is not the trusted clean build path used by this draft."
+    },
+    {
+      "id": "F4",
+      "severity": "blocking",
+      "evidence": "Host tar and docker-start children are not both awaited with error and close/status checks; exit only is watched for docker-start. A tar failure, spawn error, or stream failure can leave an ambiguous run classified from incomplete output."
+    },
+    {
+      "id": "F5",
+      "severity": "blocking",
+      "evidence": "The state record is written as creating before Docker create. If create returns an error after an ambiguous side effect, cid remains empty and finally removes the state record. The exact container may remain with its recovery identity lost. A missing final cgroup sample or failed event retrieval also lacks a fail-closed evidence classification."
+    },
+    {
+      "id": "F6",
+      "severity": "blocking",
+      "evidence": "The TAP success regex expects '# pass 1' after each named subtest, but the recorded parent test summary reports 3 tests and 3 passes. Output text matching is not bound to complete TAP structure or unique named outcomes."
+    },
+    {
+      "id": "F7",
+      "severity": "blocking",
+      "evidence": "The helper requires a candidate-890 image label, yet the retained executed suite image is labeled for 4d1. The draft has no reviewed image build and stage path for the new image; the transfer lacks probe-bindings.json at the expected incoming path. Static node --check evidence does not establish executable readiness."
+    },
+    {
+      "id": "F8",
+      "severity": "documentation",
+      "evidence": "packet.json abbreviates baseSha to 7fb97aa while the transfer identity and source candidate use the full 7fb97aac17dd440ec6f64f3d38fe43e527b9ce79 base."
+    }
+  ],
+  "decision": "Do not execute or repair this separate diagnostic launcher. Retain the unexecuted draft and its findings. Supersede the controller's focused-only probe gate with one fresh use of the already reviewed and executed C3 suite-memory canonical acceptance path for the materially changed single-PGlite candidate. The owner direction requires a discriminating unchanged-profile proof before completion, but does not require a distinct focused launcher. The prior run reached jobs.test.js after admission, typecheck, clean build, discovery and five completed files; this canonical path discriminates the changed jobs behavior while preserving authentic certificate and cleanup authority. This is a new candidate and attempt, never a retry or reclassification of the 4d1 UNKNOWN run.",
+  "minimalFixSet": [
+    "Controller records this REDIRECT and closes the draft focused-probe packet without execution; preserve its files and prior UNKNOWN evidence.",
+    "Use the prepared work/c3-suite-jobs/helpers packet with reviewed manifest 90ac3fe4da41cd8cdfda802b47f420da7ce43c24b7deec778fbe5c2ed145e175 and selected transfer. Stage under its fresh fixed root; bind exact candidate 890209224cd042f5367085ffdf5591b3aa92d739, full base, approved ref, 117-row Git-blob manifest cd6a3329d33c154619a194982bb5a312115e43020dc6e65964bf177336cac86b, unchanged runtime payload, and newly built digest-pinned verifier image labeled for this candidate. The 12 helper deltas are limited to seven fixed root/label substitutions and five byte-identical helpers against the executed canonical packet; any further helper-byte edit needs re-freeze and review.",
+    "Before dispatch, verify the new transfer and image bindings, dependency admission, source manifest, staged helper hashes, canonical shared lock/state, protected-container tuple, resource profile, and preflight. Exercise or reuse retained deterministic negative checks for manifest mismatch, image/candidate mismatch, busy lock, and ambiguous state; do not execute the new draft helpers to test them.",
+    "Run exactly one new canonical full-suite attempt with unchanged runsc 1 CPU, 1 GiB, 128 PID, 512 MiB /work and existing deadlines. Retain named jobs outcomes, exact-CID cgroup rows/events, complete runner/receipt/certificate decision, PostgreSQL snapshot, cleanup and protected-host postflight. If jobs or any later stage is OOM, max-event, timeout, or ambiguous, classify the new attempt UNKNOWN or FAIL from its evidence and stop for a new diagnosis; do not blind-retry."
+  ],
+  "limits": "This review authorizes no host action and does not certify a cloud repair, full suite, receipt, or product completion. Existing 4d1dd56 attempt remains UNKNOWN with zero certificates.",
+  "reviewedReuseCandidate": {
+    "path": "work/c3-suite-jobs/helpers",
+    "helperManifestSha256": "90ac3fe4da41cd8cdfda802b47f420da7ce43c24b7deec778fbe5c2ed145e175",
+    "priorCanonicalManifestSha256": "b4067c6c3c89a195d6d8aa3908795afe8fbde9ec90ab50dc51cf3f6d1f3b2518",
+    "evidence": "Independently checked all 13 new helper-manifest file byte counts and SHA-256 values; among the 12 executable/helpers, five are byte-identical to prior canonical helpers and seven differ only by fixed packet root c3-suite-memory to c3-suite-jobs and label C3-SUITE-MEMORY to C3-SUITE-JOBS. Stage bindings use exact candidate, full base, approved ref, source manifest, and unchanged runtime payload. This is static identity review only; stage/build/preflight and real host state remain to be validated."
+  }
+}

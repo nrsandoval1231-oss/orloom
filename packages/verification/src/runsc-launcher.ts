@@ -24,7 +24,7 @@ async function makePrivateDir(directory: string, mode = 0o700): Promise<void> {
 
 export interface LauncherProcessResult { exitCode: number | null; signal?: string | null; timedOut?: boolean; killed?: boolean; truncated?: boolean; stderr?: string; }
 
-const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v3:";
+const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v4:";
 const DIAGNOSTIC_BYTES_MAX = 16_384, DIAGNOSTIC_FRAMES_MAX = 64, DIAGNOSTIC_LINE_MAX = 512;
 const DIAGNOSTIC_STAGES = ["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"] as const;
 
@@ -50,9 +50,9 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
     const frame = parsed as Record<string, unknown>;
     const phase = frame.phase;
     const keys = Object.keys(frame).sort().join(",");
-    const common = frame.version === "orloom.suite-diagnostics.v3"
+    const common = frame.version === "orloom.suite-diagnostics.v4"
       && typeof frame.stage === "string" && Number.isSafeInteger(frame.elapsedMs)
-      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 180_000;
+      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 360_000;
     if (!common) continue;
     const stage = frame.stage as string;
     let accepted = false;

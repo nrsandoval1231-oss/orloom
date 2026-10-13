@@ -1,0 +1,8 @@
+{
+  "reason": "Independent review established container label inherits trusted source image; it is not the checked fixture identity. Restore sourceCandidate label assertion; request.candidateSha retains actual expectedCandidate fence.",
+  "oldManifest": "16f75be18d6074e43f3412ea307a4c3fdfdddf241ebb3ebc1cdc06af0b5185da",
+  "newManifest": "db12a335f4a16a5a5eaae5809eaff4914f6228a5a54d101c170de8cd308d01b5",
+  "priorHelper": "7ee26dc23c5ee21c07f9b5f5405a464e8cfe3ff9f79dc0a09a6eb3422b56b86c",
+  "nextHelper": "6ca92f43a5ac031edd39469540ee8c4dd36766bc8763c09540e41d813baac344",
+  "hostExecution": false
+}

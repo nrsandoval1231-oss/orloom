@@ -1,0 +1,10 @@
+{
+  "file": "jobs-after-cleanup.tar.gz",
+  "bytes": 70847,
+  "sha256": "663a85de667b9a2ac7fe8c2636ff9def587a8744594fe3081fc8c63e1f01a723",
+  "command": "tar -czf - -C /var/lib/orloom/c3-suite-jobs-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json capacity-observation.json verifier-image.id image-binding.json stage-bindings.json runtime-started.json staging/identity.txt",
+  "startedUtc": "2026-10-13T14:07:00.832Z",
+  "finishedUtc": "2026-10-13T14:07:02.020Z",
+  "exit": 0,
+  "stderr": ""
+}

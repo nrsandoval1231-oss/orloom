@@ -1,0 +1,11 @@
+{
+  "scriptName": "run-acceptance.sh",
+  "args": [],
+  "scriptSha256": "a753793840593c2d7419ec810b078d096f6c2d8ab7f238cbe25dabeffc091695",
+  "start": "2026-10-13T14:30:54.561Z",
+  "finish": "2026-10-13T14:34:13.023Z",
+  "elapsedMs": 198462,
+  "exit": 1,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-resource-executions\\2026-10-13T14-30-54-560Z-run-acceptance.sh"
+}

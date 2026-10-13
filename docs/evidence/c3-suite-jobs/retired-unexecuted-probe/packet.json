@@ -1,0 +1,32 @@
+{
+  "format": "orloom.c3.jobs-probe.packet.v1",
+  "classification": "NON_CERTIFYING_DIAGNOSTIC",
+  "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "baseSha": "7fb97aa",
+  "sourceManifestSha256": "cd6a3329d33c154619a194982bb5a312115e43020dc6e65964bf177336cac86b",
+  "fixedCompiledTest": "dist/tests/jobs.test.js",
+  "requiredTAPNames": [
+    "lifecycle fences stale completion and preserves UNKNOWN after interrupted execution",
+    "migration constrains status and lease consistency"
+  ],
+  "resourceProfile": {
+    "runtime": "runsc",
+    "cpus": 1,
+    "memoryBytes": 1073741824,
+    "memorySwapBytes": 1073741824,
+    "pids": 128,
+    "workTmpfsBytes": 536870912,
+    "tempTmpfsBytes": 16777216,
+    "network": "none",
+    "readOnlyRoot": true,
+    "hostMounts": false
+  },
+  "forbidden": [
+    "trusted-check request",
+    "receipt or certificate",
+    "PostgreSQL",
+    "normal suite runner",
+    "production policy or runner modification",
+    "host installation"
+  ]
+}

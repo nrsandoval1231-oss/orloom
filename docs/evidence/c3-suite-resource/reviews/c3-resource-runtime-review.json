@@ -1,0 +1,20 @@
+{
+  "verdict": "FIX",
+  "scope": "independent bounded actual-run evidence qualification, not product certification",
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "attemptId": "770b1ae5-84cf-4c33-962b-dbfc701f056a",
+  "result": "UNKNOWN; zero certificates; full-suite acceptance failed",
+  "evidence": [
+    "work/suite-resource-executions/resource-observation-summary.json binds exact candidate, image a0b779d075c95fba63d4fb365935be8d498c56025e8547d4243e80b2484ba319, and runsc container cecca49b61aa3d6a1dced32b1f98954bb8004129d9427273d84c35252aa6116e. The persisted attempt receipt was UNKNOWN after 184619 ms.",
+    "The exact-CID cgroup stream retained 596 samples, peak memory.current 1278328832 bytes under the 2147483648-byte cap; sampled oom and oom_kill counters stayed zero. Exact Docker events include die(exit 70) and destroy, with no observed oom event. This supports a deadline rather than a repeat 1 GiB-cap OOM in this run, but does not prove the allocating guest path or all possible unobserved peaks.",
+    "Advisory frames show admission 354 ms, typecheck 21066 ms, clean build 21281 ms, then ten test files completed including jobs.test.js 13162 ms, missions.test.js 26093 ms, and recovery-learning.test.js 74320 ms. File 11 verification-certification.test.js ended UNKNOWN at its remaining 15004 ms; the node-tests stage ended UNKNOWN at 137315 ms. Remaining test files and later stages were not reached.",
+    "The read-only PostgreSQL snapshot at work/resource-before-cleanup-extracted/evidence/acceptance-snapshot.json has exactly one attempt for this candidate, outcome UNKNOWN, receipt UNKNOWN, certificatePresent false, and an empty certificates array. No promotion or acceptance may be inferred from the ten completed files.",
+    "After-cleanup archive work/suite-resource-executions/resource-after-cleanup.tar.gz is SHA-256 ea34545c94284618cd348496f77c6a410fa142bab4689ce5c888945293c6d88d. Postflight exit 0 confirms absent exact packet resources, DSN and verifier state, free flock, and protected container 5825fae... running with unchanged start/restart/runtime tuple."
+  ],
+  "limits": [
+    "The advisory diagnostics are not certificate authority; the actual database attempt remains UNKNOWN.",
+    "This run does not prove that 2 GiB suffices for the remaining tests or an expanded C1b/C2 candidate.",
+    "All earlier UNKNOWN attempts remain unchanged; no old attempt should be redispatched."
+  ],
+  "nextDirection": "One new exact candidate with policy-bound measured deadline replan, local gates and independent review, followed by one conditional full run; no memory increase or fixture-test weakening."
+}

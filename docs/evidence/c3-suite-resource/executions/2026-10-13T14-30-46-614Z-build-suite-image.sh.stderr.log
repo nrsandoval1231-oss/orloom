@@ -1,0 +1,53 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.22kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 230B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [source 1/1] FROM ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#5 resolve ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304 0.0s done
+#5 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 71.69kB 0.0s done
+#4 DONE 0.0s
+
+#6 [stage-1 5/7] COPY infra/verifier-isolation/run-check.js infra/verifier-isolation/run-repo-suite.js infra/verifier-isolation/suite-policy.js infra/verifier-isolation/stage-runner.js infra/verifier-isolation/suite-diagnostics.js /opt/orloom-verifier/
+#6 CACHED
+
+#7 [stage-1 6/7] COPY package.json package-lock.json /opt/orloom-verifier/admission/
+#7 CACHED
+
+#8 [stage-1 2/7] WORKDIR /opt/orloom-verifier
+#8 CACHED
+
+#9 [stage-1 3/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/bin/node /usr/local/bin/node
+#9 CACHED
+
+#10 [stage-1 4/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/lib/node_modules/npm /opt/orloom-verifier/npm
+#10 CACHED
+
+#11 [stage-1 7/7] RUN echo 'd1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c  /usr/local/bin/node' | sha256sum -c -  && echo 'ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df  /opt/orloom-verifier/admission/package.json' | sha256sum -c -  && echo '1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4  /opt/orloom-verifier/admission/package-lock.json' | sha256sum -c -  && mkdir -p /opt/orloom-verifier/npm-config  && : > /opt/orloom-verifier/npm-config/user.npmrc  && : > /opt/orloom-verifier/npm-config/global.npmrc  && cd /opt/orloom-verifier/admission && env -i HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin /usr/local/bin/node /opt/orloom-verifier/npm/bin/npm-cli.js ci --include=dev --ignore-scripts --no-audit --no-fund --userconfig=/opt/orloom-verifier/npm-config/user.npmrc --globalconfig=/opt/orloom-verifier/npm-config/global.npmrc  && mv node_modules /opt/orloom-verifier/node_modules && chmod -R a-w /opt/orloom-verifier/node_modules  && rm -rf /opt/orloom-verifier/admission /opt/orloom-verifier/npm-config  && chmod 0555 /usr/local/bin/node /opt/orloom-verifier/run-check.js /opt/orloom-verifier/run-repo-suite.js /opt/orloom-verifier/npm/bin/npm-cli.js /opt/orloom-verifier/stage-runner.js /opt/orloom-verifier/suite-policy.js /opt/orloom-verifier/suite-diagnostics.js
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers 0.0s done
+#12 exporting manifest sha256:bd692fa99c0da342ee5c977db259e5b05375b24c165d46db6e91a8fb05330a70 0.0s done
+#12 exporting config sha256:da492f9b74f4c7682c1d155fe2b3fcbf17eae6d344f01c164f6d6078c5c34693
+#12 exporting config sha256:da492f9b74f4c7682c1d155fe2b3fcbf17eae6d344f01c164f6d6078c5c34693 0.0s done
+#12 exporting attestation manifest sha256:8f844e2855ba37be5ac83a2a8852d545ef3fd6404c65624c0766a6dea1c9dfdc 0.1s done
+#12 exporting manifest list sha256:a0b779d075c95fba63d4fb365935be8d498c56025e8547d4243e80b2484ba319
+#12 exporting manifest list sha256:a0b779d075c95fba63d4fb365935be8d498c56025e8547d4243e80b2484ba319 0.0s done
+#12 naming to docker.io/library/orloom-c3-suite-acceptance:617c378148df done
+#12 unpacking to docker.io/library/orloom-c3-suite-acceptance:617c378148df 0.1s done
+#12 DONE 0.4s
