@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, symlink, writeFile, copyFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { mkdtemp, mkdir, rm, symlink, writeFile, copyFile, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -89,6 +90,42 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
   assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
+});
+
+test("verifier image installs with two isolated npm config files", async () => {
+  const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
+  const userConfig = dockerfile.match(/--userconfig=(\/opt\/orloom-verifier\/npm-config\/[^\s\\]+)/)?.[1];
+  const globalConfig = dockerfile.match(/--globalconfig=(\/opt\/orloom-verifier\/npm-config\/[^\s\\]+)/)?.[1];
+  assert.ok(userConfig, "image supplies a trusted empty user config");
+  assert.ok(globalConfig, "image supplies a trusted empty global config");
+  assert.notEqual(userConfig, globalConfig, "npm must not load one config as both user and global");
+  assert.match(dockerfile, new RegExp(`: > ${userConfig.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  assert.match(dockerfile, new RegExp(`: > ${globalConfig.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  assert.doesNotMatch(dockerfile, /--(?:user|global)config=\/dev\/null/);
+});
+
+test("local npm accepts distinct sanitized config paths", { skip: ![
+  process.env.npm_execpath,
+  "/opt/orloom-verifier/npm/bin/npm-cli.js",
+  path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+].filter((candidate): candidate is string => typeof candidate === "string").some(existsSync) }, async () => {
+  const npmCliCandidates = [
+    process.env.npm_execpath,
+    "/opt/orloom-verifier/npm/bin/npm-cli.js",
+    path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+  const npmCli = npmCliCandidates.find(existsSync);
+  assert.ok(npmCli);
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-npm-config-"));
+  try {
+    const user = path.join(root, "trusted-user.npmrc");
+    const global = path.join(root, "trusted-global.npmrc");
+    await Promise.all([writeFile(user, ""), writeFile(global, "")]);
+    const env = { HOME: root, PATH: process.env.PATH ?? "", USERPROFILE: root, APPDATA: root, LOCALAPPDATA: root };
+    const args = [npmCli, "config", "get", "userconfig", `--userconfig=${user}`, `--globalconfig=${global}`];
+    const { stdout } = await exec(process.execPath, args, { cwd: root, env, windowsHide: true, encoding: "utf8" });
+    assert.equal(stdout.trim(), user);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("repository suite admission accepts the exact dependency pair and rejects stale locks and overrides", async () => {
