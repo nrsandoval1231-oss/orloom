@@ -1,0 +1,1 @@
+acceptance_cleanup=PASS only exact recorded PostgreSQL resources removed; source, image, artifacts, and evidence retained

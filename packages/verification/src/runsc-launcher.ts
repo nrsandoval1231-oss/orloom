@@ -24,8 +24,8 @@ async function makePrivateDir(directory: string, mode = 0o700): Promise<void> {
 
 export interface LauncherProcessResult { exitCode: number | null; signal?: string | null; timedOut?: boolean; killed?: boolean; truncated?: boolean; stderr?: string; }
 
-const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v2:";
-const DIAGNOSTIC_BYTES_MAX = 4096, DIAGNOSTIC_FRAMES_MAX = 16, DIAGNOSTIC_LINE_MAX = 512;
+const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v3:";
+const DIAGNOSTIC_BYTES_MAX = 16_384, DIAGNOSTIC_FRAMES_MAX = 64, DIAGNOSTIC_LINE_MAX = 512;
 const DIAGNOSTIC_STAGES = ["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"] as const;
 
 /** Retains only complete, bounded fixed-schema telemetry; frames never classify a check. */
@@ -33,6 +33,7 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
   if (Buffer.byteLength(stdout) > 256 * 1024) return Buffer.alloc(0);
   const lines = stdout.split("\n"), completeCount = stdout.endsWith("\n") ? lines.length - 1 : Math.max(0, lines.length - 1);
   const kept: string[] = []; let bytes = 0, frames = 0, nextStage = 0, openStage: string | undefined, halted = false;
+  let nextTestOrdinal = 1, openTest: { ordinal: number; testFile: string } | undefined, previousTestFile = "";
   for (let index = 0; index < completeCount; index++) {
     if (halted) break;
     const line = lines[index]!.endsWith("\r") ? lines[index]!.slice(0, -1) : lines[index]!;
@@ -49,18 +50,33 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
     const frame = parsed as Record<string, unknown>;
     const phase = frame.phase;
     const keys = Object.keys(frame).sort().join(",");
-    const common = frame.version === "orloom.suite-diagnostics.v2"
+    const common = frame.version === "orloom.suite-diagnostics.v3"
       && typeof frame.stage === "string" && Number.isSafeInteger(frame.elapsedMs)
       && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 180_000;
     if (!common) continue;
     const stage = frame.stage as string;
-    if (phase === "start" && keys === "elapsedMs,phase,stage,version" && openStage === undefined
+    let accepted = false;
+    if (stage === "node-tests" && openStage === stage && Number.isSafeInteger(frame.ordinal)
+      && (frame.ordinal as number) >= 1 && (frame.ordinal as number) <= 64
+      && typeof frame.testFile === "string" && Buffer.byteLength(frame.testFile) <= 128
+      && /^[A-Za-z0-9._-]+\.test\.js$/.test(frame.testFile)) {
+      if (phase === "start" && keys === "elapsedMs,ordinal,phase,stage,testFile,version" && !openTest
+        && frame.ordinal === nextTestOrdinal && frame.testFile > previousTestFile) {
+        openTest = { ordinal: frame.ordinal as number, testFile: frame.testFile }; accepted = true;
+      } else if (phase === "end" && keys === "elapsedMs,ordinal,outcome,phase,stage,testFile,version"
+        && openTest?.ordinal === frame.ordinal && openTest?.testFile === frame.testFile
+        && typeof frame.outcome === "string" && ["pass", "fail", "unknown"].includes(frame.outcome)) {
+        previousTestFile = (openTest as { ordinal: number; testFile: string }).testFile; openTest = undefined; nextTestOrdinal++; accepted = true;
+      }
+    } else if (phase === "start" && keys === "elapsedMs,phase,stage,version" && openStage === undefined
       && stage === DIAGNOSTIC_STAGES[nextStage]) {
-      openStage = stage;
+      openStage = stage; accepted = true;
     } else if (phase === "end" && keys === "elapsedMs,outcome,phase,stage,version" && openStage === stage
       && typeof frame.outcome === "string" && ["pass", "fail", "unknown"].includes(frame.outcome)) {
-      openStage = undefined; nextStage++; halted = frame.outcome !== "pass";
-    } else continue;
+      if (stage === "node-tests" && openTest) continue;
+      openStage = undefined; nextStage++; halted = frame.outcome !== "pass"; accepted = true;
+    }
+    if (!accepted) continue;
     const lineBytes = Buffer.byteLength(line) + 1;
     if (bytes + lineBytes > DIAGNOSTIC_BYTES_MAX) break;
     kept.push(`${line}\n`); bytes += lineBytes; frames++;

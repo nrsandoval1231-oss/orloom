@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "scope": "Independent pre-execution exact-packet review of the serial C3 suite helper transfer; no host run or product acceptance",
+  "candidateSha": "663af2c3e97852c28e06433baf39ac811dccf0ba",
+  "sourceManifestSha256": "1225d762b3e45ebeafb0af01d2e5cf03286b752ddd29453cd42755d021cd4bf2",
+  "helperManifestSha256": "c05f17efe1bc294616079800df66420d2b235f4d74c6bab757ccabc9b3d324ff",
+  "bundleSha256": "6bf2398f26eec6f003505ef039afb2e3cdb59bb5e3d6e4e7f0dd9c8c9f7b5a6e",
+  "runtimePayloadManifestSha256": "2bb20930b6246fe2169bb96af8ef5c77fd230cb7a3caf3088f5715d628eddff6",
+  "findings": [],
+  "evidence": [
+    "All 12 selected helper/binding files match the frozen manifest SHA-256 values and byte counts. The exact source checkout is clean at the candidate SHA, its 117-entry source manifest matches, and the transfer bundle and identity match the new base/candidate/ref.",
+    "All 152 runtime payload manifest rows rehash exactly; runtime identity binds the same candidate, source manifest, payload hash, and file count. The separate derivation record reports 24 compiled modules and 127 dependency file byte matches against the controlled installed tree.",
+    "The copied helper flow differs from the previously reviewed acceptance packet only by the fresh c3-suite-serial-20261013 namespace, ORL-C3-SUITE-SERIAL label, and a single guarded absent-to-candidate local source-ref creation before fixture preparation. The approved ref in the final binding is refs/heads/feat/trusted-verification-suite.",
+    "All seven shell helpers pass Bash syntax and isolated declaration-only set -euo pipefail smoke tests; all top-level Node helpers pass node --check. No host, Docker, source, provider, or resource action was taken during review.",
+    "The existing one-shot marker, protected-container tuple, real read-only PostgreSQL snapshot and fresh-row equality, exact resource cleanup, and fail-closed UNKNOWN/certificate boundaries are retained by the exact copied flow."
+  ],
+  "boundary": "The earlier 9ebc9d91 OOM attempt remains UNKNOWN and is not retried or reclassified. A new full run through the exact 663af2c3 source, image, runsc, PostgreSQL, and postflight is required to establish any serial-suite acceptance."
+}

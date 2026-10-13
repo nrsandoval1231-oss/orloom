@@ -2,8 +2,8 @@ import { readFile, readdir, symlink, chmod, mkdir, rm } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { ADMITTED_DEPENDENCIES, SuiteAdmissionError, admitSuiteInput, discoverSuiteTests, verifySuiteInputUnchanged } from './suite-policy.js';
-import { classifySuiteStage, enforceSuiteDeadline, executeStages } from './stage-runner.js';
-import { emitSuiteDiagnostic } from './suite-diagnostics.js';
+import { enforceSuiteDeadline, executeStages, runSerialTestFiles } from './stage-runner.js';
+import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostics.js';
 
 const root = '/work/source';
 const limit = 180_000, logLimit = 65_536, start = performance.now();
@@ -29,7 +29,9 @@ async function* fixedStages() {
     if (!tests.length) throw new SuiteAdmissionError('test discovery found no tests');
     return { exitCode: 0, stdout: Buffer.from(`selected ${tests.length} Node test files\n`), stderr: Buffer.alloc(0), truncated: false };
   } };
-  yield { name: POLICY_STAGE_ORDER[4], file: '/usr/local/bin/node', args: ['--test', '--test-concurrency=1', ...tests.map(f => `dist/tests/${f}`)], cwd: root, env, maxLogBytes: logLimit };
+  yield { name: POLICY_STAGE_ORDER[4], execute: () => runSerialTestFiles(tests, {
+    cwd: root, env, maxLogBytes: logLimit, remainingMs, emit: emitSuiteTestDiagnostic,
+  }) };
   yield { name: POLICY_STAGE_ORDER[5], file: '/usr/local/bin/node', args: ['scripts/validate.mjs'], cwd: root, env, maxLogBytes: logLimit };
   yield { name: POLICY_STAGE_ORDER[6], execute: async () => {
     await verifySuiteInputUnchanged(root, admittedManifest.files);

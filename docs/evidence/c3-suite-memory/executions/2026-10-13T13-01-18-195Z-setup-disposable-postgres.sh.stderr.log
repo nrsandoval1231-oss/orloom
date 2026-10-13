@@ -1,0 +1,1 @@
+usage: root setup-disposable-postgres.sh /absolute/preflight.json

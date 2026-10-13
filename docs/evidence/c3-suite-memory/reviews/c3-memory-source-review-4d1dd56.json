@@ -1,0 +1,16 @@
+{
+  "verdict": "PASS",
+  "candidate": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "repair_base": "0b85d05c3c53c0d6667803078033a52dd190664d",
+  "accepted_scope_base": "6b4d6832cfa2e58997fc1e0d1d0a22fa68ba1af9",
+  "scope": "Independent source acceptance only for ORL-C3-MEM-001; no cloud runtime or certificate claim",
+  "evidence": {
+    "exact_git_head_and_clean_worktree": true,
+    "source_manifest_sha256": "51519361c6552ad52f12ee815761744031282100dc43e7c0fbf6ce3812aaa39b",
+    "controller_gate_log": "work/suite-controller-gates-2026-10-13T12-52-30-642Z.log",
+    "controller_gates": "75 tests passed, zero failed or skipped; foundation validation, syntax and diff checks exit 0; root reports clean build and typecheck PASS"
+  },
+  "prior_fix_resolution": "The actual production node-tests stage calls exported runSerialTestFiles in infra/verifier-isolation/run-repo-suite.js:32-34. tests/verification-runner.test.ts:131-185 imports and executes that same helper with controlled runner, deadline and emitter inputs. It verifies all ordered files once, stops on FAIL and UNKNOWN, changes a late passing result to UNKNOWN, enforces cumulative 65536-byte output cap, and keeps execution independent of the 64-ordinal advisory telemetry cap.",
+  "boundary_review": "The helper retains fixed /usr/local/bin/node --test --test-concurrency=1 dist/tests/<trusted basename> argv, serial awaits, shared remaining deadline and fail-closed stage outcome. Test filenames still come from trusted sorted discovery; the new helper rejects non-basename inputs. Diagnostic emitter return values do not select or stop tests. The inspected repair does not change resource limits, deadline chain, syntax-check policy, or certificate authority. Prior cloud OOM attempts remain UNKNOWN with zero certificates.",
+  "findings": []
+}

@@ -1,0 +1,24 @@
+{
+  "verdict": "FIX",
+  "candidate": "0b85d05c3c53c0d6667803078033a52dd190664d",
+  "base": "6b4d6832cfa2e58997fc1e0d1d0a22fa68ba1af9",
+  "scope": "Independent source review of ORL-C3-MEM-001; no cloud acceptance or runtime proof claimed",
+  "evidence": {
+    "source_manifest_sha256": "c94c1a3537a762c1e9313123da49c455136da954fff0c719fdcb648c240b11f1",
+    "controller_gates": "work/suite-controller-gates-2026-10-13T12-45-08-805Z.log: reported 74 tests, zero skips, typecheck, build, validation, JS/Bash syntax and diff checks PASS",
+    "working_tree": "clean at exact candidate during review"
+  },
+  "findings": [
+    {
+      "severity": "blocking acceptance coverage",
+      "location": "infra/verifier-isolation/run-repo-suite.js:32-52; tests/verification-runner.test.ts:102-133",
+      "finding": "The new per-file execution loop is only checked by source regexes. The test independently maps discovered filenames into a commands array; it does not execute the production loop. Existing executeStages tests cover the generic runner, not this new loop's every-file-once behavior, early stop, shared deadline, cumulative 65536-byte output cap, or diagnostic-frame cap independence.",
+      "required_repair": "Behaviorally exercise the actual trusted per-file loop with controlled runner, clock and telemetry inputs. Prove all sorted files run once on success; failure, UNKNOWN and deadline stop subsequent files; cumulative output overflow becomes UNKNOWN; advisory diagnostic saturation does not stop execution. Keep production policy, authority and resource limits unchanged, then re-freeze and rerun exact-candidate gates and review."
+    }
+  ],
+  "source_observations": [
+    "The inspected loop invokes each discovered basename with node --test --test-concurrency=1 under the remaining shared 180-second deadline and stops on nonpass.",
+    "Diagnostic v3 frames are advisory and the emitted return value does not control suite execution; policy/resource and syntax-check boundaries appear unchanged in the inspected diff.",
+    "Those structural observations do not resolve the behavioral test gap or certify the suite. Prior cloud attempts remain UNKNOWN with zero certificates."
+  ]
+}

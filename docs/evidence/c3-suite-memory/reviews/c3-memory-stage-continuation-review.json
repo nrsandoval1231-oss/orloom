@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "scope": "Pre-execution review of the exact canonical manifest transport correction and one bounded stage continuation; no host mutation or proof run by reviewer",
+  "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "continuationSha256": "0ee0231a8334ba550a1b1aec5d617a257c8b85499f9227663513c93e6cd39ce9",
+  "canonicalHelperManifestSha256": "b4067c6c3c89a195d6d8aa3908795afe8fbde9ec90ab50dc51cf3f6d1f3b2518",
+  "committedSourceManifestSha256": "dc127e92f0bef9e9b2d0b8ad4cbf7a73d69d673e15e4e1b765ceceabac2bab28",
+  "priorWorkingCopyManifestSha256": "51519361c6552ad52f12ee815761744031282100dc43e7c0fbf6ce3812aaa39b",
+  "evidence": [
+    "Direct Git blob read at exact candidate hashes to dc127e92 and contains 117 LF rows; normalized current checkout hashes identically and Git status remains clean. The retained committed-manifest check reports all 117 source rows match.",
+    "Canonical helper manifest has 13 selected files, with only stage-bindings.json changed from the earlier reviewed helper packet. Every selected canonical helper hash matches its manifest row. Bundle 90daae28 and runtime payload manifest 287bd75c are unchanged; corrected transfer and runtime identity metadata name the committed dc127e92 source manifest.",
+    "The frozen continuation passes bash -n and declaration-only set -u smoke. It first requires the exact partial clone and absence of staged payload, fixtures, image, and runtime-started marker; validates bare/local commit, clean checkout, committed manifest bytes and 117 rows; validates corrected helper/payload/transfer identities before any copy.",
+    "After validation it installs only the pinned Node and corrected runtime payload/helpers/bindings, rehashes them, creates the exact absent local source ref with zero expected old value, prepares disposable fixture objects, and writes stage identity. It does not clone, create database resources, build an image, launch a verifier, or redispatch an UNKNOWN attempt.",
+    "The corrected upload record shows exit 0 to a separate corrected-incoming path. The old incoming path and first-stage failure evidence are preserved."
+  ],
+  "boundaries": "This PASS covers the exact local bytes and continuation guard logic. Host partial-state predicates must pass at execution time. Source acceptance remains a separate prior PASS; runtime suite acceptance and certificates remain unproven.",
+  "findings": []
+}

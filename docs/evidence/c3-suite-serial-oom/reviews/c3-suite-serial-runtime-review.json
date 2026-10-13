@@ -1,0 +1,22 @@
+{
+  "verdict": "FIX",
+  "runtimeAcceptance": "UNKNOWN",
+  "candidateSha": "663af2c3e97852c28e06433baf39ac811dccf0ba",
+  "attemptId": "66260b4a-db6c-4db0-9c91-c4e7e2ba7632",
+  "retainedArchiveSha256": "dfbe382c03b5306b1a386906a2d144509f03403118c1ef7423ef0ff331db2afe",
+  "observed": [
+    "The retained read-only PostgreSQL snapshot checksum matches its bytes. It records exactly one attempt for the positive scenario, persisted outcome unknown, receipt outcome unknown with null exit code, certificatePresent false, and zero certificates.",
+    "The runsc resource profile binds exact container 09c17d341299ccfaef6e0ef9345aaf4c7be9d1dbf1842442d7206e932e65e97d to source 663af2c3 and image sha256:3211a00302fe74c02a9cb127a48bba290088841f6e6ba208c6ab4fdfadd31021 under the unchanged 1 CPU, 1 GiB memory/swap, 128 PID, read-only, no-network, no-mount policy. Peak memory and CPU were not measured.",
+    "Retained Docker events for that exact container show oom at 2026-10-13T12:20:42.438Z and die with exit code 137 at 12:20:42.800Z. The receipt ends about 70.3 seconds after it started, before the reviewed 180-second suite limit.",
+    "Advisory stdout frames show dependency admission 236 ms pass, typecheck 21815 ms pass, clean build 28843 ms pass, test discovery 5 ms pass, then node-tests start with no end frame. The positive runtime assertion failed and run-acceptance.sh exited 1.",
+    "The post-run snapshot export succeeded, and the later retry matched the already retained snapshot against fresh PostgreSQL rows: one unknown attempt and zero certificates. The reviewed cleanup exited 0; its retained ledger records removal of the exact packet database, network, data/secret volumes and database URL.",
+    "The subsequent read-only postflight at 2026-10-13T12:25:50–12:25:52Z exited 0: canonical verifier state absent, host slot flock free, serial database URL absent, no ORL-C3-SUITE-SERIAL or ORL-C3 containers, no serial-labeled network or volumes, and protected container 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67 still running under runc with its original StartedAt and zero restarts."
+  ],
+  "inferenceLimits": [
+    "The second exact-container OOM proves that adding fixed Node test-file concurrency one alone was insufficient under the unchanged sandbox on this host. It does not identify the allocation or prove whether test workers, build artifacts, runsc overhead, or another bounded factor dominated memory.",
+    "The positive certificate, reconnect, stale-ref, negative fixture, and full-suite acceptance paths were not reached. The first OOM attempt and this serial attempt remain distinct UNKNOWN records with zero certificates; neither may be retried or reclassified.",
+    "The passing postflight establishes only the named host resources and protected tuple at its observation time; it does not change the failed suite outcome or certify positive verification."
+  ],
+  "direction": "REDIRECT to evidence-led memory diagnosis before any third host attempt. Preserve the same finite policy and prior UNKNOWN records; build a new bounded candidate and one-shot proof only after diagnosis yields a concrete change and exact source/helper review. C1b source work may proceed independently, but its acceptance dependency on a passing C3 cloud suite remains open.",
+  "scope": "Independent read-only actual-failure/evidence audit; no code, host, provider, or resource mutation"
+}

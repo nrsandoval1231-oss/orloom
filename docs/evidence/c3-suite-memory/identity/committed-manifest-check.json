@@ -1,0 +1,8 @@
+{
+  "candidate": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "committedManifestSha256": "dc127e92f0bef9e9b2d0b8ad4cbf7a73d69d673e15e4e1b765ceceabac2bab28",
+  "priorWorkingManifestSha256": "51519361c6552ad52f12ee815761744031282100dc43e7c0fbf6ce3812aaa39b",
+  "files": 117,
+  "mismatches": [],
+  "checkedUtc": "2026-10-13T13:04:18.079Z"
+}

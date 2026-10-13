@@ -6,6 +6,8 @@ PR #2 and its DeepSeek worker broker are frozen at `8bbcfffbf631e5ad2972e34b4128
 
 Draft PR #3 adds the optional typed Jev gateway, fenced progress decisions, bounded recovery and durable lesson candidates. Source `545279c` passed 51 tests and a controlled real PostgreSQL recovery/reconnect proof; [retained evidence](docs/evidence/c1a-runtime/EVIDENCE.md) includes independent source review and prior failed attempts. Lesson promotion remains disabled until independent verification exists. No live Jev calls, learning improvement, or production rollout is claimed.
 
+Draft PR #5 extends the trusted verifier with an offline repository suite and bounded per-file diagnostics. Source `4d1dd56` passed 75 local tests and independent review, but its real isolated run ran out of memory during `jobs.test.js` and remains UNKNOWN with zero certificates. [The diagnostic evidence](docs/evidence/c3-suite-memory/EVIDENCE.md) records exact-container measurements, retained failures and verified cleanup. Full cloud CI and the end-to-end platform remain incomplete.
+
 ## Run locally
 
 Requires Node.js 24. Copy `.env.example` to `.env` only in a private local working directory and set a long random `ORLOOM_SESSION_TOKEN`; the checked-in template is intentionally blank. Install and run:

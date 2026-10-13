@@ -1,0 +1,31 @@
+{
+  "verdict": "FIX",
+  "scope": "Independent review of the actual 4d1dd56 C3 memory attempt and retained cleanup evidence; no source or host action",
+  "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "canonicalSourceManifestSha256": "dc127e92f0bef9e9b2d0b8ad4cbf7a73d69d673e15e4e1b765ceceabac2bab28",
+  "attemptId": "bdac22cd-59b3-4d63-87c6-3c16b3946b4d",
+  "result": {
+    "outcome": "UNKNOWN",
+    "receiptElapsedMs": 60219,
+    "certificates": 0,
+    "positiveSuiteAccepted": false,
+    "laterFixtureScenariosExecuted": false
+  },
+  "evidence": {
+    "beforeCleanupArchiveSha256": "a3af8d8ec22512b35f3f67f4280d07eb1bd2d7aa270060ec7df2cab2a044f7bb",
+    "afterCleanupArchiveSha256": "9e09b531dc49e13b3508559f94d5567d63e71c7c683ac72e15e98baaebe4e2ec",
+    "snapshotSha256": "bc13b292d37773159d57fea5902b9298bd194e14a6f26ff97199ed4ce036a465",
+    "snapshot": "Read-only PostgreSQL export reports querySucceeded=true, exactly one node-repo-suite-v1 attempt, outcome unknown, certificatePresent=false and zero check certificates. The request binds candidate 4d1dd56, policy v3 and image digest d93113a8; the receipt runtime is runsc, exitCode null and sandboxId orloom-verifier-da669f5d-21ea-4ed1-ab4a-763bcf626841.",
+    "stageDiagnostics": "Trusted advisory v3 frames show dependency admission, typecheck, clean build and discovery passed. Node test files at ordinals 1-5 have matching PASS end frames; ordinal 6 jobs.test.js has a start frame but no end frame or final suite marker.",
+    "sandboxBinding": "The retained runsc profile binds container 6cd7a78b24ad3db0f316f5464280be857abed0451003a081943db396d4175506 to the receipt sandbox name, exact source-image candidate label, runsc runtime, no network, read-only root, 1 CPU, 1 GiB memory/swap, 128 PIDs, expected tmpfs and no mounts. All 190 cgroup rows name that same container and candidate.",
+    "memoryAndEvents": "Observed cgroup memory.current reached 1048633344 bytes against the 1073741824-byte container limit; that sample includes shmem 1035644928 bytes and memory.events max=204, oom=5, oom_kill=1. Exact-CID Docker events record oom, then die exitCode 137, then destroy. The cgroup stream status is OBSERVED, 190 rows and 109343 bytes within its 1 MiB cap.",
+    "cleanup": "cleanup-acceptance.sh exited 0 after the retained snapshot; the after-cleanup archive SHA was verified. Postflight exit 0 confirms verifier state absent, slot lock free, database URL absent, no ORL-C3 or packet-labeled containers/network/volumes, and protected container 5825fae5 remains running under runc with unchanged StartedAt and zero restarts."
+  },
+  "limitsAndDirection": [
+    "The sampled maximum is not an exact peak. The stream records a temporary exact-cgroup-unavailable period before sampling, and 250 ms polling can miss a higher transient. Shmem-heavy cgroup accounting does not by itself prove which path or test allocated memory; ordinal 6 identifies the active test when the run stopped, not sole causation.",
+    "Do not promote the five completed test files into a suite PASS, infer a certificate, or rerun this same attempt. Diagnose the bounded sandbox memory footprint or select a distinct reviewed policy-compliant repair, then create a new exact candidate and proof run."
+  ],
+  "findings": [
+    { "severity": "blocking runtime acceptance", "finding": "The real positive candidate did not complete the full trusted suite: exact sandbox OOM/exit 137 during node-tests, durable outcome UNKNOWN, zero certificates. The suite finish contract remains unmet." }
+  ]
+}
