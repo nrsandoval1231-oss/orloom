@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, rm, symlink, writeFile, copyFile, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
@@ -239,10 +239,21 @@ test("local npm accepts distinct sanitized config paths", { skip: ![
 test("repository suite admission accepts the exact dependency pair and rejects stale locks and overrides", async () => {
   const { ADMITTED_DEPENDENCIES, admitSuiteInput, verifySuiteInputUnchanged } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
   const root = await mkdtemp(path.join(os.tmpdir(), "orl-suite-admission-"));
+  const readOnlySource = await mkdtemp(path.join(os.tmpdir(), "orl-suite-readonly-source-"));
+  const sourceLock = path.join(readOnlySource, "package-lock.json");
+  const originalLock = await readFile("package-lock.json");
   try {
-    for (const file of Object.keys(ADMITTED_DEPENDENCIES)) await copyFile(file, path.join(root, file));
+    // Extracted sandbox files are read-only; admission operates on a separate
+    // writable scratch copy made from bytes, never inherited source metadata.
+    await writeFile(sourceLock, originalLock, { flag: "wx", mode: 0o600 });
+    await chmod(sourceLock, 0o444);
+    assert.equal((await stat(sourceLock)).mode & 0o222, 0, "source dependency fixture is explicitly read-only");
+    for (const file of Object.keys(ADMITTED_DEPENDENCIES)) {
+      const source = file === "package-lock.json" ? sourceLock : file;
+      await writeFile(path.join(root, file), await readFile(source), { flag: "wx", mode: 0o600 });
+    }
+    assert.notEqual((await stat(path.join(root, "package-lock.json"))).mode & 0o222, 0, "admission scratch copy remains writable");
     await admitSuiteInput(root, [{ path: "README.md" }, { path: ".env.example" }, { path: "package-lock.json" }]);
-    const { readFile } = await import("node:fs/promises");
     const crypto = await import("node:crypto");
     const gitManifest = async () => {
       const { stdout: tracked } = await exec("git", ["ls-files", "-z"], { encoding: "utf8", windowsHide: true });
@@ -273,8 +284,14 @@ test("repository suite admission accepts the exact dependency pair and rejects s
     await assert.rejects(admitSuiteInput(root, [{ path: "README.md" }]), /override/);
     await rm(path.join(root, ".npmrc"));
     await writeFile(path.join(root, "package-lock.json"), "changed");
+    assert.deepEqual(await readFile(sourceLock), originalLock, "scratch mutation does not alter the read-only source fixture");
+    assert.equal((await stat(sourceLock)).mode & 0o222, 0, "source fixture permissions remain read-only");
     await assert.rejects(admitSuiteInput(root, [{ path: "README.md" }]), /differs from admitted/);
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally {
+    await chmod(sourceLock, 0o600).catch(() => {});
+    await rm(root, { recursive: true, force: true });
+    await rm(readOnlySource, { recursive: true, force: true });
+  }
 });
 
 test("repository suite requires discovered tests and treats failures, timeouts and truncation distinctly", async () => {
