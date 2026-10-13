@@ -1,0 +1,70 @@
+{
+  "packet": "C4-COMPOSE-POLICY-01",
+  "status": "SOURCE_READY_FOR_ROOT_REVIEW",
+  "branch": "feat/controller-composition",
+  "baseSha": "3962ee0bd3c98eca010108a81a2bef4b9ed2559d",
+  "worktreeHeadSha": "3962ee0bd3c98eca010108a81a2bef4b9ed2559d",
+  "worktreeChangesAreUncommitted": true,
+  "utcStart": "UNKNOWN",
+  "utcFinish": "2026-10-13T23:53:31Z",
+  "modelAndConfig": "UNKNOWN",
+  "filesChanged": [
+    "packages/governor/src/governor.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "tests/startup-policy-flow.test.ts",
+    "tests/local-integration.test.ts",
+    "tests/integration-replay-race.test.ts",
+    "tests/delivery-c4-flow.test.ts",
+    "tests/delivery-effects.test.ts",
+    ".agent/C4-COMPOSE-POLICY-01.md",
+    ".agent/C4-COMPOSE-POLICY-01-COMPLETION.json"
+  ],
+  "fileSha256": {
+    "packages/governor/src/governor.ts": "9f87347bed6fb975155d7e75441f95f77a03b856f6f3bed58711d90745fdfbd9",
+    "packages/contracts/src/mission.ts": "3118aa1b3960b62390be7793e55929496ff1f0a334b4de191267c9402c003f20",
+    "packages/contracts/src/sql-mission-store.ts": "77aaa3681a6fcbf6de0b9c5060895909208459d9958d686be909c1dc380c224e",
+    "tests/startup-policy-flow.test.ts": "e3d7fb626ebda7c1f076b3c6623a2fb42d3c733d69261a75c043d7a9e944d54f",
+    "tests/local-integration.test.ts": "5cb96c84cb2896c2a8e9eb61d7657873e505d90dc4a75ae1fbfbbd484950a062",
+    "tests/integration-replay-race.test.ts": "74e5ee8f8f91451db02f4c637d0c3fa70940d6bcf14b8c251d5844d9caf08694",
+    "tests/delivery-c4-flow.test.ts": "9aaed87669bdc90ff7650ff7edde8ff7bf673a98492e4bc14c38601bd49d54c8",
+    "tests/delivery-effects.test.ts": "8e6f1cba52b6fc5e3b2b5c8850124d49534800fd656a26b7d4ceedee734e08de",
+    ".agent/C4-COMPOSE-POLICY-01.md": "a97f96ba25be44925dd468cd384886887f07a7b8f8a408315c44750bf795f872"
+  },
+  "changes": [
+    "Added an immutable copied TrustedCheckCoordinator integration binding separating operator lease allowed-check digest from verifier suite digest, version, image and identity.",
+    "Governor now uses suite policy digest for SQL integration intent/finalization and checks full final receipt/certificate/attempt bindings for first integration and completed replay.",
+    "Exposed the already-persisted verification attempt lease digest through MissionStore/SqlMissionStore. Integrated replay validates it against the current coordinator; locked SQL finalization rechecks it against the leased slice digest.",
+    "Added startup-shaped loadConfig/getCheckPolicy/PGlite/bare-Git positive integration and replay with fail-closed policy, image, version, allowed-check list, missing receipt/certificate, moved-ref, UNKNOWN intent and lease-domain mutation checks. Updated old integration fixtures to keep lease and suite domains distinct."
+  ],
+  "validation": [
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "node --test dist/tests/startup-policy-flow.test.js dist/tests/local-integration.test.js dist/tests/integration-replay-race.test.js dist/tests/delivery-c4-flow.test.js dist/tests/delivery-effects.test.js",
+      "exitCode": 0,
+      "result": "PASS; 19 tests, 0 failures"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "result": "PASS"
+    }
+  ],
+  "notProven": [
+    "No real PostgreSQL multi-connection runtime proof, authentic verifier execution, host/provider/external call, cloud startup, deployment, publication, or production activation was performed.",
+    "The full repository suite, refreshed source manifest and independent review remain root-owned and pending.",
+    "Attempt lease digest is reread from SQL outside Governor preflight and revalidated under the SQL finalization lock against the leased slice; external operation authority remains closed by startup configuration."
+  ],
+  "executionAccounting": {
+    "planningMs": "UNKNOWN",
+    "implementationMs": "UNKNOWN",
+    "validationMs": "UNKNOWN",
+    "repairCount": 1,
+    "tokens": "UNKNOWN"
+  },
+  "limits": "Source-ready handoff only; no commit, push, merge, host, provider or external action performed."
+}

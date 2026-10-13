@@ -51,7 +51,7 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
   const artifacts=new Map<string,Buffer>([[ref(out).key,out],[ref(err).key,err],[ref(manifest).key,manifest]]);
   const store=Object.create(sqlStore) as MissionStore;
   store.getIntegratedCertificate=async(_m,_s,_e,id)=>id===certificate.checkId?certificate:null;
-  store.getTrustedAttempt=async id=>id===request.attemptId?{purpose:"final",request,outcome:"pass",receipt,targetCheckId:null,strategyId:null,recoveryOrdinal:null,headObservedAt:now,headObservationDigest:digest}:null;
+  store.getTrustedAttempt=async id=>id===request.attemptId?{purpose:"final",request,outcome:"pass",receipt,targetCheckId:null,strategyId:null,recoveryOrdinal:null,headObservedAt:now,headObservationDigest:digest,leasePolicyDigest:digest}:null;
   let check:Check|undefined,pr:PullRequest|undefined,checkPosts=0,prPosts=0,checkReads=0,prReads=0;
   const github:GitHubInstallationClient={
     appId:mode.configuredAppId??policy.appId,

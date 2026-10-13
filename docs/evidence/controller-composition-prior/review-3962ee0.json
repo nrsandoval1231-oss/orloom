@@ -1,0 +1,34 @@
+{
+  "kind": "independent-source-review",
+  "candidateSha": "3962ee0bd3c98eca010108a81a2bef4b9ed2559d",
+  "baseSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "sourceRef": "refs/heads/feat/controller-composition",
+  "sourceManifestSha256": "c653331bf86b9da374e98b5cae23e1166d0f9db7c7b9438d5a03eac1e07032ca",
+  "verdict": "FIX",
+  "scope": "Source review of C4-COMPOSE-01 startup composition only; no host, provider, publication, or runtime acceptance claim.",
+  "deterministicEvidence": {
+    "gateLog": "work/composition-controller-gates-2026-10-13T23-39-44-518Z.log",
+    "result": "12 commands exited 0; 138 tests passed, 0 failed; git diff --check passed",
+    "worktree": "clean at candidate SHA"
+  },
+  "findings": [
+    {
+      "priority": "P1",
+      "title": "Real startup issues suite-policy certificates that integration rejects against the lease-policy digest",
+      "evidence": [
+        "packages/config/src/config.ts:141 derives trustedCheckPolicyDigest as SHA256(JSON.stringify(trustedCheckPolicy)), the lease/check-list policy digest.",
+        "apps/control-plane/src/main.ts:41 configures TrustedCheckCoordinator.policyDigest from getCheckPolicy(checkId,...).digest, the actual full-suite verifier policy digest, and passes the separate config digest as leasePolicyDigest.",
+        "packages/contracts/src/sql-mission-store.ts:341-342 checks the lease digest separately but writes request.policyDigest into mission_slices.verification_policy_digest; lines 375 and 415 require that suite digest for receipt/certificate validity.",
+        "packages/governor/src/governor.ts:190 rejects a valid suite-policy certificate unless certificate.policyDigest equals config.trustedCheckPolicyDigest; packages/contracts/src/sql-mission-store.ts:68 and 76 independently require verification_policy_digest to equal the integration intent policy digest supplied as config.trustedCheckPolicyDigest.",
+        "The new tests/controller-authority.test.ts injects a coordinator-shaped stub and tests construction/route availability, not the real loadConfig -> trusted attempt -> SQL certificate -> integrateVerifiedSlice path with distinct digests."
+      ],
+      "impact": "With the configured mandatory node-repo-suite-v1 verifier, certification can succeed but local integration and subsequent delivery cannot complete. Equating the two digests only in the Governor check would still fail the SQL integration fence.",
+      "boundedDirection": "Resolve the lease/check-list and actual verifier-suite digest domains consistently at the integration boundary and SQL intent/finalization checks, retaining both fences and the runner's exact suite-policy check. Add a startup-shaped SQL integration regression that derives the two distinct digests via loadConfig/getCheckPolicy, issues a real certificate, and integrates that candidate. Re-freeze and rerun full gates plus independent review."
+    }
+  ],
+  "acceptedBoundaries": [
+    "Default startup remains closed; enabled composition fixes repository and bare-Git identity, retains bounded private review reader, validates full-suite delivery policy, and constructs existing adapters without a startup provider call.",
+    "The Jev amendment is honored: recovery and scheduling adapter slots remain absent.",
+    "No remote upload, live GitHub/R2 operation, cloud acceptance, or owner commercial completion is inferred from source gates."
+  ]
+}

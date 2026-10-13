@@ -49,7 +49,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
       }
     };
     const store = new SqlMissionStore(sql);
-    const policyDigest = hash("trusted policy");
+    const policyDigest = hash("trusted verifier suite policy"), leasePolicyDigest = hash(JSON.stringify(["node-repo-suite-v1"]));
     await store.configureCapacity(1, hash("capacity evidence"), new Date(Date.now() + 120_000).toISOString());
 
     const source = join(root, "source"), bare = join(root, "bare.git"), template = join(root, "empty-template");
@@ -76,7 +76,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     await store.recommendPlan(mission.id, slices, "owner-session");
     await store.approvePlan(mission.id);
 
-    const governor = new MissionGovernor(store, { maxLanes: 2, capacitySlots: 1, leaseSeconds: 300, trustedCheckPolicyDigest: policyDigest, trustedCheckPolicy: ["node-repo-suite-v1"], executionConfigured: true });
+    const governor = new MissionGovernor(store, { maxLanes: 2, capacitySlots: 1, leaseSeconds: 300, trustedCheckPolicyDigest: leasePolicyDigest, trustedCheckPolicy: ["node-repo-suite-v1"], executionConfigured: true });
     const grant = await governor.claim();
     assert(grant);
     assert.equal(grant.mission.id, mission.id);
@@ -116,7 +116,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
         return { stdout, stderr, manifest };
       }
     };
-    const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("runner image"), verifierId: "fixture-runner", policyDigest, leasePolicyDigest: policyDigest, policyVersion: "fixture-policy-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
+    const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("runner image"), verifierId: "fixture-runner", policyDigest, leasePolicyDigest, policyVersion: "fixture-policy-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
     await coordinator.verifySlice(mission.id, "delivery");
 
     const reviewArtifactId = "independent-review-c4-delivery";

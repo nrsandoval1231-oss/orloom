@@ -45,6 +45,7 @@ async function waitAtBarrier(value: ReturnType<typeof barrier>) {
 }
 
 const governorConfig = (policyDigest: string) => ({ maxLanes: 2, capacitySlots: 1, leaseSeconds: 300, trustedCheckPolicyDigest: policyDigest, trustedCheckPolicy: ["node-repo-suite-v1"] });
+const leasePolicyDigest = hash(JSON.stringify(["node-repo-suite-v1"]));
 
 async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, label: string, policy: string) {
   const repoRoot = join(root, label), source = join(repoRoot, "source"), bare = join(repoRoot, "bare"), template = join(repoRoot, "empty-template");
@@ -86,7 +87,7 @@ async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, lab
   ];
   await store.recommendPlan(mission.id, slices, "owner-session");
   await store.approvePlan(mission.id);
-  const grant = await store.claim(300, policy);
+  const grant = await store.claim(300, leasePolicyDigest);
   assert(grant);
   assert.equal(grant.mission.id, mission.id);
   assert.equal(grant.slice.id, "parent");
@@ -104,8 +105,8 @@ async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, lab
     },
     verifyArtifacts: async () => ({ stdout: Buffer.from("stdout"), stderr: Buffer.from("stderr"), manifest: Buffer.from("manifest") })
   };
-  const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("image"), verifierId: "fixture-verifier", policyDigest: policy, leasePolicyDigest: policy, policyVersion: "fixture-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
-  const governor = new MissionGovernor(store, governorConfig(policy));
+  const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("image"), verifierId: "fixture-verifier", policyDigest: policy, leasePolicyDigest, policyVersion: "fixture-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
+  const governor = new MissionGovernor(store, governorConfig(leasePolicyDigest));
   await coordinator.verifySlice(mission.id, "parent");
 
   const reviewId = `review-${label}`;
@@ -198,7 +199,7 @@ test("completed exact integration replays reconcile across each pre-finalization
       const gate = barrier();
       const secondStore = delayedStore(store, point.storePoint ?? "", gate, fixture.missionId);
       const secondCoordinator = point.certificateCall ? delayedCoordinator(fixture.coordinator, gate, point.certificateCall) : fixture.coordinator;
-      const secondGovernor = new MissionGovernor(secondStore, governorConfig(policy));
+      const secondGovernor = new MissionGovernor(secondStore, governorConfig(leasePolicyDigest));
       const secondCall = secondGovernor.integrateVerifiedSlice(fixture.request, secondCoordinator, fixture.authority);
       try {
         await waitAtBarrier(gate);
