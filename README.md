@@ -1,6 +1,6 @@
 # Orloom
 
-Orloom is a single-operator repository-job foundation. This checkout provides a local control plane and durable job-state contract. It does not run repository code or connect to live providers.
+Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. It does not include a worker runtime, live provider adapter, trusted CI executor, or deployed verification service.
 
 ## Run locally
 
@@ -25,6 +25,16 @@ npm start
 - `GET /api/jobs/{id}` requires the same cookie.
 
 There is no run/shell endpoint. The worker entrypoint exits because no isolated execution provider is configured. Interrupted work that had entered `running` becomes `unknown`; an expired lease that had not started may return to `queued`. The lease token fences stale starts and completions. No external side effect is automatically replayed.
+
+## Mission API
+
+The owner UI creates a mission with repository, full immutable base SHA, objective, acceptance criteria, and budget. An owner-authored plan recommendation lists slice dependencies, scope paths, trusted check identifiers, and slice budgets. Approval is a separate authenticated action. `GET /api/missions/{id}` and `/events?after={cursor}` read durable mission state and ordered event history. Existing `/api/jobs` routes remain available.
+
+Worker claims use `POST /api/worker/claim` with the separately configured `ORLOOM_WORKER_TOKEN`. A claim is disabled by default. Enabling a slot requires an operator-marked, unexpired isolation evidence SHA-256 binding, trusted check policy, exact provider and model allowlists, and positive call/token/time ceilings. Up to six attested slots are stored in PostgreSQL. A claim carries immutable mission/slice data, base SHA, ownership scopes, fencing epoch, lease and capability tokens, plan and trusted-policy digests, reserved slice budget, and execution ceilings. Heartbeat, candidate, and `BLOCKED`/`UNKNOWN` callbacks require the mission ID, slice ID, epoch, lease token, and lease capability. Candidate results remain `awaiting_verification`; the worker cannot certify or integrate them.
+
+There is no verifier or integration endpoint in this slice. Builder results remain `awaiting_verification`, and dependent slices remain `waiting_dependency` until a later independently reviewed verifier implementation supplies trusted evidence. Arbitrary evidence references cannot advance the gate.
+
+Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. This feature branch has not been deployed or exercised against real PostgreSQL or a live worker/verifier.
 
 ## Storage and adapters
 

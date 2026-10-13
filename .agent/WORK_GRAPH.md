@@ -1,13 +1,20 @@
-# Work graph
+# Orloom Work Graph
 
-| Node | Dependencies | State | Acceptance |
+Canonical parent: docs/architecture/CANONICAL_HARNESS.md and the owner's complete harness directive. A bounded checkpoint never completes this parent. Only focused branches/PRs; no further direct-main commits or unverified merges.
+
+| Node | Dependencies | State | Evidence / acceptance boundary |
 | --- | --- | --- | --- |
-| ORL-001 foundation | none | ACCEPTED LOCALLY | REVIEW.json binds 11-test gates and independent Sol PASS to final manifest |
-| ORL-002 secure cloud connections | ORL-001 | PARTIAL | OAuth foundation correction accepted; account access verified; dedicated paid worker and actual sign-in pending |
-| ORL-003 isolated live job proof | ORL-002 | NOT READY | Cloud authorization, proven isolation, persistent job and immutable artifacts, Forge-issued check bound to SHA |
+| ORL-001 foundation | none | ACCEPTED LOCALLY | Foundation review and deterministic gates; no live worker |
+| ORL-002 cloud connections | ORL-001 | PARTIAL | DO SSH/Codex subscription request and private R2 bucket proven; DeepSeek, runtime R2 credentials and Orloom GitHub App not connected |
+| ORL-004 queue deployment | ORL-001 | DEPLOYED QUEUE ONLY | Main 41643d8, Hostinger HTTPS/auth/PostgreSQL persistence/restore proof; owner browser acceptance unresolved |
+| ORL-ISO-001 worker isolation | ORL-002 | ACCEPTED SMOKE ONLY | infra/worker-isolation reviewed exact bytes; two gVisor probes; sustained build/six-lane capacity UNKNOWN |
+| ORL-005A mission control | ORL-001 | ACCEPTED BOUNDED | Repair 1 closes four findings; frozen c418a11 manifest, 21 tests and independent PASS |
+| ORL-PG-001 real database proof | repaired ORL-005A | PASS / CLEANED | Eight real connections, races, persistence, rollback and quarantine; controller repeat PASS; disposable resources removed |
+| ORL-005B broker + DeepSeek | accepted A, ISO | READY FOR IMPLEMENTATION | Actual lease/checkout/tool-loop/candidate/evidence path; real model probe and secure credentials required for live acceptance |
+| ORL-005C active stuck + learning | A, B | DEPENDENT | Bounded strategy change and replanning; validated/versioned lessons influence active work; comparable-outcome measurements |
+| ORL-005D integration + CI + PR | B, C | DEPENDENT | Serialized exact-head integration, clean independent checks/reviewer, immutable R2 evidence, scoped App publication; owner retains merge authority |
+| ORL-005E real Living Loom | actual A-D events | DEPENDENT | Browser-to-verified-PR cloud proof and actual event weave; V1-V4 history preserved |
 
-Only ORL-001 is in current implementation scope. No parallel READY node. No cloud or GitHub write authority is inferred from local validation.
+Reference sources were inspected read-only at Aura dc0466ee24de1c97205a21f66bbb2aec57d41e11 and Forge 462ce48294b3ee2f336a49a9cf475e24b541f29a. They supply reviewed concepts, not a pre-proven six-builder runtime. No source checkout was modified.
 
-## ORL-004 Hostinger deployment — current frontier
-ORL-002 is PARTIAL: worker OAuth and private R2 resource verified; provider runtime integrations pending. ORL-004 depends on accepted foundation/OAuth code and owner deployment authority; READY then BUILDING with one Luna. Acceptance is a separate durable queue-only app/database service with secure HTTPS/session boundary, exact-candidate review and live persistence proof. Existing nine Hostinger containers are protected. ORL-003 worker execution remains NOT READY. Historical rows above describe earlier scope and are superseded by this entry.
-ORL-004: DEPLOYED_QUEUE_ONLY; technical gates and Sol PASS established, interactive browser acceptance remains UNKNOWN. See HOSTINGER-RUNTIME.md. Next direction VALIDATE user browser access then next bounded connection/isolation node. Full product remains incomplete.
+Current direction: CONTINUE B from independently accepted A and isolation-smoke checkpoints. Secure secrets-manager connection question is pending. No new spending authorized; no live provider results, throughput gains, learning gains or full-product completion established.

@@ -1,0 +1,46 @@
+{
+  "packet": "ORL-005A",
+  "verdict": "FIX",
+  "reviewed_at_utc": "2026-10-13T02:10:14Z",
+  "base_sha": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "candidate_manifest": ".agent/MISSION-ORL-005A-MANIFEST.sha256",
+  "candidate_manifest_sha256": "6a2d67c1cf82ba242a819bd82db4755ec00d9a376a304fd231c4c3e09c2eb15b",
+  "candidate_files_verified": 21,
+  "findings": [
+    {
+      "id": "A-001",
+      "severity": "high",
+      "location": ["packages/contracts/src/sql-mission-store.ts:22", "packages/contracts/src/memory-mission-store.ts:19"],
+      "problem": "The scope-conflict query treats every blocked slice as a quarantined active slice. Slices waiting for a dependency start blocked before they have ever received a lease. If a dependent child and its ready parent own overlapping paths, the waiting child prevents its parent from being claimed, so the graph cannot advance.",
+      "repair": "Distinguish dependency-waiting from worker-reported BLOCKED/UNKNOWN quarantine in persisted state and in both stores. Only unresolved work that actually acquired a lease may hold a capacity slot or quarantine a scope. Test an overlapping parent-child dependency in memory and PostgreSQL, including cross-mission conflicts."
+    },
+    {
+      "id": "A-002",
+      "severity": "high",
+      "location": ["packages/contracts/src/sql-mission-store.ts:22", "packages/contracts/src/memory-mission-store.ts:19", "packages/contracts/src/mission.ts:34"],
+      "problem": "Repository scope conflicts compare the submitted owner/repo string case-sensitively. GitHub repository names are case-insensitive, so two missions targeting the same repository under different casing can claim overlapping scopes concurrently.",
+      "repair": "Use one canonical repository identity for conflicts, preferably the resolved GitHub repository ID once the App is connected; for this bounded slice normalize owner/repo case consistently at submission and comparison. Add a two-mission mixed-case overlap test."
+    },
+    {
+      "id": "A-003",
+      "severity": "medium",
+      "location": ["packages/contracts/src/sql-mission-store.ts:32", "packages/contracts/src/memory-mission-store.ts:32", "tests/mission-http.test.ts:40"],
+      "problem": "After a candidate arrives, normal dependency-waiting children make SQL report the mission unknown and memory report it blocked. This conflates planned dependency wait with a real BLOCKED/UNKNOWN outcome and misstates owner-visible progress.",
+      "repair": "Derive mission status from semantically distinct waiting and quarantined states. A parent candidate awaiting independent verification should leave the mission awaiting_verification unless a real BLOCKED/UNKNOWN outcome exists. Update HTTP and store assertions."
+    },
+    {
+      "id": "A-004",
+      "severity": "high",
+      "location": ["apps/control-plane/src/main.ts:1", "packages/governor/src/governor.ts:31", "packages/contracts/src/sql-mission-store.ts:36"],
+      "problem": "The expired-lease transition is only called directly by tests. The running service has no startup, periodic, or claim-time reconciliation call. After a worker disappears, an expired lease remains persisted as running without an UNKNOWN event indefinitely; its callback is fenced but documented recovery state is not produced.",
+      "repair": "Add a bounded durable expiry sweep at startup and during operation, or before every claim, with a restart regression test. Preserve budget, slot, and scope quarantine and do not replay ambiguous effects."
+    }
+  ],
+  "positive_evidence": [
+    "All 21 files matched the frozen local manifest when reviewed; controller reported npm ci, typecheck, 18/18 tests, build, validate, and diff check exit 0",
+    "Owner mission writes retain session and cloud Origin/Host checks; worker routes use a separate bootstrap bearer and fenced lease/capability pair",
+    "Builder callbacks stop at awaiting_verification; integrate throws and no verifier endpoint can turn arbitrary evidence strings into certification",
+    "Expired/unknown work is intended to retain reservation and capacity/scope quarantine; current deterministic store tests cover that transition when explicitly invoked"
+  ],
+  "qualification": "Review is for the frozen 21-file working-tree candidate only. Real multi-connection PostgreSQL proof was pending at review time. Any source normalization or repair changes the candidate and requires a new manifest, deterministic gates, and independent re-review. This is not live worker, product, or finish-contract acceptance."
+}

@@ -19,6 +19,16 @@ export class PostgresJobStore extends SqlJobStore {
     try { await this.pool.query("SELECT 1"); return true; }
     catch { return false; }
   }
+  async query(text: string, params?: unknown[]) { return await this.pool.query(text, params) as unknown as { rows: Record<string, unknown>[]; rowCount: number | null }; }
+  async transaction<T>(work: (tx: SqlExecutor) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await work({ query: async (text, params) => await client.query(text, params) as unknown as { rows: Record<string, unknown>[]; rowCount: number | null } });
+      await client.query("COMMIT"); return result;
+    } catch (error) { await client.query("ROLLBACK"); throw error; }
+    finally { client.release(); }
+  }
   private async migrateAndReady() {
     const client = await this.pool.connect();
     try {
@@ -27,6 +37,9 @@ export class PostgresJobStore extends SqlJobStore {
       const migration = await readFile(resolve(process.cwd(), "db/migrations/001_initial.sql"), "utf8");
       await client.query(migration);
       await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["001_initial"]);
+      const missionMigration = await readFile(resolve(process.cwd(), "db/migrations/002_missions.sql"), "utf8");
+      await client.query(missionMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["002_missions"]);
       await client.query("SELECT 1");
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); throw error; }

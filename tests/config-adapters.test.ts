@@ -8,6 +8,8 @@ import { createCodexSdkAdapter } from "../packages/adapters/src/codex-sdk.js";
 
 test("configuration validates roles and does not reveal configured values in errors", () => {
   assert.equal(loadConfig({ ORLOOM_MODE: "local", PORT: "3210" }).port, 3210);
+  const safeDefaults=loadConfig({ORLOOM_MODE:"local"});assert.equal(safeDefaults.capacitySlots,0);assert.deepEqual(safeDefaults.workerAllowedModels,[]);assert.equal(safeDefaults.trustedCheckPolicyDigest,null);
+  assert.throws(()=>loadConfig({ORLOOM_MODE:"local",ORLOOM_CAPACITY_SLOTS:"1"}),/verified, unexpired isolation evidence binding/);
   assert.throws(() => loadConfig({ ORLOOM_MODE: "cloud", ORLOOM_DATABASE_URL: "" }), /requires ORLOOM_DATABASE_URL/);
   assert.throws(() => loadConfig({ ORLOOM_MODE: "production-secret" }), /ORLOOM_MODE must be local or cloud/);
   const github = validateRoleConfig("github", { ORLOOM_GITHUB_APP_ID: "not-a-number-secret", ORLOOM_GITHUB_PRIVATE_KEY: "private-value", ORLOOM_GITHUB_WEBHOOK_SECRET: "hook-value" });

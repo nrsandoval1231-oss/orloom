@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Preserve the exact bytes bound by the worker isolation evidence manifest.
+infra/worker-isolation/** -text
