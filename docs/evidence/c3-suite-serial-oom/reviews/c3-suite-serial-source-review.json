@@ -1,0 +1,23 @@
+{
+  "verdict": "PASS",
+  "scope": "Independent exact-source review of the bounded C3 suite test-file concurrency correction; source acceptance only, no cloud/runtime proof",
+  "baseSha": "2aeb28145e073b89d906491319c3767519a1a08d",
+  "candidateSha": "663af2c3e97852c28e06433baf39ac811dccf0ba",
+  "sourceManifestSha256": "1225d762b3e45ebeafb0af01d2e5cf03286b752ddd29453cd42755d021cd4bf2",
+  "manifestEntries": 117,
+  "changedFiles": [
+    ".agent/ORL-C3-SUITE-CONCURRENCY.md",
+    ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "packages/verification/src/policy.ts",
+    "tests/verification-runner.test.ts"
+  ],
+  "findings": [],
+  "evidence": [
+    "The clean candidate diff adds fixed --test-concurrency=1 to the Node test stage after --test, then passes the complete sorted discovered test file list unchanged. Discovery remains nonempty and no child-controlled argument, environment, or test selection is introduced.",
+    "The trusted suite stage argv, suite manifest version, and suite policy version change together, which changes the suite digest while retaining check ID node-repo-suite-v1 and the image digest binding. The syntax-check policy is unchanged.",
+    "The diff leaves the 180/210/225/240-second deadline chain, 1 CPU/1 GiB/128 PID isolation, one lane, log limits, stage order, fail/UNKNOWN/truncation handling, certificate rules, and protected PR2 source untouched.",
+    "The controller exact-candidate log work/suite-controller-gates-2026-10-13T12-11-55-420Z.log shows typecheck, clean build, all 74 tests passing with zero failures/skips, foundation validation, all applicable JavaScript and Bash syntax checks, and diff check passing. The current worktree is clean; the source manifest has 117 entries and matches its frozen hash."
+  ],
+  "boundary": "The prior 9ebc9d91 acceptance attempt remains UNKNOWN with zero certificates. This source PASS does not prove the serial full suite fits 180 seconds, avoids OOM, or earns a certificate; a new digest-bound image and new one-shot PostgreSQL/runsc acceptance attempt are required."
+}

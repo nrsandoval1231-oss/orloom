@@ -1,0 +1,11 @@
+{
+  "scriptName": "cleanup-acceptance.sh",
+  "args": [],
+  "scriptSha256": "de06b0cd1ddbcb65f745a4827a8e1d2be7ae4cf756f9a0a19ca1a635f6906486",
+  "start": "2026-10-13T12:23:59.392Z",
+  "finish": "2026-10-13T12:24:01.047Z",
+  "elapsedMs": 1655,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-serial-executions\\2026-10-13T12-23-59-391Z-cleanup-acceptance.sh"
+}
