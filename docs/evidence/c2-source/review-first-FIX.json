@@ -1,0 +1,64 @@
+{
+  "review": "ORL-C2-001 independent exact-candidate source review",
+  "verdict": "FIX",
+  "candidateSha": "8f2d27ef3d12b9c0318faf1314493c3b2f03697b",
+  "baseSha": "7a6165e3e9ce143e13aaab3b9e5b735c8eb35cdc",
+  "reviewedAtUtc": "2026-10-13T14:08:02Z",
+  "scope": "Source, packet, canonical contract and controller local gates only. No provider, host, deployment, or PR #2 action.",
+  "positiveEvidence": [
+    "The branch HEAD is the stated candidate and the worktree is clean. The diff is confined to the C2 packet/completion, existing Governor/store/Jev adapter/control-plane paths, a small pure ranking helper, and affected tests; no migration, package, worker protocol, broker, production provider configuration, or resource policy changed.",
+    "Jev is awaited before SqlMissionStore.claim enters its existing transaction and global governor lock. The SQL commit recomputes eligible ready slices, dependency status, repository-scope conflicts including UNKNOWN/blocked, budget reservation, attested free slot, and promoted lesson provenance; the selected lease still uses the existing slot, capability, reservation and event path.",
+    "The deterministic rank uses remaining DAG depth in slice-count units, known scope serialization risk, slice cost and stable identity ties. Advice is finite and validated against snapshot identities; changed snapshot digest falls back to fresh deterministic choice. Production main does not inject a scheduling adapter.",
+    "The real JevClient has a finite timeout and no retry; createJevSchedulingAdapter maps only finite labels and bounds its state to 16 KiB, with invalid or oversized input falling back through the Governor catch path.",
+    "Controller final-gates log work/scheduling-controller-gates-2026-10-13T14-04-35-095Z.log completed at 14:04:59 UTC: typecheck, clean build, 87 tests passed with zero failures/skips, structure validation, relevant syntax checks and git diff --check all exited 0."
+  ],
+  "findings": [
+    {
+      "id": "C2-F1",
+      "severity": "blocking",
+      "locations": [
+        "packages/contracts/src/sql-mission-store.ts:58",
+        "packages/contracts/src/memory-mission-store.ts:57",
+        "tests/scheduling.test.ts:28"
+      ],
+      "evidence": "Both stores set dispatchMayHaveOccurred to advice.status === 'unknown'. A successful selected result from the adapter necessarily follows an attempted call, yet its persisted event says false; invalid returned selections also record false. The new test explicitly asserts this incorrect successful-call provenance.",
+      "impact": "The durable scheduling event contradicts whether a possibly billed Jev request occurred, violating the packet's UNKNOWN/provenance boundary."
+    },
+    {
+      "id": "C2-F2",
+      "severity": "blocking",
+      "locations": [
+        "packages/judgment/src/jev-adapter.ts:76",
+        "packages/judgment/src/jev-adapter.ts:77",
+        "packages/governor/src/governor.ts:114",
+        "packages/governor/src/governor.ts:140",
+        "packages/contracts/src/sql-mission-store.ts:51",
+        "packages/contracts/src/sql-mission-store.ts:58"
+      ],
+      "evidence": "The Jev adapter returns only a selected string and discards the validated result's model and token usage. ClaimAdvice has no decision identity or usage fields. The only scheduling event is slice.claimed; if a Jev call occurred but a fresh locked claim returns null (capacity/eligibility changed), no scheduling event is written at all.",
+      "impact": "A possible provider effect can disappear from durable evidence, and a successful call cannot be attributed or metered from the recorded decision. The canonical requirement to record decision identity, policy, evidence and authorized outcome is not met by a claim event alone."
+    },
+    {
+      "id": "C2-F3",
+      "severity": "acceptance_gap",
+      "locations": [
+        "tests/scheduling.test.ts:22",
+        "tests/scheduling.test.ts:44",
+        "tests/scheduling.test.ts:58",
+        "tests/scheduling.test.ts:65",
+        ".agent/ORL-C2-001.md"
+      ],
+      "evidence": "The added tests exercise one memory concurrency race and SQL lesson withdrawal, but do not exercise a Jev timeout that ignores abort, invalid selected label through Governor, SQL concurrent claims, or fresh-change gates for slot expiry, plan/dependency/scope/budget changes. The SQL test calls store.claim directly with stale advice rather than the full Governor-to-SQL path. There is no no-grant advice-provenance assertion.",
+      "impact": "The packet's required failure/race matrix is incomplete even though the 87 existing tests pass."
+    }
+  ],
+  "boundedRepairDirection": "Keep the existing single Governor/store scheduler and unchanged production default. In one bounded source repair, represent advice dispatch state explicitly and conservatively, retain sanitized decision identity/model and measured token usage only when a validated result supplies them (otherwise UNKNOWN; never invent cost), and durably record an attempted scheduling decision even when the fresh claim grants no lease. Bind the record to the exact snapshot and policy, with no raw model text or secrets. Correct the selected/invalid dispatch flag. Add focused behavioral tests for successful and no-grant provenance, invalid and timeout/transport UNKNOWN fallback, and the packet's missing SQL fresh-state/concurrency gates. Re-freeze candidate, rerun mandatory final gates, then obtain a new independent exact-candidate review. If a durable no-grant record cannot fit the existing event model without a new authority or migration, return that precise design conflict to the controller before changing scope.",
+  "limits": "FIX is an independent source/acceptance verdict despite green deterministic gates. Real PostgreSQL multi-connection, live Jev spending and metering, host/runtime integration, measured scheduling gain, deployment and parent Finish Contract completion remain OPEN. PR #2 stays frozen.",
+  "requiredRepairTests": [
+    "Selected adapter result: one call, correct selected lease, event marks dispatch possible, exact decision/snapshot/policy identity and returned model/token usage; no raw payload or invented cost.",
+    "Invalid label and post-dispatch transport/timeout (including a never-settling transport through the bounded JevClient): one call at most, deterministic eligible fallback, dispatch possible, usage UNKNOWN when no validated result, and no worker-attempt UNKNOWN fabrication.",
+    "Advice followed by no grant after slot expiry or eligible-set removal: no lease/reservation, durable bounded advisory outcome with dispatch possible and exact candidate/snapshot identity.",
+    "SQL/PGlite Governor path: two simultaneous claims and changed scope/dependency/plan/lesson/budget/capacity between advice and locked claim; assert actual distinct leases, slots, reservations and events or safe null/fallback. Preserve UNKNOWN quarantine and six-slot configuration.",
+    "Unchanged worker lease envelope, no production adapter injection, no provider call, no migration, and no altered PR #2 files."
+  ]
+}
