@@ -1,0 +1,37 @@
+{
+  "candidate": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "role": "independent C3 source reviewer",
+  "verdict": "PASS",
+  "scope": "Source-only acceptance of the repaired local exact-commit syntax-check candidate. Actual protected-host runsc and PostgreSQL joined proof remains required.",
+  "evidence": {
+    "sourceManifestSha256": "91c672bd6519df3ef6344878cb75ddd81eb9285c9ad15f5528c85710ad89a211",
+    "controllerGates": "work/c3-controller-gates-repair1.txt records npm ci, typecheck, build, 66 tests, validate, and diff check PASS",
+    "repositoryStatus": "clean at reviewed candidate",
+    "hostProof": "OPEN; no Docker, runsc, provider, network, or host action performed by reviewer",
+    "productFinish": "OPEN"
+  },
+  "priorFindings": [
+    {
+      "id": "marker-versus-launcher-exit",
+      "status": "CLOSED_IN_SOURCE",
+      "evidence": "runsc-launcher.ts classifies a single decoded marker only when launcher exit is 0 or 1 and agrees with marker exit, with no signal, timeout, kill, truncation, or launcher stderr. launch-verifier.sh returns the Docker/tar pipeline status and treats failed cleanup as infrastructure exit. Added deterministic negative fixtures cover a PASS marker followed by infrastructure failure, timeout, signal, missing/duplicate/malformed marker and disagreement."
+    },
+    {
+      "id": "host-capacity-and-shutdown",
+      "status": "CLOSED_IN_SOURCE_RUNTIME_PROOF_OPEN",
+      "evidence": "A fixed root-owned host slot uses nonblocking flock and durable creating/running intent with exact container ID, label, name and image reconciliation. Ambiguous pre-ID creation, failed inspection or cleanup remains quarantined. Control-plane shutdown stops dispatch and awaits its in-flight verification before closing PostgreSQL. Two-instance and interruption behavior still require real host evidence."
+    },
+    {
+      "id": "policy-cwd",
+      "status": "CLOSED_IN_SOURCE",
+      "evidence": "The digested policy, tar extraction layout, and run-check.js child process all use /work/source; the archive extracts at /work so manifest.json remains at /work/manifest.json."
+    }
+  ],
+  "additionalReview": [
+    "Operator factory rejects absent, relative, temporary, source-overlapping, artifact-overlapping and malformed repository map paths before directory mutation; configuration tests cover these cases.",
+    "The repair did not add worker or owner access to the verifier capability or widen certificate scope, integration, budget release, or lesson promotion.",
+    "No new source-blocking defect found in the repaired candidate."
+  ],
+  "hostProofSafetyDirection": "A bounded existing-host proof is reasonable after read-only preflight confirms the preloaded immutable image, registered runsc runtime, protected root-owned /var/lib/orloom parent, absent or explicitly reconciled verifier slot, known disposable input/artifact paths, and no unrelated container identity. The launcher may force-remove only a recorded exact prior C3 container after matching ID, ORL-C3 label, invocation name and image; ambiguous creating intent or inspection failure stops without deletion. Retain raw pass/fail, interruption, two-instance denial, cleanup, artifact read-back, and PostgreSQL certificate evidence. Do not treat this source PASS as host-capacity or full-CI acceptance.",
+  "limits": "Read-only source and recorded-gate review. No actual protected-host execution or real PostgreSQL/runsc joined observation was performed in this review. Exact candidate changes require another review."
+}

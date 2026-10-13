@@ -6,3 +6,6 @@ infra/worker-isolation/** -text
 # Retain exact recorded evidence and archived candidate bytes.
 docs/evidence/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 .agent/archive/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# This executed helper's retained hash includes its final blank line.
+docs/evidence/c3-runtime/helpers/continue-proof.sh whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

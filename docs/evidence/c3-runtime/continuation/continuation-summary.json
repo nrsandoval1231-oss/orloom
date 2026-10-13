@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "sourceCandidate": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "originalAttempt": "UNKNOWN",
+  "originalContainerId": "140edd29f054bc9897d8f66a8b6b3bc90054954b8ff19996a31dd3fc6198dce4",
+  "reconciliation": "trusted launcher exact-ID cleanup before separate valid auxiliary-database check",
+  "certificateId": "84e7844f-5a3c-4ff2-9a54-efa2b80e7bc5",
+  "providerCalls": 0
+}

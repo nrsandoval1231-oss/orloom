@@ -1,0 +1,29 @@
+{
+  "observedAtUtc": "2026-10-13T08:16:37Z",
+  "hostMutation": false,
+  "providerCalls": 0,
+  "images": {
+    "universal": "sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304",
+    "postgres": "sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24"
+  },
+  "runscRegistered": true,
+  "protectedContainer": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67 2026-10-12T23:51:46.164222792Z 0 runc running",
+  "memory": {
+    "totalBytes": 4106100736,
+    "availableBytes": 3475755008
+  },
+  "disk": {
+    "totalBytes": 82086711296,
+    "availableBytes": 33766563840
+  },
+  "proposedSandbox": {
+    "concurrency": 1,
+    "cpuLimit": 0.5,
+    "memoryLimitBytes": 268435456,
+    "pidsLimit": 64
+  },
+  "verification": {
+    "syntaxOnly": true,
+    "fullCi": false
+  }
+}

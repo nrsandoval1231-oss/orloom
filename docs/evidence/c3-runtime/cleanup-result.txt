@@ -1,0 +1,5 @@
+{
+  "status": 0,
+  "stdout": "cleanup starts: exact database, volumes, network and staging only\ncleanup=PASS runtime resources removed; evidence, artifacts and resource records retained\n",
+  "stderr": ""
+}

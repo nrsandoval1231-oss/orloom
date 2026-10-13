@@ -1,0 +1,5 @@
+{
+  "status": 1,
+  "stdout": "",
+  "stderr": "proof failed closed; inspect evidence directory /var/lib/orloom/c3-proof-20261013/evidence/c3-c18dddbc54f6441b95711ae59bc46c22 (exit=1)\n"
+}

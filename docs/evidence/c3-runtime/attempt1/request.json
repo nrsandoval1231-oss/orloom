@@ -1,0 +1,18 @@
+{
+  "checkId": "node-validate-syntax",
+  "sliceId": "c3-runner",
+  "version": "orloom.trusted-check-request.v1",
+  "attemptId": "b07c459b-b321-4627-9d9a-00942996c98d",
+  "expiresAt": "2026-10-13T08:25:16.507Z",
+  "missionId": "67beeaad-67ab-4503-9f18-f8afcf13da91",
+  "leaseEpoch": 1,
+  "planDigest": "001c1fade4f84e2383dfc47e97f344b84ef444a09e2651c4448376e0f565dd8b",
+  "repository": "nrsandoval1231-oss/orloom",
+  "requestedAt": "2026-10-13T08:24:16.507Z",
+  "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "policyDigest": "66dd473c4f631a2bcb08e2f953708b8515ec1e566f527b8e54da7207110b127e",
+  "policyVersion": "orloom.check-policy.v1",
+  "inputBundleDigest": "91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf",
+  "verifierImageDigest": "e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+  "expectedLocalHeadSha": "765943eae18c09aa882e52c7f5255dd776c5fd43"
+}

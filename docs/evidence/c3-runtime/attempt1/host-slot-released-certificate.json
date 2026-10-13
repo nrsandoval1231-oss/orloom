@@ -1,0 +1,18 @@
+{
+  "version": "orloom.check-certificate.v1",
+  "certificateId": "a77fee6a-c911-45b5-9fc5-b8dc45c93329",
+  "attemptId": "b8abbce4-ea50-4b9c-87c3-c72789165418",
+  "missionId": "285e1a41-a829-4fcb-b607-84bd833d08fd",
+  "sliceId": "c3-slot-released",
+  "leaseEpoch": 1,
+  "repository": "nrsandoval1231-oss/orloom",
+  "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "localHeadSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "checkId": "node-validate-syntax",
+  "planDigest": "7a15204db2adefdf47b38ab400403ddd32d011224b736d63f6bcc5fb994d5f4e",
+  "policyVersion": "orloom.check-policy.v1",
+  "policyDigest": "66dd473c4f631a2bcb08e2f953708b8515ec1e566f527b8e54da7207110b127e",
+  "receiptDigest": "02c7209e7b020098916b6f4b8d57cd2e554905cf177eb7c89aa9029c5a173712",
+  "certifiedAt": "2026-10-13T08:24:28.287Z",
+  "scope": "local-exact-commit"
+}

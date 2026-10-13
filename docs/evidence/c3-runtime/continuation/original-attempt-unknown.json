@@ -1,0 +1,26 @@
+{
+  "attemptId": "0ec63b75-0377-4c4b-82b5-7df55afbcf4e",
+  "missionId": "6c61f130-0b05-4189-9a69-b64d13a2953b",
+  "outcome": "unknown",
+  "request": {
+    "checkId": "node-validate-syntax",
+    "sliceId": "c3-interrupt-cid",
+    "version": "orloom.trusted-check-request.v1",
+    "attemptId": "0ec63b75-0377-4c4b-82b5-7df55afbcf4e",
+    "expiresAt": "2026-10-13T08:25:31.441Z",
+    "missionId": "6c61f130-0b05-4189-9a69-b64d13a2953b",
+    "leaseEpoch": 1,
+    "planDigest": "1f44f999e7dce9602c6c9c08d2fb26f229a36206a6e12bb75cb4b8b788246f33",
+    "repository": "nrsandoval1231-oss/orloom",
+    "requestedAt": "2026-10-13T08:24:31.441Z",
+    "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+    "policyDigest": "66dd473c4f631a2bcb08e2f953708b8515ec1e566f527b8e54da7207110b127e",
+    "policyVersion": "orloom.check-policy.v1",
+    "inputBundleDigest": "91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf",
+    "verifierImageDigest": "e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+    "expectedLocalHeadSha": "765943eae18c09aa882e52c7f5255dd776c5fd43"
+  },
+  "receipt": null,
+  "originalRunName": "orloom-verifier-6f0f96cf-f4ab-4fc9-86c4-62a6bdb1f13d",
+  "originalContainerId": "140edd29f054bc9897d8f66a8b6b3bc90054954b8ff19996a31dd3fc6198dce4"
+}

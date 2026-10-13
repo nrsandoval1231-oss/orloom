@@ -1,0 +1,34 @@
+{
+  "sourceCandidate": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "verdict": "PASS",
+  "acceptedScope": "One genuine local exact-commit node syntax check through trusted bare Git extraction, runsc, durable hashed artifacts, private in-process coordinator capability, and PostgreSQL certificate, plus bounded host-slot contention and interrupted exact-CID reconciliation behavior. This is C3 technical runtime acceptance only.",
+  "evidence": {
+    "sourceManifestSha256": "91c672bd6519df3ef6344878cb75ddd81eb9285c9ad15f5528c85710ad89a211",
+    "retainedArchive": "work/c3-runtime-proof/retained-combined.tar.gz",
+    "retainedArchiveSha256": "3545a1c6ce5c8e5550cfff92a494b5d0056001f2d95cf05947e9b4319b55acc7",
+    "retainedArchiveBytes": 430228,
+    "initialCertificateId": "a634ca56-755e-492b-853a-5f283e80e31c",
+    "initialReceiptDigest": "bf4eb66a17a7ce3be0bb2aad3a0380370dfe118154b765d19b8fe14cf68d3e28",
+    "initialCandidateAndLocalHead": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+    "initialCheck": "node-validate-syntax; receipt outcome pass, exit 0, runtime runsc, 2026-10-13T08:24:16.522Z to 08:24:19.311Z",
+    "databaseConnections": "six distinct backend PIDs retained in attempt1/database-backend-pids.json",
+    "hostCollision": "second flock process exited 75; genuine coordinator attempt returned UNKNOWN with no new C3 container, no certificate, unchanged durable state and no automatic redispatch; a separate check certified after release",
+    "failedInitialFullHarness": "run-result-attempt1.txt exit 1 and attempt1/proof-failure.json preserve AssertionError at interrupted-real-launcher-cid-recovery; executed helper SHA256 70805d3f34163e5b6afe6740771a5445d2b1737906d9412fa64341425f34c2bf rejected Docker CREATED phase at line 236",
+    "interruptedContainer": "exact CID 140edd29f054bc9897d8f66a8b6b3bc90054954b8ff19996a31dd3fc6198dce4 was observed CREATED, not running, with runsc, network none, UID/GID 65532, read-only root, dropped capabilities, no-new-privileges, no host mounts, 0.5 CPU, 256 MiB memory and 64 PIDs",
+    "continuation": "continuation-result.txt exit 0; real-clock expiry classified original attempt 0ec63b75-0377-4c4b-82b5-7df55afbcf4e UNKNOWN with no receipt or redispatch; a fresh auxiliary-database mission used the genuine trusted launcher to reconcile the exact old CID and produced certificate 84e7844f-5a3c-4ff2-9a54-efa2b80e7bc5",
+    "continuationHelperSha256": "bf37dd990f286f334a817a4493d8c67ba8beba62cbc1141e1505200df3706b13",
+    "cleanup": "cleanup-preflight.txt and cleanup-result.txt exit 0 record exact labeled-resource cleanup while retaining evidence and artifacts; controller's independent postcheck reports no C3 containers, network, volumes, stale input/config/state and the protected codex-universal container unchanged"
+  },
+  "auditObservations": [
+    "docs/evidence/c3-runtime/EVIDENCE.md accurately distinguishes the failed first full harness from the successful separate continuation, names the CREATED phase, limits the certificate to local-exact-commit, and leaves full CI and product gates open.",
+    "The retained archive hash and size match the provided identity. Receipt and certificate records bind the exact source candidate, local head, policy and input manifest. The controller reports six artifact content hashes and continuation manifest hashes independently verified; this reviewer did not repeat host-side artifact reads.",
+    "The initial harness had passed its earlier capability, tamper, duplicate-submission, stale-local-head and reconnect assertions before the retained failure stage. These are bounded harness observations, not a completed initial end-to-end run or live provider results.",
+    "No source change or host execution was performed during this audit."
+  ],
+  "limits": [
+    "The failed initial full harness remains a failure record; the continuation is a separate recovery run and a distinct mission, not a retroactive PASS for that run.",
+    "The inspected interrupted sandbox was CREATED and not shown running; its inspection proves configuration and exact-ID reconciliation, while the separate certified checks establish actual runsc execution.",
+    "The proof does not establish full build/test/lint/typecheck/security CI, six-worker capacity, GitHub remote freshness or Checks publication, R2 retention, integration, deployment, Jev/provider use, C1b promotion, or product completion.",
+    "Cleanup script results and controller postcheck support the cleanup claim; the retained cleanup-independent.txt by itself records protected-container identity, not every empty-resource query."
+  ]
+}

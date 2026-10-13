@@ -1,0 +1,10 @@
+{
+  "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "baseSha": "545279c7b53fef8453c8e50ae0bc7f0d790959af",
+  "sourceRef": "refs/heads/feat/trusted-verification",
+  "sourceManifestSha256": "91c672bd6519df3ef6344878cb75ddd81eb9285c9ad15f5528c85710ad89a211",
+  "bundleSha256": "88564de225aaff2b90d084d57ab243e09b615e37bf651a9f388a5887e1729fe5",
+  "payloadManifestSha256": "f5e7a3a34af4549cb7eb5d4ad01739ee29fa8a7c1c266272c3e46e529553da15",
+  "fileCount": 157,
+  "repository": "nrsandoval1231-oss/orloom"
+}
