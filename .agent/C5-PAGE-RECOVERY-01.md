@@ -4,6 +4,8 @@
 
 **Repository identity.** `work/orloom-loom`, branch `feat/live-loom`, base `df72574e35799cd379a24a734d5e3ae00e86e2f5`.
 
+**Bounded follow-up.** On frozen browser candidate `8d6dda1ef62d5c4250c9965d4f280b2fe96d9afc`, desktop resize left the mobile disclosure subtree visible beside the desktop inspector. Keep exactly one visible inspector: `#inspect` hidden by default and enabled only at the mobile breakpoint; desktop summary remains hidden only at that breakpoint. Preserve mobile toggle behavior and add a focused responsive-rule regression. No authority or renderer change.
+
 **Owned files.** `apps/control-plane/src/loom-page.ts`, page-focused test(s), this packet, and its completion record. No other files are authorized.
 
 **Acceptance.**

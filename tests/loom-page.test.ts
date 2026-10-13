@@ -25,5 +25,7 @@ test("Loom renders its tested certificate rule and keeps explicit fallback and b
   assert.match(source, /pollTimer=setTimeout/);
   assert.match(source, /clearTimeout\(pollTimer\)/);
   assert.match(source, /certificateAvailable\(slice,e\)/);
+  assert.match(html, /#inspect\{display:none\}/);
+  assert.match(html, /\.desktop-summary\{display:none\}#inspect\{display:block\}/);
   assert.doesNotMatch(source, /localStorage|sessionStorage|innerHTML/);
 });
