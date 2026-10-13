@@ -5,6 +5,10 @@ export function classifySuiteStage(result) {
   return result.exitCode === 0 ? 'pass' : 'fail';
 }
 
+export function enforceSuiteDeadline(result, remainingMs) {
+  return remainingMs() <= 0 ? { ...result, exitCode: null, timedOut: true, deadlineExceeded: true } : result;
+}
+
 export async function runStage(file, args, { cwd, timeoutMs, maxLogBytes = 65_536, env }) {
   return new Promise(resolve => {
     let child;
@@ -33,11 +37,12 @@ export async function executeStages(stages, { run = runStage, remainingMs, onSta
   for await (const stage of stages) {
     onStart(stage.name);
     const budget = remainingMs();
-    const result = budget <= 0
+    let result = budget <= 0
       ? { exitCode: null, timedOut: true, spawnError: false, truncated: false, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0) }
       : stage.execute
         ? await stage.execute()
         : await run(stage.file, stage.args, { cwd: stage.cwd, timeoutMs: budget, maxLogBytes: stage.maxLogBytes, env: stage.env });
+    result = enforceSuiteDeadline(result, remainingMs);
     const outcome = classifySuiteStage(result);
     onEnd(stage.name, outcome, result);
     results.push({ name: stage.name, outcome, result });

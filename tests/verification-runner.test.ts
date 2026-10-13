@@ -186,7 +186,7 @@ test("repository suite admission accepts the exact dependency pair and rejects s
 
 test("repository suite requires discovered tests and treats failures, timeouts and truncation distinctly", async () => {
   const { discoverSuiteTests } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
-  const { classifySuiteStage, runStage, executeStages } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/stage-runner.js")).href);
+  const { classifySuiteStage, enforceSuiteDeadline, runStage, executeStages } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/stage-runner.js")).href);
   assert.deepEqual(discoverSuiteTests(["x.js", "b.test.js", "a.test.js"]), ["a.test.js", "b.test.js"]);
   assert.deepEqual(discoverSuiteTests(["x.js"]), []);
   const root = await mkdtemp(path.join(os.tmpdir(), "orl-suite-stage-")), script = path.join(root, "fixture.mjs"), later = path.join(root, "later.txt");
@@ -206,6 +206,20 @@ test("repository suite requires discovered tests and treats failures, timeouts a
     const ran = await executeStages(stages, { remainingMs: () => 500 });
     assert.equal(ran.length, 1); assert.equal(ran[0].outcome, "fail");
     await assert.rejects(import("node:fs/promises").then(fs => fs.access(later)), { code: "ENOENT" });
+
+    let callbackStarted = false, laterCallbackStarted = false, callbackBudget = 1;
+    const late = await executeStages([
+      { name: "late-final-callback", execute: async () => { callbackStarted = true; assert.ok(callbackBudget > 0, "callback starts within the remaining budget"); await Promise.resolve(); callbackBudget = -1; return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: false }; } },
+      { name: "must-not-run", execute: async () => { laterCallbackStarted = true; return { exitCode: 0, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: false }; } },
+    ], { remainingMs: () => callbackBudget });
+    assert.equal(callbackStarted, true);
+    assert.equal(late.length, 1);
+    assert.equal(late[0].outcome, "unknown", "a callback that returns after the whole-suite deadline cannot PASS");
+    assert.equal(late[0].result.deadlineExceeded, true);
+    assert.equal(laterCallbackStarted, false, "no later stage starts after a late final callback");
+    const finalGuard = enforceSuiteDeadline({ exitCode: 0, truncated: false, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0) }, () => -1);
+    assert.equal(finalGuard.exitCode, null, "the marker-boundary guard converts any over-deadline result to UNKNOWN");
+    assert.equal(classifySuiteStage(finalGuard), "unknown");
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -242,9 +256,9 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
 });
 
 test("UNKNOWN retains only bounded complete diagnostics from the trusted stage emitter", async () => {
-  const script = `import { emitSuiteDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 180001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 60001, outcome: 'pass' })) process.exitCode = 11;\n`;
+  const script = `import { emitSuiteDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nconst monotonicElapsed = Math.floor(performance.now());\nconst fractionalElapsed = monotonicElapsed + 0.5;\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 180001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }, { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: fractionalElapsed, outcome: 'pass' }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: monotonicElapsed, outcome: 'pass' })) process.exitCode = 11;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'start', elapsedMs: 0 })) process.exitCode = 12;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'end', elapsedMs: 60001, outcome: 'pass' })) process.exitCode = 13;\n`;
   const { stdout: emitted } = await exec(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8", windowsHide: true });
-  assert.equal(emitted.split("\n").filter(Boolean).length, 2, "the actual trusted emitter produces complete newline-terminated frames");
+  assert.equal(emitted.split("\n").filter(Boolean).length, 4, "the actual trusted emitter accepts integer monotonic elapsed values and produces complete ordered frames");
   const unknown = classifyLauncherOutput(`${emitted}candidate secret output\nORLOOM-DIAG:v2:eyJwYXJ0aWFsIg`, { exitCode: null, timedOut: true, killed: true }, 4096);
   assert.equal(unknown.exitCode, null);
   assert.equal(unknown.stdout.toString(), emitted);
