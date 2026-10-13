@@ -1,0 +1,9 @@
+# C4-DELIVERY-HTTP-01
+
+- **Objective:** Mount the owner-session `POST /api/delivery` route for the exact `DeliveryCommandV1`, reject request-supplied delivery-policy overrides, keep unavailable App/R2/controller authority closed, and bind separate Check/PR GET readbacks to requested/created IDs.
+- **Repository / branch / base:** `work/orloom-delivery`, `feat/certified-delivery`, `ea869d23301b712696122be25cdffc53ded598f8`.
+- **Allowed files:** `apps/control-plane/src/server.ts`, `tests/delivery-http.test.ts`, `packages/integration/src/delivery.ts`, `tests/delivery-effects.test.ts`, `docs/delivery.md`, this packet and C4 delivery completion artifact.
+- **Explicit exclusions:** No contracts, Governor, SQL store, migrations, adapters, production credential wiring, external HTTP, pushes, commits, merge, deployment, or UI controls. Preserve merged C5 server behavior and other concurrent work.
+- **Requirements:** Use the existing owner cookie/session and `MissionGovernor.deliverIntegratedCommit`; inject immutable policy and authority only through the server/controller argument. Exact request shape only. Missing authority returns 503. Check GET must return the requested/created/prior Check ID; PR GET must return the requested/created/prior PR number. Require no browser policy fields and no automatic merge.
+- **Validation:** Focused build/typecheck, `delivery-http` and delivery-effects tests, `git diff --check`. No full suite or live provider proof.
+- **Handoff:** Dirty candidate only; parent root serially integrates and runs final gates/review. Record UTC/model/usage as measured or UNKNOWN in completion artifact.

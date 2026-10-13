@@ -1,0 +1,9 @@
+# Certified delivery boundary
+
+`POST /api/delivery` accepts the exact `orloom.delivery-command.v1` envelope: `version`, `missionId`, `sliceId`, `leaseEpoch`, `integratedSha`, `treeSha`, `reviewArtifactId`, `reviewArtifactDigest`, and `idempotencyKey`. It requires the existing owner session. Any extra field is rejected; repository, GitHub App/installation, branch, base, check set, permissions, and policy come only from controller-injected immutable configuration.
+
+The server does not create GitHub credentials or discover R2 configuration. Without an injected delivery controller the route returns 503. Current application startup does not inject one, so this route remains closed by default. When configured, the existing Governor pipeline requires the approved integrated slice, retained final certificate and review, exact local integration ref/tree, and controller services before publishing. It consumes an already uploaded reserved Orloom branch after exact remote SHA/tree readback; it does not push Git data.
+
+Delivery publishes retained evidence as a completed Check and creates a draft pull request. It performs separate Check and PR GET readbacks and requires each returned ID to match the requested or created ID; the PR must remain open, draft, and unmerged with exact head/base identity. Durable effect claims prevent blind create retries after interruption. Missing or ambiguous outcomes remain unresolved for reconciliation. No automatic merge or deployment occurs, and GitHub does not execute CI.
+
+Responses are 401 for a missing owner session, 400 for malformed or extra command fields, 409 when delivery prerequisites or exact evidence fences fail, and 503 when controller delivery authority is absent or delivery is unavailable. These controlled tests are not credentialed GitHub App/R2 or remote delivery proof.

@@ -9,6 +9,7 @@ import { LocalIntegrationAuthority, MissionGovernor, RecoveryJudgmentAdapter, Sc
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
 import type { LearningActivation } from "../../../packages/learning/src/activation.js";
+import type { DeliveryAuthority, DeliveryCommandV1, DeliveryPolicy } from "../../../packages/integration/src/delivery.js";
 import { loomDocument } from "./loom-page.js";
 import { projectLoom } from "./loom-projection.js";
 
@@ -34,7 +35,7 @@ async function body(req: IncomingMessage): Promise<Buffer> {
 function send(res: ServerResponse, status: number, data: string, type = "application/json") { res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "x-content-type-options": "nosniff", "cache-control": "no-store" }); res.end(data); }
 function parseJson(raw: Buffer): unknown { try { return JSON.parse(raw.toString()); } catch { throw new InputValidationError("invalid json"); } }
 
-export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, schedulingAdapter?:SchedulingJudgmentAdapter, learningActivation?:LearningActivation, localIntegration?:LocalIntegrationAuthority) {
+export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, schedulingAdapter?:SchedulingJudgmentAdapter, learningActivation?:LearningActivation, localIntegration?:LocalIntegrationAuthority, deliveryController?: { policy: DeliveryPolicy; authority: DeliveryAuthority }) {
   const sessions = new Map<string, number>();
   const cloud = config.mode === "cloud";
   const sessionMaxAge = (config as Config & { sessionTtlSeconds?: number }).sessionTtlSeconds ?? 8 * 60 * 60;
@@ -80,6 +81,32 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         if (!validSession(req, config, sessions)) return send(res, 401, JSON.stringify({ error: "Unauthorized" }));
         const input = parseJson(await body(req)); if (!input || typeof input !== "object" || Array.isArray(input)) return send(res,400,JSON.stringify({error:"Invalid mission input"}));const v=input as Record<string,unknown>;
         const mission = await governor.submit({repository:v.repository as string,baseSha:v.baseSha as string,objective:v.objective as string,acceptance:v.acceptance as string[],budgetCents:v.budgetCents as number}); return send(res,201,JSON.stringify(mission));
+      }
+      if (req.method === "POST" && req.url?.split("?",1)[0] === "/api/delivery") {
+        if (!validSession(req, config, sessions)) return send(res,401,JSON.stringify({error:"Unauthorized"}));
+        if (!deliveryController?.policy || !deliveryController.authority) return send(res,503,JSON.stringify({error:"Delivery authority is not configured"}));
+        let input: unknown;
+        try { input = parseJson(await body(req)); } catch (error) {
+          if (error instanceof RequestTooLargeError) throw error;
+          return send(res,400,JSON.stringify({error:"Invalid delivery request"}));
+        }
+        const keys=["version","missionId","sliceId","leaseEpoch","integratedSha","treeSha","reviewArtifactId","reviewArtifactDigest","idempotencyKey"];
+        if (!input || typeof input !== "object" || Array.isArray(input)) return send(res,400,JSON.stringify({error:"Invalid delivery request"}));
+        const value=input as Record<string,unknown>;
+        if (Object.keys(value).length!==keys.length || Object.keys(value).some(key=>!keys.includes(key)) ||
+            value.version!=="orloom.delivery-command.v1" || typeof value.missionId!=="string" || typeof value.sliceId!=="string" ||
+            !Number.isSafeInteger(value.leaseEpoch) || typeof value.integratedSha!=="string" || typeof value.treeSha!=="string" ||
+            typeof value.reviewArtifactId!=="string" || typeof value.reviewArtifactDigest!=="string" || typeof value.idempotencyKey!=="string") {
+          return send(res,400,JSON.stringify({error:"Invalid delivery request"}));
+        }
+        try {
+          const result=await governor.deliverIntegratedCommit(value as unknown as DeliveryCommandV1,deliveryController.policy,deliveryController.authority);
+          return send(res,200,JSON.stringify(result));
+        } catch (error) {
+          if (error instanceof MissionValidationError) return send(res,400,JSON.stringify({error:"Invalid delivery request"}));
+          if (error instanceof MissionConflictError) return send(res,409,JSON.stringify({error:"Delivery could not be confirmed"}));
+          return send(res,503,JSON.stringify({error:"Delivery is unavailable"}));
+        }
       }
       if(req.method==="GET"&&req.url?.match(/^\/api\/lessons\/([^/?]+)\/impact$/)){
         if(!validSession(req,config,sessions))return send(res,401,JSON.stringify({error:"Unauthorized"}));

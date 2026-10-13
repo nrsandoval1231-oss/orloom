@@ -19,7 +19,7 @@ const checkIdFor=(missionId:string,sliceId:string,epoch:number,sha:string)=>`${m
 const branchFor=(missionId:string,sliceId:string)=>`orloom/delivery/${missionId}/${hash(sliceId).slice(0,12)}`;
 function assertRemote(remote:{sha:string;treeSha:string},sha:string,tree:string){if(remote.sha!==sha||remote.treeSha!==tree)throw new MissionConflictError("Remote delivery branch does not match the integrated commit and tree");}
 function assertBase(remote:{sha:string;treeSha:string},sha:string){if(remote.sha!==sha)throw new MissionConflictError("Remote base ref no longer matches the approved pinned commit");}
-function assertPr(pr:{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string},request:DeliveryRequestV1){if(!Number.isSafeInteger(pr.number)||pr.number<1||!pr.draft||pr.state!=="open"||pr.merged||pr.headRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.headRef!==request.branch||pr.headSha!==request.integratedSha||pr.baseRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.baseRef!==request.baseRef||pr.baseSha!==request.baseSha)throw new MissionConflictError("Draft PR readback differs from the exact approved delivery identity");}
+function assertPr(pr:{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string},request:DeliveryRequestV1,expectedNumber?:number){if(!Number.isSafeInteger(pr.number)||pr.number<1||(expectedNumber!==undefined&&pr.number!==expectedNumber)||!pr.draft||pr.state!=="open"||pr.merged||pr.headRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.headRef!==request.branch||pr.headSha!==request.integratedSha||pr.baseRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.baseRef!==request.baseRef||pr.baseSha!==request.baseSha)throw new MissionConflictError("Draft PR readback differs from the exact approved delivery identity");}
 async function verifyArtifact(store:ArtifactStore,r:{key:string;sha256:string;bytes:number}){if(!sha256.test(r.sha256)||r.key!==`sha256/${r.sha256}`||!Number.isSafeInteger(r.bytes)||r.bytes<0)throw new MissionConflictError("Trusted evidence artifact reference is malformed");const bytes=await store.get(r.key);if(bytes.byteLength!==r.bytes||hash(bytes)!==r.sha256)throw new MissionConflictError("Trusted evidence artifact could not be read back by its content digest");}
 function asRecord(x:unknown):Record<string,unknown>{if(!x||typeof x!=="object"||Array.isArray(x))throw new MissionConflictError("Retained trusted receipt is malformed");return x as Record<string,unknown>;}
 async function validateCert(store:MissionStore,artifacts:ArtifactStore,certificate:CheckCertificateV1,request:DeliveryRequestV1,policy:DeliveryPolicy){
@@ -28,8 +28,8 @@ async function validateCert(store:MissionStore,artifacts:ArtifactStore,certifica
   await Promise.all([verifyArtifact(artifacts,receipt.stdout),verifyArtifact(artifacts,receipt.stderr),verifyArtifact(artifacts,receipt.inputManifest)]);
 }
 
-function assertCheck(check:{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null},request:DeliveryRequestV1,name:string,externalId:string){
-  if(!Number.isSafeInteger(check.id)||check.id<1||check.headSha!==request.integratedSha||check.name!==name||check.externalId!==externalId||check.conclusion!=="success"||check.appId!==request.appId)throw new MissionConflictError("Check response or readback differs from the configured App and retained certificate identity");
+function assertCheck(check:{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null},request:DeliveryRequestV1,name:string,externalId:string,expectedId?:number){
+  if(!Number.isSafeInteger(check.id)||check.id<1||(expectedId!==undefined&&check.id!==expectedId)||check.headSha!==request.integratedSha||check.name!==name||check.externalId!==externalId||check.conclusion!=="success"||check.appId!==request.appId)throw new MissionConflictError("Check response or readback differs from the configured App and retained certificate identity");
 }
 function deliveryRequest(command:DeliveryCommandV1,policy:DeliveryPolicy,branch:string,checkIds:string[]):DeliveryRequestV1{
   return{version:"orloom.delivery-request.v1",missionId:command.missionId,sliceId:command.sliceId,leaseEpoch:command.leaseEpoch,integratedSha:command.integratedSha,treeSha:command.treeSha,repository:policy.repository.toLowerCase(),appId:policy.appId,installationId:policy.installationId,branch,baseRef:policy.baseRef,baseSha:policy.baseSha,checkIds,reviewArtifactId:command.reviewArtifactId,reviewArtifactDigest:command.reviewArtifactDigest,idempotencyKey:command.idempotencyKey};
@@ -95,9 +95,10 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
     try{
       assertCheck(check,request,checkName,externalId);
       if(checkClaim.externalId&&checkClaim.externalId!==String(check.id))throw new MissionConflictError("Check readback differs from the durable effect identity");
+      const listedId=check.id;
       await verifyRemoteAndBase();
-      check=await authority.github.getCheckRun(policy.installationId,repository,check.id);
-      assertCheck(check,request,checkName,externalId);
+      check=await authority.github.getCheckRun(policy.installationId,repository,listedId);
+      assertCheck(check,request,checkName,externalId,listedId);
       await verifyRemoteAndBase();
       await store.observeDeliveryEffect!(request,"check",String(check.id));
       if(intent.state!=="pr_created")intent=await store.updateDeliveryIntent!(request,{state:"check_created",checkRunId:String(check.id),observedRemoteSha:command.integratedSha});
@@ -111,7 +112,7 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
       assertCheck(created,request,checkName,externalId);
       await verifyRemoteAndBase();
       check=await authority.github.getCheckRun(policy.installationId,repository,created.id);
-      assertCheck(check,request,checkName,externalId);
+      assertCheck(check,request,checkName,externalId,created.id);
       await verifyRemoteAndBase();
       await store.observeDeliveryEffect!(request,"check",String(check.id));
       intent=await store.updateDeliveryIntent!(request,{state:"check_created",checkRunId:String(check.id),observedRemoteSha:command.integratedSha});
@@ -129,9 +130,10 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
     try{
       assertPr(pr,request);
       if(prClaim.externalId&&prClaim.externalId!==String(pr.number))throw new MissionConflictError("Draft PR readback differs from the durable effect identity");
+      const listedNumber=pr.number;
       await verifyRemoteAndBase();
-      pr=await authority.github.getPullRequest(policy.installationId,repository,pr.number);
-      assertPr(pr,request);
+      pr=await authority.github.getPullRequest(policy.installationId,repository,listedNumber);
+      assertPr(pr,request,listedNumber);
       await verifyRemoteAndBase();
       await store.observeDeliveryEffect!(request,"pull_request",String(pr.number));
     }catch{return markUnknown("Existing PR did not pass exact open, unmerged draft readback");}
@@ -146,7 +148,7 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
       assertPr(created,request);
       await verifyRemoteAndBase();
       pr=await authority.github.getPullRequest(policy.installationId,repository,created.number);
-      assertPr(pr,request);
+      assertPr(pr,request,created.number);
       await verifyRemoteAndBase();
       await store.observeDeliveryEffect!(request,"pull_request",String(pr.number));
     }catch{return markUnknown("Draft PR write or separate PR readback is unresolved; create will not be repeated");}

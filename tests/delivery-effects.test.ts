@@ -18,7 +18,7 @@ const policy:DeliveryPolicy={repository:"acme/orloom",appId:11,installationId:9,
 type Check=Awaited<ReturnType<GitHubInstallationClient["createDeliveryCheck"]>>;
 type PullRequest=Awaited<ReturnType<GitHubInstallationClient["createDraftPullRequest"]>>;
 
-async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_after"|"throw_absent";prPost?:"normal"|"throw_after";appId?:number;draft?:boolean;state?:string;merged?:boolean;duplicates?:boolean}={}){
+async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_after"|"throw_absent";prPost?:"normal"|"throw_after";appId?:number;checkGetId?:number;prGetNumber?:number;draft?:boolean;state?:string;merged?:boolean;duplicates?:boolean}={}){
   const db=new PGlite();
   for(const file of ["001_initial.sql","002_missions.sql","003_recovery.sql","004_verification.sql","005_learning.sql","006_integration.sql","007_delivery.sql"])await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
   let lock=Promise.resolve();
@@ -60,7 +60,7 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
       if(mode.duplicates){const existing=check??{id:81,headSha,name,externalId,conclusion:"success",appId:policy.appId};return[existing,{...existing,id:existing.id+1}];}
       return check?[check]:[];
     },
-    getCheckRun:async(_install,_repo,id)=>{checkReads++;if(!check||check.id!==id)throw new Error("Check unavailable");return{...check,appId:mode.appId??check.appId};},
+    getCheckRun:async(_install,_repo,id)=>{checkReads++;if(!check||check.id!==id)throw new Error("Check unavailable");return{...check,id:mode.checkGetId??check.id,appId:mode.appId??check.appId};},
     createDeliveryCheck:async(_install,_repo,headSha,name,externalId)=>{
       const claim=await db.query("SELECT state FROM mission_delivery_effects WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=1 AND effect='check'",[mission.id,command.sliceId]);assert.equal((claim.rows[0] as {state:string}|undefined)?.state,"claimed","durable Check claim precedes POST");
       checkPosts++;
@@ -77,7 +77,7 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
       if(mode.prPost==="throw_after")throw new Error("connection lost after PR create");
       return pr;
     },
-    getPullRequest:async(_install,_repo,number)=>{prReads++;if(!pr||pr.number!==number)throw new Error("PR unavailable");return pr;}
+    getPullRequest:async(_install,_repo,number)=>{prReads++;if(!pr||pr.number!==number)throw new Error("PR unavailable");return{...pr,number:mode.prGetNumber??pr.number};}
   };
   const integrator={repositoryIdentity:policy.repository,readRef:async()=>sha,inspect:async()=>({candidateSha:sha,treeSha:tree,expectedIntegrationSha:base})};
   const authority={integrator,reviews:{read:async(id:string)=>id===command.reviewArtifactId?reviewBytes:null},artifacts:{put:async()=>({key:"",sha256:""}),get:async(key:string)=>{const value=artifacts.get(key);if(!value)throw new Error("artifact unavailable");return value;}},github} as never;
@@ -123,8 +123,8 @@ test("unresolved absent effect remains UNKNOWN and is never blindly retried",asy
   }finally{await f.db.close();}
 });
 
-test("wrong App identity, duplicate Checks, and closed or merged PRs remain non-success",async t=>{
-  for(const scenario of [{name:"wrong App in Check readback",mode:{appId:999}},{name:"configured App policy mismatch",mode:{configuredAppId:99}},{name:"ambiguous Checks",mode:{duplicates:true}},{name:"closed draft",mode:{state:"closed"}},{name:"merged draft",mode:{merged:true}},{name:"non-draft PR",mode:{draft:false}}]){
+test("wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success",async t=>{
+  for(const scenario of [{name:"wrong App in Check readback",mode:{appId:999}},{name:"Check GET returns a different id",mode:{checkGetId:82}},{name:"PR GET returns a different number",mode:{prGetNumber:92}},{name:"configured App policy mismatch",mode:{configuredAppId:99}},{name:"ambiguous Checks",mode:{duplicates:true}},{name:"closed draft",mode:{state:"closed"}},{name:"merged draft",mode:{merged:true}},{name:"non-draft PR",mode:{draft:false}}]){
     await t.test(scenario.name,async()=>{const f=await setup(scenario.mode);try{await assert.rejects(deliver(f));const state=await f.db.query("SELECT state FROM mission_delivery_intents WHERE mission_id=$1",[f.missionId]);assert.notEqual((state.rows[0] as {state:string}|undefined)?.state,"pr_created");}finally{await f.db.close();}});
   }
 });
