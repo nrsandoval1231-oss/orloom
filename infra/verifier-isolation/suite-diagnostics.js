@@ -1,4 +1,4 @@
-const PREFIX = 'ORLOOM-DIAG:v3:';
+const PREFIX = 'ORLOOM-DIAG:v4:';
 const stages = new Set([
   'dependency-lock-admission', 'typecheck', 'clean-build', 'test-discovery',
   'node-tests', 'foundation-validation', 'offline-security-policy',
@@ -11,22 +11,22 @@ export function emitSuiteDiagnostic(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const { stage, phase, elapsedMs, outcome } = value;
   if (!stages.has(stage) || !['start', 'end'].includes(phase)
-    || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 180_000
+    || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 360_000
     || (phase === 'start' ? outcome !== undefined : !['pass', 'fail', 'unknown'].includes(outcome))) {
     return false;
   }
-  return emit({ version: 'orloom.suite-diagnostics.v3', stage, phase, elapsedMs, ...(phase === 'end' ? { outcome } : {}) });
+  return emit({ version: 'orloom.suite-diagnostics.v4', stage, phase, elapsedMs, ...(phase === 'end' ? { outcome } : {}) });
 }
 
 /** Emits one fixed-schema per-file frame. Filenames are basenames from trusted discovery. */
 export function emitSuiteTestDiagnostic(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const { phase, elapsedMs, ordinal, testFile, outcome } = value;
-  if (!['start', 'end'].includes(phase) || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 180_000
+  if (!['start', 'end'].includes(phase) || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 360_000
     || !Number.isSafeInteger(ordinal) || ordinal < 1 || ordinal > 64
     || typeof testFile !== 'string' || testFile.length < 1 || testFile.length > 128 || !/^[A-Za-z0-9._-]+\.test\.js$/.test(testFile)
     || (phase === 'start' ? outcome !== undefined : !['pass', 'fail', 'unknown'].includes(outcome))) return false;
-  return emit({ version: 'orloom.suite-diagnostics.v3', stage: 'node-tests', phase, elapsedMs, ordinal, testFile, ...(phase === 'end' ? { outcome } : {}) });
+  return emit({ version: 'orloom.suite-diagnostics.v4', stage: 'node-tests', phase, elapsedMs, ordinal, testFile, ...(phase === 'end' ? { outcome } : {}) });
 }
 
 function emit(frame) {
