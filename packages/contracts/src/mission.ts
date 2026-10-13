@@ -43,7 +43,18 @@ export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: numb
 export interface SchedulingLessonHint { id: string; version: number; challengeDigest: string; checkId: string; strategyId: string; policyDigest: string; }
 export interface SchedulingChoice { missionId: string; sliceId: string; repository: string; planDigest: string; dependencies: string[]; scopes: string[]; budgetCents: number; missionBudgetCents: number; reservedBudgetCents: number; downstreamDepth: number; scopeRisk: number; lessons: SchedulingLessonHint[]; }
 export interface SchedulingSnapshot { capturedAt: string; freeCapacity: number; choices: SchedulingChoice[]; snapshotDigest: string; }
-export interface ClaimAdvice { status: "selected" | "unknown" | "invalid" | "unavailable" | "not_consulted" | "stale_fallback"; preferredCandidateId: string | null; snapshotDigest: string | null; }
+export interface SchedulingTokenUsage { inputTokens: number; outputTokens: number; }
+export interface SchedulingDecisionRecord {
+  decisionId: string; phase: "dispatch_possible" | "advice_resolved" | "no_lease";
+  status: "pending" | "selected" | "invalid" | "unknown" | "no_lease";
+  snapshotDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string;
+  dispatchMayHaveOccurred: true; preferredCandidateId: string | null; validatedCandidateId: string | null;
+  modelId: string | null; tokenUsage: SchedulingTokenUsage | null; tokenUsageStatus: "measured" | "unknown";
+}
+export interface ClaimAdvice extends Omit<SchedulingDecisionRecord, "phase" | "status" | "dispatchMayHaveOccurred" | "trustedCheckPolicyDigest" | "recoveryPolicyDigest"> {
+  status: "selected" | "unknown" | "invalid"; dispatchMayHaveOccurred: true;
+  trustedCheckPolicyDigest: string; recoveryPolicyDigest: string;
+}
 export interface MissionStore {
   configureCapacity(count: number, evidenceDigest: string | null, expiresAt: string | null): Promise<void>;
   submit(input: MissionInput): Promise<Mission>;
@@ -53,6 +64,7 @@ export interface MissionStore {
   events(missionId: string, after: number): Promise<MissionEvent[]>;
   claim(leaseSeconds: number, policyDigest: string, now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice): Promise<LeaseGrant | null>;
   schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, now?: Date): Promise<SchedulingSnapshot>;
+  recordSchedulingDecision?(missionId: string, decision: SchedulingDecisionRecord): Promise<void>;
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;
   complete(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, candidateSha: string, evidenceRefs: string[]): Promise<MissionSlice>;
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;

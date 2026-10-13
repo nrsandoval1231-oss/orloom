@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { ClaimAdvice, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { ClaimAdvice, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CheckCertificateV1, parseTrustedCheckRequestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
@@ -111,7 +111,8 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
 
 export interface GovernorConfig { maxLanes: number; capacitySlots: number; leaseSeconds: number; trustedCheckPolicyDigest: string | null; recoveryPolicyDigest?: string | null; trustedCheckPolicy?: string[]; trustedStrategies?: Record<string,TrustedStrategyPolicy>; executionConfigured?: boolean; progressLimits?: {maxProviderCalls:number;maxInputTokens:number;maxOutputTokens:number;maxWallSeconds:number}; }
 export type RecoveryJudgmentAdapter=(snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>;
-export type SchedulingJudgmentAdapter=(snapshot:SchedulingSnapshot)=>Promise<string>;
+export interface SchedulingJudgmentResult { selectedCandidateId:string; modelId:string; tokenUsage:SchedulingTokenUsage; }
+export type SchedulingJudgmentAdapter=(snapshot:SchedulingSnapshot,decisionId:string)=>Promise<SchedulingJudgmentResult>;
 function exactKeys(value: unknown, expected: readonly string[]): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = Object.keys(value);
@@ -132,16 +133,31 @@ export class MissionGovernor {
   approve(missionId: string) { return this.store.approvePlan(missionId); }
   async claim() {
     if (!this.config.capacitySlots || !this.config.trustedCheckPolicyDigest || !this.config.executionConfigured) return null;
-    const recoveryPolicyDigest=this.config.recoveryPolicyDigest??"";let advice:ClaimAdvice|undefined;
+    const recoveryPolicyDigest=this.config.recoveryPolicyDigest??"";let advice:ClaimAdvice|undefined,decision:{missionId:string;record:SchedulingDecisionRecord}|undefined;
     if(this.store.schedulingSnapshot){
       const snapshot=await this.store.schedulingSnapshot(this.config.trustedCheckPolicyDigest,recoveryPolicyDigest);
       if(this.schedulingAdapter&&snapshot.freeCapacity>0&&snapshot.choices.length>=2){
         const bounded={...snapshot,choices:rankSchedulingChoices(snapshot.choices).slice(0,32)};
-        try{const selected=await this.schedulingAdapter(bounded);advice={status:bounded.choices.some(x=>`${x.missionId}:${x.sliceId}`===selected)?"selected":"invalid",preferredCandidateId:bounded.choices.some(x=>`${x.missionId}:${x.sliceId}`===selected)?selected:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices})};}
-        catch{advice={status:"unknown",preferredCandidateId:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices})};}
-      }else advice={status:"not_consulted",preferredCandidateId:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:snapshot.freeCapacity,choices:snapshot.choices})};
+        const snapshotDigest=schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices}),decisionId=randomUUID(),anchor=bounded.choices[0]!;
+        const record=async(phase:SchedulingDecisionRecord["phase"],status:SchedulingDecisionRecord["status"],selectedCandidateId:string|null,modelId:string|null,tokenUsage:SchedulingTokenUsage|null,tokenUsageStatus:SchedulingDecisionRecord["tokenUsageStatus"])=>(this.store.recordSchedulingDecision?.(anchor.missionId,{decisionId,phase,status,snapshotDigest,trustedCheckPolicyDigest:this.config.trustedCheckPolicyDigest!,recoveryPolicyDigest,dispatchMayHaveOccurred:true,preferredCandidateId:selectedCandidateId,validatedCandidateId:status==="selected"?selectedCandidateId:null,modelId,tokenUsage,tokenUsageStatus}));
+        let canDispatch=false;
+        try{if(this.store.recordSchedulingDecision){await record("dispatch_possible","pending",null,null,null,"unknown");canDispatch=true;}}catch{/* A possible Jev call must have a durable pre-dispatch record. */}
+        if(canDispatch){
+          let status:ClaimAdvice["status"]="unknown",preferredCandidateId:string|null=null,modelId:string|null=null,tokenUsage:SchedulingTokenUsage|null=null,tokenUsageStatus:SchedulingDecisionRecord["tokenUsageStatus"]="unknown";
+          try{
+            const result=await this.schedulingAdapter(bounded,decisionId),validModel=typeof result?.modelId==="string"&&result.modelId.length<=256&&/^[A-Za-z0-9._:-]+$/.test(result.modelId),validUsage=!!result?.tokenUsage&&Number.isSafeInteger(result.tokenUsage.inputTokens)&&result.tokenUsage.inputTokens>=0&&Number.isSafeInteger(result.tokenUsage.outputTokens)&&result.tokenUsage.outputTokens>=0;
+            if(validModel)modelId=result.modelId;if(validUsage){tokenUsage={inputTokens:result.tokenUsage.inputTokens,outputTokens:result.tokenUsage.outputTokens};tokenUsageStatus="measured";}
+            if(typeof result?.selectedCandidateId==="string"&&bounded.choices.some(x=>`${x.missionId}:${x.sliceId}`===result.selectedCandidateId)){status="selected";preferredCandidateId=result.selectedCandidateId;}else status="invalid";
+          }catch{status="unknown";}
+          try{await record("advice_resolved",status,preferredCandidateId,modelId,tokenUsage,tokenUsageStatus);}catch{status="unknown";preferredCandidateId=null;modelId=null;tokenUsage=null;tokenUsageStatus="unknown";}
+          advice={decisionId,snapshotDigest,trustedCheckPolicyDigest:this.config.trustedCheckPolicyDigest,recoveryPolicyDigest,status,dispatchMayHaveOccurred:true,preferredCandidateId,validatedCandidateId:status==="selected"?preferredCandidateId:null,modelId,tokenUsage,tokenUsageStatus};
+          decision={missionId:anchor.missionId,record:{decisionId,phase:"no_lease",status:"no_lease",snapshotDigest,trustedCheckPolicyDigest:this.config.trustedCheckPolicyDigest,recoveryPolicyDigest,dispatchMayHaveOccurred:true,preferredCandidateId,validatedCandidateId:null,modelId,tokenUsage,tokenUsageStatus}};
+        }
+      }
     }
-    return this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,undefined,recoveryPolicyDigest,advice);
+    const grant=await this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,undefined,recoveryPolicyDigest,advice);
+    if(!grant&&decision)await this.store.recordSchedulingDecision?.(decision.missionId,decision.record);
+    return grant;
   }
   heartbeat(missionId:string,id: string, epoch: number, token: string, capability: string) { return this.store.heartbeat(missionId,id, epoch, token, capability, this.config.leaseSeconds); }
   complete(missionId:string,id: string, epoch: number, token: string, capability: string, candidateSha: string, evidenceRefs: string[]) {

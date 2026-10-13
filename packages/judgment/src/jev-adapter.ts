@@ -61,7 +61,7 @@ export function createJevRecoveryAdapter(client: JevClient): RecoveryJudgmentAda
 
 /** Selects one opaque candidate identity from a bounded advisory scheduling snapshot. */
 export function createJevSchedulingAdapter(client: JevClient): SchedulingJudgmentAdapter {
-  return async snapshot => {
+  return async (snapshot, _decisionId) => {
     const candidates=snapshot.choices.slice(0,32);
     if(candidates.length<2)throw new Error("scheduling advice needs at least two eligible choices");
     const choices:Record<string,string>={},labels=new Map<string,string>();
@@ -74,6 +74,7 @@ export function createJevSchedulingAdapter(client: JevClient): SchedulingJudgmen
     const state={version:"orloom.athena-scheduling-context.v1",capturedAt:snapshot.capturedAt,freeCapacity:snapshot.freeCapacity,choices:candidates.map(x=>({missionId:x.missionId,sliceId:x.sliceId,repository:x.repository,planDigest:x.planDigest,dependencies:x.dependencies,scopeRisk:x.scopeRisk,budgetCents:x.budgetCents,missionBudgetCents:x.missionBudgetCents,reservedBudgetCents:x.reservedBudgetCents,downstreamDepth:x.downstreamDepth,lessons:x.lessons}))};
     if(Buffer.byteLength(JSON.stringify(state),"utf8")>16_384)throw new Error("scheduling context exceeds local byte bound");
     const result=await client.choose({state:state as unknown as EntryType,choices});
-    const selected=labels.get(result.choice);if(!selected)throw new Error("Jev selected an unknown scheduling option");return selected;
+    const selected=labels.get(result.choice);if(!selected)throw new Error("Jev selected an unknown scheduling option");
+    return {selectedCandidateId:selected,modelId:result.model,tokenUsage:result.usage};
   };
 }

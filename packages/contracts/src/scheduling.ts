@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { SchedulingChoice, SchedulingSnapshot, SliceInput } from "./mission.js";
+import { MissionValidationError, type SchedulingChoice, type SchedulingDecisionRecord, type SchedulingSnapshot, type SliceInput } from "./mission.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 
 /** Longest remaining DAG path in slice-count units; this is a critical-path proxy, not a duration estimate. */
@@ -27,4 +27,20 @@ export function rankSchedulingChoices(choices: readonly SchedulingChoice[]): Sch
 
 export function schedulingSnapshotDigest(snapshot: Pick<SchedulingSnapshot, "freeCapacity" | "choices">): string {
   return createHash("sha256").update(canonicalJson({ freeCapacity: snapshot.freeCapacity, choices: rankSchedulingChoices(snapshot.choices) })).digest("hex");
+}
+
+export function validateSchedulingDecision(value: SchedulingDecisionRecord): void {
+  if(!value||typeof value!=="object"||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.decisionId)
+    ||! /^[a-f0-9]{64}$/.test(value.snapshotDigest)||! /^[a-f0-9]{64}$/.test(value.trustedCheckPolicyDigest)
+    ||!(value.recoveryPolicyDigest===""||/^[a-f0-9]{64}$/.test(value.recoveryPolicyDigest))
+    ||value.dispatchMayHaveOccurred!==true||!(["dispatch_possible","advice_resolved","no_lease"] as const).includes(value.phase)
+    ||!(["pending","selected","invalid","unknown","no_lease"] as const).includes(value.status)
+    ||(value.preferredCandidateId!==null&&(typeof value.preferredCandidateId!=="string"||value.preferredCandidateId.length>130))
+    ||(value.validatedCandidateId!==null&&(typeof value.validatedCandidateId!=="string"||value.validatedCandidateId.length>130))
+    ||(value.modelId!==null&&(typeof value.modelId!=="string"||value.modelId.length>256||!/^[A-Za-z0-9._:-]+$/.test(value.modelId)))
+    ||!(["measured","unknown"] as const).includes(value.tokenUsageStatus)
+    ||(value.tokenUsageStatus==="measured"&&(!value.tokenUsage||!Number.isSafeInteger(value.tokenUsage.inputTokens)||value.tokenUsage.inputTokens<0||!Number.isSafeInteger(value.tokenUsage.outputTokens)||value.tokenUsage.outputTokens<0))
+    ||(value.tokenUsageStatus==="unknown"&&value.tokenUsage!==null)
+    ||(value.phase==="dispatch_possible"&&(value.status!=="pending"||value.modelId!==null||value.tokenUsage!==null||value.preferredCandidateId!==null||value.validatedCandidateId!==null))
+    ||(value.phase==="no_lease"&&value.status!=="no_lease"))throw new MissionValidationError("invalid bounded scheduling decision record");
 }
