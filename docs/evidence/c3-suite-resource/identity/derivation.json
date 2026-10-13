@@ -1,0 +1,99 @@
+{
+  "priorManifest": "90ac3fe4da41cd8cdfda802b47f420da7ce43c24b7deec778fbe5c2ed145e175",
+  "changes": [
+    {
+      "file": "build-suite-image.sh",
+      "priorSha256": "ef46467c67480ecf2aa0a35f760d11349887bdc5b5d786eed2c6c2b7303a8752",
+      "nextSha256": "898cae1929966a01d03486e7881ac4995d841e3bc7d6fc6884af1ed124843457",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": []
+    },
+    {
+      "file": "cgroup-observer.mjs",
+      "priorSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+      "nextSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+      "change": "identical",
+      "adjustments": []
+    },
+    {
+      "file": "cleanup-acceptance.sh",
+      "priorSha256": "1fd0a67b6435c2b7cbab9ecb3d39ee17e32956a35c9a7b8dda45e55a6983a910",
+      "nextSha256": "3f2b90f14a5c841c27ee4b60f325205282413fb93555d84542774b0c5f01e19c",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": []
+    },
+    {
+      "file": "export-acceptance-snapshot.sh",
+      "priorSha256": "5191ab660f51dc69fa1a3f658e5fcfcfc51a1f81e3032cc00feb7972d8af6aca",
+      "nextSha256": "0ee493f74701f4985462d2d6631a02dbad4c27e84d121e32e45e487929dbc4d0",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": []
+    },
+    {
+      "file": "preflight-acceptance.sh",
+      "priorSha256": "cda5b1b932f6f2d0b5769e3251b77bf3ee7d03d8b808a19581c74e229549d451",
+      "nextSha256": "d54b2994f8bd9cb5c3e17820dfdfb2fe004b3e2be1bb9eb41d470e126599ae71",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": [
+        "pre-setup canonical state/lock/no-old-sandbox gate"
+      ]
+    },
+    {
+      "file": "prepare-acceptance-fixtures.mjs",
+      "priorSha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd",
+      "nextSha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd",
+      "change": "identical",
+      "adjustments": []
+    },
+    {
+      "file": "run-acceptance.sh",
+      "priorSha256": "14d2d3325c0267bcd3f3eb8054a71e4ca9d5c6fadec7e5818ce61f398768e63e",
+      "nextSha256": "a753793840593c2d7419ec810b078d096f6c2d8ab7f238cbe25dabeffc091695",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": [
+        "fresh post-PG predispatch 2GiB+768MiB capacity/disk record, fail closed"
+      ]
+    },
+    {
+      "file": "runtime-acceptance-entry.mjs",
+      "priorSha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+      "nextSha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+      "change": "identical",
+      "adjustments": []
+    },
+    {
+      "file": "runtime-acceptance.mjs",
+      "priorSha256": "e3811e720e3aceaf838345971e0aa64ab1f9353fd768d2be8b4b9e093f4b10ab",
+      "nextSha256": "7ee26dc23c5ee21c07f9b5f5405a464e8cfe3ff9f79dc0a09a6eb3422b56b86c",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": [
+        "2GiB exact inspect profile",
+        "fix latent fixture candidate observation binding",
+        "fresh memory admission before each controlled scenario"
+      ]
+    },
+    {
+      "file": "runtime-snapshot-export.mjs",
+      "priorSha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6",
+      "nextSha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6",
+      "change": "identical",
+      "adjustments": []
+    },
+    {
+      "file": "setup-disposable-postgres.sh",
+      "priorSha256": "d4adf3642e3e321b0997d3a40feba0b3e656cb609abfea7b12e06263f35c90f8",
+      "nextSha256": "56129adf7bf363a64c1765c16716543ed6e0cb1e35879e9405da904ec2a3145c",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": [
+        "pre-setup floor increased, post-PG measurement still mandatory"
+      ]
+    },
+    {
+      "file": "stage-acceptance.sh",
+      "priorSha256": "af55738af7079c172dc9e14efaa07872a1d8facbc50c72fa7c0f5438266bfc8b",
+      "nextSha256": "33140f94011940e245ab95fb84d2c9a4beec8fcecf92dc83dbc2fe8bedb2b2a8",
+      "change": "fixed packet root/label plus listed adjustments",
+      "adjustments": []
+    }
+  ]
+}

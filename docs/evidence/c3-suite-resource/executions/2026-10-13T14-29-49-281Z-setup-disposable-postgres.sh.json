@@ -1,0 +1,13 @@
+{
+  "scriptName": "setup-disposable-postgres.sh",
+  "args": [
+    "/var/lib/orloom/c3-suite-resource-20261013.incoming/preflight/preflight.json"
+  ],
+  "scriptSha256": "56129adf7bf363a64c1765c16716543ed6e0cb1e35879e9405da904ec2a3145c",
+  "start": "2026-10-13T14:29:49.283Z",
+  "finish": "2026-10-13T14:29:58.600Z",
+  "elapsedMs": 9317,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-resource-executions\\2026-10-13T14-29-49-281Z-setup-disposable-postgres.sh"
+}

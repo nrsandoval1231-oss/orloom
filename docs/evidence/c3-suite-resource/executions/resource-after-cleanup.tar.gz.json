@@ -1,0 +1,10 @@
+{
+  "file": "resource-after-cleanup.tar.gz",
+  "bytes": 90684,
+  "sha256": "ea34545c94284618cd348496f77c6a410fa142bab4689ce5c888945293c6d88d",
+  "command": "tar -czf - -C /var/lib/orloom/c3-suite-resource-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json capacity-observation.json verifier-image.id image-binding.json stage-bindings.json runtime-started.json staging/identity.txt",
+  "startedUtc": "2026-10-13T14:35:31.059Z",
+  "finishedUtc": "2026-10-13T14:35:32.173Z",
+  "exit": 0,
+  "stderr": ""
+}

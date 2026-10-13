@@ -1,0 +1,21 @@
+{
+  "verdict": "PASS",
+  "scope": "independent exact-source review only; no operational or full-suite acceptance",
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "baseSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "sourceManifestSha256": "09f99677a6dfbf7f060a65180671cadf243182c62b1bf372e547d544c1fbceeb",
+  "controllerGateLog": "work/suite-controller-gates-2026-10-13T14-21-18-386Z.log",
+  "controllerGates": "typecheck, clean build, 76 tests/0 skipped, validation, JS and bash syntax, diff check all passed",
+  "findings": [],
+  "evidence": [
+    "packages/verification/src/policy.ts:13-42: suite manifest and policy advance to v4 with 2147483648-byte cap; digest changes from v3 while finite command/stages, 180/210/225/240-second deadlines, one concurrent check, network/UID/PID/CPU/tmpfs bounds remain. Syntax policy definition is unchanged.",
+    "infra/verifier-isolation/launch-verifier.sh:43-45,79-96: fixed suite memory and swap become 2g, syntax remains 256m; created HostConfig is inspected against exact selected resource/isolation profile before docker start and fails closed on mismatch.",
+    "tests/verification-runner.test.ts:71-120: exact new and old suite digest, syntax digest, policy/launcher profile, stage order and deadlines are asserted. These are source assertions; actual Docker HostConfig behavior remains a runtime proof obligation.",
+    "Prior actual attempt ff440387-899e-45c8-802d-fad73bb3ee51 reached the 1 GiB cgroup cap, had an exact-CID oom event, persisted UNKNOWN, and had zero certificates. The new allocation is a finite hypothesis only."
+  ],
+  "boundaries": [
+    "No live runsc/PostgreSQL test of 617c378 has occurred in this review.",
+    "The bundled-PGlite memory cause and sufficiency of 2 GiB remain unproven.",
+    "The separate frozen runtime helper packet has a blocking finding and is not covered by this PASS."
+  ]
+}
