@@ -1,0 +1,64 @@
+{
+  "packet": "C5-LOOM-001",
+  "baseSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "branch": "feat/live-loom",
+  "result": "SOURCE_HANDOFF_READY",
+  "changedFiles": [
+    "apps/control-plane/src/server.ts",
+    "apps/control-plane/src/loom-page.ts",
+    "apps/control-plane/src/loom-projection.ts",
+    "tests/loom-http.test.ts",
+    "tests/loom-projection.test.ts",
+    ".agent/C5-LOOM-001-COMPLETION.json"
+  ],
+  "implementation": [
+    "Owner-cookie-authenticated /loom page with per-response nonce CSP, same-origin credentialed read polling, 10-second abort timeout, bounded exponential backoff, and historical-only disconnected presentation.",
+    "Static WebGL2 torus renderer adapted from V4 torus geometry, status palette, and restrained 3D rotation; accessible inspector, responsive layout, reduced-motion support, visible open seam unless typed projection proves closure, and labeled SVG fallback.",
+    "Authenticated read-only GET /api/missions/:id/loom uses shared typed projection over mission snapshot and bounded durable event history; 1,000-row overflow is UNKNOWN.",
+    "Closure binds the verified mission and all planned verified slices to current candidate SHA, lease epoch, each certified check ID, exact pending certificate IDs and SHA-256 digests, and integrated candidate/tree/review bindings. Contradictory events after integration invalidate closure.",
+    "Named event rows cover mission/plan/slice/check, recovery/Governor, scheduling, and lesson evidence. Untrusted text uses textContent; certificate links are constructed only from validated same-origin mission, slice, and check identifiers."
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/loom-projection.test.js dist/tests/loom-http.test.js", "exitCode": 0, "passed": 7, "failed": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run validate", "exitCode": 0, "result": "Foundation structure validation passed" },
+    { "command": "git diff --check", "exitCode": 0 },
+    { "check": "served inline browser script syntax via node:vm.Script", "exitCode": 0 }
+  ],
+  "prototypeSha256": {
+    "before": {
+      "prototypes/v1/index.html": "566A87EB6BFFD4ECDD3F7AD359ABA31DB582D1B07FC3083D002DB8FCD2DC5E22",
+      "prototypes/v2/index.html": "564D0A412F83162BF987E8D1E3306CDBA16983CFF6E01746819952AC93C1A1A0",
+      "prototypes/v3/index.html": "D3B28965BAD3C93271209FF123A029EF6F0EAA2F386F1D4F6049E08288B4E574",
+      "prototypes/v4/index.html": "AF5BA66C9CDEFC5EC33CF0C5241B33792C7985BF039824B73A9D18FCD6A0442E"
+    },
+    "after": {
+      "prototypes/v1/index.html": "566A87EB6BFFD4ECDD3F7AD359ABA31DB582D1B07FC3083D002DB8FCD2DC5E22",
+      "prototypes/v2/index.html": "564D0A412F83162BF987E8D1E3306CDBA16983CFF6E01746819952AC93C1A1A0",
+      "prototypes/v3/index.html": "D3B28965BAD3C93271209FF123A029EF6F0EAA2F386F1D4F6049E08288B4E574",
+      "prototypes/v4/index.html": "AF5BA66C9CDEFC5EC33CF0C5241B33792C7985BF039824B73A9D18FCD6A0442E"
+    },
+    "unchanged": true
+  },
+  "work": {
+    "taskStartedAtUtc": "UNKNOWN; start was not sampled",
+    "sourceHandoffAtUtc": "2026-10-13 19:43:19 UTC",
+    "planningDuration": "UNKNOWN",
+    "implementationDuration": "UNKNOWN",
+    "focusedValidationDuration": "UNKNOWN; individual node test duration reported as 132.96 ms",
+    "independentAuditDuration": "PENDING",
+    "repairCount": 1,
+    "lane": "single primary builder",
+    "modelIdentity": "UNKNOWN from runtime metadata",
+    "tokenUsage": "UNKNOWN; no measured usage source available",
+    "elapsedToAcceptance": "PENDING independent review"
+  },
+  "notCompletedHere": [
+    "Exact-candidate root review and final repository gates",
+    "Real browser screenshots, responsive/keyboard/WebGL-fallback proof, and network/console evidence",
+    "PostgreSQL-backed live transition/reconnect proof"
+  ],
+  "commitCreated": false,
+  "pushOrDeployment": false
+}
