@@ -1,0 +1,10 @@
+{
+  "file": "memory-before-cleanup.tar.gz",
+  "bytes": 66567,
+  "sha256": "a3af8d8ec22512b35f3f67f4280d07eb1bd2d7aa270060ec7df2cab2a044f7bb",
+  "command": "tar -czf - -C /var/lib/orloom/c3-suite-memory-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json capacity-observation.json verifier-image.id image-binding.json stage-bindings.json runtime-started.json staging/identity.txt",
+  "startedUtc": "2026-10-13T13:15:18.124Z",
+  "finishedUtc": "2026-10-13T13:15:20.819Z",
+  "exit": 0,
+  "stderr": ""
+}

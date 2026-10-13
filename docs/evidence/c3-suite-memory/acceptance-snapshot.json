@@ -1,0 +1,83 @@
+{
+  "format": "orloom-c3-suite-acceptance-snapshot-v1",
+  "querySucceeded": true,
+  "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "sourceManifestSha256": "dc127e92f0bef9e9b2d0b8ad4cbf7a73d69d673e15e4e1b765ceceabac2bab28",
+  "exportedAt": "2026-10-13T13:12:38.717Z",
+  "attempts": [
+    {
+      "attemptId": "bdac22cd-59b3-4d63-87c6-3c16b3946b4d",
+      "missionId": "4b3a5088-a5c4-4d75-9842-75d09c68e818",
+      "sliceId": "suite-passing",
+      "leaseEpoch": 1,
+      "checkId": "node-repo-suite-v1",
+      "outcome": "unknown",
+      "request": {
+        "version": "orloom.trusted-check-request.v1",
+        "attemptId": "bdac22cd-59b3-4d63-87c6-3c16b3946b4d",
+        "missionId": "4b3a5088-a5c4-4d75-9842-75d09c68e818",
+        "sliceId": "suite-passing",
+        "leaseEpoch": 1,
+        "repository": "nrsandoval1231-oss/orloom",
+        "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+        "expectedLocalHeadSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+        "planDigest": "ec07bcb3176293412e481db3c54f95968e92596d6ec023b24cb6944d44596dd0",
+        "checkId": "node-repo-suite-v1",
+        "policyVersion": "orloom.node-repo-suite.v3",
+        "policyDigest": "e09cf92bfa42162dfac6d0f3a93331edf0c34f94cfc83087d8dc8ad8a58fc152",
+        "verifierImageDigest": "d93113a87cf61ff7910dae971bb279c81d357e11f545199175550d51974c349c",
+        "inputBundleDigest": "ffa94e24e42814f32aab5594b8571250f41349b8b3c1bb276f52ed9bccaa2682",
+        "requestedAt": "2026-10-13T13:11:36.818Z",
+        "expiresAt": "2026-10-13T13:15:36.818Z"
+      },
+      "receipt": {
+        "version": "orloom.trusted-check-receipt.v1",
+        "request": {
+          "version": "orloom.trusted-check-request.v1",
+          "attemptId": "bdac22cd-59b3-4d63-87c6-3c16b3946b4d",
+          "missionId": "4b3a5088-a5c4-4d75-9842-75d09c68e818",
+          "sliceId": "suite-passing",
+          "leaseEpoch": 1,
+          "repository": "nrsandoval1231-oss/orloom",
+          "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+          "expectedLocalHeadSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+          "planDigest": "ec07bcb3176293412e481db3c54f95968e92596d6ec023b24cb6944d44596dd0",
+          "checkId": "node-repo-suite-v1",
+          "policyVersion": "orloom.node-repo-suite.v3",
+          "policyDigest": "e09cf92bfa42162dfac6d0f3a93331edf0c34f94cfc83087d8dc8ad8a58fc152",
+          "verifierImageDigest": "d93113a87cf61ff7910dae971bb279c81d357e11f545199175550d51974c349c",
+          "inputBundleDigest": "ffa94e24e42814f32aab5594b8571250f41349b8b3c1bb276f52ed9bccaa2682",
+          "requestedAt": "2026-10-13T13:11:36.818Z",
+          "expiresAt": "2026-10-13T13:15:36.818Z"
+        },
+        "verifierId": "c3-suite-acceptance",
+        "runtime": "runsc",
+        "sandboxId": "orloom-verifier-da669f5d-21ea-4ed1-ab4a-763bcf626841",
+        "outcome": "unknown",
+        "exitCode": null,
+        "startedAt": "2026-10-13T13:11:36.843Z",
+        "finishedAt": "2026-10-13T13:12:37.062Z",
+        "stdout": {
+          "key": "sha256/34c407e5aaf05edea92c1857d6fb4edc0aea35c2fca668afa58521fca012fff6",
+          "sha256": "34c407e5aaf05edea92c1857d6fb4edc0aea35c2fca668afa58521fca012fff6",
+          "bytes": 3712
+        },
+        "stderr": {
+          "key": "sha256/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "inputManifest": {
+          "key": "sha256/ffa94e24e42814f32aab5594b8571250f41349b8b3c1bb276f52ed9bccaa2682",
+          "sha256": "ffa94e24e42814f32aab5594b8571250f41349b8b3c1bb276f52ed9bccaa2682",
+          "bytes": 81415
+        },
+        "receiptDigest": "295bf6691821cff2c0267abbe639f9ea4fe03b3ecc75f1e6ae36571fd4049006"
+      },
+      "createdAt": "2026-10-13 13:11:36.821287+00",
+      "terminalAt": "2026-10-13 13:12:37.240159+00",
+      "certificatePresent": false
+    }
+  ],
+  "certificates": []
+}

@@ -1,0 +1,13 @@
+{
+  "approvedRef": "refs/heads/feat/trusted-verification-suite",
+  "baseSha": "6b4d6832cfa2e58997fc1e0d1d0a22fa68ba1af9",
+  "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "fixtureHelperSha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd",
+  "observerHelperSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+  "runtimeEntrySha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+  "runtimeHelperSha256": "e3811e720e3aceaf838345971e0aa64ab1f9353fd768d2be8b4b9e093f4b10ab",
+  "runtimePayloadSha256": "287bd75c4c3b463ff0a9703f07242bf47d53bdc9da1abc102c1d35c5a1b4f15a",
+  "runtimeSnapshotSha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6",
+  "runtimeSnapshotShellSha256": "7292e3c4e3e59fd16ed34a2b755bc54de20643eb780f1ab7cb8c4e68acea03e9",
+  "sourceManifestSha256": "dc127e92f0bef9e9b2d0b8ad4cbf7a73d69d673e15e4e1b765ceceabac2bab28"
+}
