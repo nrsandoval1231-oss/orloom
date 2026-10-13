@@ -1,0 +1,61 @@
+{
+  "format": "orloom-independent-source-browser-review-v1",
+  "verdict": "FIX",
+  "candidate": "df72574e35799cd379a24a734d5e3ae00e86e2f5",
+  "repository": "work/orloom-loom",
+  "sourceStatus": "clean at reviewed HEAD",
+  "controllerGates": {
+    "log": "work/loom-controller-gates-2026-10-13T22-38-02-536Z.log",
+    "tests": 108,
+    "passed": 108,
+    "failed": 0,
+    "typecheckBuildValidateSyntaxDiff": "PASS"
+  },
+  "browserEvidence": {
+    "result": "work/loom-browser-checks/2026-10-13T22-38-35-967Z/result.json",
+    "status": "FAIL",
+    "failure": "forced WebGL fallback did not become visible",
+    "otherObserved": "owner auth, desktop WebGL, keyboard focus, mobile overflow, offline label and reconnect passed in controlled MemoryMissionStore browser check",
+    "comparison": "work/loom-v4-reference.png"
+  },
+  "resolvedFromPriorReview": [
+    "Approved plan membership and current slice fields are compared exactly before closure. Matching certificate, pending intent and integration events now require causal cursor order and current candidate/lease bindings.",
+    "The Loom endpoint pages mission events through a bounded 10,000-event projection window and allows gaps in global cursor values; the browser catches up with cursor pages and marks overflow or regression unavailable.",
+    "Desktop capture shows distinct woven sectors and central mission nucleus. Mobile capture gives the ring its own space and a separately expandable, scrollable inspector. Camera controls and keyboard interaction are present. This is a faithful functional adaptation of the visual reference for the number of actual planned slices, without copying simulation progress."
+  ],
+  "findings": [
+    {
+      "id": "C5-F4",
+      "severity": "P1 blocking browser acceptance",
+      "location": "apps/control-plane/src/loom-page.ts:12,22",
+      "issue": "The forced WebGL failure path assigns fallback.hidden=false on an SVGElement. That assignment need not remove the SVG's initial hidden attribute; CSS explicitly keeps svg[hidden] at display:none. The browser result confirms the fallback remains invisible.",
+      "requiredRepair": "Use removeAttribute('hidden') when showing the SVG and setAttribute('hidden','') when hiding it; keep canvas visibility explicit. Repeat the forced-WebGL-off browser assertion and screenshot on the new frozen candidate, plus the ordinary WebGL/mobile checks."
+    },
+    {
+      "id": "C5-F5",
+      "severity": "P2 functional evidence-link limitation",
+      "location": "apps/control-plane/src/loom-page.ts:18; apps/control-plane/src/server.ts:128-133; packages/contracts/src/sql-mission-store.ts:360",
+      "issue": "Every check.certified row receives an Open certificate link, but the existing certificate readback returns a certificate only while its slice is awaiting_verification. After integration makes the slice verified, a historical certificate link can return 404. The controlled browser run has zero certificates and does not exercise this path.",
+      "requiredRepair": "Within C5, expose the link only when the existing route can read the certificate for the current slice state; otherwise render the retained certificate ID/digest as non-clickable evidence as the packet permits. Do not broaden C5 into a new trusted certificate API. Add one verified-slice link-state regression."
+    },
+    {
+      "id": "C5-F6",
+      "severity": "P2 fallback interaction",
+      "location": "apps/control-plane/src/loom-page.ts:5,9,17",
+      "issue": "SVG slice focus/click uses document.querySelector('[data-slice=...]'), which selects the mobile inspector row first even on desktop. That row is hidden by the desktop layout; on mobile it is hidden while details is collapsed. Fallback interaction therefore targets an invisible row rather than opening or focusing visible mission details.",
+      "requiredRepair": "Select the currently visible inspector list, opening mobile details when needed, or keep focus on the SVG node and announce its slice status. Verify keyboard and click behavior in the forced fallback capture."
+    },
+    {
+      "id": "C5-F7",
+      "severity": "P2 polling resource use",
+      "location": "apps/control-plane/src/loom-page.ts:21-22",
+      "issue": "Every completed refresh schedules a new timeout, while the manual button and visibility handler can invoke refresh before the old timeout fires. Repeated manual refreshes can accumulate polling timers and duplicate bounded-history reads over time.",
+      "requiredRepair": "Keep one scheduled poll timer: clear it before an immediate/manual refresh and replace it after completion. Retain the current abort and backoff behavior."
+    }
+  ],
+  "remainingAcceptance": [
+    "The browser evidence uses a controlled MemoryMissionStore mission; PostgreSQL-backed event transitions after refresh/reconnect are still unproven.",
+    "No live worker, provider, authentic trusted certificate, independent review, deployment, or commercial/product completion follows from this C5 view."
+  ],
+  "direction": "Issue one narrow page repair for SVG attribute visibility, fallback focus, polling timer coalescing, and truthful certificate-link availability; then freeze a successor, run focused and mandatory exact-source gates once, repeat forced-fallback and ordinary desktop/mobile browser checks, and obtain independent review. Keep real PostgreSQL event/reconnect proof as a separate required C5 gate; do not reopen the architecture or protected prototypes."
+}

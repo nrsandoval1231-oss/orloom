@@ -39,3 +39,5 @@ Latest C4: exact078ed12 source98testPASS/independentPASS after f669 FIX, evidenc
 C5 source3d1be84 implemented; final gates/browser/independent review pending on composition with C4 evidence037. No operational or PostgreSQL acceptance. Delivery core proceeds on a separate branch and waits for serialized server route integration.
 
 C5 checkpoint: 19abb354 source105PASS but independentFIX (visual, pagination, closure). Repair1 0c8c85de retained; final scope/camera correction and controller gates/browser/review next. Source does not establish runtime certification. Delivery core preserved f51d364 on separate branch; preliminary independentFIX for concurrency, per-effect recovery and external identity readback; repair in progress before serialized server integration.
+
+Latest C5: bd2bb5e source110PASS/browserPASS/independentPASS bounded, evidence docs/evidence/c5-source-browser. Actual PG browser gate remainsOPEN. C4 realPG078 replayraceFAIL supersedes concurrency assumption; bounded source repair separate. Continue serialized delivery route after C5 source integration; root keeps originalfailedattempts.

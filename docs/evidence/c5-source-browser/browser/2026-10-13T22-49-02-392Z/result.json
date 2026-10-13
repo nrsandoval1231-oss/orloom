@@ -1,0 +1,59 @@
+{
+  "candidate": "bd2bb5e34cee8562f40d4be2949c82030a7b20d2",
+  "store": "MemoryMissionStore",
+  "controlledMission": true,
+  "providerCalls": 0,
+  "workerExecutions": 0,
+  "certificates": 0,
+  "startedUtc": "2026-10-13T22:49:02.399Z",
+  "unauthenticated": "owner session required",
+  "webgl": true,
+  "keyboardFocus": "CANVAS",
+  "mobileOverflow": false,
+  "offline": "DISCONNECTED · HISTORICAL",
+  "reconnected": true,
+  "fallbackState": {
+    "hasHiddenAttribute": false,
+    "display": "block"
+  },
+  "fallback": true,
+  "fallbackSelection": "mobile Enter and desktop click",
+  "status": "PASS_RENDERING_ONLY",
+  "finishedUtc": "2026-10-13T22:49:03.622Z",
+  "pageErrors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/429e64f1-6f0d-4dad-88f9-7ec14cc887c1/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/429e64f1-6f0d-4dad-88f9-7ec14cc887c1/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/429e64f1-6f0d-4dad-88f9-7ec14cc887c1/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/429e64f1-6f0d-4dad-88f9-7ec14cc887c1/loom"
+    }
+  ],
+  "modules": {
+    "apps/control-plane/src/server.js": "341b3e7d24bcade06ce619c2814f231e6e4db75aa1720a56cc490c9c7d488d42",
+    "apps/control-plane/src/loom-page.js": "36276b23fe4b9929f0947237158d9bcc76980e5a7763ef2069934f727af0c381",
+    "apps/control-plane/src/loom-projection.js": "45fe9b166a51a329a4777b8e8fafb8c6a7bcd66d866f16470a69596ed57ac59f"
+  },
+  "limitations": [
+    "Memory-store controlled mission; not PostgreSQL durability proof",
+    "No live builder, provider, certification or deployment evidence"
+  ]
+}
