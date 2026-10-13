@@ -1,0 +1,33 @@
+{
+  "format": "orloom-independent-source-rereview-v1",
+  "verdict": "PASS",
+  "candidate": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "base": "f669e5a553fafabebb4d4ced54f9c36eb0e7dd0b",
+  "repository": "work/orloom-integration-coordinator",
+  "sourceStatus": "clean at reviewed HEAD",
+  "priorReview": "work/c4-source-review-f669e5a.json",
+  "controllerGates": {
+    "log": "work/c4-controller-gates-2026-10-13T19-25-27-662Z.log",
+    "tests": 98,
+    "passed": 98,
+    "failed": 0,
+    "skipped": 0,
+    "typecheckBuildValidateSyntaxDiff": "PASS"
+  },
+  "findingsResolved": [
+    {
+      "id": "C4-F1",
+      "evidence": "SqlMissionStore.assertIntegrationCertificates now locks and rereads the attempt, persisted request digest, attempt receipt and certificate-held receipt. It requires canonical request/receipt.request equality, request digest equality, complete certificate request identity including mission/slice/head/check/policy version and digest, and digest-validated receipt correspondence. Post-intent mutations of verifierImageDigest, inputBundleDigest, policyVersion, and certificate receipt are regression-tested to leave the slice awaiting_verification, with no integrated event or dependent release."
+    },
+    {
+      "id": "C4-F2",
+      "evidence": "BareGitFastForwardIntegrator.assertCompleteStore checks repository root and internal directories, alternates, loose fixed ref, bare/shallow/partial clone/promisor configuration, unsafe local Git configuration and hooks at open, before inspect traversal, and immediately before CAS. Tests mutate alternates, shallow/promisor/partial-clone state, object/ref symlinks after open, and alternates between inspect and CAS; the ref remains unmoved when checks fail."
+    }
+  ],
+  "integratedSourceAssessment": "The prior bounded C4 direct-child, fixed-ref, scope-limited CAS and durable intent/reconciliation design remains intact. The only executable source changes since f669e5a are the two repairs and their focused tests; no production isolation, certificate issuance, PR2 broker, or owner route authority was relaxed.",
+  "limits": [
+    "PASS is source acceptance only. PGlite with fixture certificates/review bytes does not establish real PostgreSQL multi-connection/restart behavior, authentic C3 certification, or operational integration authority.",
+    "The prior 8f271de cloud suite attempt remains FAIL with zero certificates. Candidate 078ed12 has not been cloud-run or certified; no GitHub merge, publication, deployment, or C1b activation is authorized by this review.",
+    "The scratch lock-file fixture repair remains operationally unproven as nonroot Linux until a new exact-candidate full-suite run passes."
+  ]
+}
