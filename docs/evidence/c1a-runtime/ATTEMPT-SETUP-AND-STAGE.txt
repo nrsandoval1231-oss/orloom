@@ -1,0 +1,27 @@
+ORL-005C1A setup/staging transport attempts
+
+## Disposable PostgreSQL setup
+- Input: `setup-disposable.sh`, CRLF bytes passed through PowerShell native pipe to `ssh codex-dark-peak-5042 'bash -s'`.
+- Raw output:
+```text
+setup=ready label=ORL-005C1A-PG-RUNTIME database_health=healthy image_ids=sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24 sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+db=5bad5efd9fa38990585d319d17a40c0dafbd5569175831851a9265d055acabb7 status=running health=healthy ip=172.19.0.2 ports={} binds=null memory=536870912 cpus=500000000 pids=64
+test=4559a5efd42682f81b9365f036ebfc69411e19569dcc2a29c260a67e49e84698 status=running runtime=runsc user=65532:65532 ports={} binds=null memory=805306368 cpus=1000000000 pids=128
+bash: line 66: $'\r': command not found
+```
+- Exit status: UNKNOWN; it was not captured. Setup did create both intended containers, internal net and labeled volumes; follow-up metadata confirmed them.
+
+## Stage preparation
+- Input: `stage-payload.sh prepare`, CRLF bytes passed through PowerShell native pipe to SSH.
+- Output:
+```text
+stage_prepared=true node=v24.15.0 uid=65532 node_sha256=d1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c staging=/var/lib/orloom/c1a-pg-proof-20261013/staging
+bash: line 48: $'\r': command not found
+```
+- Exit status: UNKNOWN; not captured. Prepared staging dir and node binary are verified present/hash-valid; do not repeat `prepare`.
+
+## Local scp attempt
+- A multi-operation PowerShell command containing an unescaped `<` failed at PowerShell parse time before scp; no remote effects from that invocation. Payload tree and manifest were later copied separately and verified against the exact bundle SHA.
+
+## First runtime proof
+See `ATTEMPT-01.txt`: source-bound runtime exited 1 at bootstrap. Subsequent read-only diagnosis isolated Docker's `pg` alias DNS failure in runsc (`EAI_AGAIN`); connecting to the same DB via its metadata-derived private network address succeeded. No proof retry has occurred.

@@ -1,0 +1,40 @@
+{
+  "review": "ORL-005C1 C1a repair 2 independent read-only source review",
+  "candidateSha": "545279c7b53fef8453c8e50ae0bc7f0d790959af",
+  "manifestSha256": "85612beddd1d5b81bd2987fc6980c149f87092d42b316e54ea6af93c8e5fbace",
+  "verdict": "PASS",
+  "verdictScope": "Bounded C1a source candidate only, conditional on exact-candidate real PostgreSQL proof and final evidence reconciliation; not parent C1b or platform completion",
+  "blockingFindings": [],
+  "priorFindings": [
+    {
+      "id": "unresolved-pass-candidate",
+      "result": "CLOSED",
+      "evidence": ["packages/contracts/src/sql-mission-store.ts:140-161", "packages/contracts/src/memory-mission-store.ts:99-129", "packages/learning/src/lesson-policy.ts:39-63"],
+      "reason": "SQL selects only committed failure/pass rows; memory requires committed receipts for both observations. Shared eligibility also checks their decisions and episode fence. Tests exercise UNKNOWN pass before and after a valid episode."
+    },
+    {
+      "id": "cohort-parity",
+      "result": "CLOSED",
+      "evidence": ["packages/learning/src/lesson-policy.ts:27-37", "packages/contracts/src/sql-mission-store.ts:143-159", "packages/contracts/src/memory-mission-store.ts:100-129"],
+      "reason": "Both stores call one scopeCohort derivation for current and historical episodes; shared eligibility requires equal cohorts. Tests exercise mixed cohorts and unsorted multi-scope paths."
+    }
+  ],
+  "otherCheckedBoundaries": [
+    "Each failure/pass pair binds one mission, slice, lease epoch, increasing ordinal, target check, strategy change, trusted-check policy digest, and recovery policy digest; distinct slice episodes are counted by mission and slice.",
+    "Terminal UNKNOWN/blocked reports remain fail-closed; SQL phase 2 binds the persisted snapshot, active lease, budget context, and recovery revision.",
+    "Lesson promotion stays closed at the Governor, stores, and HTTP route; candidates cannot authorize later decisions.",
+    "Jev is optional and not instantiated in production by default; no live provider call or spend is evidenced."
+  ],
+  "validationEvidence": {
+    "controller": "Root independently reported exact-candidate npm ci, typecheck, build, 51 tests, validate, diff check PASS; work/c1a-controller-gates-545279c.txt. Reviewer did not run shared build.",
+    "realPostgres": "PENDING at source-review time; required before bounded C1a runtime acceptance",
+    "manifest": "Root reports 36 entries verified against working and staged bytes; reviewer checked manifest hash and clean HEAD."
+  },
+  "limits": [
+    "This source review does not prove multi-connection PostgreSQL transaction behavior or reconnect durability.",
+    "Scope cohort is a coarse context label, not ownership equivalence or independent outcome verification.",
+    "C1b promotion, application, withdrawal, and full continuous self-improvement remain open."
+  ],
+  "sourceEdits": "none",
+  "nextDirection": "VALIDATE the exact 545279c candidate on disposable real PostgreSQL, bind raw runtime evidence, then mark only the bounded C1a checkpoint accepted if proof passes; continue to C3/C1b according to Work Graph."
+}
