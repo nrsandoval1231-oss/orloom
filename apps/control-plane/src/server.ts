@@ -8,6 +8,7 @@ import { MemoryMissionStore } from "../../../packages/contracts/src/memory-missi
 import { MissionGovernor, RecoveryJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
+import type { LearningActivation } from "../../../packages/learning/src/activation.js";
 
 class RequestTooLargeError extends Error {}
 
@@ -31,12 +32,12 @@ async function body(req: IncomingMessage): Promise<Buffer> {
 function send(res: ServerResponse, status: number, data: string, type = "application/json") { res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "x-content-type-options": "nosniff", "cache-control": "no-store" }); res.end(data); }
 function parseJson(raw: Buffer): unknown { try { return JSON.parse(raw.toString()); } catch { throw new InputValidationError("invalid json"); } }
 
-export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator) {
+export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, learningActivation?:LearningActivation) {
   const sessions = new Map<string, number>();
   const cloud = config.mode === "cloud";
   const sessionMaxAge = (config as Config & { sessionTtlSeconds?: number }).sessionTtlSeconds ?? 8 * 60 * 60;
   const limitsReady=(config.workerMaxProviderCalls??0)>0&&(config.workerMaxInputTokens??0)>0&&(config.workerMaxOutputTokens??0)>0&&(config.workerMaxWallSeconds??0)>0&&(config.workerAllowedProviders?.length??0)>0&&(config.workerAllowedModels?.length??0)>0;
-  const governor = new MissionGovernor(missionStore, { maxLanes: config.maxLanes ?? 6, capacitySlots: config.capacitySlots ?? 0, leaseSeconds: 300, trustedCheckPolicyDigest: config.trustedCheckPolicyDigest ?? null, recoveryPolicyDigest:config.recoveryPolicyDigest??null,trustedCheckPolicy:config.trustedCheckPolicy??[],trustedStrategies:config.trustedStrategies??{}, executionConfigured: limitsReady,progressLimits:{maxProviderCalls:config.workerMaxProviderCalls??0,maxInputTokens:config.workerMaxInputTokens??0,maxOutputTokens:config.workerMaxOutputTokens??0,maxWallSeconds:config.workerMaxWallSeconds??0} }, judgmentAdapter);
+  const governor = new MissionGovernor(missionStore, { maxLanes: config.maxLanes ?? 6, capacitySlots: config.capacitySlots ?? 0, leaseSeconds: 300, trustedCheckPolicyDigest: config.trustedCheckPolicyDigest ?? null, recoveryPolicyDigest:config.recoveryPolicyDigest??null,trustedCheckPolicy:config.trustedCheckPolicy??[],trustedStrategies:config.trustedStrategies??{}, executionConfigured: limitsReady,progressLimits:{maxProviderCalls:config.workerMaxProviderCalls??0,maxInputTokens:config.workerMaxInputTokens??0,maxOutputTokens:config.workerMaxOutputTokens??0,maxWallSeconds:config.workerMaxWallSeconds??0} }, judgmentAdapter, learningActivation);
   return createServer(async (req, res) => {
     try {
       if (req.method === "GET" && req.url === "/") return send(res, 200, page(Boolean(config.sessionToken), config.mode), "text/html");
@@ -72,6 +73,12 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         if (!validSession(req, config, sessions)) return send(res, 401, JSON.stringify({ error: "Unauthorized" }));
         const input = parseJson(await body(req)); if (!input || typeof input !== "object" || Array.isArray(input)) return send(res,400,JSON.stringify({error:"Invalid mission input"}));const v=input as Record<string,unknown>;
         const mission = await governor.submit({repository:v.repository as string,baseSha:v.baseSha as string,objective:v.objective as string,acceptance:v.acceptance as string[],budgetCents:v.budgetCents as number}); return send(res,201,JSON.stringify(mission));
+      }
+      if(req.method==="GET"&&req.url?.match(/^\/api\/lessons\/([^/?]+)\/impact$/)){
+        if(!validSession(req,config,sessions))return send(res,401,JSON.stringify({error:"Unauthorized"}));
+        if(!missionStore.lessonImpact)return send(res,503,JSON.stringify({error:"Durable lesson impact is unavailable"}));
+        const id=decodeURIComponent(req.url.match(/^\/api\/lessons\/([^/?]+)\/impact$/)![1]!);
+        const impact=await missionStore.lessonImpact(id);return send(res,impact?200:404,JSON.stringify(impact??{error:"Lesson unavailable"}));
       }
       if(req.method==="POST"&&req.url?.match(/^\/api\/lessons\/([^/?]+)\/(challenge|promote)$/)){
         if(!validSession(req,config,sessions))return send(res,401,JSON.stringify({error:"Unauthorized"}));

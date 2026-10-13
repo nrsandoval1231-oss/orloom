@@ -54,6 +54,7 @@ export interface MissionStore {
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
   recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;
   lessons(missionId: string): Promise<LessonCandidate[]>;
+  lessonImpact?(lessonId:string):Promise<unknown>;
   getLesson?(lessonId:string):Promise<LessonCandidate|null>;
   getLesson?(lessonId:string):Promise<LessonCandidate|null>;
   promoteLesson(lessonId: string, challengeDigest: string, reviewer: string): Promise<LessonCandidate>;

@@ -36,6 +36,7 @@ export function challengeTrustedLesson(input: {
   if (!input.verifierId || attempts.length !== 4 || new Set(attempts.map(a => a.attemptId)).size !== 4
       || new Set(attempts.map(a => a.eventId)).size !== 4) return reject("four distinct trusted attempts and events are required");
   if (attempts.some(a => a.outcome === "unknown" || !input.expectedCheckIds.has(a.checkId)
+      || a.observation.repository !== input.provenance.repository || a.observation.cohort !== input.provenance.cohort
       || a.observation.decisionStatus !== "committed" || a.observation.trustedCheckPolicyDigest !== input.expectedPolicyDigest
       || a.observation.recoveryPolicyDigest!==input.provenance.policyDigest
       || a.observation.eventId !== a.eventId || a.observation.status !== (a.outcome === "pass" ? "passed" : "failed")

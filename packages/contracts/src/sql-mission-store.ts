@@ -179,10 +179,41 @@ export class SqlMissionStore implements MissionStore {
   }
   async lessons(missionId:string){const q=await this.db.query("SELECT l.* FROM operational_lessons l JOIN missions m ON m.repository=l.repository WHERE m.id=$1 ORDER BY l.created_at",[missionId]);return q.rows.map(lesson);}
   async getLesson(lessonId:string){const q=await this.db.query("SELECT * FROM operational_lessons WHERE id=$1",[lessonId]);return q.rows[0]?lesson(q.rows[0]):null;}
+  async lessonImpact(lessonId:string){
+    const candidate=await this.getLesson(lessonId);if(!candidate)return null;
+    const q=await this.db.query(`SELECT p.event_id,p.mission_id,p.slice_id,p.lease_epoch,p.ordinal,p.snapshot,p.action,
+      b.binding,a.attempt_id,a.outcome,a.receipt,a.request,a.bound_lesson_id
+      FROM mission_recovery_progress p
+      CROSS JOIN LATERAL jsonb_array_elements(p.action->'lessonBindings') b(binding)
+      LEFT JOIN LATERAL (SELECT v.* FROM verification_attempts v
+        WHERE v.purpose='recovery' AND v.mission_id=p.mission_id AND v.slice_id=p.slice_id
+        AND v.lease_epoch=p.lease_epoch AND v.recovery_ordinal=p.ordinal+1
+        AND v.request->>'planDigest'=p.snapshot->>'planDigest'
+        AND v.lease_policy_digest=p.snapshot->>'trustedCheckPolicyDigest'
+        AND v.strategy_id=p.action->>'strategyId' AND v.target_check_id=p.progress->>'targetCheckId'
+        AND v.recovery_policy_digest=p.progress->>'recoveryPolicyDigest'
+        ORDER BY v.recovery_ordinal LIMIT 1) a ON true
+      WHERE p.decision_status='committed' AND p.action->>'action'='change_strategy'
+        AND b.binding->>'id'=$1::text AND p.action->>'strategyId'=b.binding->>'strategyId'
+      ORDER BY p.created_at,p.event_id`,[lessonId]);
+    const decisions=q.rows.map(row=>{
+      const snapshot=row.snapshot as DecisionSnapshotV1, action=row.action as GovernorActionV1;
+      const receipt=row.receipt as TrustedCheckReceiptV1|null;
+      return{eventId:String(row.event_id),missionId:String(row.mission_id),sliceId:String(row.slice_id),leaseEpoch:Number(row.lease_epoch),
+        binding:row.binding,lessonStillBoundAtAttempt:row.bound_lesson_id===lessonId,strategyId:action.strategyId,defaultAlternative:snapshot.alternatives[0]?.id??null,
+        preferenceChangedOrder:action.strategyId!==snapshot.alternatives[0]?.id,
+        attemptId:row.attempt_id===null?null:String(row.attempt_id),outcome:row.outcome??"pending",
+        receiptDigest:receipt?.receiptDigest??null,candidateSha:receipt?.request.candidateSha??null};
+    });
+    return{lesson:candidate,decisions,counts:{applied:decisions.length,pass:decisions.filter(d=>d.outcome==='pass').length,
+      fail:decisions.filter(d=>d.outcome==='fail').length,unknown:decisions.filter(d=>d.outcome==='unknown').length,
+      pending:decisions.filter(d=>d.outcome==='pending').length},measuredImprovement:null,
+      limitation:"Preference order and independently checked outcomes are inspectable; no causal improvement estimate without a comparable baseline."};
+  }
   async lessonChallengeEvidence(lessonId:string){
-    const q=await this.db.query("SELECT l.*,p.event_id,p.progress,p.decision_status,a.attempt_id,a.outcome,a.request,a.request_digest,a.receipt,m.repository FROM operational_lessons l CROSS JOIN LATERAL jsonb_array_elements_text(l.evidence_event_ids) e(event_id) JOIN mission_recovery_progress p ON p.event_id=e.event_id JOIN verification_attempts a ON a.attempt_id=p.trusted_attempt_id JOIN missions m ON m.id=p.mission_id WHERE l.id=$1 AND l.status='candidate' ORDER BY p.created_at",[lessonId]);
+    const q=await this.db.query("SELECT l.*,p.event_id,p.progress,p.decision_status,a.attempt_id,a.outcome,a.request,a.request_digest,a.receipt,m.repository AS observed_repository,s.scopes AS observed_scopes FROM operational_lessons l CROSS JOIN LATERAL jsonb_array_elements_text(l.evidence_event_ids) e(event_id) JOIN mission_recovery_progress p ON p.event_id=e.event_id JOIN verification_attempts a ON a.attempt_id=p.trusted_attempt_id JOIN missions m ON m.id=p.mission_id JOIN mission_slices s ON s.mission_id=p.mission_id AND s.id=p.slice_id WHERE l.id=$1 AND l.status='candidate' ORDER BY p.created_at",[lessonId]);
     if(!q.rows.length)return null;const row=q.rows[0]!,candidate=lesson(row);
-    const attempts=q.rows.map(r=>{const p=r.progress as ProgressV1 & {candidateSha?:string};const request=parseTrustedCheckRequestV1(r.request),receipt=r.receipt?parseTrustedCheckReceiptV1(r.receipt):null;return{attemptId:String(r.attempt_id),eventId:String(r.event_id),observation:{eventId:String(r.event_id),repository:String(r.repository),missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,ordinal:p.ordinal,status:p.status,decisionStatus:String(r.decision_status),targetCheckId:p.targetCheckId,strategyId:p.strategyId,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,cohort:candidate.cohort},outcome:r.outcome as "pass"|"fail"|"unknown"|null,candidateSha:p.candidateSha??"",checkId:request.checkId,requestDigest:String(r.request_digest),receiptDigest:receipt?.receiptDigest??null,request,receipt};});
+    const attempts=q.rows.map(r=>{const p=r.progress as ProgressV1 & {candidateSha?:string};const request=parseTrustedCheckRequestV1(r.request),receipt=r.receipt?parseTrustedCheckReceiptV1(r.receipt):null;return{attemptId:String(r.attempt_id),eventId:String(r.event_id),observation:{eventId:String(r.event_id),repository:String(r.observed_repository),missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,ordinal:p.ordinal,status:p.status,decisionStatus:String(r.decision_status),targetCheckId:p.targetCheckId,strategyId:p.strategyId,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,cohort:scopeCohort(r.observed_scopes)??""},outcome:r.outcome as "pass"|"fail"|"unknown"|null,candidateSha:p.candidateSha??"",checkId:request.checkId,requestDigest:String(r.request_digest),receiptDigest:receipt?.receiptDigest??null,request,receipt};});
     return{lesson:candidate,attempts};
   }
   async recordLessonChallenge(result:{lessonId:string;lessonVersion:number;candidateDigest:string;challengeDigest:string;evidenceDigest:string;verifierId:string;algorithmVersion:string;decision:"accepted"|"rejected";reason:string}):Promise<string>{

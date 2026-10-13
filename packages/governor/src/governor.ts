@@ -3,6 +3,7 @@ import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js
 import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CheckCertificateV1, parseTrustedCheckRequestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
+import type { LearningActivation } from "../../learning/src/activation.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
 
 export interface TrustedCheckRunner {
@@ -122,7 +123,7 @@ export function validateGovernorConfig(config: GovernorConfig) {
 export function makeMissionInput(input: MissionInput) { validateMission(input); return input; }
 export function makePlan(missionId: string, slices: SliceInput[], recommendedBy: string) { validatePlan(missionId, slices, recommendedBy); return slices; }
 export class MissionGovernor {
-  constructor(private readonly store: MissionStore, private readonly config: GovernorConfig, private readonly judgmentAdapter?:RecoveryJudgmentAdapter) {
+  constructor(private readonly store: MissionStore, private readonly config: GovernorConfig, private readonly judgmentAdapter?:RecoveryJudgmentAdapter, private readonly learningActivation?:LearningActivation) {
     validateGovernorConfig(config);
   }
   submit(input: MissionInput) { validateMission(input); return this.store.submit(input); }
@@ -202,6 +203,8 @@ export class MissionGovernor {
     return this.store.recordProgress(progress, leaseToken, capabilityToken, this.config.trustedStrategies ?? {}, this.judgmentAdapter);
   }  lessons(missionId:string):Promise<LessonCandidate[]>{return this.store.lessons(missionId);}
   async promoteLesson(id:string,challengeDigest:string){
+    if(!this.learningActivation)throw new MissionConflictError("Learning runtime acceptance is unavailable; promotion remains disabled");
+    try{await this.learningActivation.assertAccepted();}catch{throw new MissionConflictError("Learning runtime acceptance is unavailable; promotion remains disabled");}
     if(!/^[a-f0-9]{64}$/.test(challengeDigest))throw new MissionValidationError("invalid lesson challenge digest");
     const lesson=await this.store.getLesson?.(id);const strategy=lesson&&this.config.trustedStrategies?.[lesson.strategyId];
     if(!lesson||lesson.status==="withdrawn"||!strategy||strategy.version!==lesson.policyVersion||!strategy.targetCheckIds.includes(lesson.fromCheckId)||!this.config.recoveryPolicyDigest||lesson.policyDigest!==this.config.recoveryPolicyDigest)throw new MissionConflictError("Lesson is outside the current Governor policy");
