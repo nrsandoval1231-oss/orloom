@@ -7,6 +7,7 @@ import type { LearningActivation } from "../../learning/src/activation.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
 import { rankSchedulingChoices, schedulingSnapshotDigest } from "../../contracts/src/scheduling.js";
 import type { LocalIntegrator } from "../../integration/src/local.js";
+import { deliverIntegratedCommit, type DeliveryAuthority, type DeliveryCommandV1, type DeliveryPolicy } from "../../integration/src/delivery.js";
 
 export interface TrustedCheckRunner {
   prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
@@ -135,6 +136,7 @@ export class MissionGovernor {
   submit(input: MissionInput) { validateMission(input); return this.store.submit(input); }
   recommend(missionId: string, slices: SliceInput[], recommendedBy: string) { validatePlan(missionId, slices, recommendedBy); const strategies=this.config.trustedStrategies??{};const allowed=new Set(Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]));if(slices.some(s=>!s.checks.length||s.checks.some(c=>!allowed.has(c))))throw new MissionValidationError("slice checks must be selected from the trusted operator policy");return this.store.recommendPlan(missionId, slices, recommendedBy); }
   approve(missionId: string) { return this.store.approvePlan(missionId); }
+  deliverIntegratedCommit(input:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority){return deliverIntegratedCommit(input,policy,authority,this.store);}
   async integrateVerifiedSlice(input:IntegrationRequestV1,trustedChecks:TrustedCheckCoordinator|null|undefined,authority:LocalIntegrationAuthority|null|undefined){
     if(!authority||!trustedChecks||!this.store.createIntegrationIntent||!this.store.finishIntegrationIntent||!this.store.markIntegrationUnknown||!this.store.getTrustedAttempt||!this.store.getCertificate)throw new MissionConflictError("Local integration remains closed without controller-owned Git, review, and trusted certificate services");
     const keys=["version","missionId","sliceId","expectedIntegrationSha","candidateSha","leaseEpoch","requiredCheckIds","reviewArtifactId","reviewArtifactDigest"];

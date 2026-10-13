@@ -13,6 +13,8 @@ export interface MissionSlice extends SliceInput { missionId: string; status: Sl
 export interface MissionEvent { cursor: number; missionId: string; type: string; data: Record<string, unknown>; createdAt: string; }
 export interface IntegrationRequestV1 { version:"orloom.integration-request.v1"; missionId:string; sliceId:string; expectedIntegrationSha:string; candidateSha:string; leaseEpoch:number; requiredCheckIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; }
 export interface IntegrationIntentV1 extends IntegrationRequestV1 { treeSha:string; certificateIds:string[]; certificateDigests:string[]; state:"pending"|"integrated"|"unknown"; observedIntegrationSha:string|null; }
+export interface DeliveryRequestV1 { version:"orloom.delivery-request.v1"; missionId:string; sliceId:string; leaseEpoch:number; integratedSha:string; treeSha:string; repository:string; installationId:number; branch:string; baseRef:string; baseSha:string; checkIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; idempotencyKey:string; }
+export interface DeliveryIntentV1 extends DeliveryRequestV1 { state:"pending"|"check_created"|"pr_created"|"unknown"; checkRunId:string|null; pullRequestNumber:number|null; observedRemoteSha:string|null; }
 export type ProgressStatus = "started" | "passed" | "failed" | "blocked" | "unknown";
 export interface ProgressV1 {
   version: "orloom.progress.v1"; eventId: string; missionId: string; sliceId: string; leaseEpoch: number;
@@ -74,6 +76,10 @@ export interface MissionStore {
   getIntegrationIntent?(request:IntegrationRequestV1):Promise<IntegrationIntentV1|null>;
   finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string):Promise<MissionSlice>;
   markIntegrationUnknown?(request:IntegrationRequestV1,observedSha:string|null,reason:string):Promise<void>;
+  getIntegratedIntent?(missionId:string,sliceId:string,leaseEpoch:number):Promise<IntegrationIntentV1|null>;
+  createDeliveryIntent?(request:DeliveryRequestV1):Promise<DeliveryIntentV1>;
+  getDeliveryIntent?(request:DeliveryRequestV1):Promise<DeliveryIntentV1|null>;
+  updateDeliveryIntent?(request:DeliveryRequestV1,update:Partial<Pick<DeliveryIntentV1,"state"|"checkRunId"|"pullRequestNumber"|"observedRemoteSha">>):Promise<DeliveryIntentV1>;
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
   recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;
   lessons(missionId: string): Promise<LessonCandidate[]>;
@@ -90,6 +96,7 @@ export interface MissionStore {
   submitRecoveryVerification?(receipt:TrustedCheckReceiptV1,capabilityHash:string,observedHeadSha:string,observedAt:string,observationDigest:string):Promise<{attemptId:string;outcome:"pass"|"fail"|"unknown";receiptDigest:string}>;
   submitVerification?(receipt: TrustedCheckReceiptV1, capabilityHash: string, observedHeadSha: string, observedAt: string, observationDigest: string, certificateId: string): Promise<CheckCertificateV1 | null>;
   getCertificate?(missionId: string, sliceId: string, checkId: string): Promise<CheckCertificateV1 | null>;
+  getIntegratedCertificate?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string):Promise<CheckCertificateV1|null>;
   getCertificateRequest?(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1|null>;
   expireVerificationAttempts?(now?:Date,limit?:number):Promise<number>;
   awaitingVerification?(checkIds:string[],limit?:number):Promise<Array<{missionId:string;sliceId:string}>>;

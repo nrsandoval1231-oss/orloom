@@ -1,0 +1,41 @@
+{
+  "nodeId": "C4-DELIVERY-001",
+  "status": "IMPLEMENTATION_HANDOFF_PENDING_SERIAL_ROUTE_INTEGRATION_AND_ROOT_GATES",
+  "repository": "work/orloom-delivery",
+  "branch": "feat/certified-delivery",
+  "baseSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "baseReview": "../c4-source-review-078ed12.json",
+  "candidate": "dirty working tree; no commit created",
+  "changedFiles": [
+    "packages/adapters/src/providers.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/postgres-store.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/governor/src/governor.ts",
+    "packages/integration/src/delivery.ts",
+    "db/migrations/007_delivery.sql",
+    "tests/delivery-adapter.test.ts",
+    "tests/delivery-boundary.test.ts"
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/delivery-*.test.js", "exitCode": 0, "passed": 3, "failed": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "notRun": [
+    "full repository test suite and validate; root final gates after C5 route integration",
+    "real PostgreSQL recovery/multi-connection proof",
+    "independent review of this changed candidate",
+    "credentialed GitHub App/R2 remote proof"
+  ],
+  "routeHandoff": "apps/control-plane/src/server.ts is untouched because C5 owns it. Add an authenticated owner-session route that accepts exactly DeliveryCommandV1 fields, invokes the configured MissionGovernor.deliverIntegratedCommit, and injects immutable controller-owned DeliveryPolicy and DeliveryAuthority only when SQL/local integrator/review/R2/GitHub App prerequisites are available. Keep missing App or R2 authority closed; never accept repository, installation, branch, base, permissions, check IDs, or policy fields from the request.",
+  "deliveryBoundary": "Consumes only an already-uploaded reserved remote branch after exact SHA/tree readback; no credentialed Git push, commit, merge, or deploy was attempted. Unknown outcomes are persisted and recover only after exactly one matching completed Check and one matching draft PR are read back; missing or ambiguous matches stay UNKNOWN.",
+  "liveEffects": "none",
+  "startedAtUtc": null,
+  "startedAtStatus": "UNKNOWN; dispatch timestamp was not captured by this worker",
+  "finishedAtUtc": "2026-10-13T21:02:56Z",
+  "elapsedSeconds": null,
+  "model": "GPT-6 family; exact configured model UNKNOWN",
+  "tokenUsage": "UNKNOWN"
+}

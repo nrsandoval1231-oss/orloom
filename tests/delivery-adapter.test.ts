@@ -1,0 +1,17 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { createGitHubAppAdapter, type GitHubRequestBoundary } from "../packages/adapters/src/providers.js";
+
+test("GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities",async()=>{
+  const mintCalls:Record<string,unknown>[]=[],installationTokens:string[]=[],calls:Array<{route:string;parameters:Record<string,unknown>}>=[];
+  const head="a".repeat(40),tree="b".repeat(40),base="c".repeat(40),baseTree="d".repeat(40),externalId="mission:slice:1:"+head;
+  const boundary:GitHubRequestBoundary={app:{request:async(_route,parameters)=>{mintCalls.push(parameters);return{data:{token:`token-${mintCalls.length}`}};}},installation:async(_id,token)=>{installationTokens.push(token??"");return{request:async(route,parameters)=>{calls.push({route,parameters});if(route.startsWith("GET /repos")&&route.includes("/git/ref/")){const ref=String(parameters.ref);return{data:{object:{sha:ref.endsWith("main")?base:head}}};}if(route.startsWith("GET /repos")&&route.includes("/git/commits/")){const commit=String(parameters.commit_sha);return{data:{sha:commit,tree:{sha:commit===base?baseTree:tree}}};}if(route.startsWith("GET /repos")&&route.includes("/check-runs"))return{data:{check_runs:[]}};if(route.startsWith("POST /repos")&&route.includes("/check-runs"))return{data:{id:81,head_sha:head,name:"Orloom suite",external_id:externalId,conclusion:"success"}};if(route==="GET /repos/{owner}/{repo}/pulls")return{data:[]};if(route==="POST /repos/{owner}/{repo}/pulls")return{data:{number:9,draft:true,head:{repo:{full_name:"acme/orloom"},ref:"orloom/delivery/x",sha:head},base:{repo:{full_name:"acme/orloom"},ref:"main",sha:base}}};if(route.includes("/pulls/{pull_number}"))return{data:{number:9,draft:true,head:{repo:{full_name:"acme/orloom"},ref:"orloom/delivery/x",sha:head},base:{repo:{full_name:"acme/orloom"},ref:"main",sha:base}}};throw new Error(`unexpected route ${route}`);}};}};
+  const client=createGitHubAppAdapter({appId:1,privateKey:"test-only"},boundary);
+  assert.deepEqual(await client.inspectBranch(7,"acme/orloom","orloom/delivery/x"),{sha:head,treeSha:tree});
+  const check=await client.createDeliveryCheck(7,"acme/orloom",head,"Orloom suite",externalId,"Title","Summary");assert.equal(check.id,81);assert.equal(check.conclusion,"success");
+  assert.deepEqual(await client.listCheckRuns(7,"acme/orloom",head,"Orloom suite",externalId),[]);
+  assert.equal((await client.listPullRequests(7,"acme/orloom","orloom/delivery/x","main")).length,0);
+  const pr=await client.createDraftPullRequest(7,"acme/orloom","orloom/delivery/x","main","Title","Body");assert.equal(pr.number,9);assert(pr.draft);assert.equal((await client.getPullRequest(7,"acme/orloom",9)).headSha,head);
+  assert.equal(mintCalls.length,6);for(const p of mintCalls){assert.equal(p.installation_id,7);assert.deepEqual(p.repositories,["orloom"]);}assert.deepEqual(mintCalls.map(x=>x.permissions),[{contents:"read"},{checks:"write"},{checks:"read"},{pull_requests:"read"},{pull_requests:"write"},{pull_requests:"read"}]);
+  assert(installationTokens.every(x=>x.startsWith("token-")));assert(calls.some(x=>x.route.startsWith("POST")&&x.route.includes("check-runs")&&(x.parameters as {external_id?:string}).external_id===externalId));assert(calls.some(x=>x.route==="POST /repos/{owner}/{repo}/pulls"&&(x.parameters as {draft?:boolean}).draft===true));
+});
