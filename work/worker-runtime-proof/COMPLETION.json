@@ -1,58 +1,54 @@
 {
-  "packet": "ORL-005B remote broker/runtime checkpoint",
-  "status": "PASS_BOUNDED_RUNTIME; LIVE_PROVIDER_AND_INDEPENDENT_REVIEW_PENDING",
+  "packet": "ORL-005B bounded fixture broker/runtime checkpoint",
+  "status": "FIXTURE_RUNTIME_PASS; LIVE_PATH_NOT_IMPLEMENTED; FINAL_GATES_AND_REVIEW_PENDING",
   "repository": "outputs/orloom",
   "branch": "feat/deepseek-worker-broker",
-  "committedHead": "8bbcfffbf631e5ad2972e34b41284198afc566e2",
-  "baseSha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "reviewedCommit": "6a128423d069718f37bcde34207806b9e35e826c",
   "sourceManifest": {
     "path": "work/worker-runtime-proof/runtime-source-manifest.json",
-    "sha256": "cc44ff425c91f7ef9b6422817b61f93adf66b1ffa11c841c99294c30332717c5"
+    "sha256": "4ac1c621cf353588be85046b5c4786aa7226610ea0280353326cc01e3e9a110e"
   },
-  "result": {
-    "runId": "orloom-pr2-20261013182514-1d792e61",
-    "startedAtUtc": "2026-10-13T18:25:14Z",
-    "finishedAtUtc": "2026-10-13T18:25:20Z",
+  "reviewCorrection": {
+    "finding": "Previous dormant live branch refreshed pricing timestamp and rounded fractional cap usage.",
+    "action": "Removed live provider, secret-read, and spend-ledger code. Non-fixture mode exits before proof-root inspection or creation.",
+    "validation": "check-live-disabled.mjs PASS; no live provider calls."
+  },
+  "runtimeProof": {
+    "runId": "orloom-pr2-20261013183734-9292bfc9",
+    "startedAtUtc": "2026-10-13T18:37:34Z",
+    "durationMs": 4605,
+    "exitCode": 0,
     "result": "awaiting_verification",
-    "evidence": "work/worker-runtime-proof/runtime-proof-pass.json",
-    "evidenceSha256": "bfb0b15be5dba1be08c3ca7326bf9ed65a4825b3c635fe7cf6a26f9fc2ab2bb9",
-    "controllerRepeat": {
-      "runId": "orloom-pr2-20261013182821-7eb00659",
-      "evidence": "work/worker-runtime-proof/controller-runtime-proof.json",
-      "evidenceSha256": "630e56836e1245396d5a718fc28f86e25df0198735868a89cdd9e74ec1ef095c",
-      "result": "awaiting_verification",
-      "compiledDistFilesCompared": 32,
-      "compiledDistMismatches": 0
-    },
-    "provider": "deterministic fixture; live calls 0; fixture counters are not real token usage",
-    "candidateIsNotVerified": true
+    "evidence": "work/worker-runtime-proof/post-review-runtime-proof.json",
+    "evidenceSha256": "831a7302d99cc3f0565fb8af7570e1b2b5f76774537fc7e876c0a3fcfc4b7f02",
+    "provider": "deterministic fixture; zero live calls; counters are synthetic",
+    "runtime": "production executeLease, HTTP control protocol, DockerWorkerRuntime, Docker runsc",
+    "docker": "two containers inspected; cancellation and exact cleanup PASS; post-candidate owned set empty; protected container unchanged",
+    "candidateVerified": false
   },
-  "changes": [
-    "Fixed Docker cleanup argv to use supported `docker rm --force <exact-id>` after exact ownership checks.",
-    "Added CLI-argv regression test.",
-    "Added bounded production broker/DockerWorkerRuntime fixture harness and retained pass/failure evidence."
-  ],
   "validation": {
+    "liveDisabledGuard": "PASS",
     "nodeCheckProofScript": "PASS",
-    "typecheckBuild": "PASS via npm test build step",
-    "tests": "PASS 40/40",
-    "runtime": "PASS bounded remote fixture only",
-    "providerLive": "NOT RUN; Infisical client-secret file absent",
-    "infisicalRetrieval": "NOT RUN; expected root-owned bootstrap file absent",
-    "spendLedger": "USD 0 confirmed; USD 0 reserved; USD 5 remaining",
-    "protectedCodexContainer": "PASS unchanged",
-    "ownedContainerCleanup": "PASS; no Orloom-owned containers remain",
-    "finalControllerGates": "PASS: npm run typecheck; npm test (build and 40 tests); npm run validate; node --check prove-broker.mjs; git diff --check, all exit 0",
-    "independentReview": "PENDING"
+    "nodeCheckGuardScript": "PASS",
+    "freshRemoteFixtureRuntime": "PASS",
+    "finalControllerGates": "PENDING exact changed candidate",
+    "independentReview": "PENDING",
+    "liveInfisicalRetrieval": "NOT RUN; expected host client-secret file absent at last metadata check",
+    "liveDeepSeek": "NOT RUN; live path intentionally removed pending separate reviewed implementation",
+    "sharedSpendLedger": "USD 0 confirmed; USD 0 reserved; USD 5 cap"
   },
-  "failedAttempts": [
+  "retainedHistory": [
+    "work/worker-runtime-proof/runtime-proof-pass.json",
+    "work/worker-runtime-proof/controller-runtime-proof.json",
     "work/worker-runtime-proof/attempt-01-runtime-proof.json",
     "work/worker-runtime-proof/attempt-02-runtime-proof.json",
-    "work/worker-runtime-proof/attempt-03-runtime-proof.json"
+    "work/worker-runtime-proof/attempt-03-runtime-proof.json",
+    "work/worker-runtime-proof/runtime-source-manifest.pre-review.json (SHA-256 cc44ff425c91f7ef9b6422817b61f93adf66b1ffa11c841c99294c30332717c5)",
+    "C:/Users/nrsan/Nucleus/02_Projects/Orloom/PR2-RUNTIME-REVIEW.json"
   ],
   "limitations": [
-    "No live DeepSeek API/model/pricing measurement or provider outcome.",
-    "GitHub App checkout, R2, production worker service bootstrap, production Hostinger A deployment, real PostgreSQL on this host, representative build capacity, six live lanes, verifier, integration, PR publication, and product completion remain unproven."
+    "No live provider model, pricing, token usage, cost, or outcome was measured.",
+    "GitHub App checkout, R2, production worker service bootstrap, Hostinger deployment, real PostgreSQL on this host, representative capacity, six live lanes, verifier, integration, publication, and product completion remain unproven."
   ],
-  "authority": "No push, merge, deployment, or certification performed."
+  "authority": "No provider spend, push, merge, deployment, or certification performed."
 }

@@ -1,5 +1,5 @@
 {
-  "packet": "ORL-005B remote broker/runtime checkpoint",
+  "packet": "ORL-005B fixture broker/runtime checkpoint with live mode disabled",
   "primaryRun": {
     "startUtc": "2026-10-13T18:25:14Z",
     "finishUtc": "2026-10-13T18:25:20Z",
@@ -8,7 +8,12 @@
     "model": "UNKNOWN",
     "configIdentity": "UNKNOWN",
     "measuredModelTokens": "UNKNOWN; no live provider request",
-    "fixtureCounters": { "inputTokens": 26, "outputTokens": 21, "providerCalls": 5, "meaning": "synthetic provider fixture counters only" }
+    "fixtureCounters": {
+      "inputTokens": 26,
+      "outputTokens": 21,
+      "providerCalls": 5,
+      "meaning": "synthetic provider fixture counters only"
+    }
   },
   "controllerRepeat": {
     "startUtc": "2026-10-13T18:28:21Z",
@@ -24,6 +29,25 @@
   "independentAuditDuration": "PENDING",
   "repairCount": 2,
   "elapsedToIndependentAcceptance": null,
-  "billing": { "deepseekCalls": 0, "confirmedUsd": 0, "reservedUsd": 0, "capUsd": 5 },
-  "failedAttemptsRetained": 3
+  "billing": {
+    "deepseekCalls": 0,
+    "confirmedUsd": 0,
+    "reservedUsd": 0,
+    "capUsd": 5
+  },
+  "failedAttemptsRetained": 3,
+  "postReviewCorrection": {
+    "finishUtc": "2026-10-13T18:39:59Z",
+    "implementationDuration": "UNKNOWN",
+    "validation": "live-disabled guard and Node syntax checks PASS",
+    "runtimeRunId": "orloom-pr2-20261013183734-9292bfc9",
+    "runtimeDurationMs": 4605,
+    "independentAuditDuration": "PENDING",
+    "liveProviderCalls": 0,
+    "spendLedger": {
+      "confirmedUsd": 0,
+      "reservedUsd": 0,
+      "capUsd": 5
+    }
+  }
 }

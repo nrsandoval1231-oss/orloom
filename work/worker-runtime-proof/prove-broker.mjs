@@ -1,17 +1,19 @@
 import { createHash, randomUUID } from "node:crypto";
-import { chmod, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { chmod, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { createControlPlane } from "../../dist/apps/control-plane/src/server.js";
 import { MemoryJobStore } from "../../dist/packages/contracts/src/memory-store.js";
 import { MemoryMissionStore } from "../../dist/packages/contracts/src/memory-mission-store.js";
-import { DeepSeekHttpClient, executeLease, HttpControlPlane, R2WorkerProgressSink } from "../../dist/packages/agents/src/worker.js";
+import { executeLease, HttpControlPlane, R2WorkerProgressSink } from "../../dist/packages/agents/src/worker.js";
 import { DockerWorkerRuntime } from "../../dist/apps/worker/src/docker-runtime.js";
 
 const proofRoot = process.env.ORLOOM_PROOF_ROOT ?? "/var/lib/orloom/pr2-live-proof-20261013";
 const mode = process.env.ORLOOM_PROOF_MODE ?? "fixture";
-if (!new Set(["fixture", "live"]).has(mode)) throw new Error("invalid proof mode");
+if (mode !== "fixture") {
+  process.stderr.write("Live proof mode is disabled: this harness performs no credential retrieval, spend-ledger mutation, or provider calls. Use the separately approved live workflow only after verified pricing and credential bootstrap.\n");
+  process.exit(2);
+}
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const startedAtUtc = new Date().toISOString();
 const runId = `orloom-pr2-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}-${randomUUID().slice(0, 8)}`;
@@ -22,7 +24,7 @@ await chmod(runRoot, 0o700);
 const output = { version: "orloom.pr2.runtime-proof.v1", runId, startedAtUtc, status: "FAIL", mode,
   candidate: { branch: "feat/deepseek-worker-broker", head: process.env.ORLOOM_CANDIDATE_SHA ?? "UNKNOWN" },
   scope: "actual executeLease / HTTP control protocol / DockerWorkerRuntime; isolated local fixture; no integration, push, verification, or PR",
-  provider: { kind: mode === "fixture" ? "deterministic test double" : "DeepSeekHttpClient", liveCalls: 0 },
+  provider: { kind: "deterministic test double", liveCalls: 0 },
   controls: { terminalResults: [] }, docker: { imageRef: process.env.ORLOOM_SANDBOX_IMAGE_REF ?? "UNKNOWN", protectedBefore: null, protectedAfter: null, containers: [] },
   artifacts: [], limitations: ["GitHub App checkout, R2, production worker bootstrap, production Hostinger A deployment, representative build capacity, and six live lanes are not proven."] };
 
@@ -106,12 +108,7 @@ let store;
 let runtime;
 let controls = null;
 let usage = { inputTokens: 0, outputTokens: 0, calls: 0 };
-let providerCallMayHaveBeenSent = false;
-let providerOutcomeUnknown = false;
-let ledgerReserved = false;
-let ledgerSettled = false;
 let provider;
-const modelIds = [];
 const imageRef = output.docker.imageRef;
 let epoch = 0;
 try {
@@ -190,8 +187,7 @@ try {
       inputTokens: event.inputTokens, outputTokens: event.outputTokens });
     return await progress.append(progressLease, event);
   } };
-  provider = mode === "fixture"
-    ? {
+  provider = {
         async listModels() { return ["deepseek-flash"]; },
         async probeTools(model) { await waitForContainer(epoch, imageId); return { model, inputTokens: 2, outputTokens: 1 }; },
         async complete(model, messages) {
@@ -202,73 +198,10 @@ try {
           if (step === 2) return tool("run_check", { checkId: "check:unit" }, "fixture-check");
           return { model, inputTokens: 6, outputTokens: 5, message: { role: "assistant", content: "The requested change and check completed." } };
         }
-      }
-    : await (async () => {
-        const secretPath = process.env.ORLOOM_DEEPSEEK_API_KEY_FILE ?? "/run/orloom/pr2-deepseek-api-key";
-        const { lstat } = await import("node:fs/promises");
-        const st = await lstat(secretPath);
-        if (!st.isFile() || st.isSymbolicLink() || st.uid !== 0 || (st.mode & 0o077) !== 0 || st.size < 16 || st.size > 4096) throw new Error("live provider credential file missing or unsafe");
-        const key = (await readFile(secretPath, "utf8")).trim();
-        if (!key || /[\r\n\0]/.test(key)) throw new Error("live provider credential file malformed");
-        const client = new DeepSeekHttpClient(key);
-        const ledgerPath = "/var/lib/orloom/provider-spend-ledger.json";
-        const reservationId = runId;
-        async function mutateLedger(mutator) {
-          const lockPath = `${ledgerPath}.lock`;
-          await mkdir(lockPath, { mode: 0o700 });
-          try {
-            const ledger = JSON.parse(await readFile(ledgerPath, "utf8"));
-            if (ledger.version !== "orloom.provider-spend-ledger.v1" || ledger.aggregateCap !== 5) throw new Error("shared spend ledger invalid");
-            await mutator(ledger);
-            ledger.updatedAtUtc = new Date().toISOString();
-            const temp = `${ledgerPath}.${randomUUID()}.tmp`;
-            await writeFile(temp, JSON.stringify(ledger, null, 2) + "\n", { mode: 0o600, flag: "wx" });
-            await rename(temp, ledgerPath);
-          } finally { await rm(lockPath, { recursive: true, force: true }); }
-        }
-        async function reserve() {
-          if (ledgerReserved) return;
-          await mutateLedger((ledger) => {
-            const reservedCents = 1;
-            const usedCents = Math.round((ledger.confirmedSpend + ledger.reservedSpend) * 100);
-            if (usedCents + reservedCents > Math.round(ledger.aggregateCap * 100)) throw new Error("aggregate DeepSeek cap exhausted");
-            ledger.reservedSpend = Number((ledger.reservedSpend + 0.01).toFixed(2));
-            ledger.remainingUnreserved = Number((ledger.aggregateCap - ledger.confirmedSpend - ledger.reservedSpend).toFixed(2));
-            ledger.status = "RESERVED";
-            ledger.requests.push({ id: reservationId, status: "RESERVED", reservedUsd: 0.01, maxModel: "deepseek-flash", maxInputTokens: 12_000, maxOutputTokens: 1_024, pricingSource: "https://api-docs.deepseek.com/quick_start/pricing/", startedAtUtc: new Date().toISOString() });
-          });
-          ledgerReserved = true;
-        }
-        return {
-          async listModels(signal) { const models = await client.listModels(signal); modelIds.push(models.includes("deepseek-flash") ? "deepseek-flash-listed" : "deepseek-flash-not-listed"); return models; },
-          async probeTools(model, signal) { await waitForContainer(epoch, imageId); await reserve(); providerCallMayHaveBeenSent = true; usage.calls++; try { const result = await client.probeTools(model, signal); modelIds.push(result.model); usage.inputTokens += result.inputTokens; usage.outputTokens += result.outputTokens; return result; } catch (error) { providerOutcomeUnknown = true; throw error; } },
-          async complete(model, messages, signal, maxOutputTokens) { await reserve(); providerCallMayHaveBeenSent = true; usage.calls++; try { const result = await client.complete(model, messages, signal, maxOutputTokens); modelIds.push(result.model); usage.inputTokens += result.inputTokens; usage.outputTokens += result.outputTokens; return result; } catch (error) { providerOutcomeUnknown = true; throw error; } },
-          async finishLedger(uncertain) {
-            if (!ledgerReserved || ledgerSettled) return;
-            await mutateLedger((ledger) => {
-              const row = ledger.requests.find((entry) => entry.id === reservationId);
-              if (!row || row.status !== "RESERVED") throw new Error("shared spend reservation cannot be reconciled safely");
-              if (uncertain) { row.status = "UNKNOWN"; row.reason = "provider request outcome or usage may be uncertain; reservation retained"; }
-              else {
-                const priceCentsPerMillion = { input: 30, output: 120 };
-                const upperBoundUsd = (usage.inputTokens * priceCentsPerMillion.input + usage.outputTokens * priceCentsPerMillion.output) / 100_000_000 * 1.5;
-                if (upperBoundUsd > 0.01) throw new Error("observed provider cost exceeded the one-cent reservation; retain reservation and stop");
-                const settled = Number(upperBoundUsd.toFixed(8));
-                ledger.reservedSpend = Number((ledger.reservedSpend - 0.01).toFixed(2));
-                ledger.confirmedSpend = Number((ledger.confirmedSpend + settled).toFixed(8));
-                ledger.remainingUnreserved = Number((ledger.aggregateCap - ledger.confirmedSpend - ledger.reservedSpend).toFixed(8));
-                row.status = "SETTLED"; row.confirmedUpperBoundUsd = settled; row.inputTokens = usage.inputTokens; row.outputTokens = usage.outputTokens; row.calls = usage.calls; row.settledAtUtc = new Date().toISOString();
-                ledger.status = "SETTLED";
-              }
-              if (uncertain) ledger.status = "UNKNOWN_RESERVATION_RETAINED";
-            });
-            ledgerSettled = true;
-          }
-        };
-      })();
+      };
   const options = { allowedModels: ["deepseek-flash"], allowedProviders: ["deepseek"], trustedChecks: policy, trustedCheckPolicyDigest: policyDigest,
     trustedCheckCommands: checkCommands, sandboxImageRef: imageId, maxToolCalls: 4,
-    pricing: { model: "deepseek-flash", version: "DeepSeek pricing snapshot peak-rate ceiling 2026-10-13", source: "https://api-docs.deepseek.com/quick_start/pricing/; peak input cache-miss $0.30/M, output/reasoning $1.20/M", capturedAt: startedAtUtc, expiresAt: new Date(Date.now() + 60 * 60_000).toISOString(), inputCentsPerMillion: 30, outputCentsPerMillion: 120, reasoningCentsPerMillion: 120, safetyMultiplier: 1.5 } };
+    pricing: { model: "deepseek-flash", version: "fixture-only", source: "synthetic local policy; not valid for provider billing", capturedAt: startedAtUtc, expiresAt: new Date(Date.now() + 60 * 60_000).toISOString(), inputCentsPerMillion: 30, outputCentsPerMillion: 120, reasoningCentsPerMillion: 120, safetyMultiplier: 1.5 } };
   const checkIds = { "check:unit": ["check:unit"], "check:delay": ["check:delay"] };
   await executeLease(lease, { control, provider, runtime, evidence, progress: progressSink, checks: checkIds, options });
   output.controls.progressSummary = progressSummary;
@@ -323,21 +256,12 @@ try {
   output.docker.cancellation = { interruptedRpcRejected: cancelled, exactOwnedContainerAbsent: currentOwned(epoch).every((row) => row.id !== cancelRow.id) };
   if (!cancelled || !output.docker.cancellation.exactOwnedContainerAbsent) throw new Error("actual Docker RPC cancellation/cleanup proof failed");
 
-  if (mode === "live") {
-    await provider.finishLedger(providerOutcomeUnknown);
-    output.provider = { kind: "DeepSeekHttpClient", liveCalls: usage.calls, inputTokens: usage.inputTokens, outputTokens: usage.outputTokens,
-      modelIdentities: modelIds, spendLedger: providerOutcomeUnknown ? "UNKNOWN_RESERVATION_RETAINED" : "SETTLED_AT_CONSERVATIVE_PEAK_RATE" };
-  }
   output.docker.protectedAfter = protectedSnapshot();
   if (JSON.stringify(output.docker.protectedBefore) !== JSON.stringify(output.docker.protectedAfter)) throw new Error("protected codex-universal container changed during proof");
   output.status = "PASS";
 } catch (error) {
   output.status = "FAIL";
   output.failureType = error?.name ?? "Error";
-  output.providerFailureMayBeUnknown = providerCallMayHaveBeenSent && !ledgerSettled;
-  if (mode === "live" && ledgerReserved && provider?.finishLedger) {
-    try { await provider.finishLedger(providerOutcomeUnknown); } catch { output.spendLedger = "UNKNOWN: reservation could not be reconciled; do not retry"; }
-  }
 } finally {
   if (server) await new Promise((resolve) => server.close(() => resolve()));
   if (output.docker.protectedBefore && !output.docker.protectedAfter) {
