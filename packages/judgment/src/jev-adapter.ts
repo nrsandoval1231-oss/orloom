@@ -1,10 +1,11 @@
 import type { EntryType } from "@typesafe-ai/sdk";
-import type { RecoveryJudgmentAdapter } from "../../governor/src/governor.js";
+import type { RecoveryJudgmentAdapter, SchedulingJudgmentAdapter } from "../../governor/src/governor.js";
 import { JevClient } from "./jev-client.js";
 import type { JudgmentV1 } from "./types.js";
 import { createHash } from "node:crypto";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import { canonicalJson } from "./canonical.js";
+import type { SchedulingSnapshot } from "../../contracts/src/mission.js";
 
 const snapshotDigest = (snapshot: unknown) => createHash("sha256").update(canonicalJson(snapshot)).digest("hex");
 
@@ -55,5 +56,24 @@ export function createJevRecoveryAdapter(client: JevClient): RecoveryJudgmentAda
       confidence: result.confidence,
       usage: result.usage,
     };
+  };
+}
+
+/** Selects one opaque candidate identity from a bounded advisory scheduling snapshot. */
+export function createJevSchedulingAdapter(client: JevClient): SchedulingJudgmentAdapter {
+  return async snapshot => {
+    const candidates=snapshot.choices.slice(0,32);
+    if(candidates.length<2)throw new Error("scheduling advice needs at least two eligible choices");
+    const choices:Record<string,string>={},labels=new Map<string,string>();
+    candidates.forEach((candidate,index)=>{
+      const label=`slice_${index+1}`;const identity=`${candidate.missionId}:${candidate.sliceId}`;
+      labels.set(label,identity);
+      const lesson=candidate.lessons.map(x=>({id:x.id,version:x.version,challengeDigest:x.challengeDigest,checkId:x.checkId,strategyId:x.strategyId,policyDigest:x.policyDigest}));
+      choices[label]=`Approved candidate ${identity}; repository ${candidate.repository}; downstream depth ${candidate.downstreamDepth} slices; slice budget ${candidate.budgetCents} cents; mission budget ${candidate.missionBudgetCents} cents with ${candidate.reservedBudgetCents} reserved; scope risk ${candidate.scopeRisk}; matching promoted lesson provenance ${JSON.stringify(lesson)}`;
+    });
+    const state={version:"orloom.athena-scheduling-context.v1",capturedAt:snapshot.capturedAt,freeCapacity:snapshot.freeCapacity,choices:candidates.map(x=>({missionId:x.missionId,sliceId:x.sliceId,repository:x.repository,planDigest:x.planDigest,dependencies:x.dependencies,scopeRisk:x.scopeRisk,budgetCents:x.budgetCents,missionBudgetCents:x.missionBudgetCents,reservedBudgetCents:x.reservedBudgetCents,downstreamDepth:x.downstreamDepth,lessons:x.lessons}))};
+    if(Buffer.byteLength(JSON.stringify(state),"utf8")>16_384)throw new Error("scheduling context exceeds local byte bound");
+    const result=await client.choose({state:state as unknown as EntryType,choices});
+    const selected=labels.get(result.choice);if(!selected)throw new Error("Jev selected an unknown scheduling option");return selected;
   };
 }

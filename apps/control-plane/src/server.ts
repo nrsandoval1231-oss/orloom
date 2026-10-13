@@ -5,7 +5,7 @@ import { Config } from "../../../packages/config/src/config.js";
 import { InputValidationError, JobStore } from "../../../packages/contracts/src/job.js";
 import { MissionConflictError, MissionStore, MissionValidationError, RecoveryProgress } from "../../../packages/contracts/src/mission.js";
 import { MemoryMissionStore } from "../../../packages/contracts/src/memory-mission-store.js";
-import { MissionGovernor, RecoveryJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
+import { MissionGovernor, RecoveryJudgmentAdapter, SchedulingJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
 
@@ -31,12 +31,12 @@ async function body(req: IncomingMessage): Promise<Buffer> {
 function send(res: ServerResponse, status: number, data: string, type = "application/json") { res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "x-content-type-options": "nosniff", "cache-control": "no-store" }); res.end(data); }
 function parseJson(raw: Buffer): unknown { try { return JSON.parse(raw.toString()); } catch { throw new InputValidationError("invalid json"); } }
 
-export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator) {
+export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, schedulingAdapter?:SchedulingJudgmentAdapter) {
   const sessions = new Map<string, number>();
   const cloud = config.mode === "cloud";
   const sessionMaxAge = (config as Config & { sessionTtlSeconds?: number }).sessionTtlSeconds ?? 8 * 60 * 60;
   const limitsReady=(config.workerMaxProviderCalls??0)>0&&(config.workerMaxInputTokens??0)>0&&(config.workerMaxOutputTokens??0)>0&&(config.workerMaxWallSeconds??0)>0&&(config.workerAllowedProviders?.length??0)>0&&(config.workerAllowedModels?.length??0)>0;
-  const governor = new MissionGovernor(missionStore, { maxLanes: config.maxLanes ?? 6, capacitySlots: config.capacitySlots ?? 0, leaseSeconds: 300, trustedCheckPolicyDigest: config.trustedCheckPolicyDigest ?? null, recoveryPolicyDigest:config.recoveryPolicyDigest??null,trustedCheckPolicy:config.trustedCheckPolicy??[],trustedStrategies:config.trustedStrategies??{}, executionConfigured: limitsReady,progressLimits:{maxProviderCalls:config.workerMaxProviderCalls??0,maxInputTokens:config.workerMaxInputTokens??0,maxOutputTokens:config.workerMaxOutputTokens??0,maxWallSeconds:config.workerMaxWallSeconds??0} }, judgmentAdapter);
+  const governor = new MissionGovernor(missionStore, { maxLanes: config.maxLanes ?? 6, capacitySlots: config.capacitySlots ?? 0, leaseSeconds: 300, trustedCheckPolicyDigest: config.trustedCheckPolicyDigest ?? null, recoveryPolicyDigest:config.recoveryPolicyDigest??null,trustedCheckPolicy:config.trustedCheckPolicy??[],trustedStrategies:config.trustedStrategies??{}, executionConfigured: limitsReady,progressLimits:{maxProviderCalls:config.workerMaxProviderCalls??0,maxInputTokens:config.workerMaxInputTokens??0,maxOutputTokens:config.workerMaxOutputTokens??0,maxWallSeconds:config.workerMaxWallSeconds??0} }, judgmentAdapter, schedulingAdapter);
   return createServer(async (req, res) => {
     try {
       if (req.method === "GET" && req.url === "/") return send(res, 200, page(Boolean(config.sessionToken), config.mode), "text/html");

@@ -1,9 +1,10 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { ClaimAdvice, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CheckCertificateV1, parseTrustedCheckRequestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
+import { rankSchedulingChoices, schedulingSnapshotDigest } from "../../contracts/src/scheduling.js";
 
 export interface TrustedCheckRunner {
   prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
@@ -110,6 +111,7 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
 
 export interface GovernorConfig { maxLanes: number; capacitySlots: number; leaseSeconds: number; trustedCheckPolicyDigest: string | null; recoveryPolicyDigest?: string | null; trustedCheckPolicy?: string[]; trustedStrategies?: Record<string,TrustedStrategyPolicy>; executionConfigured?: boolean; progressLimits?: {maxProviderCalls:number;maxInputTokens:number;maxOutputTokens:number;maxWallSeconds:number}; }
 export type RecoveryJudgmentAdapter=(snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>;
+export type SchedulingJudgmentAdapter=(snapshot:SchedulingSnapshot)=>Promise<string>;
 function exactKeys(value: unknown, expected: readonly string[]): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const keys = Object.keys(value);
@@ -122,13 +124,25 @@ export function validateGovernorConfig(config: GovernorConfig) {
 export function makeMissionInput(input: MissionInput) { validateMission(input); return input; }
 export function makePlan(missionId: string, slices: SliceInput[], recommendedBy: string) { validatePlan(missionId, slices, recommendedBy); return slices; }
 export class MissionGovernor {
-  constructor(private readonly store: MissionStore, private readonly config: GovernorConfig, private readonly judgmentAdapter?:RecoveryJudgmentAdapter) {
+  constructor(private readonly store: MissionStore, private readonly config: GovernorConfig, private readonly judgmentAdapter?:RecoveryJudgmentAdapter, private readonly schedulingAdapter?:SchedulingJudgmentAdapter) {
     validateGovernorConfig(config);
   }
   submit(input: MissionInput) { validateMission(input); return this.store.submit(input); }
   recommend(missionId: string, slices: SliceInput[], recommendedBy: string) { validatePlan(missionId, slices, recommendedBy); const strategies=this.config.trustedStrategies??{};const allowed=new Set(Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]));if(slices.some(s=>!s.checks.length||s.checks.some(c=>!allowed.has(c))))throw new MissionValidationError("slice checks must be selected from the trusted operator policy");return this.store.recommendPlan(missionId, slices, recommendedBy); }
   approve(missionId: string) { return this.store.approvePlan(missionId); }
-  claim() { if (!this.config.capacitySlots || !this.config.trustedCheckPolicyDigest || !this.config.executionConfigured) return Promise.resolve(null); return this.store.claim(this.config.leaseSeconds, this.config.trustedCheckPolicyDigest,undefined,this.config.recoveryPolicyDigest??""); }
+  async claim() {
+    if (!this.config.capacitySlots || !this.config.trustedCheckPolicyDigest || !this.config.executionConfigured) return null;
+    const recoveryPolicyDigest=this.config.recoveryPolicyDigest??"";let advice:ClaimAdvice|undefined;
+    if(this.store.schedulingSnapshot){
+      const snapshot=await this.store.schedulingSnapshot(this.config.trustedCheckPolicyDigest,recoveryPolicyDigest);
+      if(this.schedulingAdapter&&snapshot.freeCapacity>0&&snapshot.choices.length>=2){
+        const bounded={...snapshot,choices:rankSchedulingChoices(snapshot.choices).slice(0,32)};
+        try{const selected=await this.schedulingAdapter(bounded);advice={status:bounded.choices.some(x=>`${x.missionId}:${x.sliceId}`===selected)?"selected":"invalid",preferredCandidateId:bounded.choices.some(x=>`${x.missionId}:${x.sliceId}`===selected)?selected:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices})};}
+        catch{advice={status:"unknown",preferredCandidateId:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices})};}
+      }else advice={status:"not_consulted",preferredCandidateId:null,snapshotDigest:schedulingSnapshotDigest({freeCapacity:snapshot.freeCapacity,choices:snapshot.choices})};
+    }
+    return this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,undefined,recoveryPolicyDigest,advice);
+  }
   heartbeat(missionId:string,id: string, epoch: number, token: string, capability: string) { return this.store.heartbeat(missionId,id, epoch, token, capability, this.config.leaseSeconds); }
   complete(missionId:string,id: string, epoch: number, token: string, capability: string, candidateSha: string, evidenceRefs: string[]) {
     if (!/^[0-9a-f]{40}$/i.test(candidateSha) || !Array.isArray(evidenceRefs) || evidenceRefs.length > 100 || evidenceRefs.some(x => typeof x !== "string" || !x || x.length > 2048)) throw new Error("Invalid candidate result");

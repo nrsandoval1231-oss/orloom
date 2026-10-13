@@ -3,7 +3,8 @@ import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { canonicalRepository, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
+import { canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
+import { downstreamDepths, rankSchedulingChoices, schedulingSnapshotDigest } from "./scheduling.js";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const newSecret = () => randomBytes(32).toString("base64url");
 const isTerminalRecoveryProgress=(p:RecoveryProgress)=>p.status==="failed"||p.status==="passed";
@@ -26,9 +27,26 @@ export class MemoryMissionStore implements MissionStore {
   async approvePlan(id: string) { const m = this.mustMission(id), p = this.plans.get(id); if (!p || p.approvedAt || m.status !== "planning") throw new MissionConflictError("Plan cannot be approved"); if (p.slices.reduce((n, s) => n + s.budgetCents, 0) > m.budgetCents) throw new MissionConflictError("Plan budget exceeds mission budget"); p.approvedAt = new Date().toISOString(); m.status = "ready"; for (const s of p.slices) if (!s.dependencies.length) this.slices.get(`${id}:${s.id}`)!.status = "ready"; this.event(id, "plan.approved", { sliceCount: p.slices.length }); return m; }
   async getMission(id: string) { const m = this.missions.get(id); if (!m) return null; return { mission: m, plan: this.plans.get(id) ?? null, slices: [...this.slices.values()].filter(s => s.missionId === id) }; }
   async events(id: string, after: number) { return this.eventsLog.filter(e => e.missionId === id && e.cursor > after); }
-  async claim(leaseSeconds: number, policyDigest: string, now = new Date(), recoveryPolicyDigest=""): Promise<LeaseGrant | null> {
+  private eligibleSchedulingChoices(policyDigest: string, recoveryPolicyDigest: string, now: Date): { choices: SchedulingChoice[]; freeCapacity: number } {
+    const free=[...this.slots.entries()].filter(([slot,x])=>x.enabled&&Date.parse(x.expires)>now.getTime()&&![...this.occupied.values()].includes(slot)).length;
+    const choices:SchedulingChoice[]=[];
+    for(const s of this.slices.values()){
+      if(s.status!=="ready")continue;const plan=this.plans.get(s.missionId),mission=this.missions.get(s.missionId);if(!plan?.approvedAt||!mission||plan.slices.some(d=>s.dependencies.includes(d.id)&&this.slices.get(`${s.missionId}:${d.id}`)?.status!=="verified"))continue;
+      if(mission.reservedCents+s.budgetCents>mission.budgetCents)continue;
+      const running=[...this.slices.values()].filter(x=>["running","awaiting_verification","unknown","blocked"].includes(x.status)&&this.missions.get(x.missionId)?.repository===mission.repository);
+      if(running.some(x=>x.scopes.some(a=>s.scopes.some(b=>scopesOverlap(a,b)))))continue;
+      const cohort=scopeCohort(s.scopes),lessons=this.lessonRows.filter(l=>l.status==="promoted"&&l.repository===mission.repository&&l.policyDigest===recoveryPolicyDigest&&l.cohort===cohort&&s.checks.includes(l.fromCheckId)).map(l=>({id:l.id,version:l.lessonVersion,challengeDigest:l.challengeDigest,checkId:l.fromCheckId,strategyId:l.strategyId,policyDigest:l.policyDigest})).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,8);
+      choices.push({missionId:s.missionId,sliceId:s.id,repository:mission.repository,planDigest:hash(canonicalJson(plan.slices)),dependencies:[...s.dependencies],scopes:[...s.scopes],budgetCents:s.budgetCents,missionBudgetCents:mission.budgetCents,reservedBudgetCents:mission.reservedCents,downstreamDepth:downstreamDepths(plan.slices).get(s.id)??0,scopeRisk:s.scopes.reduce((n,x)=>n+(/[?*[{]/.test(x)?100:Math.max(0,4-x.split("/").length)),0),lessons});
+    }
+    return{choices:rankSchedulingChoices(choices).slice(0,32),freeCapacity:free};
+  }
+  async schedulingSnapshot(_policyDigest:string,recoveryPolicyDigest:string,now=new Date()):Promise<SchedulingSnapshot>{const value=this.eligibleSchedulingChoices(_policyDigest,recoveryPolicyDigest,now),base={freeCapacity:value.freeCapacity,choices:value.choices};return{capturedAt:now.toISOString(),...base,snapshotDigest:schedulingSnapshotDigest(base)};}
+  async claim(leaseSeconds: number, policyDigest: string, now = new Date(), recoveryPolicyDigest="", advice?:ClaimAdvice): Promise<LeaseGrant | null> {
     await this.expire(now);
-    const candidates = [...this.slices.values()].filter(s => s.status === "ready").sort((a,b) => a.missionId.localeCompare(b.missionId) || a.id.localeCompare(b.id));
+    const fresh=this.eligibleSchedulingChoices(policyDigest,recoveryPolicyDigest,now),unchanged=Boolean(advice?.snapshotDigest&&advice.snapshotDigest===schedulingSnapshotDigest({freeCapacity:fresh.freeCapacity,choices:fresh.choices}));
+    const preferred=unchanged&&advice?.status==="selected"?advice.preferredCandidateId:null;
+    const candidates=rankSchedulingChoices(fresh.choices).map(choice=>this.slices.get(`${choice.missionId}:${choice.sliceId}`)!).filter(Boolean);
+    if(preferred){const index=candidates.findIndex(x=>`${x.missionId}:${x.id}`===preferred);if(index>0)candidates.unshift(...candidates.splice(index,1));}
     for (const s of candidates) {
       const p = this.plans.get(s.missionId)!; if (!p.approvedAt || p.slices.some(d => s.dependencies.includes(d.id) && this.slices.get(`${s.missionId}:${d.id}`)?.status !== "verified")) continue;
       const repository=this.missions.get(s.missionId)!.repository;const running = [...this.slices.values()].filter(x => ["running","awaiting_verification","unknown","blocked"].includes(x.status) && this.missions.get(x.missionId)?.repository===repository);
@@ -36,7 +54,7 @@ export class MemoryMissionStore implements MissionStore {
       const slot = [...this.slots.entries()].find(([n,x])=>x.enabled&&new Date(x.expires)>now&&![...this.occupied.values()].includes(n)); if(!slot||!policyDigest) continue;
       const m = this.missions.get(s.missionId)!; if (m.reservedCents + s.budgetCents > m.budgetCents) continue;
       const leaseToken = newSecret(), capabilityToken = newSecret(),planDigest=hash(canonicalJson(p.slices)); s.status = "running"; s.leaseEpoch++; s.leaseToken = `${hash(leaseToken)}:${hash(capabilityToken)}`; s.leaseExpiresAt = new Date(now.getTime() + leaseSeconds*1000).toISOString(); this.occupied.set(`${s.missionId}:${s.id}`,slot[0]);this.leaseBindings.set(`${s.missionId}:${s.id}:${s.leaseEpoch}`,{planDigest,policyDigest:policyDigest+":"+recoveryPolicyDigest}); m.reservedCents += s.budgetCents; m.status = "running";
-      this.event(m.id, "slice.claimed", { sliceId: s.id, owner: s.owner, epoch: s.leaseEpoch, scopes: s.scopes }); return { mission: m, slice: { ...s, leaseToken: null }, epoch: s.leaseEpoch, leaseToken, capabilityToken, leaseExpiresAt: s.leaseExpiresAt, capacitySlot:slot[0], trustedCheckPolicyDigest:policyDigest, planDigest };
+      this.event(m.id, "slice.claimed", { sliceId: s.id, owner: s.owner, epoch: s.leaseEpoch, scopes: s.scopes, schedulingAdvice: advice?{status:unchanged?advice.status:"stale_fallback",adviceStatus:advice.status,dispatchMayHaveOccurred:advice.status==="unknown",preferredCandidateId:advice.preferredCandidateId,snapshotDigest:advice.snapshotDigest}:null }); return { mission: m, slice: { ...s, leaseToken: null }, epoch: s.leaseEpoch, leaseToken, capabilityToken, leaseExpiresAt: s.leaseExpiresAt, capacitySlot:slot[0], trustedCheckPolicyDigest:policyDigest, planDigest };
     } return null;
   }
   async heartbeat(missionId:string,id: string, epoch: number, token: string, cap: string, seconds: number) { const s = this.mustRunning(missionId,id, epoch, token, cap); s.leaseExpiresAt = new Date(Date.now()+seconds*1000).toISOString(); this.event(s.missionId, "slice.heartbeat", { sliceId:s.id, epoch }); return { ...s, leaseToken: null }; }
