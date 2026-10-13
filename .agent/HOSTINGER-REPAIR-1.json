@@ -1,0 +1,25 @@
+{
+  "repair": 1,
+  "review": ".agent/HOSTINGER-REVIEW.json",
+  "archived_review": ".agent/archive/ORL-004-repair1/HOSTINGER-REVIEW.json",
+  "archived_review_sha256": "51b30681cbe3dc1987ecf2e50fd6c29d61ad838a5561baa343af2b5212c8d3b9",
+  "findings": [
+    {
+      "evidence": "Validate one raw Host header against strict DNS-label grammar and exact configured hostname without a port; cloud HTTP tests send actual Host using node:http and reject path, userinfo, fragment, internal whitespace, and port variants while retaining exact Origin.",
+      "status": "repaired",
+      "id": "strict-host"
+    },
+    {
+      "evidence": "Generator now sets app_password owner 70:70 mode 0400; deployment docs provide metadata-only chown/chmod for existing file and explicitly prohibit rerunning generator.",
+      "status": "repaired",
+      "id": "app-password-file-mode"
+    },
+    {
+      "evidence": "Cloud page names Cloud control plane, states queue-only/live execution disabled, and action is Unlock submissions.",
+      "status": "repaired",
+      "id": "cloud-ui-copy"
+    }
+  ],
+  "existing_secret_contents_modified": false,
+  "old_review_candidate": "9684dd84434976937c0f55d4aafe26d1e09240a917866a1ff2e225332be75c62"
+}

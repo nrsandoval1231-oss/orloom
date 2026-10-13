@@ -1,0 +1,18 @@
+{
+  "packet": "ORL-004",
+  "lane": "single Luna primary builder",
+  "model": "gpt-6-luna",
+  "reasoning": "low",
+  "config_identity": "UNKNOWN",
+  "base_sha": "ccc78ab5975c7f8bee20b52a74eb48ca45cffb51",
+  "candidate_manifest_sha256": "9684dd84434976937c0f55d4aafe26d1e09240a917866a1ff2e225332be75c62",
+  "start_utc": "UNKNOWN",
+  "finish_utc": "2026-10-13T01:09:40Z",
+  "planning_seconds": "UNKNOWN",
+  "build_seconds": "UNKNOWN",
+  "validation_seconds": "UNKNOWN",
+  "audit_seconds": "UNKNOWN",
+  "repair_count": 1,
+  "measured_tokens": "UNKNOWN",
+  "elapsed_to_accept": "UNKNOWN: independent controller review/runtime acceptance pending"
+}

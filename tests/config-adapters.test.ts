@@ -116,3 +116,14 @@ test("Codex subscription adapter passes explicit isolated environment and ChatGP
   assert.equal(await createCodexAdapter(FakeSdk, "C:/runner/jobs/work", { CODEX_HOME: "C:/runner/codex", ORLOOM_WORKER_JOB_DIRECTORY: "C:/runner/jobs" }).run("windows"), "ok:windows");
   assert.equal(typeof createCodexSdkAdapter, "function");
 });
+
+test("cloud mode fails closed without explicit database URL, host, token, and HTTPS origin", () => {
+  assert.throws(() => loadConfig({ ORLOOM_MODE: "cloud", ORLOOM_SESSION_TOKEN: "x", ORLOOM_HOST: "orloom.example", ORLOOM_PUBLIC_ORIGIN: "https://orloom.example" }), /DATABASE_URL/);
+  assert.throws(() => loadConfig({ ORLOOM_MODE: "cloud", ORLOOM_SESSION_TOKEN: "x", ORLOOM_DATABASE_URL: "postgres://db", ORLOOM_PUBLIC_ORIGIN: "https://orloom.example" }), /ORLOOM_HOST/);
+  assert.throws(() => loadConfig({ ORLOOM_MODE: "cloud", ORLOOM_SESSION_TOKEN: "x", ORLOOM_DATABASE_URL: "postgres://db", ORLOOM_HOST: "orloom.example", ORLOOM_PUBLIC_ORIGIN: "http://orloom.example" }), /ORLOOM_PUBLIC_ORIGIN/);
+});
+
+test("PostgreSQL job store refuses readiness when the database is unreachable", async () => {
+  const { PostgresJobStore } = await import("../packages/contracts/src/postgres-store.js");
+  await assert.rejects(PostgresJobStore.connect("postgres://orloom_app:test@127.0.0.1:1/orloom"));
+});

@@ -1,0 +1,66 @@
+[
+  {
+    "path": ".env.example",
+    "sha256": "481cbb4b439de894c4e22394e847203d891c735866770e1efbf5edcc8056e1f5"
+  },
+  {
+    "path": "apps/control-plane/Dockerfile",
+    "sha256": "8c4db92bff413a3c01034d5c3158c1b56a639626ece2161fb984b35850b51add"
+  },
+  {
+    "path": "apps/control-plane/src/main.ts",
+    "sha256": "ce74507618ea57c333483ff283d2f9a52b690e633fa260a6319d12810bdaeffd"
+  },
+  {
+    "path": "apps/control-plane/src/server.ts",
+    "sha256": "2fd79604720421e6cdf180d023fc3a66b186b2f09d88f2acc03863b04b40e76a"
+  },
+  {
+    "path": "deploy/hostinger/.env.example",
+    "sha256": "0fdef706a52359e03556f7a4545a66c599e997591559d0134f58da3d2cc42bb2"
+  },
+  {
+    "path": "deploy/hostinger/compose.yml",
+    "sha256": "11cd14e207f1455601fabdf41e4948372bdfe7d5ebf677bfb48771bd813af6ff"
+  },
+  {
+    "path": "deploy/hostinger/init-secrets.sh",
+    "sha256": "655080a124bea6fcf2ac08b7130cbf045985121d1f8d4a483a64850cc55f1e96"
+  },
+  {
+    "path": "deploy/hostinger/initdb/010-app-role.sh",
+    "sha256": "a393513e7e8615272b17ad17a13aa0b9f122b705647ef97e54253aacbc446734"
+  },
+  {
+    "path": "docs/deployment.md",
+    "sha256": "79c99891d548094d7e988ebddf538416324756ac85d0461375e61d646213d656"
+  },
+  {
+    "path": "docs/security.md",
+    "sha256": "5a6744337d6bfd6453362e5553e818cb80fbf1c5922af8841df1c3addd4ed0c3"
+  },
+  {
+    "path": "package-lock.json",
+    "sha256": "8969f1cd59b72f7832bd8ced96a49fdfddb4ed0eaf84768a21ab3b92d001d02f"
+  },
+  {
+    "path": "package.json",
+    "sha256": "73b3e37031825ab4f1b3d5377a55a454b9cb6905224ef7d73445569dcd5bc659"
+  },
+  {
+    "path": "packages/config/src/config.ts",
+    "sha256": "a5642e9215f16517a0cbb84a33a917000aac5f495e3df716e69bf5961b21d688"
+  },
+  {
+    "path": "packages/contracts/src/postgres-store.ts",
+    "sha256": "06597f164473f8992879b2aa81764f64180a29fe1bb5e43704723a9cea9e312e"
+  },
+  {
+    "path": "tests/config-adapters.test.ts",
+    "sha256": "bf65e2ef192e1991bd1c729f016064d42a392bf608bb6c924a6d28406a60611d"
+  },
+  {
+    "path": "tests/http.test.ts",
+    "sha256": "3358fbb2a9618bbc8b96c7e71b8131cc3bb93ff63abeea39f7c5f447eb67a27e"
+  }
+]

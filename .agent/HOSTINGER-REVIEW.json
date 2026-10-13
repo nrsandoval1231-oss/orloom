@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "scope": "ORL-004 Hostinger queue-only app and PostgreSQL deployment candidate; this is not a full-product completion review",
+  "reviewer": "independent Sol",
+  "reviewed_utc": "2026-10-13T01:18:26Z",
+  "base_sha": "ccc78ab5975c7f8bee20b52a74eb48ca45cffb51",
+  "candidate_manifest": ".agent/HOSTINGER-CANDIDATE.json",
+  "candidate_manifest_sha256": "04759a85db512b330db56050365a3a504c0ce861e7aac6918680b8784ec85e76",
+  "exact_candidate_check": "All 16 manifest file SHA-256 values matched the reviewed working files; manifest file SHA-256 matched the supplied identity. Controller-owned .agent state and evidence files are outside this implementation manifest.",
+  "findings": [],
+  "repaired_findings": [
+    "Cloud writes now require exactly one raw Host header, strict DNS hostname syntax, and case-insensitive equality to configured hostname; negative HTTP tests cover path, userinfo, fragment, whitespace, and port variants. Exact Origin comparison remains.",
+    "app_password is owned by PostgreSQL Alpine UID/GID 70 with mode 0400; controller reports runtime verification of mount readability and successful fresh init-script role creation with these permissions."
+  ],
+  "positive_evidence": [
+    "Cloud configuration requires DB URL, session token, host, and matching HTTPS public origin.",
+    "Cloud cookies use random opaque IDs, HttpOnly, Secure, SameSite=Strict, and eight-hour expiry; configured token stays server-side.",
+    "App runs as UID 10001 with a read-only root filesystem; PostgreSQL has an internal network and no published port; app joins the existing Traefik network with an explicit router and TLS resolver.",
+    "Docker build context excludes secrets; Dockerfile copies migration into runtime image; cloud startup waits for DB readiness and migration before listening.",
+    "The Hostinger Compose stack defines only app and db and makes no worker or provider credential available."
+  ],
+  "validation_boundary": {
+    "builder_claimed_local_gates": "npm ci, typecheck, 14 tests, build, validate, and git diff --check passed on this repaired candidate; controller rerun in progress",
+    "compose_image_postgres": "Controller reports Compose config, image build, private DB health, nonsuperuser app role, actual PostgreSQL migrate/submit/reconnect/get, and fresh isolated init-script bootstrap with repaired secret permissions passed. Those runtime checks are controller evidence and do not establish live HTTPS acceptance.",
+    "live_hostinger_tls_session_restart_backup_restore": "UNKNOWN: runtime acceptance pending",
+    "existing_nine_container_preservation": "UNKNOWN until pre/post deployment inventory"
+  },
+  "next_direction": "Proceed with owner-authorized queue-only deployment validation after controller final gates; keep acceptance open until live TLS/session, restart persistence, isolated backup/restore, and pre/post inventory of the nine protected containers pass. Do not infer worker or full-product readiness."
+}

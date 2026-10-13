@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orloom
+      POSTGRES_USER: orloom_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password, app_password]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    networks: [database]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orloom_admin -d orloom"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1G }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/control-plane/Dockerfile
+    restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    tmpfs: ["/tmp:size=16m,noexec,nosuid,nodev"]
+    environment:
+      NODE_ENV: production
+      ORLOOM_MODE: cloud
+      ORLOOM_BIND: 0.0.0.0
+      PORT: 3000
+      ORLOOM_HOST: ${ORLOOM_HOST:?set ORLOOM_HOST}
+      ORLOOM_SESSION_TOKEN_FILE: /run/secrets/session_token
+      ORLOOM_PUBLIC_ORIGIN_FILE: /run/secrets/public_origin
+      ORLOOM_DATABASE_URL_FILE: /run/secrets/database_url
+    secrets: [session_token, public_origin, database_url]
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [database, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:?set TRAEFIK_NETWORK}
+      - traefik.http.routers.orloom.rule=Host(`${ORLOOM_HOST:?set ORLOOM_HOST}`)
+      - traefik.http.routers.orloom.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}
+      - traefik.http.routers.orloom.tls=true
+      - traefik.http.routers.orloom.tls.certresolver=${TRAEFIK_CERT_RESOLVER:?set TRAEFIK_CERT_RESOLVER}
+      - traefik.http.services.orloom.loadbalancer.server.port=3000
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  postgres_data:
+networks:
+  database:
+    internal: true
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:?set TRAEFIK_NETWORK}
+secrets:
+  db_password: { file: ./secrets/db_password }
+  app_password: { file: ./secrets/app_password }
+  session_token: { file: ./secrets/session_token }
+  public_origin: { file: ./secrets/public_origin }
+  database_url: { file: ./secrets/database_url }

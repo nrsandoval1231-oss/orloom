@@ -1,0 +1,19 @@
+{
+  "packet": "ORL-004",
+  "status": "PASS_LOCAL_GATES_RUNTIME_OPEN",
+  "base_sha": "ccc78ab5975c7f8bee20b52a74eb48ca45cffb51",
+  "candidate_manifest_sha256": "9684dd84434976937c0f55d4aafe26d1e09240a917866a1ff2e225332be75c62",
+  "manifest": ".agent/HOSTINGER-CANDIDATE.json",
+  "changed_files": null,
+  "checks": {
+    "npm ci": 0,
+    "npm run typecheck": 0,
+    "npm test": 0,
+    "npm run build": 0,
+    "npm run validate": 0,
+    "git diff --check": 0
+  },
+  "runtime": "UNKNOWN: controller to verify Hostinger Compose, PostgreSQL persistence/restart, backup/restore, and HTTPS browser",
+  "external_side_effects": "none by builder",
+  "commit_push_deploy": "none by builder"
+}

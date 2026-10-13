@@ -1,0 +1,41 @@
+{
+  "status": "FIX",
+  "scope": "ORL-004 Hostinger queue-only app and PostgreSQL deployment candidate; this is not a full-product completion review",
+  "reviewer": "independent Sol",
+  "reviewed_utc": "2026-10-13T01:13:31Z",
+  "base_sha": "ccc78ab5975c7f8bee20b52a74eb48ca45cffb51",
+  "candidate_manifest": ".agent/HOSTINGER-CANDIDATE.json",
+  "candidate_manifest_sha256": "9684dd84434976937c0f55d4aafe26d1e09240a917866a1ff2e225332be75c62",
+  "exact_candidate_check": "All 16 manifest file SHA-256 values matched the reviewed working files; manifest file SHA-256 matched the supplied identity. Controller-owned .agent state and evidence files are outside this implementation manifest.",
+  "findings": [
+    {
+      "severity": "blocking",
+      "file": "apps/control-plane/src/server.ts",
+      "symbol": "validWriteOrigin",
+      "evidence": "The Host check parses the supplied header as a URL and compares only its parsed host. Host headers orloom.example/extra, attacker@orloom.example, and orloom.example#fragment all pass when the configured host is orloom.example. Reproduced with the candidate expression in Node.",
+      "impact": "The packet's exact Host requirement is not enforced for cloud mutations. A same-network direct request can present a malformed Host that the application accepts as the public host.",
+      "required_repair": "Compare the raw Host header to the configured hostname using a strict, validated host syntax and an explicit port policy. Add negative tests for path, userinfo, fragment, whitespace, and port variants. Preserve the exact Origin comparison."
+    },
+    {
+      "severity": "hardening",
+      "file": "deploy/hostinger/init-secrets.sh",
+      "evidence": "app_password is chmod 0444. The parent secrets directory is 0700 on the host, but the mounted app-role password is readable by every process identity inside the DB container.",
+      "impact": "This is broader than the documented narrow runtime-secret access boundary and makes later DB-container sidecars or diagnostic processes able to read the app credential.",
+      "required_repair": "Restrict the mounted app_password to the PostgreSQL init-script identity and host root, while retaining first-boot readability. Verify the actual mount mode and init script in Compose runtime."
+    }
+  ],
+  "positive_evidence": [
+    "Cloud configuration requires DB URL, session token, host, and matching HTTPS public origin.",
+    "Cloud cookies use random opaque IDs, HttpOnly, Secure, SameSite=Strict, and eight-hour expiry; configured token stays server-side.",
+    "App runs as UID 10001 with a read-only root filesystem; PostgreSQL has an internal network and no published port; app joins the existing Traefik network with an explicit router and TLS resolver.",
+    "Docker build context excludes secrets; Dockerfile copies migration into runtime image; cloud startup waits for DB readiness and migration before listening.",
+    "The Hostinger Compose stack defines only app and db and makes no worker or provider credential available."
+  ],
+  "validation_boundary": {
+    "builder_claimed_local_gates": "npm ci, typecheck, 14 tests, build, validate, and git diff --check passed; controller rerun in progress",
+    "compose_image_postgres": "UNKNOWN: controller validation in progress",
+    "live_hostinger_tls_session_restart_backup_restore": "UNKNOWN: runtime acceptance pending",
+    "existing_nine_container_preservation": "UNKNOWN until pre/post deployment inventory"
+  },
+  "next_direction": "Issue one bounded Luna repair for strict Host validation and secret file access; freeze a new manifest, rerun exact-candidate gates, and repeat independent review. Keep Hostinger deployment acceptance open until controller runtime and existing-container checks pass."
+}

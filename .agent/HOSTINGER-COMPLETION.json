@@ -1,0 +1,39 @@
+{
+  "packet": "ORL-004",
+  "status": "PASS_LOCAL_GATES_RUNTIME_OPEN",
+  "base_sha": "ccc78ab5975c7f8bee20b52a74eb48ca45cffb51",
+  "candidate_manifest_sha256": "04759a85db512b330db56050365a3a504c0ce861e7aac6918680b8784ec85e76",
+  "manifest": ".agent/HOSTINGER-CANDIDATE.json",
+  "changed_files": [
+    ".env.example",
+    "apps/control-plane/Dockerfile",
+    "apps/control-plane/src/main.ts",
+    "apps/control-plane/src/server.ts",
+    "deploy/hostinger/.env.example",
+    "deploy/hostinger/compose.yml",
+    "deploy/hostinger/init-secrets.sh",
+    "deploy/hostinger/initdb/010-app-role.sh",
+    "docs/deployment.md",
+    "docs/security.md",
+    "package-lock.json",
+    "package.json",
+    "packages/config/src/config.ts",
+    "packages/contracts/src/postgres-store.ts",
+    "tests/config-adapters.test.ts",
+    "tests/http.test.ts"
+  ],
+  "checks": {
+    "npm ci": 0,
+    "npm run typecheck": 0,
+    "npm test": 0,
+    "npm run build": 0,
+    "npm run validate": 0,
+    "git diff --check": 0
+  },
+  "repair_review": ".agent/archive/ORL-004-repair1/HOSTINGER-REVIEW.json",
+  "repair_review_sha256": "51b30681cbe3dc1987ecf2e50fd6c29d61ad838a5561baa343af2b5212c8d3b9",
+  "runtime": "UNKNOWN: controller to verify Hostinger Compose, PostgreSQL persistence/restart, backup/restore, and HTTPS browser",
+  "external_side_effects": "none by builder",
+  "existing_secret_contents_modified": false,
+  "commit_push_deploy": "none by builder"
+}
