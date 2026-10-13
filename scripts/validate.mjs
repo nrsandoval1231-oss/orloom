@@ -10,6 +10,7 @@ const env = await readFile(".env.example", "utf8");
 for (const line of env.split(/\r?\n/)) if (line.includes("=")) {
   const [name, value] = line.split("=", 2);
   if (name === "ORLOOM_MODE") continue;
+  if (["ORLOOM_INTEGRATION_ENABLED", "ORLOOM_DELIVERY_ENABLED"].includes(name)) { assert.equal(value.trim(), "false", `${name} must remain disabled in the example environment`); continue; }
   if (name === "ORLOOM_MAX_LANES") { assert.equal(value.trim(), "6"); continue; }
   if (name === "ORLOOM_CAPACITY_SLOTS") { assert.equal(value.trim(), "0"); continue; }
   assert.equal(value.trim(), "", "example credentials must be blank");

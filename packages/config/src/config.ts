@@ -27,6 +27,12 @@ export interface Config {
   workerMaxWallSeconds?: number;
   workerAllowedProviders?: string[];
   workerAllowedModels?: string[];
+  integrationEnabled?: boolean;
+  integrationRepository?: string;
+  integrationBareRepository?: string;
+  reviewArtifactRoot?: string;
+  deliveryEnabled?: boolean;
+  deliveryPolicyFile?: string;
 }
 export type ConfigRole = "control-plane" | "github" | "artifact" | "worker";
 export interface RoleConfigCheck { ok: boolean; missingFields: string[] }
@@ -97,6 +103,25 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("PORT must be a valid TCP port");
   if (mode === "cloud" && !value("ORLOOM_DATABASE_URL")) throw new Error("Cloud mode requires ORLOOM_DATABASE_URL");
   if (mode === "cloud" && !env.ORLOOM_HOST) throw new Error("Cloud mode requires ORLOOM_HOST");
+  const enabled = (name: string) => {
+    const raw = env[name];
+    if (raw === undefined || raw === "false") return false;
+    if (raw === "true") return true;
+    throw new Error(`${name} must be true or false`);
+  };
+  const integrationEnabled = enabled("ORLOOM_INTEGRATION_ENABLED");
+  const deliveryEnabled = enabled("ORLOOM_DELIVERY_ENABLED");
+  const integrationRepository = env.ORLOOM_INTEGRATION_REPOSITORY?.trim().toLowerCase();
+  const integrationBareRepository = env.ORLOOM_INTEGRATION_BARE_REPOSITORY?.trim();
+  const reviewArtifactRoot = env.ORLOOM_REVIEW_ARTIFACT_ROOT?.trim();
+  const deliveryPolicyFile = env.ORLOOM_DELIVERY_POLICY_FILE?.trim();
+  if ((integrationEnabled || deliveryEnabled) && mode !== "cloud") throw new Error("Controller authorities require cloud SQL mode");
+  if (integrationEnabled && (!integrationRepository || !/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(integrationRepository) || !integrationBareRepository || !path.isAbsolute(integrationBareRepository) || !reviewArtifactRoot || !path.isAbsolute(reviewArtifactRoot))) {
+    throw new Error("ORLOOM_INTEGRATION_ENABLED requires valid ORLOOM_INTEGRATION_REPOSITORY, ORLOOM_INTEGRATION_BARE_REPOSITORY, and ORLOOM_REVIEW_ARTIFACT_ROOT");
+  }
+  if (deliveryEnabled && (!integrationEnabled || !deliveryPolicyFile || !path.isAbsolute(deliveryPolicyFile))) {
+    throw new Error("ORLOOM_DELIVERY_ENABLED requires integration authority and an absolute ORLOOM_DELIVERY_POLICY_FILE");
+  }
   const resolvedEnv = { ...env, ORLOOM_SESSION_TOKEN: value("ORLOOM_SESSION_TOKEN"), ORLOOM_PUBLIC_ORIGIN: value("ORLOOM_PUBLIC_ORIGIN") };
   if (mode === "cloud") assertRoleConfig("control-plane", resolvedEnv);
   const publicOrigin = value("ORLOOM_PUBLIC_ORIGIN");
@@ -145,6 +170,12 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     trustedStrategies,
     recoveryPolicyDigest,
     workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds,workerAllowedProviders,workerAllowedModels,
+    integrationEnabled,
+    ...(integrationRepository ? { integrationRepository } : {}),
+    ...(integrationBareRepository ? { integrationBareRepository: path.resolve(integrationBareRepository) } : {}),
+    ...(reviewArtifactRoot ? { reviewArtifactRoot: path.resolve(reviewArtifactRoot) } : {}),
+    deliveryEnabled,
+    ...(deliveryPolicyFile ? { deliveryPolicyFile: path.resolve(deliveryPolicyFile) } : {}),
     ...(publicOrigin ? { publicOrigin } : {}),
     ...(env.ORLOOM_HOST ? { host: env.ORLOOM_HOST.toLowerCase() } : {}),
     ...(databaseUrl ? { databaseUrl } : {})

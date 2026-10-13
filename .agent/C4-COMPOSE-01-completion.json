@@ -1,0 +1,81 @@
+{
+  "packet": "C4-COMPOSE-01",
+  "status": "SOURCE_READY_PENDING_ROOT_FREEZE_AND_REVIEW",
+  "baseHead": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "workingTreeCandidate": "uncommitted successor of baseHead; no commit created",
+  "scope": [
+    "apps/control-plane/src/main.ts",
+    "apps/control-plane/src/controller-authority.ts",
+    "packages/config/src/config.ts",
+    "tests/controller-authority.test.ts",
+    ".env.example",
+    "docs/delivery.md",
+    ".agent/C4-COMPOSE-01.md",
+    "scripts/validate.mjs",
+    ".agent/CURRENT_STATE.md",
+    ".agent/WORK_GRAPH.md"
+  ],
+  "implementation": [
+    "Added opt-in cloud/SQL-only local integration and delivery composition through existing createControlPlane dependency slots.",
+    "Delivery policy is strict-shape, fixed-repository, App-ID and trusted node-repo-suite-v1 policy bound; no request field controls repository, refs, App, installation, check set, or policy.",
+    "Retained review and operator policy readers reject symlink/non-regular files, enforce owner/private POSIX permissions, and bound file sizes and artifact identifiers.",
+    "App and R2 credentials are read from the existing _FILE form when configured and are never stored in Config; adapters are constructed without startup requests.",
+    "Per work/controller-composition-jev-amendment.md, Jev recovery/scheduling injection remains absent regardless of Jev environment values; no Jev client or process-local budget is added."
+  ],
+  "validation": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test dist/tests/controller-authority.test.js dist/tests/startup.test.js dist/tests/delivery-http.test.js dist/tests/local-integration.test.js dist/tests/config-adapters.test.js",
+      "exitCode": 0,
+      "passed": 18,
+      "failed": 0
+    },
+    {
+      "command": "node --test dist/tests/delivery-c4-flow.test.js dist/tests/delivery-effects.test.js dist/tests/delivery-boundary.test.js dist/tests/integration-replay-race.test.js",
+      "exitCode": 0,
+      "passed": 19,
+      "failed": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run validate",
+      "exitCode": 0,
+      "output": "Foundation structure validation passed."
+    }
+  ],
+  "rootGateCheckpoint": {
+    "candidateBinding": "composition working tree based on f6023ac, not the f6023ac commit itself",
+    "evidenceLog": "work/composition-controller-gates-2026-10-13T23-36-36-629Z.log",
+    "nodeTests": "138 passed, 0 failed",
+    "validate": "initially failed because the validator required every .env.example value to be blank; repaired to permit only the two explicit false capability flags while retaining blank credential checks; npm run validate now passes",
+    "independentReview": "pending"
+  },
+  "executionAccounting": {
+    "startUtc": "UNKNOWN",
+    "finishUtc": "2026-10-13T23:39:04.9263169Z",
+    "model": "UNKNOWN",
+    "planningMs": "UNKNOWN",
+    "implementationMs": "UNKNOWN",
+    "validationMs": "UNKNOWN",
+    "repairCount": 1,
+    "tokens": "UNKNOWN"
+  },
+  "notProven": [
+    "Root final full-suite gates and independent review are pending.",
+    "No cloud/SQL control-plane startup was exercised for this composition.",
+    "No authentic verifier execution, credentialed GitHub App or R2 operation, remote branch upload, live CI, Jev call, deployment, or publication was attempted.",
+    "This source change does not activate production capabilities; explicit operator configuration is still required."
+  ],
+  "initialFixtureFailure": "The first focused run used Git's ambient template, which created active hooks and caused the fixed-integrator test fixture to fail closed. The fixture was corrected to initialize the temporary bare repository from an empty template; all focused and C4 regression tests then passed.",
+  "limits": "Source-ready handoff only; no commit, push, merge, host, provider, or external action performed."
+}
