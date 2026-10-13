@@ -1,0 +1,45 @@
+{
+  "format": "orloom-independent-source-review-v1",
+  "verdict": "FIX",
+  "candidate": "f669e5a553fafabebb4d4ced54f9c36eb0e7dd0b",
+  "base": "cdad7a27762f73f1af3492e4dfb849ca04d9aed4",
+  "branch": "feat/local-integration",
+  "repository": "work/orloom-integration-coordinator",
+  "sourceStatus": "clean at reviewed HEAD",
+  "controllerGates": {
+    "log": "work/c4-controller-gates-2026-10-13T19-12-20-438Z.log",
+    "tests": 98,
+    "passed": 98,
+    "failed": 0,
+    "skipped": 0,
+    "typecheckBuildValidateSyntaxDiff": "PASS"
+  },
+  "acceptedBoundaries": [
+    "The owner-session integration route is optional and default-closed without injected local Git/review authority and trusted checks; no worker route or PR2 broker change was found.",
+    "The integrator uses a fixed local ref, bare Git object store, direct-child commit check, scoped changed-path comparison, CAS update-ref, no checkout, and no candidate execution. Hooks and filters are disabled in Git invocation and checked in repository configuration.",
+    "A durable pending SQL intent precedes Git CAS; exact replay after CAS can reconcile, conflicting requests and moved refs close, and the final SQL transaction checks approved state, epoch, candidate, plan/policy, dependencies, PASS attempts and certificate digests before one verified event and child release.",
+    "The scratch fixture repair writes dependency bytes to a separate writable temporary copy while asserting its source fixture remains read-only. It leaves production sandbox permissions unchanged."
+  ],
+  "findings": [
+    {
+      "id": "C4-F1",
+      "severity": "blocking",
+      "location": "packages/contracts/src/sql-mission-store.ts:86-93",
+      "issue": "Finalization rereads the stored attempt request and receipt but checks only selected request fields. It does not require the stored attempt request to equal the request embedded in the digest-validated receipt. After a pending intent, a change to verifierImageDigest, inputBundleDigest, policyVersion, expectedLocalHeadSha, or other unchecked request fields can leave the certificate digest and selected fields intact and still mark the slice verified. That violates the packet's final request/image/artifact binding fence.",
+      "requiredRepair": "Inside assertIntegrationCertificates, require canonical equality of the persisted attempt request and receipt.request, plus the exact certificate/check/mission/slice/policy bindings already expected at issuance. Add a post-intent/pre-finalization mutation test for an unchecked request field, verifying no verified transition, no integrated event, and no dependent release. Keep the original pending intent and fail closed for reconciliation; do not accept a new request or silently overwrite evidence."
+    },
+    {
+      "id": "C4-F2",
+      "severity": "blocking",
+      "location": "packages/integration/src/local.ts:17-41",
+      "issue": "The complete local object-store checks for alternates, shallow state, and promisor/partial-clone configuration run only in open(). inspect() can execute later after the repository is changed, but rechecks only hooks and a subset of config. A once-open integrator can therefore inspect through newly introduced external alternates or incomplete-object configuration despite the packet's complete repository-local object-store boundary.",
+      "requiredRepair": "Recheck alternates, shallow status, and promisor/partial-clone configuration immediately before commit/tree traversal in inspect(), before Git CAS, and test mutations after open() to confirm the operation stops before integration. Preserve the fixed-ref and no-checkout design."
+    }
+  ],
+  "limitations": [
+    "This review covers source only. Tests use PGlite and fixture certificates/review bytes; real PostgreSQL multi-connection, restart reconciliation, cloud certificates, and operational integration authority remain unproven.",
+    "The earlier 8f271de cloud suite attempt is a persisted FAIL with zero certificates. This candidate has no C3 runtime certificate, and no C4 integration/runtime acceptance is claimed.",
+    "The nonroot scratch permission repair has clear source semantics but needs an actual nonroot Linux full-suite run before claiming the prior EACCES is resolved operationally."
+  ],
+  "direction": "One bounded Luna repair for C4-F1 and C4-F2, then freeze a successor SHA, rerun mandatory exact-candidate gates, and obtain independent rereview before C5 integration or a new cloud proof."
+}
