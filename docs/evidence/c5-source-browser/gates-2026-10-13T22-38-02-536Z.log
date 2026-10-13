@@ -1,0 +1,192 @@
+
+COMMAND C:\Program Files\nodejs\node.exe node_modules/typescript/bin/tsc --noEmit
+START 2026-10-13T22:38:02.537Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:04.873Z
+
+COMMAND C:\Program Files\nodejs\node.exe scripts/clean.mjs
+START 2026-10-13T22:38:04.874Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:04.963Z
+
+COMMAND C:\Program Files\nodejs\node.exe node_modules/typescript/bin/tsc
+START 2026-10-13T22:38:04.964Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:07.437Z
+
+COMMAND C:\Program Files\nodejs\node.exe --test dist/tests/canonical-json.test.js dist/tests/config-adapters.test.js dist/tests/http.test.js dist/tests/jev-adapter.test.js dist/tests/jev-client.test.js dist/tests/jobs.test.js dist/tests/learning-activation.test.js dist/tests/local-integration.test.js dist/tests/loom-http.test.js dist/tests/loom-projection.test.js dist/tests/mission-http.test.js dist/tests/missions.test.js dist/tests/recovery-learning.test.js dist/tests/scheduling.test.js dist/tests/startup.test.js dist/tests/verification-certification.test.js dist/tests/verification-config.test.js dist/tests/verification-contract.test.js dist/tests/verification-runner.test.js
+START 2026-10-13T22:38:07.438Z
+✔ canonical JSON makes key-order permutations hash-identical, including nested JSONB values (0.8577ms)
+✔ configuration validates roles and does not reveal configured values in errors (3.83ms)
+✔ webhook signature is constant-time compared after strict digest length check (1.8246ms)
+✔ artifact adapter uses content SHA-256 addressing and copies bytes (0.2518ms)
+✔ R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary (23.5392ms)
+✔ GitHub App token request uses app client and explicit repository and permission scope (0.4586ms)
+✔ Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration (0.5442ms)
+✔ cloud mode fails closed without explicit database URL, host, token, and HTTPS origin (0.196ms)
+✔ PostgreSQL job store refuses readiness when the database is unreachable (71.5776ms)
+✔ HTTP control plane exposes status, authenticates job operations, and never executes jobs (41.4535ms)
+✔ unexpected provider/store errors return generic 500 without reflecting secrets (10.4227ms)
+✔ cloud sessions are opaque, secure, expiring, and writes require the configured origin and host (1187.1307ms)
+✔ Jev recovery adapter exposes only approved alternative IDs and binds the answer to the snapshot (29.6127ms)
+✔ blocked and unknown snapshots are terminal without consulting Jev (0.4407ms)
+✔ Jev client makes one bounded fixed-origin choice request and validates its result (30.2185ms)
+✔ missing key, disallowed or moving model, invalid bounds, and oversized input fail before fetch (0.5922ms)
+✔ unsafe SDK URL, non-POST, and over-limit request bodies never reach the injected transport (0.2685ms)
+▶ invalid provider outputs become sanitized UNKNOWN and are never retried
+  ✔ invalid response 1 (1.4054ms)
+  ✔ invalid response 2 (0.5594ms)
+  ✔ invalid response 3 (0.6092ms)
+  ✔ invalid response 4 (0.7091ms)
+  ✔ invalid response 5 (0.7151ms)
+✔ invalid provider outputs become sanitized UNKNOWN and are never retried (4.6766ms)
+▶ provider errors and oversized response bodies are redacted and make one attempt
+  ✔ provider error text is not exposed (0.7449ms)
+  ✔ response byte limit enforced while reading (0.5275ms)
+  ✔ timeout is sanitized and not retried (56.8984ms)
+  ✔ wall-clock deadline bounds a fetch that ignores abort (72.8762ms)
+  ✔ wall-clock deadline bounds a stalled response stream and does not await cancellation (62.7972ms)
+✔ provider errors and oversized response bodies are redacted and make one attempt (194.6832ms)
+▶ SQL job persistence behaviors
+  ✔ lifecycle fences stale completion and preserves UNKNOWN after interrupted execution (12.4669ms)
+  ✔ migration constrains status and lease consistency (1.8013ms)
+✔ SQL job persistence behaviors (2391.684ms)
+✔ promotion fails closed before lesson lookup when runtime acceptance is absent (0.832ms)
+✔ activation requires the current exact-runtime full-suite certificate on every call (0.9666ms)
+✔ fixed bare Git ref accepts one scoped linear fast-forward and rejects scope escape and moved ref (16405.8566ms)
+✔ /loom uses a restrictive same-origin CSP and keeps mission reads owner-authenticated (58.8387ms)
+✔ Loom pages durable history after its SQL window, resumes from cursor, and distinguishes exact boundary from overflow (75.0561ms)
+✔ Loom projection preserves ownership and dependencies without inventing progress (2.0603ms)
+✔ durable verified, certified, and integrated evidence closes every planned slice (0.662ms)
+✔ contradictions, unknown state, duplicate and out-of-order cursors fail closed (0.7175ms)
+✔ candidate, lease, certificate, tree and review bindings must remain exact (0.3184ms)
+✔ durable scheduling, recovery and learning events receive named safe inspector labels (0.2545ms)
+✔ empty, missing, hostile labels and mismatched mission records remain unavailable and text only (0.2225ms)
+✔ approved plan membership and exact proof causality are required for closure (0.3376ms)
+✔ pending certificate IDs bind to certified checks independent of check order (0.8981ms)
+✔ HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed (79.9445ms)
+✔ memory governor allows six disjoint same-owner slices and keeps verification/dependency gates closed (17.0023ms)
+✔ scope ancestors and globs serialize; expired UNKNOWN retains budget and quarantines slot and scope (1.9193ms)
+✔ dependency wait does not block overlapping parent and mixed-case repositories still serialize (1.2951ms)
+✔ memory recovery fences terminal judgments and excludes cross-target lesson pairs (8.5343ms)
+✔ memory two-phase judgment quarantines when mission reservation changes after snapshot (2.0525ms)
+✔ memory lesson candidates require two committed same-cohort episodes (1.7003ms)
+✔ lesson episode count deduplicates epochs but pairs evidence only within one epoch (0.1694ms)
+✔ PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart (2538.0528ms)
+✔ PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity (1366.7472ms)
+✔ mission migration allows explicit dependency wait and is idempotent (1330.0705ms)
+✔ trusted recovery evidence is challenged, promoted, selected later, then withdrawn on contradiction (4036.0604ms)
+✔ verified lesson changes a later comparable choice and retains pass and UNKNOWN outcomes across reconnect (2174.1483ms)
+✔ impact retains an authorized outcome if another lease withdraws the lesson before check creation (1567.1333ms)
+✔ independent challenger rejects a candidate cohort differing from its persisted observations (1309.8759ms)
+✔ episodes with different target checks cannot form one comparable lesson candidate (1181.6064ms)
+✔ two strategies may share one trusted check ID while retaining distinct immutable strategy attribution (1169.2615ms)
+✔ challenger rejects altered or absent reread artifact bytes and rejected challenges cannot promote (1238.749ms)
+✔ challenger rejects four individually trusted observations from four different episodes (1479.0795ms)
+✔ withdrawal during an in-flight lesson-bound judgment quarantines the stale Jev choice (1607.3222ms)
+✔ candidate extraction excludes UNKNOWN pass evidence in either episode order (2285.4161ms)
+✔ terminal progress rejects outcome, check, commit, epoch, policy, target, strategy, attempt reuse and ordering mismatches (956.2062ms)
+✔ prepared recovery attempts cannot drive progress; expired late receipt becomes UNKNOWN and cannot be replayed as FAIL (1115.0723ms)
+✔ same-check recovery attempts do not suppress a later final-check dispatch (1323.3513ms)
+✔ mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence (2489.7838ms)
+✔ an in-flight adapter result is fenced after lease expiry and the unresolved slice remains quarantined (1026.7094ms)
+✔ an in-flight decision is quarantined if authoritative mission budget changes after snapshot (935.1041ms)
+✔ an impossible model continue on a failed check commits no decision and quarantines the slice (980.2659ms)
+✔ blocked and unknown progress cannot be continued by an injected judgment (1030.097ms)
+✔ memory scheduling ranks critical path and applies validated advice only at fresh claim (4.7699ms)
+✔ scheduler and optional learning activation retain separate dependency slots (16.7847ms)
+✔ advice is skipped for zero or one eligible choice and Jev context is capped at 32 (4.5217ms)
+✔ memory concurrent claims fence stale advice and preserve deterministic fallback after UNKNOWN (3.3414ms)
+✔ invalid advice and bounded Jev timeout keep fallback safe and usage UNKNOWN (29.8832ms)
+✔ finite Jev adapter rejects oversized context before transport and emits no arbitrary action (8.2058ms)
+✔ finite Jev adapter preserves validated model and measured usage with the selected candidate (0.4513ms)
+✔ failed durable pre-dispatch record prevents advice dispatch (0.721ms)
+✔ PGlite snapshots expose only exact promoted lesson provenance and stale withdrawal falls back (2762.085ms)
+✔ Node env-file startup loads local token and starts the real control-plane entrypoint (319.5423ms)
+✔ PostgreSQL certification binds exact candidate, stores immutable certificate and event once (2689.2117ms)
+✔ coordinator keeps capability private, runs fixture runner, and hides a certificate when local head moves (1390.9761ms)
+✔ factory stays disabled without explicit configuration and builds a valid runner (1.9983ms)
+✔ rejects artifact roots equal to or below source root and relative roots (13.9058ms)
+✔ rejects temporary paths, overlap in either direction, and malformed maps (6.7955ms)
+✔ parsers accept the exact typed request, receipt, capability metadata, and certificate (2.3911ms)
+✔ rejects unknown top-level and nested fields and malformed values (1.2531ms)
+✔ receipt outcome, exit code, time range, and nested artifact bounds must agree (0.4352ms)
+✔ late UNKNOWN timeout evidence is retained while late PASS and FAIL are rejected (8.7624ms)
+✔ canonical receipt digest ignores object key insertion order and metadata serializes no capability secret (0.4993ms)
+✔ durable artifacts are content-addressed and reject tampering and symlinks (61.4617ms)
+✔ extractor only accepts reachable commit regular files and rejects symlink entries (3691.1865ms)
+✔ check policy is finite and worker text cannot select commands (1.2418ms)
+✔ repository suite is a separate trusted policy bound to the reviewed lock and fixed profile (36.7226ms)
+✔ repository suite runs every discovered test file serially and binds the new policy digest (3.7392ms)
+✔ production serial test runner executes trusted files in order and stops fail-closed (28.4749ms)
+✔ verifier image installs with two isolated npm config files (2.3604ms)
+✔ local npm accepts distinct sanitized config paths (192.9509ms)
+✔ repository suite admission accepts the exact dependency pair and rejects stale locks and overrides (1257.4779ms)
+✔ repository suite requires discovered tests and treats failures, timeouts and truncation distinctly (272.0158ms)
+✔ launcher process-result fixtures reject infrastructure ambiguity and accept only matching check markers (1.5027ms)
+✔ UNKNOWN retains only bounded complete diagnostics from the trusted stage and file emitters (85.3514ms)
+✔ stage diagnostics never classify a partial, forged, malformed, or excessive result (1.6272ms)
+✔ trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd (4.3681ms)
+ℹ tests 108
+ℹ suites 0
+ℹ pass 108
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28374.3793
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:35.880Z
+
+COMMAND C:\Program Files\nodejs\node.exe scripts/validate.mjs
+START 2026-10-13T22:38:35.880Z
+Foundation structure validation passed.
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:35.942Z
+
+COMMAND C:\Program Files\nodejs\node.exe --check infra/verifier-isolation/run-check.js
+START 2026-10-13T22:38:35.943Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.001Z
+
+COMMAND C:\Program Files\nodejs\node.exe --check infra/verifier-isolation/run-repo-suite.js
+START 2026-10-13T22:38:36.001Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.056Z
+
+COMMAND C:\Program Files\nodejs\node.exe --check infra/verifier-isolation/stage-runner.js
+START 2026-10-13T22:38:36.057Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.115Z
+
+COMMAND C:\Program Files\nodejs\node.exe --check infra/verifier-isolation/suite-diagnostics.js
+START 2026-10-13T22:38:36.115Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.172Z
+
+COMMAND C:\Program Files\nodejs\node.exe --check infra/verifier-isolation/suite-policy.js
+START 2026-10-13T22:38:36.172Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.228Z
+
+COMMAND C:/Program Files/Git/bin/bash.exe -n infra/verifier-isolation/launch-verifier.sh
+START 2026-10-13T22:38:36.229Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.293Z
+
+COMMAND git diff --check
+START 2026-10-13T22:38:36.294Z
+
+EXIT 0 SIGNAL null
+FINISH 2026-10-13T22:38:36.363Z

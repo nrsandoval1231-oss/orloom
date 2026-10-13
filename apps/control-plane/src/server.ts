@@ -9,6 +9,8 @@ import { LocalIntegrationAuthority, MissionGovernor, RecoveryJudgmentAdapter, Sc
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
 import type { LearningActivation } from "../../../packages/learning/src/activation.js";
+import { loomDocument } from "./loom-page.js";
+import { projectLoom } from "./loom-projection.js";
 
 class RequestTooLargeError extends Error {}
 
@@ -41,6 +43,11 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
   return createServer(async (req, res) => {
     try {
       if (req.method === "GET" && req.url === "/") return send(res, 200, page(Boolean(config.sessionToken), config.mode), "text/html");
+      if (req.method === "GET" && req.url?.split("?", 1)[0] === "/loom") {
+        const nonce = randomBytes(18).toString("base64url");
+        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "x-content-type-options": "nosniff", "cache-control": "no-store", "content-security-policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'` });
+        return res.end(loomDocument(nonce));
+      }
       if (req.method === "GET" && req.url === "/health") {
         const ready = !cloud || ("ready" in jobs && typeof jobs.ready === "function" && await jobs.ready());
         return send(res, ready ? 200 : 503, JSON.stringify({ status: ready ? "ok" : "unavailable", mode: config.mode, liveExecution: false }));
@@ -96,7 +103,7 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         const request:IntegrationRequestV1={version:"orloom.integration-request.v1",missionId:decodeURIComponent(integrationRoute[1]!),sliceId:decodeURIComponent(integrationRoute[2]!),expectedIntegrationSha:v.expectedIntegrationSha,candidateSha:v.candidateSha,leaseEpoch:Number(v.leaseEpoch),requiredCheckIds:v.requiredCheckIds as string[],reviewArtifactId:v.reviewArtifactId,reviewArtifactDigest:v.reviewArtifactDigest};
         return send(res,200,JSON.stringify(await governor.integrateVerifiedSlice(request,trustedChecks,localIntegration)));
       }
-      const missionRoute = req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)(?:\/(plan|approve|events|lessons))?$/);
+      const missionRoute = req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)(?:\/(plan|approve|events|lessons|loom))?$/);
       if (missionRoute && req.method === "POST") {
         if (!validSession(req, config, sessions)) return send(res,401,JSON.stringify({error:"Unauthorized"}));
         const id=decodeURIComponent(missionRoute[1]!);
@@ -108,6 +115,14 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         const id=decodeURIComponent(missionRoute[1]!);
         if(missionRoute[2]==="events"){const after=Number(new URL(req.url!,"http://local").searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));return send(res,200,JSON.stringify(await governor.events(id,after)));}
         if(missionRoute[2]==="lessons"){return send(res,200,JSON.stringify(await governor.lessons(id)));}
+        if(missionRoute[2]==="loom"){
+          const record=await governor.get(id);if(!record)return send(res,404,JSON.stringify({error:"Not found"}));
+          const url=new URL(req.url!,"http://local"),after=Number(url.searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));
+          const limit=10_000,pageSize=1_000,deadline=Date.now()+8_000,events=[] as Awaited<ReturnType<typeof governor.events>>;let cursor=0,invalid=false,overflow=false;
+          try{while(events.length<=limit){if(Date.now()>=deadline)throw new Error("Loom history read deadline exceeded");let timer:ReturnType<typeof setTimeout>|undefined;let page:Awaited<ReturnType<typeof governor.events>>;try{page=await Promise.race([governor.events(id,cursor),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error("Loom history read deadline exceeded")),Math.max(1,deadline-Date.now()));})]);}finally{if(timer)clearTimeout(timer);}if(!Array.isArray(page)||page.length>pageSize)throw new Error("Invalid mission event page");if(!page.length)break;for(const event of page){if(event.missionId!==id||!Number.isSafeInteger(event.cursor)||event.cursor<=cursor){invalid=true;break;}cursor=event.cursor;events.push(event);if(events.length>limit){overflow=true;break;}}if(invalid||overflow)break;if(page.length<pageSize)break;}}
+          catch{return send(res,503,JSON.stringify({error:"Mission history is unavailable; refresh to reconnect"}));}
+          if(events.length>limit){events.length=limit;overflow=true;}const projection=projectLoom(record.mission,record.plan,record.slices,events,{stale:overflow||invalid});const page=events.filter(event=>event.cursor>after).slice(0,pageSize);const hasMore=events.some(event=>event.cursor>(page.at(-1)?.cursor??after));return send(res,200,JSON.stringify({projection,events:page,overflow,hasMore,nextCursor:page.at(-1)?.cursor??after}));
+        }
         const record=await governor.get(id);return record?send(res,200,JSON.stringify(record)):send(res,404,JSON.stringify({error:"Not found"}));
       }
       const certificateRoute=req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)\/slices\/([^/?]+)\/checks\/([^/?]+)\/certificate$/);

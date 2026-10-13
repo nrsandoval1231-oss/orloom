@@ -46,6 +46,8 @@ These local certificates do not establish full CI, remote GitHub freshness, or i
 
 Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. PR #1 passed an independently repeated disposable PostgreSQL proof with eight connections, six concurrent claims, rollback, restart durability, and expiry quarantine. It has not been deployed to production or exercised with a live builder/verifier.
 
+The read-only [Living Loom](docs/living-loom.md) is available at `/loom?mission=<mission-id>` after owner sign-in. It displays recorded mission, slice, decision, recovery, learning and verification events, with bounded cursor catch-up and conservative completion checks. Source and controlled browser evidence do not establish live builders or cloud deployment.
+
 ## Storage and adapters
 
 The migrations under `db/migrations/` define queue, mission, and subsequent additive state. Local tests use embedded PGlite; cloud mode uses `PostgresJobStore` and `SqlMissionStore` with a real PostgreSQL pool and fails startup if initialization or readiness checks fail. It never silently falls back to memory.

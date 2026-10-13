@@ -1,0 +1,175 @@
+{
+  "sourceCandidate": "bd2bb5e34cee8562f40d4be2949c82030a7b20d2",
+  "sourceManifest": "e7b3220750208601fa9090b2fe8c8b589eccca54e65e86a0ff544cb874345b60",
+  "files": [
+    {
+      "path": "c5-source-review-19abb35.json",
+      "sha256": "85610d7aba4bc68abf4c15a778d3b958b51c5a84cc4772fee5f68eff09077bfc",
+      "bytes": 5978
+    },
+    {
+      "path": "c5-source-review-df72574.json",
+      "sha256": "4a2ae8ced16ce914d58494da4c32d41e01bef59381a81054e18db599bf265b17",
+      "bytes": 5481
+    },
+    {
+      "path": "c5-source-review-bd2bb5e.json",
+      "sha256": "8b643641d869cb9abdb03f91f7e66c5cc10810a150b50d50259a8dff13cbf9b0",
+      "bytes": 3347
+    },
+    {
+      "path": "loom-browser-check.mjs",
+      "sha256": "afac3b756e7d0dd13e1a82f50400315060b9e9b10a9595ba4267bbd436b613c1",
+      "bytes": 8086
+    },
+    {
+      "path": "gates-2026-10-13T19-45-10-422Z.log",
+      "sha256": "4ba7a4f783fa92f527048adc7bf1fd0687eac58e35b32b9131b8c29003c7a0fd",
+      "bytes": 13014
+    },
+    {
+      "path": "gates-2026-10-13T22-38-02-536Z.log",
+      "sha256": "f46fcbdcd4e9b119f82f9de101c1a73c820abf8dc73b21794a1075d3c752b45d",
+      "bytes": 13342
+    },
+    {
+      "path": "gates-2026-10-13T22-44-52-567Z.log",
+      "sha256": "d37f41c8edf3c40967cb06093259d0f170c63fddcd3c275778932fe6b23b3502",
+      "bytes": 13568
+    },
+    {
+      "path": "gates-2026-10-13T22-48-34-327Z.log",
+      "sha256": "8c4abd5d2bc5407e3f5af6b275778cfb89ba9cb5fc0b7132759af4b79c1a4577",
+      "bytes": 13582
+    },
+    {
+      "path": "browser/2026-10-13T19-57-10-934Z/result.json",
+      "sha256": "15aa14a182b480d6e65eb84d325532c16777346011b62b4c4c9bcf3cb9f2c607",
+      "bytes": 1626
+    },
+    {
+      "path": "browser/2026-10-13T19-57-10-934Z/desktop.png",
+      "sha256": "9509122611f9c5b39b9b3adec1e0bb4069d24d5f4025166fc2482a3f9855cf68",
+      "bytes": 212216
+    },
+    {
+      "path": "browser/2026-10-13T19-57-10-934Z/mobile.png",
+      "sha256": "80e59b4ea16629cc02c373ec1000601715c8fa66ad01a76bacdf8372b3780d6b",
+      "bytes": 90143
+    },
+    {
+      "path": "browser/2026-10-13T19-57-10-934Z/disconnected.png",
+      "sha256": "cff6c9439ee68bfb99780a4ec967aa7912b35f7d7395ea7eb28f53f04808eab2",
+      "bytes": 91289
+    },
+    {
+      "path": "browser/2026-10-13T19-57-10-934Z/webgl-fallback.png",
+      "sha256": "47459f25af5539c435851e6930c58d3aa460c34de7281a21fdadb03402a77e42",
+      "bytes": 83137
+    },
+    {
+      "path": "browser/2026-10-13T21-32-33-926Z/result.json",
+      "sha256": "cc7f3f3f5540cc9921fc10350c75643af9615f81e1dd267b3d5081672f10f131",
+      "bytes": 2701
+    },
+    {
+      "path": "browser/2026-10-13T21-32-33-926Z/desktop.png",
+      "sha256": "253374e6d19886400931d70a23b5d7b58534fa232d3ad68f0c79adbf248b64c1",
+      "bytes": 225379
+    },
+    {
+      "path": "browser/2026-10-13T21-32-33-926Z/mobile.png",
+      "sha256": "1505a9d0833ee4752247e6a17cfe76a45bd07dd1495ec6484bed9d3c7bed1aea",
+      "bytes": 68518
+    },
+    {
+      "path": "browser/2026-10-13T22-38-35-967Z/result.json",
+      "sha256": "f5e0401e49d8eb422f41c099f7df5e8e47503d38fcbc69f992bcf3bcc9964069",
+      "bytes": 1667
+    },
+    {
+      "path": "browser/2026-10-13T22-38-35-967Z/desktop.png",
+      "sha256": "163741efe82611c8d2b78d8cd28796f47e1c1d82331732ef83a774279d660089",
+      "bytes": 225821
+    },
+    {
+      "path": "browser/2026-10-13T22-38-35-967Z/mobile.png",
+      "sha256": "1505a9d0833ee4752247e6a17cfe76a45bd07dd1495ec6484bed9d3c7bed1aea",
+      "bytes": 68518
+    },
+    {
+      "path": "browser/2026-10-13T22-38-35-967Z/mobile-inspector.png",
+      "sha256": "1e05120da79531d7b9820600a1867a307d605b6431b31f84790e38539de5d8e7",
+      "bytes": 86879
+    },
+    {
+      "path": "browser/2026-10-13T22-38-35-967Z/disconnected.png",
+      "sha256": "cca34fa210d648c1b60d72ac0886d70c56da2f696bc1dfde18eb9b53ac79e8d1",
+      "bytes": 88346
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/result.json",
+      "sha256": "e433964612f8be7e4795fb79a347b3a520f776c084d80c6279637d954afa947c",
+      "bytes": 1769
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/desktop.png",
+      "sha256": "7d6ec913b47065b9f017c6876b625e3762070dbb6d26b9bc6c2b246d3e508e8a",
+      "bytes": 225772
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/mobile.png",
+      "sha256": "1505a9d0833ee4752247e6a17cfe76a45bd07dd1495ec6484bed9d3c7bed1aea",
+      "bytes": 68518
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/mobile-inspector.png",
+      "sha256": "71b7e98e15b626296d293d4b7f8f240dc608a83cf3b4520dd1fc4c99664b1aca",
+      "bytes": 86891
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/disconnected.png",
+      "sha256": "278ef4ac30f338a4620bbed2efde7a9f967cb6624bcbc9a2b337eb5e680bd977",
+      "bytes": 88365
+    },
+    {
+      "path": "browser/2026-10-13T22-45-40-250Z/webgl-fallback.png",
+      "sha256": "60973603942061b87a128c13bee731fafafa7d2119940aece36ab66154f58c3a",
+      "bytes": 65118
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/result.json",
+      "sha256": "7f66263b8b88ab1007e7ffd29af323617a53081e6f88d33a57dda5fc5abc856b",
+      "bytes": 1769
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/desktop.png",
+      "sha256": "42cb27bf52082d057ac837d09107e630c23cca34b962b5a787804e481dad9f58",
+      "bytes": 226089
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/mobile.png",
+      "sha256": "1505a9d0833ee4752247e6a17cfe76a45bd07dd1495ec6484bed9d3c7bed1aea",
+      "bytes": 68518
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/mobile-inspector.png",
+      "sha256": "6470b5bfd11958dc07170cadaacfdd902eb8b6953b403d110329d2e2f602d03b",
+      "bytes": 86919
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/disconnected.png",
+      "sha256": "6aed24524966e14507c44ed7fa7cc3a98a794bf6f980aa9fd96f343242d71197",
+      "bytes": 88441
+    },
+    {
+      "path": "browser/2026-10-13T22-49-02-392Z/webgl-fallback.png",
+      "sha256": "60973603942061b87a128c13bee731fafafa7d2119940aece36ab66154f58c3a",
+      "bytes": 65118
+    }
+  ],
+  "limits": [
+    "Controlled memory-store browser evidence only; no PostgreSQL, worker, provider, certificate or deployment acceptance.",
+    "Earlier FAIL and FIX records are historical, not overwritten by latest bounded PASS."
+  ]
+}

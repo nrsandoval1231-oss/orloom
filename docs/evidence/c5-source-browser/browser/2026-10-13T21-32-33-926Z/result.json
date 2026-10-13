@@ -1,0 +1,60 @@
+{
+  "candidate": "0c8c85de102121795d41158163dde79729b996ab",
+  "store": "MemoryMissionStore",
+  "controlledMission": true,
+  "providerCalls": 0,
+  "workerExecutions": 0,
+  "certificates": 0,
+  "startedUtc": "2026-10-13T21:32:33.933Z",
+  "unauthenticated": "owner session required",
+  "webgl": true,
+  "keyboardFocus": "CANVAS",
+  "mobileOverflow": false,
+  "status": "FAIL",
+  "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#refresh')\u001b[22m\n\u001b[2m    - locator resolved to <button id=\"refresh\" type=\"button\">Refresh evidence</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    58 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+  "finishedUtc": "2026-10-13T21:33:04.703Z",
+  "pageErrors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/93af4cae-fc12-41cb-940f-c2f28e774650/loom"
+    }
+  ],
+  "modules": {
+    "apps/control-plane/src/server.js": "341b3e7d24bcade06ce619c2814f231e6e4db75aa1720a56cc490c9c7d488d42",
+    "apps/control-plane/src/loom-page.js": "b68f3fb796b759f8e57621693dcbf8b04675e1f07d157ff8b06419b1152f0ee4",
+    "apps/control-plane/src/loom-projection.js": "4c7297a6316d4549b67cd83220b9aa527719c0301e662887160c1c7f3cde17ba"
+  },
+  "limitations": [
+    "Memory-store controlled mission; not PostgreSQL durability proof",
+    "No live builder, provider, certification or deployment evidence"
+  ]
+}
