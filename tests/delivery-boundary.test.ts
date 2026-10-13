@@ -8,7 +8,7 @@ import type { DeliveryCommandV1, DeliveryPolicy } from "../packages/integration/
 
 const sha="a".repeat(40),digest="b".repeat(64);
 const command:DeliveryCommandV1={version:"orloom.delivery-command.v1",missionId:"11111111-1111-4111-8111-111111111111",sliceId:"slice",leaseEpoch:1,integratedSha:sha,treeSha:sha,reviewArtifactId:"review-1",reviewArtifactDigest:digest,idempotencyKey:"delivery-key-00000001"};
-const policy:DeliveryPolicy={repository:"acme/orloom",installationId:7,baseRef:"main",baseSha:sha,protectedRefs:["main","feat/pr2"],checkIds:["node-repo-suite-v1"],policyVersion:"v1",policyDigest:digest,imageDigest:digest,checkName:"Orloom certified suite"};
+const policy:DeliveryPolicy={repository:"acme/orloom",appId:1,installationId:7,baseRef:"main",baseSha:sha,protectedRefs:["main","feat/pr2"],checkIds:["node-repo-suite-v1"],policyVersion:"v1",policyDigest:digest,imageDigest:digest,checkName:"Orloom certified suite"};
 
 test("delivery rejects public repo/ref overrides and stays closed when R2 or GitHub App authority is absent",async()=>{
   const governor=new MissionGovernor(new MemoryMissionStore(),{maxLanes:1,capacitySlots:0,leaseSeconds:300,trustedCheckPolicyDigest:digest});

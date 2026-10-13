@@ -1,0 +1,49 @@
+{
+  "reviewType": "preliminary source review",
+  "candidate": "dirty work/orloom-delivery on 078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "verdict": "FIX",
+  "scope": "C4 delivery core only; C5 route and live/provider proof excluded",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Concurrent delivery calls can create duplicate Checks or PRs",
+      "evidence": ["packages/integration/src/delivery.ts:43-57", "packages/integration/src/delivery.ts:60-62", "packages/contracts/src/sql-mission-store.ts:102-104"],
+      "reason": "The SQL governor lock ends after createDeliveryIntent. Two callers can both read pending and an empty Check list, then both POST a Check. They can similarly both list no PR and POST a PR. The durable row does not claim either external attempt before the write, and the later identity conflict only occurs after duplicates may exist.",
+      "repair": "Persist an exclusive, expiring per-intent external-attempt claim/phase before each create, with a stable operation identity. A concurrent caller must observe in-flight/UNKNOWN and reconcile, never enter the same create window. Exercise two independent SQL connections and controlled overlapping calls."
+    },
+    {
+      "severity": "P1",
+      "title": "An ambiguous Check write before PR creation cannot be recovered to progress",
+      "evidence": ["packages/integration/src/delivery.ts:46-48", "packages/integration/src/delivery.ts:56-57", "packages/contracts/src/sql-mission-store.ts:104"],
+      "reason": "Any Check POST timeout marks the whole intent unknown. The only unknown recovery demands exactly one successful Check and one draft PR, even though no PR was attempted. Thus a normal interrupted Check cannot advance, and the packet's restart-after-each-effect requirement fails.",
+      "repair": "Record which external effect was attempted and reconcile that phase independently. After one exact Check is found, durably transition to check_created and allow the PR phase. If no match after an ambiguous attempt, remain UNKNOWN for operator resolution; do not blindly retry."
+    },
+    {
+      "severity": "P1",
+      "title": "Successful Check response is accepted without an independent readback",
+      "evidence": ["packages/integration/src/delivery.ts:56-57", "packages/adapters/src/providers.ts:115-116"],
+      "reason": "After POST, the code validates the returned object and remote branch but does not GET/list the created Check before persisting check_created. A response from an intermediary or stale/faulty provider can make a non-observed Check count as delivered.",
+      "repair": "List Checks after POST and require exactly one matching ID, SHA, name, external ID, successful conclusion, and trusted App identity before storing check_created. Treat failed or ambiguous readback as UNKNOWN."
+    },
+    {
+      "severity": "P2",
+      "title": "Check readback does not verify the issuing GitHub App",
+      "evidence": ["packages/adapters/src/providers.ts:71-72", "packages/adapters/src/providers.ts:115-116", "packages/integration/src/delivery.ts:46-57"],
+      "reason": "The adapter strips Check app metadata. A Check with the same SHA/name/external ID from another App could be adopted or accepted during reconciliation. The check external ID is predictable from mission, slice, epoch, and SHA.",
+      "repair": "Return and validate check_run.app.id against configured appId on both create response and list readback. Retain source identity with the observed Check ID."
+    },
+    {
+      "severity": "P2",
+      "title": "Closed draft PR can satisfy completed delivery replay",
+      "evidence": ["packages/adapters/src/providers.ts:73-75", "packages/adapters/src/providers.ts:117-119", "packages/integration/src/delivery.ts:60-64"],
+      "reason": "PR list includes state=all, but the returned contract omits state and merged status. A closed draft PR with matching head/base and draft=true can pass assertPr and be returned as pr_created.",
+      "repair": "Carry PR state/merged status through list and get. Require an open unmerged draft PR at creation, reconciliation, and replay."
+    }
+  ],
+  "additionalBoundaries": [
+    "The packet requires secure upload of the exact local commit or independently verified already-uploaded branch. This core only implements the latter; report remote upload as an explicit prerequisite, not a delivery capability.",
+    "C5 owner-session route is absent by planned file ownership. No claim of end-to-end acceptance can follow from this review.",
+    "The three focused tests do not cover crash/restart phase recovery, concurrency, App identity, or closed PR. Completion handoff itself records full suite, real PostgreSQL recovery, independent final review, and live App/R2 proof as unrun."
+  ],
+  "reviewLimit": "No code mutation, external call, test run, or live acceptance claim was made."
+}

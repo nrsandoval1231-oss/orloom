@@ -16,3 +16,21 @@ CREATE TABLE IF NOT EXISTS mission_delivery_intents (
   CHECK (state <> 'pr_created' OR pull_request_number IS NOT NULL)
 );
 CREATE INDEX IF NOT EXISTS mission_delivery_intents_state_idx ON mission_delivery_intents(state,updated_at);
+
+-- A claim is permanent once a create request may have escaped the process.
+-- Recovery is read-only until the exact external object is observed.
+CREATE TABLE IF NOT EXISTS mission_delivery_effects (
+  mission_id uuid NOT NULL,
+  slice_id text NOT NULL,
+  lease_epoch bigint NOT NULL,
+  effect text NOT NULL CHECK (effect IN ('check','pull_request')),
+  state text NOT NULL CHECK (state IN ('claimed','observed')),
+  external_id text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  observed_at timestamptz,
+  PRIMARY KEY (mission_id,slice_id,lease_epoch,effect),
+  FOREIGN KEY (mission_id,slice_id,lease_epoch)
+    REFERENCES mission_delivery_intents(mission_id,slice_id,lease_epoch),
+  CHECK ((state='claimed' AND external_id IS NULL AND observed_at IS NULL)
+      OR (state='observed' AND external_id IS NOT NULL AND observed_at IS NOT NULL))
+);
