@@ -1,0 +1,78 @@
+{
+  "packet": "ORL-C3-SUITE-DIAGNOSTICS",
+  "status": "BUILDER_HANDOFF_REPAIRED_LOCAL_GATES_PASS_HOST_PROOF_NOT_RUN",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseCommit": "691d36d9a625ba17e6366d6ec7ca15130a5ecf18",
+  "workingCandidateIdentitySha256": "9ba4ad7ba079ade24c1ca8805682f56928371cde86b2dbddb5a6892acd7eb4a6",
+  "changedFiles": [
+    "docs/verification.md",
+    "infra/verifier-isolation/Dockerfile",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/suite-diagnostics.js",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-runner.test.ts"
+  ],
+  "validation": [
+    {
+      "result": "12 focused tests passed",
+      "exit": 0,
+      "command": "npm run build; node --test dist/tests/verification-runner.test.js; node --check infra/verifier-isolation/run-repo-suite.js; node --check infra/verifier-isolation/suite-diagnostics.js"
+    },
+    {
+      "exit": 0,
+      "command": "npm run typecheck"
+    },
+    {
+      "exit": 0,
+      "command": "npm run build"
+    },
+    {
+      "result": "73 passed, 0 failed",
+      "exit": 0,
+      "command": "npm test"
+    },
+    {
+      "result": "Foundation structure validation passed",
+      "exit": 0,
+      "command": "npm run validate"
+    },
+    {
+      "exit": 0,
+      "command": "node --check infra/verifier-isolation/run-repo-suite.js"
+    },
+    {
+      "exit": 0,
+      "command": "node --check infra/verifier-isolation/suite-diagnostics.js"
+    },
+    {
+      "exit": 0,
+      "command": "git diff --check"
+    }
+  ],
+  "rawFinalGateLog": "work/c3-suite-diagnostics-repair-final-gates.log",
+  "rawFinalGateLogSha256": "14bda23862d1176f3dc472bb70b4f6377cf4f9c08911909231de7e3b331fb01b",
+  "timing": {
+    "utcStart": "UNKNOWN",
+    "utcFinish": "2026-10-13T10:18:59Z",
+    "focusedAndFinalValidationElapsed": "UNKNOWN",
+    "finalGateToolElapsedSeconds": 17.9,
+    "planning": "UNKNOWN",
+    "build": "UNKNOWN",
+    "repairCount": 2
+  },
+  "runtimeProof": {
+    "hostExecution": "NOT_RUN_BY_BUILDER",
+    "retainedPriorAttempt": "UNKNOWN",
+    "certificate": "NONE_CLAIMED",
+    "attemptRedispatch": "NOT_PERFORMED"
+  },
+  "usage": "UNKNOWN",
+  "limitations": [
+    "Diagnostic frames are bounded advisory telemetry and cannot determine PASS or FAIL.",
+    "Candidate output, arbitrary host output, and raw stderr are discarded from ambiguous launcher results.",
+    "No image build, host, provider, deployment, commit, or push action was performed.",
+    "Existing dirty docs/evidence/.gitattributes and root-owned evidence manifest were preserved and are excluded from changedFiles."
+  ]
+}

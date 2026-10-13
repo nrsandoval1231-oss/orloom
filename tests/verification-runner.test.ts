@@ -10,7 +10,7 @@ import { test } from "node:test";
 import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
 import { extractCandidateBundle } from "../packages/verification/src/repository.js";
 import { getCheckPolicy, NODE_REPO_SUITE_BINDING } from "../packages/verification/src/policy.js";
-import { classifyLauncherOutput } from "../packages/verification/src/runsc-launcher.js";
+import { classifyLauncherOutput, retainSuiteDiagnostics } from "../packages/verification/src/runsc-launcher.js";
 
 const exec = promisify(execFile);
 async function git(dir: string, ...args: string[]): Promise<void> {
@@ -78,6 +78,7 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.pids, 128);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.workTmpfsBytes, 512 * 1024 * 1024);
+  assert.deepEqual(NODE_REPO_SUITE_BINDING.diagnostics, { protocol: "orloom.suite-diagnostics.v1", maxFrames: 16, maxBytes: 4096, authority: "advisory-only" });
   const { ADMITTED_DEPENDENCIES } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
   assert.equal(ADMITTED_DEPENDENCIES["package.json"], NODE_REPO_SUITE_BINDING.dependencies.packageJsonSha256);
   assert.equal(ADMITTED_DEPENDENCIES["package-lock.json"], NODE_REPO_SUITE_BINDING.dependencies.packageLockSha256);
@@ -199,6 +200,9 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
   const pass = classifyLauncherOutput(marker(0), { exitCode: 0 }, 64);
   assert.equal(pass.exitCode, 0);
   assert.equal(pass.stdout.toString(), "ok");
+  const diagFrame = (phase: string, outcome?: string) => `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v1", stage: "dependency-lock-admission", phase, elapsedMs: 5, ...(outcome ? { outcome } : {}) })).toString("base64")}\n`;
+  const diagnosticsSayFail = `${diagFrame("start")}${diagFrame("end", "fail")}`;
+  assert.equal(classifyLauncherOutput(`${diagnosticsSayFail}${marker(0)}`, { exitCode: 0 }, 64).exitCode, 0, "even a complete advisory FAIL frame cannot override the exact result marker and clean launcher exit");
   const fail = classifyLauncherOutput(marker(1), { exitCode: 1 }, 64);
   assert.equal(fail.exitCode, 1);
 
@@ -221,6 +225,46 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
   const checkScript = await import("node:fs/promises").then(({ readFile }) => readFile("infra/verifier-isolation/run-check.js", "utf8"));
   assert(checkScript.includes(`cwd: path.join(input, 'source')`));
   assert.equal(policy.cwd, path.posix.join("/work", "source"));
+});
+
+test("UNKNOWN retains only bounded complete diagnostics from the trusted stage emitter", async () => {
+  const script = `import { emitSuiteDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 60001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 8, outcome: 'pass' })) process.exitCode = 11;\n`;
+  const { stdout: emitted } = await exec(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8", windowsHide: true });
+  assert.equal(emitted.split("\n").filter(Boolean).length, 2, "the actual trusted emitter produces complete newline-terminated frames");
+  const unknown = classifyLauncherOutput(`${emitted}candidate secret output\nORLOOM-DIAG:v1:eyJwYXJ0aWFsIg`, { exitCode: null, timedOut: true, killed: true }, 4096);
+  assert.equal(unknown.exitCode, null);
+  assert.equal(unknown.stdout.toString(), emitted);
+  assert.equal(unknown.stderr.length, 0);
+  assert.doesNotMatch(unknown.stdout.toString(), /candidate secret|partial/);
+  assert.equal(retainSuiteDiagnostics(`${emitted}${emitted}`).toString(), emitted, "duplicate or out-of-order frames do not add telemetry authority");
+});
+
+test("stage diagnostics never classify a partial, forged, malformed, or excessive result", async () => {
+  const frame = (stage: string, phase: string, outcome?: string) => {
+    const value = { version: "orloom.suite-diagnostics.v1", stage, phase, elapsedMs: 3, ...(outcome ? { outcome } : {}) };
+    return `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify(value)).toString("base64")}\n`;
+  };
+  const forgedEnd = frame("dependency-lock-admission", "end", "pass");
+  const start = frame("dependency-lock-admission", "start");
+  for (const [stdout, expected] of [[forgedEnd, ""], [`${start}${forgedEnd.slice(0, -1)}`, start], [`${start}ORLOOM-DIAG:v1:not-base64!\n${forgedEnd}`, `${start}${forgedEnd}`], [`${frame("typecheck", "start")}${frame("typecheck", "end", "pass")}`, ""]] as const) {
+    const result = classifyLauncherOutput(stdout, { exitCode: null, timedOut: true }, 4096);
+    assert.equal(result.exitCode, null);
+    assert.equal(result.stdout.toString(), expected, "only complete ordered frames are retained as advisory telemetry");
+  }
+  const validStart = frame("dependency-lock-admission", "start");
+  const oversized = validStart.repeat(17);
+  assert.ok(Buffer.byteLength(retainSuiteDiagnostics(oversized)) <= 4096);
+  const result = classifyLauncherOutput(`${oversized}untrusted host text\n`, { exitCode: 0 }, 4096);
+  assert.equal(result.exitCode, null, "diagnostics without the final result marker cannot turn into PASS or FAIL");
+  assert.doesNotMatch(result.stdout.toString(), /untrusted/);
+
+  for (const value of ["null", "[]", "\"primitive\"", "7"]) {
+    const hostile = `ORLOOM-DIAG:v1:${Buffer.from(value).toString("base64")}\n`;
+    assert.doesNotThrow(() => retainSuiteDiagnostics(hostile), `JSON root ${value} is discarded safely`);
+    const retained = classifyLauncherOutput(`${validStart}${hostile}${frame("dependency-lock-admission", "end", "pass")}`, { exitCode: null, timedOut: true }, 4096);
+    assert.equal(retained.exitCode, null);
+    assert.equal(retained.stdout.toString(), `${validStart}${frame("dependency-lock-admission", "end", "pass")}`);
+  }
 });
 
 test("trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd", async () => {

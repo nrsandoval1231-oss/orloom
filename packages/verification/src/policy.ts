@@ -11,6 +11,7 @@ function bindPolicy(image: string, imageDigest: Sha256): CheckPolicy {
 }
 export const NODE_REPO_SUITE_BINDING = Object.freeze({
   manifestVersion: "node-repo-suite-v1.stages.v1",
+  diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v1", maxFrames: 16, maxBytes: 4096, authority: "advisory-only" }),
   dependencies: Object.freeze({
     packageJsonSha256: "ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df",
     packageLockSha256: "1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4",

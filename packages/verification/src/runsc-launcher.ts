@@ -24,10 +24,54 @@ async function makePrivateDir(directory: string, mode = 0o700): Promise<void> {
 
 export interface LauncherProcessResult { exitCode: number | null; signal?: string | null; timedOut?: boolean; killed?: boolean; truncated?: boolean; stderr?: string; }
 
+const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v1:";
+const DIAGNOSTIC_BYTES_MAX = 4096, DIAGNOSTIC_FRAMES_MAX = 16, DIAGNOSTIC_LINE_MAX = 512;
+const DIAGNOSTIC_STAGES = ["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"] as const;
+
+/** Retains only complete, bounded fixed-schema telemetry; frames never classify a check. */
+export function retainSuiteDiagnostics(stdout: string): Buffer {
+  if (Buffer.byteLength(stdout) > 256 * 1024) return Buffer.alloc(0);
+  const lines = stdout.split("\n"), completeCount = stdout.endsWith("\n") ? lines.length - 1 : Math.max(0, lines.length - 1);
+  const kept: string[] = []; let bytes = 0, frames = 0, nextStage = 0, openStage: string | undefined, halted = false;
+  for (let index = 0; index < completeCount; index++) {
+    if (halted) break;
+    const line = lines[index]!.endsWith("\r") ? lines[index]!.slice(0, -1) : lines[index]!;
+    if (!line.startsWith(DIAGNOSTIC_PREFIX) || line.length > DIAGNOSTIC_LINE_MAX || frames >= DIAGNOSTIC_FRAMES_MAX) continue;
+    const encoded = line.slice(DIAGNOSTIC_PREFIX.length);
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) continue;
+    let parsed: unknown;
+    try {
+      const raw = Buffer.from(encoded, "base64");
+      if (raw.toString("base64") !== encoded) continue;
+      parsed = JSON.parse(raw.toString("utf8"));
+    } catch { continue; }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) continue;
+    const frame = parsed as Record<string, unknown>;
+    const phase = frame.phase;
+    const keys = Object.keys(frame).sort().join(",");
+    const common = frame.version === "orloom.suite-diagnostics.v1"
+      && typeof frame.stage === "string" && Number.isSafeInteger(frame.elapsedMs)
+      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 60_000;
+    if (!common) continue;
+    const stage = frame.stage as string;
+    if (phase === "start" && keys === "elapsedMs,phase,stage,version" && openStage === undefined
+      && stage === DIAGNOSTIC_STAGES[nextStage]) {
+      openStage = stage;
+    } else if (phase === "end" && keys === "elapsedMs,outcome,phase,stage,version" && openStage === stage
+      && ["pass", "fail", "unknown"].includes(String(frame.outcome))) {
+      openStage = undefined; nextStage++; halted = frame.outcome !== "pass";
+    } else continue;
+    const lineBytes = Buffer.byteLength(line) + 1;
+    if (bytes + lineBytes > DIAGNOSTIC_BYTES_MAX) break;
+    kept.push(`${line}\n`); bytes += lineBytes; frames++;
+  }
+  return Buffer.from(kept.join(""), "utf8");
+}
+
 /** Maps an injected launcher-process result to check status; only an exact clean exit/marker match is determinate. */
 export function classifyLauncherOutput(stdout: string, processResult: LauncherProcessResult, maxLogBytes: number): SandboxResult {
   const markers = stdout.split(/\r?\n/).filter((line) => line.startsWith("ORLOOM-RESULT:"));
-  const unknown = (): ReturnType<typeof classifyLauncherOutput> => ({ sandboxId: "unavailable", exitCode: null, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: true, timedOut: true, launcherExitCode: processResult.exitCode, ...(processResult.signal ? { launcherSignal: processResult.signal } : {}), launcherTimedOut: processResult.timedOut === true || processResult.killed === true, launcherTruncated: processResult.truncated === true });
+  const unknown = (): ReturnType<typeof classifyLauncherOutput> => ({ sandboxId: "unavailable", exitCode: null, stdout: retainSuiteDiagnostics(stdout), stderr: Buffer.alloc(0), truncated: true, timedOut: true, launcherExitCode: processResult.exitCode, ...(processResult.signal ? { launcherSignal: processResult.signal } : {}), launcherTimedOut: processResult.timedOut === true || processResult.killed === true, launcherTruncated: processResult.truncated === true });
   if (markers.length !== 1 || processResult.exitCode === null || processResult.signal || processResult.timedOut || processResult.killed || processResult.truncated || processResult.stderr || ![0, 1].includes(processResult.exitCode)) return unknown();
   try {
     const parsed = JSON.parse(Buffer.from(markers[0]!.slice("ORLOOM-RESULT:".length), "base64").toString("utf8")) as Record<string, unknown>;
