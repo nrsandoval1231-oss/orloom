@@ -1,0 +1,41 @@
+{
+  "packet": "C5-PG-BROWSER-01 successor preparation: CPG-PG-STARTUP-POLICY-01",
+  "status": "PREPARATION_COMPLETE_EXECUTION_NOT_AUTHORIZED",
+  "preparedAtUtc": "2026-10-13T23:57:15Z",
+  "candidate": {
+    "repository": "work/orloom-controller",
+    "sha": "0725fa20698aa30b796ba096f663037116f49767",
+    "workingTreeClean": true,
+    "independentReview": "PENDING",
+    "acceptance": "PENDING",
+    "compiledManifest": "NOT_SUPPLIED"
+  },
+  "ownedFiles": {
+    "work/cpg-proof/run.mjs": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "work/cpg-proof/scenario.mjs": "2b5462372a2ccdbbdcb23f1ea58a0b702f509eb9dd361b470d8479efacb4d361",
+    "work/cpg-proof/README.md": "7b3a9a0c51de997059dec19add6aef79ca28a235a4b68be0f07fdf8e0156440e",
+    "work/cpg-proof/PACKET.md": "3ceb35e83aabb9b34da73e82cb96f2d9a4b635fecf7e71b2c8ec31cdee5935af"
+  },
+  "runnerIdentity": {
+    "reference": "work/dpg-proof/run.mjs",
+    "referenceSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "preparedSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "byteIdentical": true
+  },
+  "validation": {
+    "commands": [
+      "node --check work/cpg-proof/scenario.mjs",
+      "node --check work/cpg-proof/run.mjs",
+      "Get-FileHash work/dpg-proof/run.mjs,work/cpg-proof/run.mjs,... -Algorithm SHA256"
+    ],
+    "result": "PASS",
+    "postgresqlScenarioExecuted": false,
+    "databaseClusterCreated": false,
+    "externalCalls": false
+  },
+  "limits": [
+    "Controlled local fixtures only; no external verifier, review, GitHub, R2, provider, or deployment evidence.",
+    "Scenario must not execute until exact compiled manifest is supplied and root authorizes after independent source acceptance.",
+    "The packet demonstrates PostgreSQL-backed startup policy-domain behavior only; it does not establish production readiness."
+  ]
+}
