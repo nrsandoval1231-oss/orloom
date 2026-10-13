@@ -80,7 +80,7 @@ Add an internal verifier submission route or equivalent process boundary, isolat
 
 ## Controller dispatch boundary
 
-Current source base is 545279c7b53fef8453c8e50ae0bc7f0d790959af, independently source-reviewed with 51 tests passing. C1a real PostgreSQL proof is in progress; C3 implementation dispatch remains pending its result. Full CI build/test/typecheck/lint/security policies, independent final engineering certification, R2 retention, and GitHub Checks remain parent requirements. The initial syntax-check certificate cannot satisfy those requirements by itself.
+Current source base is 545279c7b53fef8453c8e50ae0bc7f0d790959af, independently source-reviewed with 51 tests passing. C1a real PostgreSQL proof passed; raw output SHA256 ff7b5a9a26aebc9fb08437d32bcdaf410bedb0c2954aa6f21f8f666c923fc6d5. Controller verified cleanup, fixture receipt bytes, and source identity; final evidence reconciliation is separate. Shared contract c790bfd9c09eafed25370a77d1a1edfdfc05be3f passed controller build/typecheck/five focused tests. Runner and certification lanes are dispatched with disjoint ownership. Certification ownership additionally includes packages/contracts/src/postgres-store.ts for additive migration loading. Controller owns state/evidence bookkeeping and serial validation. Full CI build/test/typecheck/lint/security policies, independent final engineering certification, R2 retention, and GitHub Checks remain parent requirements. The initial syntax-check certificate cannot satisfy those requirements by itself.
 
 ## Contract-only READY node
 

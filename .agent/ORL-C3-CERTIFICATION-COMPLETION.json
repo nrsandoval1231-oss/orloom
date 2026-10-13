@@ -1,0 +1,73 @@
+{
+  "packet": "ORL-C3 certification lane",
+  "status": "IMPLEMENTED_LOCAL; REAL_HOST_JOIN_PENDING",
+  "repository": "work/orloom-ci",
+  "branch": "feat/trusted-verification",
+  "baseSha": "c790bfd9c09eafed25370a77d1a1edfdfc05be3f",
+  "controllerMetadataHeadObserved": "bcd289da39bb3007e4eca8cb7157ed84a46b05de",
+  "candidateCommit": "UNKNOWN; changes are uncommitted and shared runner files are also present",
+  "files": [
+    ".env.example",
+    "apps/control-plane/src/main.ts",
+    "apps/control-plane/src/server.ts",
+    "db/migrations/004_verification.sql",
+    "docs/verification.md",
+    "packages/config/src/config.ts",
+    "packages/contracts/src/memory-mission-store.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/postgres-store.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/governor/src/governor.ts",
+    "tests/verification-certification.test.ts"
+  ],
+  "validation": [
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test dist/tests/verification-certification.test.js",
+      "exitCode": 0,
+      "passed": 2,
+      "failed": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "evidence": {
+    "tested": [
+      "PGlite attempt issuance and transactionally immutable certificate plus single event",
+      "exact candidate, approved plan, selected policy, lease epoch, and local-head fences",
+      "forged capability rejection and concurrent idempotent duplicate submission",
+      "late PASS rejection, reporting-grace expiry to UNKNOWN, and no restart redispatch",
+      "coordinator private capability flow with explicitly injected fixture runner",
+      "owner certificate read hides evidence after the trusted local ref moves",
+      "slice remains awaiting_verification; no integration, budget release, or lesson promotion"
+    ],
+    "realRunscHostProof": "UNKNOWN; not performed in this lane",
+    "realPostgresRunnerJoin": "PENDING controller integration",
+    "remoteHeadFreshness": "UNKNOWN",
+    "githubChecks": "NOT IMPLEMENTED"
+  },
+  "limits": [
+    "The PGlite and injected-runner tests are deterministic fixtures, not host runtime proof.",
+    "Production runner is disabled unless immutable image, verifier identity, persistent artifact root, trusted repository map, approved check policy, and PostgreSQL are configured.",
+    "A durable unique attempt prevents duplicate execution after concurrency or restart; a lost in-flight capability expires to UNKNOWN.",
+    "Only the finite node-validate-syntax check can be enabled by this implementation."
+  ],
+  "execution": {
+    "startedAt": "UNKNOWN",
+    "finishedAt": "2026-10-13T07:42:38Z",
+    "planningDuration": "UNKNOWN",
+    "buildDuration": "UNKNOWN",
+    "validationDuration": "UNKNOWN",
+    "auditDuration": "UNKNOWN",
+    "repairAttempts": 2,
+    "model": "UNKNOWN",
+    "configIdentity": "UNKNOWN",
+    "tokens": "UNKNOWN",
+    "elapsedToIndependentAcceptance": "UNKNOWN"
+  }
+}

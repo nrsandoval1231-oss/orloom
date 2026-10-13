@@ -5,7 +5,7 @@ import { Config } from "../../../packages/config/src/config.js";
 import { InputValidationError, JobStore } from "../../../packages/contracts/src/job.js";
 import { MissionConflictError, MissionStore, MissionValidationError, ProgressV1 } from "../../../packages/contracts/src/mission.js";
 import { MemoryMissionStore } from "../../../packages/contracts/src/memory-mission-store.js";
-import { MissionGovernor, RecoveryJudgmentAdapter } from "../../../packages/governor/src/governor.js";
+import { MissionGovernor, RecoveryJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
 
@@ -31,7 +31,7 @@ async function body(req: IncomingMessage): Promise<Buffer> {
 function send(res: ServerResponse, status: number, data: string, type = "application/json") { res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "x-content-type-options": "nosniff", "cache-control": "no-store" }); res.end(data); }
 function parseJson(raw: Buffer): unknown { try { return JSON.parse(raw.toString()); } catch { throw new InputValidationError("invalid json"); } }
 
-export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter) {
+export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator) {
   const sessions = new Map<string, number>();
   const cloud = config.mode === "cloud";
   const sessionMaxAge = (config as Config & { sessionTtlSeconds?: number }).sessionTtlSeconds ?? 8 * 60 * 60;
@@ -92,6 +92,13 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         if(missionRoute[2]==="events"){const after=Number(new URL(req.url!,"http://local").searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));return send(res,200,JSON.stringify(await governor.events(id,after)));}
         if(missionRoute[2]==="lessons"){return send(res,200,JSON.stringify(await governor.lessons(id)));}
         const record=await governor.get(id);return record?send(res,200,JSON.stringify(record)):send(res,404,JSON.stringify({error:"Not found"}));
+      }
+      const certificateRoute=req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)\/slices\/([^/?]+)\/checks\/([^/?]+)\/certificate$/);
+      if(certificateRoute&&req.method==="GET"){
+        if(!validSession(req,config,sessions))return send(res,401,JSON.stringify({error:"Unauthorized"}));
+        if(!trustedChecks)return send(res,503,JSON.stringify({error:"Trusted verification is not configured"}));
+        const certificate=await trustedChecks.getCertificate(decodeURIComponent(certificateRoute[1]!),decodeURIComponent(certificateRoute[2]!),decodeURIComponent(certificateRoute[3]!));
+        return certificate?send(res,200,JSON.stringify(certificate)):send(res,404,JSON.stringify({error:"Certificate not found"}));
       }
       if(workerPath&&req.method==="GET"){
         const m=req.url?.match(/^\/api\/worker\/missions\/([^/]+)\/slices\/([^/]+)\/recovery-policy$/);if(m){const epoch=Number(req.headers["x-orloom-lease-epoch"]),auth=req.headers.authorization,cap=typeof auth==="string"?auth.replace(/^Bearer\s+/i,""):"",leaseToken=req.headers["x-orloom-lease-token"];if(!cap||typeof leaseToken!=="string"||!leaseToken)return send(res,401,JSON.stringify({error:"Unauthorized"}));if(!Number.isSafeInteger(epoch)||epoch<1)return send(res,400,JSON.stringify({error:"Invalid lease identity"}));return send(res,200,JSON.stringify(await governor.recoveryPolicy(decodeURIComponent(m[1]!),decodeURIComponent(m[2]!),epoch,leaseToken,cap)));}

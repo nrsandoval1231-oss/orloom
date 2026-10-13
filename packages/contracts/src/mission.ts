@@ -1,5 +1,6 @@
 /** Logical scope owner. Execution capacity is represented only by attested slots. */
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
+import type { CheckCertificateV1, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "./verification.js";
 export type Lane = string;
 export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown";
 export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown";
@@ -29,6 +30,7 @@ export interface TrustedStrategyPolicy { checkId: string; version: string; expec
 export interface LessonCandidate { id: string; lessonVersion: number; repository: string; cohort: string; fromCheckId: string; strategyId: string; rule: string; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; policyVersion: string; policyDigest: string; status: "candidate" | "promoted" | "withdrawn"; challengeDigest: string; evidenceEventIds: string[]; }
 export interface LessonValidationChallenge { version: "orloom.lesson-challenge.v1"; lessonId: string; repository: string; cohort: string; fromCheckId: string; strategyId: string; policyVersion: string; policyDigest: string; evidenceEventIds: string[]; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; }
 export interface RecoveryPolicyLease { planDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string; }
+export interface VerificationAttemptBinding { request: TrustedCheckRequestV1; capabilityHash: string; capabilityExpiresAt: string; leasePolicyDigest:string; headObservedAt: string; headObservationDigest: string; }
 export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; planDigest: string; }
 export interface MissionStore {
   configureCapacity(count: number, evidenceDigest: string | null, expiresAt: string | null): Promise<void>;
@@ -46,6 +48,13 @@ export interface MissionStore {
   lessons(missionId: string): Promise<LessonCandidate[]>;
   promoteLesson(lessonId: string, challenge: LessonValidationChallenge, reviewer: string): Promise<LessonCandidate>;
   recoveryPolicyLease(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string): Promise<RecoveryPolicyLease>;
+  createVerificationAttempt?(binding: VerificationAttemptBinding): Promise<void>;
+  submitVerification?(receipt: TrustedCheckReceiptV1, capabilityHash: string, observedHeadSha: string, observedAt: string, observationDigest: string, certificateId: string): Promise<CheckCertificateV1 | null>;
+  getCertificate?(missionId: string, sliceId: string, checkId: string): Promise<CheckCertificateV1 | null>;
+  getCertificateRequest?(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1|null>;
+  expireVerificationAttempts?(now?:Date,limit?:number):Promise<number>;
+  awaitingVerification?(checkIds:string[],limit?:number):Promise<Array<{missionId:string;sliceId:string}>>;
+  recordVerificationUnavailable?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string,reason:"candidate_unavailable"|"local_head_unavailable"):Promise<void>;
   expire(now?: Date, limit?: number): Promise<number>;
 }
 

@@ -1,0 +1,65 @@
+{
+  "packet": "ORL-C3 runner lane",
+  "status": "IMPLEMENTED_LOCAL; HOST_RUNTIME_PROOF_PENDING",
+  "repository": "work/orloom-ci",
+  "branch": "feat/trusted-verification",
+  "baseSha": "c790bfd9c09eafed25370a77d1a1edfdfc05be3f",
+  "files": [
+    "packages/verification/src/artifact-store.ts",
+    "packages/verification/src/index.ts",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/repository.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "packages/verification/src/runner.ts",
+    "apps/verifier/src/index.ts",
+    "infra/verifier-isolation/Dockerfile",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "infra/verifier-isolation/preflight-host.sh",
+    "infra/verifier-isolation/run-check.js",
+    "tests/verification-runner.test.ts",
+    ".agent/ORL-C3-RUNNER-COMPLETION.json"
+  ],
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/verification-runner.test.js", "exitCode": 0, "passed": 3, "failed": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "evidence": {
+    "tested": [
+      "content-addressed durable artifact readback and tamper rejection",
+      "Git candidate reachability, base ancestry, symlink tree rejection, and invalid trusted ref rejection",
+      "finite allowlisted check policy"
+    ],
+    "hostRunscExecuted": false,
+    "sandboxTransfer": "host-generated bounded tar streamed on stdin into per-container tmpfs; no bind mounts",
+    "cleanup": "launcher records exact newly created container ID, checks ORL-C3/run labels and configured image, and removes only that verified ID after the fixed timeout",
+    "hostImageBuiltOrDigestMeasured": false,
+    "inputManifestDigest": "UNKNOWN",
+    "artifactHashesFromHostRun": "UNKNOWN",
+    "resourceMeasurements": "UNKNOWN",
+    "realPostgresCertificateJoin": "PENDING controller integration"
+  },
+  "limits": [
+    "Local unit checks are not a live runsc execution or certificate proof.",
+    "The application factory returns no runner unless explicit trusted repository, persistent artifact, verifier identity, and immutable image configuration is supplied.",
+    "Image can be bound by locally inspected sha256 image ID or repository@sha256 digest; mutable tags are rejected.",
+    "Only node --check scripts/validate.mjs is implemented; it is not full CI.",
+    "The host proof preflight is read-only and was not run by this builder; image build/run commands are documented for controller review."
+  ],
+  "execution": {
+    "startedAt": "UNKNOWN",
+    "finishedAt": "2026-10-13T07:43:40Z",
+    "planningDuration": "UNKNOWN",
+    "buildDuration": "UNKNOWN",
+    "validationDuration": "UNKNOWN",
+    "auditDuration": "UNKNOWN",
+    "developmentCorrections": 2,
+    "formalReviewRepairs": 0,
+    "model": "UNKNOWN",
+    "configIdentity": "UNKNOWN",
+    "tokens": "UNKNOWN",
+    "elapsedToIndependentAcceptance": "UNKNOWN"
+  }
+}

@@ -1,6 +1,68 @@
-import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { CheckCertificateV1, parseTrustedCheckRequestV1, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
+import { canonicalJson } from "../../judgment/src/canonical.js";
+
+export interface TrustedCheckRunner {
+  prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
+  observeHead(repository:string):Promise<{sha:string;observedAt:string;digest:string}>;
+  run(request:TrustedCheckRequestV1,bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}):Promise<TrustedCheckReceiptV1>;
+  verifyArtifacts(receipt:TrustedCheckReceiptV1):Promise<unknown>;
+}
+export class TrustedCheckCoordinator implements TrustedCheckService {
+  private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}}>();
+  constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[]},private readonly clock=()=>new Date()){}
+  async prepare(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1>{
+    if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
+    if(!this.settings.allowedChecks.includes(checkId))throw new MissionConflictError("Check is outside trusted operator policy");
+    const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);
+    if(!record||!slice||slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(checkId)||!record.plan?.approvedAt)throw new MissionConflictError("Mission slice is not ready for trusted verification");
+    let bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};
+    try{bundle=await this.runner.prepareBundle(record.mission.repository,record.mission.baseSha,slice.candidateSha);}catch{await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
+    let head:{sha:string;observedAt:string;digest:string};
+    try{head=await this.runner.observeHead(record.mission.repository);}catch{await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
+    if(head.sha!==slice.candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
+    const now=this.clock(),expires=new Date(now.getTime()+60_000),attemptId=randomUUID();
+    const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId,sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha:slice.candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
+    const capability=randomBytes(32).toString("base64url");
+    await this.store.createVerificationAttempt({request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest});
+    this.pending.set(attemptId,{capability,bundle});return request;
+  }
+  async run(value:TrustedCheckRequestV1):Promise<TrustedCheckReceiptV1>{
+    const request=parseTrustedCheckRequestV1(value),pending=this.pending.get(request.attemptId);
+    if(!pending)throw new MissionConflictError("Trusted verifier attempt is unavailable after process restart");
+    try{return await this.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted verifier did not produce a receipt; attempt will expire UNKNOWN");}
+  }
+  async submit(value:TrustedCheckReceiptV1,capability:string):Promise<CheckCertificateV1|null>{
+    const receipt=value,request=parseTrustedCheckRequestV1(receipt.request),pending=this.pending.get(request.attemptId);
+    if(!pending||!secretMatches(pending.capability,capability))throw new MissionConflictError("Verifier capability is invalid or expired");
+    try{
+      await this.runner.verifyArtifacts(receipt);const head=await this.runner.observeHead(request.repository);
+      if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
+      return await this.store.submitVerification!(receipt,createHash("sha256").update(capability).digest("hex"),head.sha,head.observedAt,head.digest,randomUUID());
+    }finally{this.pending.delete(request.attemptId);}
+  }
+  async verifySlice(missionId:string,sliceId:string){
+    const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);if(!slice)return;
+    for(const checkId of slice.checks.filter(id=>this.settings.allowedChecks.includes(id))){const request=await this.prepare(missionId,sliceId,checkId),receipt=await this.run(request),pending=this.pending.get(request.attemptId);if(!pending)throw new MissionConflictError("Trusted verifier capability was lost");await this.submit(receipt,pending.capability);}
+  }
+  async reconcile(limit=10){
+    if(!this.store.awaitingVerification)return 0;
+    const pending=await this.store.awaitingVerification(this.settings.allowedChecks,limit);
+    for(const item of pending)await this.verifySlice(item.missionId,item.sliceId);
+    return pending.length;
+  }
+  async getCertificate(missionId:string,sliceId:string,checkId:string){
+    if(!this.store.getCertificate)return null;
+    const certificate=await this.store.getCertificate(missionId,sliceId,checkId);if(!certificate)return null;
+    const request=await this.store.getCertificateRequest?.(missionId,sliceId,checkId);if(!request||request.policyVersion!==this.settings.policyVersion||request.policyDigest!==this.settings.policyDigest||request.verifierImageDigest!==this.settings.imageDigest)return null;
+    const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);
+    if(!record||!slice||certificate.repository!==record.mission.repository||certificate.candidateSha!==slice.candidateSha||certificate.leaseEpoch!==slice.leaseEpoch||certificate.policyDigest!==this.settings.policyDigest)return null;
+    const head=await this.runner.observeHead(record.mission.repository);return head.sha===certificate.localHeadSha?certificate:null;
+  }
+  expire(now=new Date(),limit=100){return this.store.expireVerificationAttempts?this.store.expireVerificationAttempts(now,limit):Promise.resolve(0);}
+}
 
 export interface GovernorConfig { maxLanes: number; capacitySlots: number; leaseSeconds: number; trustedCheckPolicyDigest: string | null; recoveryPolicyDigest?: string | null; trustedCheckPolicy?: string[]; trustedStrategies?: Record<string,TrustedStrategyPolicy>; executionConfigured?: boolean; progressLimits?: {maxProviderCalls:number;maxInputTokens:number;maxOutputTokens:number;maxWallSeconds:number}; }
 export type RecoveryJudgmentAdapter=(snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>;

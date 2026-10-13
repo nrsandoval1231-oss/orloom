@@ -16,6 +16,9 @@ export interface Config {
   capacityEvidenceExpiresAt?: string | null;
   trustedCheckPolicy?: string[];
   trustedCheckPolicyDigest?: string | null;
+  trustedVerifierId?: string | null;
+  trustedVerifierImageDigest?: string | null;
+  trustedVerificationPolicyVersion?: string | null;
   trustedStrategies?: Record<string, { checkId: string; version: string; expectedSignal: string; scopeClasses: string[]; targetCheckIds: string[] }>;
   recoveryPolicyDigest?: string | null;
   workerMaxProviderCalls?: number;
@@ -111,6 +114,16 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     catch { throw new Error("ORLOOM_TRUSTED_CHECK_POLICY_JSON must be a non-empty array of trusted check identifiers"); }
   }
   const trustedCheckPolicyDigest = trustedCheckPolicy.length ? createHash("sha256").update(JSON.stringify(trustedCheckPolicy)).digest("hex") : null;
+  const trustedVerifierId=env.ORLOOM_VERIFIER_ID?.trim()||null;
+  const verifierImage=env.ORLOOM_VERIFIER_IMAGE?.trim()||null;
+  const imageMatch=verifierImage?.match(/(?:@sha256:|^sha256:)([a-f0-9]{64})$/);
+  const explicitImageDigest=env.ORLOOM_VERIFIER_IMAGE_SHA256?.trim()||null;
+  if(verifierImage&&!imageMatch)throw new Error("ORLOOM_VERIFIER_IMAGE must be immutable and digest pinned");
+  const trustedVerifierImageDigest=explicitImageDigest??imageMatch?.[1]??null;
+  const trustedVerificationPolicyVersion=env.ORLOOM_VERIFICATION_POLICY_VERSION?.trim()||null;
+  if(trustedVerifierId!==null&&!/^[a-zA-Z0-9_.:-]{1,128}$/.test(trustedVerifierId))throw new Error("ORLOOM_VERIFIER_ID is invalid");
+  if(trustedVerifierImageDigest!==null&&(!/^[a-f0-9]{64}$/.test(trustedVerifierImageDigest)||(imageMatch&&trustedVerifierImageDigest!==imageMatch[1])))throw new Error("Verifier image digest does not match the immutable image reference");
+  if(trustedVerificationPolicyVersion!==null&&!/^[a-zA-Z0-9_.-]{1,64}$/.test(trustedVerificationPolicyVersion))throw new Error("ORLOOM_VERIFICATION_POLICY_VERSION is invalid");
   let trustedStrategies:Config["trustedStrategies"]={};try{const parsed:unknown=JSON.parse(env.ORLOOM_TRUSTED_STRATEGIES_JSON?.trim()||"{}");if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)||Object.keys(parsed).length>100)throw new Error();for(const[id,value]of Object.entries(parsed)){if(!/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(id)||!value||typeof value!=="object"||Array.isArray(value))throw new Error();const v=value as Record<string,unknown>;if(typeof v.checkId!=="string"||!trustedCheckPolicy.includes(v.checkId)||typeof v.version!=="string"||!/^[a-zA-Z0-9_.-]{1,64}$/.test(v.version)||typeof v.expectedSignal!=="string"||!v.expectedSignal.trim()||v.expectedSignal.length>256||!Array.isArray(v.scopeClasses)||v.scopeClasses.length<1||v.scopeClasses.length>32||v.scopeClasses.some(x=>typeof x!=="string"||! /^[a-zA-Z0-9_-]{1,64}$/.test(x))||!Array.isArray(v.targetCheckIds)||v.targetCheckIds.length<1||v.targetCheckIds.length>100||v.targetCheckIds.some(x=>typeof x!=="string"||!trustedCheckPolicy.includes(x)))throw new Error();trustedStrategies![id]={checkId:v.checkId,version:v.version,expectedSignal:v.expectedSignal,scopeClasses:[...v.scopeClasses] as string[],targetCheckIds:[...v.targetCheckIds] as string[]};}}catch{throw new Error("ORLOOM_TRUSTED_STRATEGIES_JSON must map strategy IDs to trusted checks, versions, expected signals, scope classes and target check IDs");}
   const recoveryPolicyDigest=Object.keys(trustedStrategies??{}).length?createHash("sha256").update(JSON.stringify(trustedStrategies)).digest("hex"):null;
   const workerMaxProviderCalls=Number(env.ORLOOM_WORKER_MAX_PROVIDER_CALLS??"0"),workerMaxInputTokens=Number(env.ORLOOM_WORKER_MAX_INPUT_TOKENS??"0"),workerMaxOutputTokens=Number(env.ORLOOM_WORKER_MAX_OUTPUT_TOKENS??"0"),workerMaxWallSeconds=Number(env.ORLOOM_WORKER_MAX_WALL_SECONDS??"0");
@@ -128,6 +141,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     capacityEvidenceExpiresAt: capacitySlots ? new Date(capacityEvidenceExpiresAt!).toISOString() : null,
     trustedCheckPolicy,
     trustedCheckPolicyDigest,
+    trustedVerifierId,trustedVerifierImageDigest,trustedVerificationPolicyVersion,
     trustedStrategies,
     recoveryPolicyDigest,
     workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds,workerAllowedProviders,workerAllowedModels,

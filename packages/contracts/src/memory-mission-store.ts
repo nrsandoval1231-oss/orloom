@@ -7,6 +7,11 @@ import { canonicalRepository, GovernorActionV1, Lane, LeaseGrant, LessonCandidat
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const newSecret = () => randomBytes(32).toString("base64url");
 export class MemoryMissionStore implements MissionStore {
+  async createVerificationAttempt():Promise<void>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot issue certification attempts");}
+  async submitVerification():Promise<never>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot certify receipts");}
+  async getCertificate():Promise<null>{return null;}
+  async getCertificateRequest():Promise<null>{return null;}
+  async awaitingVerification():Promise<never[]>{return[];}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private slots = new Map<number, { digest: string; expires: string; enabled: boolean }>(); private occupied = new Map<string, number>();
   private progress = new Map<string, ProgressV1>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
