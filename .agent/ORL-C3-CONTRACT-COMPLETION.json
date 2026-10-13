@@ -1,0 +1,45 @@
+{
+  "packet": "ORL-C3 contract-only READY node",
+  "status": "PASS",
+  "repository": "work/orloom-ci",
+  "branch": "feat/trusted-verification",
+  "baseSha": "545279c7b53fef8453c8e50ae0bc7f0d790959af",
+  "files": [
+    "packages/contracts/src/verification.ts",
+    "tests/verification-contract.test.ts",
+    ".agent/ORL-C3-CONTRACT-COMPLETION.json"
+  ],
+  "exports": [
+    "TrustedCheckRequestV1",
+    "TrustedCheckReceiptV1",
+    "TrustedVerifierCapabilityV1",
+    "CheckCertificateV1",
+    "TrustedCheckService",
+    "parseTrustedCheckRequestV1",
+    "trustedCheckRequestDigestV1",
+    "parseTrustedCheckReceiptV1",
+    "receiptDigestV1",
+    "parseTrustedVerifierCapabilityV1",
+    "parseCheckCertificateV1",
+    "TRUSTED_CHECK_LIMITS"
+  ],
+  "validation": [
+    { "command": "npm ci", "exitCode": 0, "result": "99 packages installed; audit reported 0 vulnerabilities" },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "node --test dist/tests/verification-contract.test.js", "exitCode": 0, "passed": 4, "failed": 0 },
+    { "command": "git diff --check", "exitCode": 0 },
+    { "command": "bounded integration parser correction: npm run build; npm run typecheck; node --test dist/tests/verification-contract.test.js; git diff --check", "exitCodes": [0, 0, 0, 0], "passed": 4, "failed": 0 },
+    { "command": "architect temporal-rule correction: npm run build; npm run typecheck; node --test dist/tests/verification-contract.test.js; git diff --check", "exitCodes": [0, 0, 0, 0], "passed": 5, "failed": 0 }
+  ],
+  "utc": {
+    "finishedAt": "2026-10-13T07:14:04Z",
+    "startedAt": "UNKNOWN"
+  },
+  "limitations": [
+    "Trusted capability and attempt reporting grace of 120 seconds is a server-side certification responsibility; pure parsing does not consult wall clock.",
+    "Contract code does not issue capabilities, execute checks, access Git/host state, mutate policy/database state, or certify outcomes.",
+    "No runtime, PostgreSQL, provider, deployment, or product-readiness claim is made.",
+    "C1a controlled PostgreSQL acceptance remains an external prerequisite for runner and certification work."
+  ]
+}
