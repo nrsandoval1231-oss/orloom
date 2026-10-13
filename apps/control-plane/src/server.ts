@@ -3,9 +3,9 @@ import { timingSafeEqual } from "node:crypto";
 import { randomBytes } from "node:crypto";
 import { Config } from "../../../packages/config/src/config.js";
 import { InputValidationError, JobStore } from "../../../packages/contracts/src/job.js";
-import { MissionConflictError, MissionStore, MissionValidationError, RecoveryProgress } from "../../../packages/contracts/src/mission.js";
+import { IntegrationRequestV1, MissionConflictError, MissionStore, MissionValidationError, RecoveryProgress } from "../../../packages/contracts/src/mission.js";
 import { MemoryMissionStore } from "../../../packages/contracts/src/memory-mission-store.js";
-import { MissionGovernor, RecoveryJudgmentAdapter, SchedulingJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
+import { LocalIntegrationAuthority, MissionGovernor, RecoveryJudgmentAdapter, SchedulingJudgmentAdapter, TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { workerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { createHash } from "node:crypto";
 import type { LearningActivation } from "../../../packages/learning/src/activation.js";
@@ -32,7 +32,7 @@ async function body(req: IncomingMessage): Promise<Buffer> {
 function send(res: ServerResponse, status: number, data: string, type = "application/json") { res.writeHead(status, { "content-type": `${type}; charset=utf-8`, "x-content-type-options": "nosniff", "cache-control": "no-store" }); res.end(data); }
 function parseJson(raw: Buffer): unknown { try { return JSON.parse(raw.toString()); } catch { throw new InputValidationError("invalid json"); } }
 
-export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, schedulingAdapter?:SchedulingJudgmentAdapter, learningActivation?:LearningActivation) {
+export function createControlPlane(config: Config, jobs: JobStore, missionStore: MissionStore = new MemoryMissionStore(), judgmentAdapter?: RecoveryJudgmentAdapter, trustedChecks?:TrustedCheckCoordinator, schedulingAdapter?:SchedulingJudgmentAdapter, learningActivation?:LearningActivation, localIntegration?:LocalIntegrationAuthority) {
   const sessions = new Map<string, number>();
   const cloud = config.mode === "cloud";
   const sessionMaxAge = (config as Config & { sessionTtlSeconds?: number }).sessionTtlSeconds ?? 8 * 60 * 60;
@@ -85,6 +85,16 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         const match=req.url.match(/^\/api\/lessons\/([^/?]+)\/(challenge|promote)$/)!,id=decodeURIComponent(match[1]!);
         if(match[2]==="challenge"){await body(req);if(!trustedChecks)return send(res,503,JSON.stringify({error:"Independent lesson challenger is unavailable"}));return send(res,200,JSON.stringify(await trustedChecks.challengeLesson(id)));}
         const raw=parseJson(await body(req));if(!raw||typeof raw!=="object"||Array.isArray(raw)||typeof (raw as Record<string,unknown>).challengeDigest!=="string"||Object.keys(raw).length!==1)return send(res,400,JSON.stringify({error:"Invalid accepted challenge reference"}));return send(res,200,JSON.stringify(await governor.promoteLesson(id,(raw as {challengeDigest:string}).challengeDigest)));
+      }
+      const integrationRoute=req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)\/slices\/([^/?]+)\/integrate$/);
+      if(integrationRoute&&req.method==="POST"){
+        if(!validSession(req,config,sessions))return send(res,401,JSON.stringify({error:"Unauthorized"}));
+        if(!localIntegration||!trustedChecks)return send(res,503,JSON.stringify({error:"Local integration authority is not configured"}));
+        const raw=parseJson(await body(req));if(!raw||typeof raw!=="object"||Array.isArray(raw))return send(res,400,JSON.stringify({error:"Invalid integration request"}));const v=raw as Record<string,unknown>;
+        const allowed=["expectedIntegrationSha","candidateSha","leaseEpoch","requiredCheckIds","reviewArtifactId","reviewArtifactDigest"];
+        if(Object.keys(v).length!==allowed.length||Object.keys(v).some(k=>!allowed.includes(k))||typeof v.expectedIntegrationSha!=="string"||typeof v.candidateSha!=="string"||!Number.isSafeInteger(v.leaseEpoch)||!Array.isArray(v.requiredCheckIds)||v.requiredCheckIds.some(x=>typeof x!=="string")||typeof v.reviewArtifactId!=="string"||typeof v.reviewArtifactDigest!=="string")return send(res,400,JSON.stringify({error:"Invalid integration request"}));
+        const request:IntegrationRequestV1={version:"orloom.integration-request.v1",missionId:decodeURIComponent(integrationRoute[1]!),sliceId:decodeURIComponent(integrationRoute[2]!),expectedIntegrationSha:v.expectedIntegrationSha,candidateSha:v.candidateSha,leaseEpoch:Number(v.leaseEpoch),requiredCheckIds:v.requiredCheckIds as string[],reviewArtifactId:v.reviewArtifactId,reviewArtifactDigest:v.reviewArtifactDigest};
+        return send(res,200,JSON.stringify(await governor.integrateVerifiedSlice(request,trustedChecks,localIntegration)));
       }
       const missionRoute = req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)(?:\/(plan|approve|events|lessons))?$/);
       if (missionRoute && req.method === "POST") {

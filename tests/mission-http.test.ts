@@ -12,6 +12,10 @@ test("HTTP mission path authenticates roles, fences callbacks, and keeps verific
   try{
     assert.equal((await fetch(`${base}/api/missions`,{method:"POST",body:"null"})).status,401);
     const login=await fetch(`${base}/session`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({token})});const cookie=login.headers.get("set-cookie")?.split(";")[0];assert(cookie);
+    const closedIntegration={expectedIntegrationSha:"a".repeat(40),candidateSha:"d".repeat(40),leaseEpoch:1,requiredCheckIds:["check:unit"],reviewArtifactId:"review-1",reviewArtifactDigest:"e".repeat(64)};
+    assert.equal((await fetch(`${base}/api/missions/missing/slices/first/integrate`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(closedIntegration)})).status,401,"integration requires owner session");
+    assert.equal((await fetch(`${base}/api/missions/missing/slices/first/integrate`,{method:"POST",headers:{cookie,"content-type":"application/json"},body:JSON.stringify(closedIntegration)})).status,503,"production integration remains closed without controller-only authority");
+    assert.equal((await fetch(`${base}/api/worker/missions/missing/slices/first/integrate`,{method:"POST",headers:{authorization:`Bearer ${worker}`,"content-type":"application/json"},body:JSON.stringify(closedIntegration)})).status,404,"worker capability has no integration route");
     const bad=await fetch(`${base}/api/missions`,{method:"POST",headers:{cookie,"content-type":"application/json"},body:"null"});assert.equal(bad.status,400);
     const missionResponse=await fetch(`${base}/api/missions`,{method:"POST",headers:{cookie,"content-type":"application/json"},body:JSON.stringify({repository:"owner/repo",baseSha:"a".repeat(40),objective:"two-step",acceptance:["independent check"],budgetCents:200,untrustedExtra:"discard"})});assert.equal(missionResponse.status,201);const mission=await missionResponse.json();assert.equal("untrustedExtra" in mission,false);
     assert.equal((await fetch(`${base}/api/missions/${mission.id}/plan`,{method:"POST",headers:{"content-type":"application/json"},body:"{}"})).status,401);

@@ -11,6 +11,8 @@ export interface MissionPlan { missionId: string; slices: SliceInput[]; recommen
 export interface Mission extends MissionInput { id: string; status: MissionStatus; reservedCents: number; createdAt: string; }
 export interface MissionSlice extends SliceInput { missionId: string; status: SliceStatus; leaseEpoch: number; leaseToken: string | null; leaseExpiresAt: string | null; candidateSha: string | null; evidenceRefs: string[]; }
 export interface MissionEvent { cursor: number; missionId: string; type: string; data: Record<string, unknown>; createdAt: string; }
+export interface IntegrationRequestV1 { version:"orloom.integration-request.v1"; missionId:string; sliceId:string; expectedIntegrationSha:string; candidateSha:string; leaseEpoch:number; requiredCheckIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; }
+export interface IntegrationIntentV1 extends IntegrationRequestV1 { treeSha:string; certificateIds:string[]; certificateDigests:string[]; state:"pending"|"integrated"|"unknown"; observedIntegrationSha:string|null; }
 export type ProgressStatus = "started" | "passed" | "failed" | "blocked" | "unknown";
 export interface ProgressV1 {
   version: "orloom.progress.v1"; eventId: string; missionId: string; sliceId: string; leaseEpoch: number;
@@ -68,6 +70,10 @@ export interface MissionStore {
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;
   complete(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, candidateSha: string, evidenceRefs: string[]): Promise<MissionSlice>;
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;
+  createIntegrationIntent?(request:IntegrationRequestV1,treeSha:string,certificateIds:string[],certificateDigests:string[],binding:{planDigest:string;policyDigest:string}):Promise<IntegrationIntentV1>;
+  getIntegrationIntent?(request:IntegrationRequestV1):Promise<IntegrationIntentV1|null>;
+  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string):Promise<MissionSlice>;
+  markIntegrationUnknown?(request:IntegrationRequestV1,observedSha:string|null,reason:string):Promise<void>;
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
   recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;
   lessons(missionId: string): Promise<LessonCandidate[]>;
