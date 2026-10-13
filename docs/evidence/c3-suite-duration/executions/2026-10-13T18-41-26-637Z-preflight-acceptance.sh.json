@@ -1,0 +1,12 @@
+{
+  "name": "preflight-acceptance.sh",
+  "args": [],
+  "scriptSha256": "be689fc4893d3a14c241fbc35c6b098b9f99a0b4f4cc718182bf856c109285d6",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "startedUtc": "2026-10-13T18:41:26.637Z",
+  "finishedUtc": "2026-10-13T18:41:28.728Z",
+  "elapsedMs": 2091,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-duration\\executions\\2026-10-13T18-41-26-637Z-preflight-acceptance.sh"
+}

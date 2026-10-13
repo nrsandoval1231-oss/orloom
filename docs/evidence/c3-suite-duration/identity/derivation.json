@@ -1,0 +1,26 @@
+{
+  "format": "orl-c3-suite-duration-derivation-v1",
+  "status": "PASS",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "base": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceRef": "refs/heads/feat/integrated-harness",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "runtimePayloadManifestSha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a",
+  "compilerCommand": [
+    "node",
+    "node_modules/typescript/bin/tsc",
+    "--outDir",
+    "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-duration\\candidate-8f271de\\fresh-compile"
+  ],
+  "compiledFiles": 27,
+  "dependencyCopyMatches": 127,
+  "dependencyProvenance": "Byte matches controlled installed dependency tree; not a fresh registry integrity verification.",
+  "sourceBinding": "EXACT candidate, source manifest, helper manifest, and runtime payload; see candidate-8f271de/derivation.json",
+  "priorPendingRecord": {
+    "file": "derivation-pending-2026-10-13.json",
+    "sha256": "541e041440756d55df5464ce7de570a01ff762cd6fe4fb68898230fcc1dad7d3",
+    "disposition": "preserved historical unbound record"
+  },
+  "hostExecution": "NOT-RUN"
+}

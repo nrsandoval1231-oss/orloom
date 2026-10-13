@@ -1,0 +1,42 @@
+{
+  "format": "orloom-independent-runtime-evidence-review-v1",
+  "verdict": "FIX",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "attemptId": "1fdeee6f-9344-4845-a985-6a601ae150d3",
+  "runtimeResult": {
+    "persistedOutcome": "fail",
+    "receiptExitCode": 1,
+    "certificateCount": 0,
+    "runnerScriptExitCode": 1,
+    "runnerScriptElapsedMs": 312968,
+    "proofHelperStatus": "UNKNOWN after positive scenario assertion",
+    "scenariosCompleted": ["positive suite attempted; failed before reconnect, stale-ref, and controlled negative fixtures"],
+    "c3Acceptance": "NOT-PASS"
+  },
+  "evidence": [
+    "The allowlisted PostgreSQL snapshot in work/duration-before-cleanup-extracted/evidence/acceptance-snapshot.json reports exactly one attempt for this candidate, outcome fail, terminal receipt exit 1, certificatePresent false, and an empty certificates array. The request/receipt pair under the passing scenario has the same attempt ID and candidate.",
+    "The trusted stdout artifact reports successful dependency-lock admission, typecheck, clean build, and discovery, followed by serial node tests. All earlier discovered files passed. The final verification-runner test file had 13 passes and one failure: repository suite admission accepts the exact dependency pair and rejects stale locks and overrides.",
+    "That failed test reports EACCES while opening /tmp/orl-suite-admission-H8vOJD/package-lock.json for write. At exact source tests/verification-runner.test.ts:243, copyFile copies the admitted package-lock.json into the temporary fixture; at line 275, writeFile tries to overwrite it. The trusted runsc launcher stages all source files mode 0444 in packages/verification/src/runsc-launcher.ts:127, so the copied lock remains read-only to the nonroot sandbox user. This is a test-fixture permission defect, not evidence that production dependency admission or runsc isolation should be weakened.",
+    "The runtime proof helper recorded an AssertionError at runtime-acceptance.mjs:161 because the intended positive outcome was fail rather than pass. Its proof-failure.json status UNKNOWN describes the incomplete acceptance proof; it does not override the persisted verification FAIL.",
+    "Fresh pre-dispatch memory admissions were ADMITTED (3,426,869,248 and 3,417,763,840 available bytes against 2,952,790,016 required). The observed cgroup stream has 968 rows, peak memory.current 1,284,440,064 bytes, and last observed oom and oom_kill counters zero. This attempt supplies no evidence of memory exhaustion or a 360-second suite timeout."
+  ],
+  "archiveAndCleanup": {
+    "beforeCleanupArchiveSha256": "dca8ee97b4d80fd7970b537f48c454d7768837618d90343b46e6c344117a3df1",
+    "afterCleanupArchiveSha256": "82b6c100593a295f65f892dcc922f91cd88de8f543e76ba8ff383e53b2443ba9",
+    "snapshotExported": true,
+    "exactLedgerCleanupExit": 0,
+    "postflight": "PASS: canonical verifier state absent, slot free, database URL absent, no labeled C3 verifier/disposable containers/network/volumes, protected container tuple unchanged",
+    "retainedEvidenceDisposition": "Keep source, image, artifacts, archives, and evidence as immutable failed-attempt evidence. They are not active disposable database resources and do not authorize C1b reuse or a repeat C3 dispatch."
+  },
+  "boundedRepairDirection": [
+    "Change only the temporary test fixture in tests/verification-runner.test.ts so its copied package-lock.json is writable by the sandbox user before the deliberate stale-lock overwrite. Preserve the exact dependency-admission assertions and the read-only staging/production isolation policy.",
+    "Validate the affected test as a nonroot Linux user against staged read-only source, then run the mandatory full local gates on the frozen successor candidate. A Windows-only pass cannot prove this repair.",
+    "Consolidate the already-planned C4/C5 source changes before the next paid cloud proof, then freeze one new exact candidate and regenerate its source manifest, helper/image/payload bindings, independent review, and fresh capacity admission. Do not reclassify this candidate's failed receipt or reuse its image as a new candidate.",
+    "Do not reuse C3 resources for C1b unless a later exact candidate obtains a real C3 PASS and certificate; no certificate exists for this attempt."
+  ],
+  "limits": [
+    "This is independent review of retained local evidence only; no host, provider, source edit, or new runtime execution was performed.",
+    "The persisted FAIL is explained by the observed EACCES and exact test/source code path. A repaired candidate requires its own runtime evidence."
+  ]
+}

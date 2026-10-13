@@ -1,0 +1,20 @@
+{
+  "review": "Independent exact combined C1b/PR7/C2/C3 successor source review",
+  "verdict": "PASS",
+  "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "parentSha": "198156548804673a8ade8a8878c1368c9d3cd357",
+  "reviewedAtUtc": "2026-10-13T18:25:31Z",
+  "scope": "Exact clean successor source, corrected durable state, unchanged product-source/manifest bytes and completed local gates. No host, provider, deployment, PR or runtime action.",
+  "priorFindingDisposition": {
+    "id": "INT-STATE-1",
+    "result": "resolved",
+    "evidence": "The only successor diff is .agent/CURRENT_STATE.md and .agent/WORK_GRAPH.md. Both now identify the committed integrated source code SHA 1981565, its completed 97-test controller run, pending independent successor review, and open runtime/activation boundaries. They no longer describe C3 as uncommitted or claim no combined candidate. Historical packet/completion handoffs remain historical."
+  },
+  "evidence": [
+    "Git HEAD was the stated clean candidate. No production code, tests, dependency, migration, worker protocol, verifier profile, source manifest or historical evidence changed from parent 1981565. The previously reviewed combined wiring and C1b/C2/PR7/C3 source behavior therefore remain byte-identical.",
+    "Independent manifest recomputation found 123/123 exact HEAD Git blobs matching .agent/ORL-C3-SUITE-MANIFEST.sha256; manifest SHA-256 remains 1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12.",
+    "Controller log work/integrated-controller-gates-2026-10-13T18-24-12-437Z.log completed at 18:24:41.541Z: typecheck, clean build, all 97 tests passed with zero failures/skips, validation, relevant JavaScript and shell syntax, and diff checks exited 0.",
+    "Production startup still supplies neither a scheduling provider adapter nor learning activation. Promotion remains closed without controller-owned exact runtime certificate recheck; fresh SQL claim fences scheduling advice; the suite keeps serial tests, 2 GiB isolation and finite 360/390/405/420-second bounds with advisory-only v4 diagnostics."
+  ],
+  "limits": "PASS certifies exact integrated source and local gates only. Old-source C1b helper approval does not transfer to this candidate. Real PostgreSQL/runsc learning proof, an exact integrated full-suite certificate, executing-runtime identity and activation eligibility, live Jev/provider usage, measured improvement, deployment, PR delivery and parent Finish Contract remain OPEN. Prior C3 attempt 617c378 remains UNKNOWN with zero certificates."
+}

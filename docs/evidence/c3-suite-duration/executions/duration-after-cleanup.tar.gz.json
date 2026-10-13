@@ -1,0 +1,12 @@
+{
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "file": "duration-after-cleanup.tar.gz",
+  "bytes": 118879,
+  "sha256": "82b6c100593a295f65f892dcc922f91cd88de8f543e76ba8ff383e53b2443ba9",
+  "command": "set -euo pipefail; root=/var/lib/orloom/c3-suite-duration-20261013; [[ -d \"$root\" && ! -L \"$root\" ]]; cd \"$root\"; files=(); for f in 'evidence' 'artifacts' 'fixtures/fixtures.json' 'resources.tsv' 'capacity-evidence.json' 'capacity-observation.json' 'verifier-image.id' 'image-binding.json' 'stage-bindings.json' 'runtime-started.json' 'staging/identity.txt'; do [[ ! -L \"$f\" ]] || exit 65; [[ ! -e \"$f\" ]] || files+=(\"$f\"); done; (( ${#files[@]} > 0 )) || exit 66; tar -czf - -- \"${files[@]}\"",
+  "startedUtc": "2026-10-13T18:51:32.120Z",
+  "finishedUtc": "2026-10-13T18:51:32.999Z",
+  "exit": 0,
+  "stderr": ""
+}

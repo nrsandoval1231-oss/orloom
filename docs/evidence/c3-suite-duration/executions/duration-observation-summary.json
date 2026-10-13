@@ -1,0 +1,102 @@
+{
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "attempt": "1fdeee6f-9344-4845-a985-6a601ae150d3",
+  "outcome": "fail",
+  "certificates": 0,
+  "elapsedMs": 297978,
+  "image": "83f0eab13bdf13952085afceb7b61763180139fee042c5f4d417af5b607ee329",
+  "telemetry": {
+    "format": "orloom-c3-memory-observation-stream-v1",
+    "status": "OBSERVED",
+    "intervalMs": 250,
+    "maxRows": 1680,
+    "maxBytes": 2097152,
+    "maxElapsedMs": 420000,
+    "bytes": 558154,
+    "unavailableReason": "exact-cgroup-unavailable"
+  },
+  "sampleCount": 968,
+  "first": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T18:44:22.299Z",
+    "elapsedMs": 10113,
+    "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "imageDigest": "83f0eab13bdf13952085afceb7b61763180139fee042c5f4d417af5b607ee329",
+    "sandboxId": "orloom-verifier-b2dab031-1032-4d0d-bc3b-c406b5aaaa7b",
+    "containerId": "5c523e14f5e521cfb36bc4ce6756988474057538672287de907b61c1945e259f",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 12705792,
+    "memoryStat": {
+      "anon": 10387456,
+      "file": 479232,
+      "shmem": 442368
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "peak": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T18:48:40.221Z",
+    "elapsedMs": 268339,
+    "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "imageDigest": "83f0eab13bdf13952085afceb7b61763180139fee042c5f4d417af5b607ee329",
+    "sandboxId": "orloom-verifier-b2dab031-1032-4d0d-bc3b-c406b5aaaa7b",
+    "containerId": "5c523e14f5e521cfb36bc4ce6756988474057538672287de907b61c1945e259f",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 1284440064,
+    "memoryStat": {
+      "anon": 31535104,
+      "file": 1237639168,
+      "shmem": 1214926848
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "last": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T18:49:18.142Z",
+    "elapsedMs": 306260,
+    "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "imageDigest": "83f0eab13bdf13952085afceb7b61763180139fee042c5f4d417af5b607ee329",
+    "sandboxId": "orloom-verifier-b2dab031-1032-4d0d-bc3b-c406b5aaaa7b",
+    "containerId": "5c523e14f5e521cfb36bc4ce6756988474057538672287de907b61c1945e259f",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 69730304,
+    "memoryStat": {
+      "anon": 31969280,
+      "file": 33894400,
+      "shmem": 1073152
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "frames": [],
+  "events": [
+    {
+      "action": "die",
+      "cid": "5c523e14f5e521cfb36bc4ce6756988474057538672287de907b61c1945e259f",
+      "time": 1791917358,
+      "exitCode": "1"
+    },
+    {
+      "action": "destroy",
+      "cid": "5c523e14f5e521cfb36bc4ce6756988474057538672287de907b61c1945e259f",
+      "time": 1791917358
+    }
+  ]
+}

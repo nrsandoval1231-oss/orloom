@@ -1,0 +1,186 @@
+{
+  "format": "orl-c3-suite-duration-prepared-review-package-v1",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "base": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceRef": "refs/heads/feat/integrated-harness",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "sourceManifestFileCount": 123,
+  "testFileCount": 16,
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "runtimePayloadFileCount": 155,
+  "capacityObservation": "NOT-OBSERVED",
+  "runtimeAttempt": "NOT-RUN",
+  "hostActionsPerformed": 0,
+  "files": [
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\derivation.json",
+      "bytes": 5313,
+      "sha256": "1a08b516c401c0087d1fc354e8970ac3324c14c189ddc3fe37fdc14dfd73ff3b"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\prepare-runtime-files.mjs.log",
+      "bytes": 164,
+      "sha256": "58205289f83f895861ea086c1a15a9191d49f12f0b69bbc6b474783cd0f13cad"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\prepare-transfer.mjs.log",
+      "bytes": 492,
+      "sha256": "1f0a79d6f95b6a21ec1d9dcae5ee090be65630241a49d9256ca2a14c57034770"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\selected-transfer.json",
+      "bytes": 1075,
+      "sha256": "ef876be648513f8b1a1167d167083a3a95d8f94264b88a97185cb3b660e4d45e"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\transfer\\candidate-identity.json",
+      "bytes": 525,
+      "sha256": "0859b7555088a4ab9e54e3a93b56e783bbdd27f5d19a165b58671a1d1952d727"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\transfer\\candidate.bundle",
+      "bytes": 1708807,
+      "sha256": "d747e6c0eae9d26652eb5f30d30b782ec35a241166b559c3e3c44006a3c3191d"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\transfer\\runtime-files\\runtime-files-identity.json",
+      "bytes": 318,
+      "sha256": "195a2de1e0ab1c9b3830dd558b086853e4bf3feeea433e75ac1618c4b7ad44a5"
+    },
+    {
+      "file": "work\\c3-suite-duration\\candidate-8f271de\\transfer\\runtime-files\\runtime-files.sha256",
+      "bytes": 16290,
+      "sha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a"
+    },
+    {
+      "file": "work\\c3-suite-duration\\derivation-pending-2026-10-13.json",
+      "bytes": 2901,
+      "sha256": "541e041440756d55df5464ce7de570a01ff762cd6fe4fb68898230fcc1dad7d3"
+    },
+    {
+      "file": "work\\c3-suite-duration\\derivation.json",
+      "bytes": 1345,
+      "sha256": "f98377e495d5b34ea4a2de43c659bc9beca983d0be92c9856f1819549b29dd6e"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\build-suite-image.sh",
+      "bytes": 2472,
+      "sha256": "02a7af6e9ba804d0c38a9b42a4be9dd201f866aa58e28645d595cbfbb7e02b9f"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\cgroup-observer.mjs",
+      "bytes": 2164,
+      "sha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\cleanup-acceptance.sh",
+      "bytes": 5581,
+      "sha256": "52346295fc52cafa40a9d4315ca8281081a6fc2faa199d0b5f98785a1e24d45b"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\export-acceptance-snapshot.sh",
+      "bytes": 2851,
+      "sha256": "e25900fb8b5bcc4f129d30a7fbe47e4e528aceba951db2068aee48405bfefc94"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\helper-manifest.json",
+      "bytes": 3513,
+      "sha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\preflight-acceptance.sh",
+      "bytes": 2922,
+      "sha256": "be689fc4893d3a14c241fbc35c6b098b9f99a0b4f4cc718182bf856c109285d6"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\prepare-acceptance-fixtures.mjs",
+      "bytes": 4528,
+      "sha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\run-acceptance.sh",
+      "bytes": 13646,
+      "sha256": "3c35a7076005f72128304a099a07df5f82cd2815c12eaa536ac4e49d2dc4ea93"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\runtime-acceptance-entry.mjs",
+      "bytes": 1444,
+      "sha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\runtime-acceptance.mjs",
+      "bytes": 22634,
+      "sha256": "2c661ac1543c122cf6b4111dbf65431fe8a15ef14f24ee1640e950e362a9c91c"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\runtime-snapshot-export.mjs",
+      "bytes": 9349,
+      "sha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\setup-disposable-postgres.sh",
+      "bytes": 6427,
+      "sha256": "4d86672d24b90485f8a4d8f3a25dc820276d7a02830f40fc3c273d4ba8d60ff5"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\stage-acceptance.sh",
+      "bytes": 9578,
+      "sha256": "96cf6a732295f1b715075288527b7035cc34e3b18edff6a26abe6b31949d50e7"
+    },
+    {
+      "file": "work\\c3-suite-duration\\helpers\\stage-bindings.json",
+      "bytes": 932,
+      "sha256": "cda631a03beff5296137c7b0ae8db920cb7ca21bd207bd7485c33d06a1d93d2d"
+    },
+    {
+      "file": "work\\c3-suite-duration\\PREPARED-TRANSFER.md",
+      "bytes": 3272,
+      "sha256": "8867cbf59b72d994a6b7ecd907706e3f23805b912765f0405f2e7cdb0d89a19e"
+    },
+    {
+      "file": "work\\finalize-duration-package.cjs",
+      "bytes": 5050,
+      "sha256": "6fa90588bc68c0e1119f10153468a3b59b4a1ec45e2c3ca4e76163f69074b805"
+    },
+    {
+      "file": "work\\integrated-controller-gates-2026-10-13T18-24-12-437Z.log",
+      "bytes": 12112,
+      "sha256": "916de57cb1991a45e08c74ceea3fde2746fd406734797665c4b3864f2b80cc9d"
+    },
+    {
+      "file": "work\\integrated-source-review-8f271de.json",
+      "bytes": 2564,
+      "sha256": "ad7a4c24c89ede1e25eec953527b05a301793d2c04bfe513e94ab25f672d7e4c"
+    },
+    {
+      "file": "work\\package-duration-candidate.cjs",
+      "bytes": 4544,
+      "sha256": "71fa64853e5dbaf27243de3c85b47ca6d0a251816bc3a56d9705c8c188e773fe"
+    },
+    {
+      "file": "work\\postflight-duration-suite.cjs",
+      "bytes": 2659,
+      "sha256": "1438860eede89771c069169455a3026f19734e309fb776fa235066adaab9bd50"
+    },
+    {
+      "file": "work\\retain-duration-suite-evidence.cjs",
+      "bytes": 2460,
+      "sha256": "ed6bceb05a7f4616e2608bac79be0acadb0b47a14b55286fe0feb9ab6dd9a8d0"
+    },
+    {
+      "file": "work\\run-duration-suite-script.cjs",
+      "bytes": 2823,
+      "sha256": "e4f8a90d695d0089c1d86f6e471a8f065f335faea12dbbf92b095a12a840d7d8"
+    },
+    {
+      "file": "work\\upload-duration-candidate.cjs",
+      "bytes": 3576,
+      "sha256": "6636420312b3b15743bcecc41e9dd916383367d75097eaf0a83c7adc18ddb780"
+    },
+    {
+      "file": "work\\verify-duration-derivation.cjs",
+      "bytes": 2838,
+      "sha256": "8792252fabe32fda93b6a556c72a3dab1665b2f3082d56800c4cd7a8892a1820"
+    }
+  ]
+}
