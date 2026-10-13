@@ -33,7 +33,7 @@ async function reconcileVerification():Promise<void>{
 try {
   const runner=await createTrustedVerificationRunner(process.env);
   if(runner&&missions instanceof SqlMissionStore&&config.trustedCheckPolicyDigest&&config.trustedVerifierId&&config.trustedVerifierImageDigest){
-    const checkId="node-validate-syntax",policy=getCheckPolicy(checkId,process.env.ORLOOM_VERIFIER_IMAGE,config.trustedVerifierImageDigest);
+    const checkId=process.env.ORLOOM_VERIFIER_CHECK_ID??"node-validate-syntax",policy=getCheckPolicy(checkId,process.env.ORLOOM_VERIFIER_IMAGE,config.trustedVerifierImageDigest);
     if(config.trustedCheckPolicy?.includes(checkId)&&policy.imageDigest===config.trustedVerifierImageDigest&&(!config.trustedVerificationPolicyVersion||config.trustedVerificationPolicyVersion===policy.version)){
       trustedChecks=new TrustedCheckCoordinator(missions,runner,{imageDigest:policy.imageDigest,verifierId:config.trustedVerifierId,policyDigest:policy.digest,leasePolicyDigest:config.trustedCheckPolicyDigest,policyVersion:policy.version,allowedChecks:[checkId]});
       verificationTimer=setInterval(()=>{void reconcileVerification();},5_000);verificationTimer.unref();

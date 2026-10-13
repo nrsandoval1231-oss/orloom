@@ -1,18 +1,23 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile, copyFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
 import { extractCandidateBundle } from "../packages/verification/src/repository.js";
-import { getCheckPolicy } from "../packages/verification/src/policy.js";
+import { getCheckPolicy, NODE_REPO_SUITE_BINDING } from "../packages/verification/src/policy.js";
 import { classifyLauncherOutput } from "../packages/verification/src/runsc-launcher.js";
 
 const exec = promisify(execFile);
 async function git(dir: string, ...args: string[]): Promise<void> {
   await exec("git", ["-C", dir, "-c", "user.name=Verifier Fixture", "-c", "user.email=fixture@example.invalid", ...args], { windowsHide: true });
+}
+async function resolveManifestFiles(manifestPath: string, trackedFiles: () => Promise<Array<{ path: string; bytes: number; sha256: string }>>) {
+  try { return JSON.parse(await (await import("node:fs/promises")).readFile(manifestPath, "utf8")).files; }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; return trackedFiles(); }
 }
 
 test("durable artifacts are content-addressed and reject tampering and symlinks", async () => {
@@ -58,6 +63,98 @@ test("check policy is finite and worker text cannot select commands", () => {
   assert.deepEqual(policy.argv, ["/usr/local/bin/node", "--check", "scripts/validate.mjs"]);
   assert.equal(policy.cwd, "/work/source");
   assert.throws(() => getCheckPolicy("bash -c arbitrary"), /finite policy/);
+  for (const inherited of ["toString", "constructor", "__proto__", "hasOwnProperty"]) assert.throws(() => getCheckPolicy(inherited), /finite policy/);
+});
+
+test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
+  const suite = getCheckPolicy("node-repo-suite-v1");
+  assert.equal(suite.version, "orloom.node-repo-suite.v1");
+  assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
+  assert.equal(suite.timeoutMs, 60_000);
+  assert.equal(suite.maxConcurrent, 1);
+  assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
+  assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
+  assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
+  assert.equal(NODE_REPO_SUITE_BINDING.resources.pids, 128);
+  assert.equal(NODE_REPO_SUITE_BINDING.resources.workTmpfsBytes, 512 * 1024 * 1024);
+  const { ADMITTED_DEPENDENCIES } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
+  assert.equal(ADMITTED_DEPENDENCIES["package.json"], NODE_REPO_SUITE_BINDING.dependencies.packageJsonSha256);
+  assert.equal(ADMITTED_DEPENDENCIES["package-lock.json"], NODE_REPO_SUITE_BINDING.dependencies.packageLockSha256);
+  const { readFile } = await import("node:fs/promises");
+  const runner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
+  const orderSource = runner.match(/const POLICY_STAGE_ORDER = Object\.freeze\((\[[^\]]+\])\)/)?.[1];
+  assert.ok(orderSource); assert.deepEqual(JSON.parse(orderSource), NODE_REPO_SUITE_BINDING.stages.map(stage => stage.name));
+  const isolation = await readFile("infra/verifier-isolation/launch-verifier.sh", "utf8");
+  for (const bound of ["echo 128", "echo 1g", "echo 512m", "--network=none", "--read-only"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
+  const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
+  assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
+  assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
+});
+
+test("repository suite admission accepts the exact dependency pair and rejects stale locks and overrides", async () => {
+  const { ADMITTED_DEPENDENCIES, admitSuiteInput, verifySuiteInputUnchanged } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-suite-admission-"));
+  try {
+    for (const file of Object.keys(ADMITTED_DEPENDENCIES)) await copyFile(file, path.join(root, file));
+    await admitSuiteInput(root, [{ path: "README.md" }, { path: ".env.example" }, { path: "package-lock.json" }]);
+    const { readFile } = await import("node:fs/promises");
+    const crypto = await import("node:crypto");
+    const gitManifest = async () => {
+      const { stdout: tracked } = await exec("git", ["ls-files", "-z"], { encoding: "utf8", windowsHide: true });
+      return Promise.all(tracked.split("\0").filter(Boolean).map(async file => {
+        const bytes = await readFile(file);
+        return { path: file.replaceAll("\\", "/"), bytes: bytes.length, sha256: crypto.createHash("sha256").update(bytes).digest("hex") };
+      }));
+    };
+    const actualManifest = await resolveManifestFiles("/work/manifest.json", gitManifest);
+    const fixtureManifestPath = path.join(root, "manifest.json");
+    await writeFile(fixtureManifestPath, JSON.stringify({ files: [{ path: "fixture", bytes: 0, sha256: "0".repeat(64) }] }));
+    assert.equal((await resolveManifestFiles(fixtureManifestPath, async () => { throw new Error("must not require Git in extracted sandbox"); }))[0].path, "fixture");
+    assert.deepEqual(await resolveManifestFiles(path.join(root, "absent-manifest.json"), async () => [{ path: "checkout", bytes: 0, sha256: "0".repeat(64) }]), [{ path: "checkout", bytes: 0, sha256: "0".repeat(64) }]);
+    await admitSuiteInput(root, actualManifest);
+    await verifySuiteInputUnchanged(process.cwd(), actualManifest);
+    await assert.rejects(admitSuiteInput(root, [{ path: "dist/stale.test.js" }]), /credential\/dependency configuration/);
+    await writeFile(path.join(root, "README.md"), "fixture source");
+    const manifest = [{ path: "README.md", bytes: 14, sha256: (await import("node:crypto")).createHash("sha256").update("fixture source").digest("hex") }];
+    await verifySuiteInputUnchanged(root, manifest);
+    await writeFile(path.join(root, "README.md"), "candidate altered");
+    await assert.rejects(verifySuiteInputUnchanged(root, manifest), /modified manifested input/);
+    await assert.rejects(admitSuiteInput(root, []), /empty input/);
+    await assert.rejects(admitSuiteInput(root, [{ path: ".github/workflows/check.yml" }]), /workflow/);
+    for (const forbidden of ["src/secrets/token.json", "src/credentials.json", "state/run.db", "keys/signing.pfx", "src/.env.local", "src/node_modules/pkg/index.js", "src/.npmrc", "package-lock.json.bak"]) {
+      await assert.rejects(admitSuiteInput(root, [{ path: forbidden }]), /credential\/dependency configuration/);
+    }
+    await writeFile(path.join(root, ".npmrc"), "registry=https://untrusted.invalid");
+    await assert.rejects(admitSuiteInput(root, [{ path: "README.md" }]), /override/);
+    await rm(path.join(root, ".npmrc"));
+    await writeFile(path.join(root, "package-lock.json"), "changed");
+    await assert.rejects(admitSuiteInput(root, [{ path: "README.md" }]), /differs from admitted/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("repository suite requires discovered tests and treats failures, timeouts and truncation distinctly", async () => {
+  const { discoverSuiteTests } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
+  const { classifySuiteStage, runStage, executeStages } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/stage-runner.js")).href);
+  assert.deepEqual(discoverSuiteTests(["x.js", "b.test.js", "a.test.js"]), ["a.test.js", "b.test.js"]);
+  assert.deepEqual(discoverSuiteTests(["x.js"]), []);
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-suite-stage-")), script = path.join(root, "fixture.mjs"), later = path.join(root, "later.txt");
+  const run = (opts = {}) => runStage(process.execPath, [script], { cwd: root, timeoutMs: 5000, maxLogBytes: 128, env: process.env, ...opts });
+  try {
+    await writeFile(script, "process.stdout.write('ready')");
+    let result = await run(); assert.equal(classifySuiteStage(result), "pass"); assert.equal(result.stdout.toString(), "ready");
+    await writeFile(script, "process.exit(3)"); result = await run(); assert.equal(classifySuiteStage(result), "fail");
+    await writeFile(script, "setInterval(() => {}, 1000)"); result = await run({ timeoutMs: 40 }); assert.equal(classifySuiteStage(result), "unknown"); assert.equal(result.timedOut, true);
+    await writeFile(script, "process.stdout.write('x'.repeat(4096))"); result = await run(); assert.equal(classifySuiteStage(result), "unknown"); assert.equal(result.truncated, true);
+    result = await runStage(path.join(root, "missing-executable"), [], { cwd: root, timeoutMs: 500, env: process.env }); assert.equal(classifySuiteStage(result), "unknown"); assert.equal(result.spawnError, true);
+    await writeFile(script, "process.exit(2)");
+    const stages = [
+      { name: "fails", file: process.execPath, args: [script], cwd: root, env: process.env },
+      { name: "must-not-run", file: process.execPath, args: ["-e", "require('node:fs').writeFileSync(process.argv[1], 'ran')", later], cwd: root, env: process.env },
+    ];
+    const ran = await executeStages(stages, { remainingMs: () => 500 });
+    assert.equal(ran.length, 1); assert.equal(ran[0].outcome, "fail");
+    await assert.rejects(import("node:fs/promises").then(fs => fs.access(later)), { code: "ENOENT" });
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("launcher process-result fixtures reject infrastructure ambiguity and accept only matching check markers", async () => {

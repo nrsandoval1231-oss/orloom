@@ -4,6 +4,8 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 
 const input = '/work';
+const checkPolicy = process.env.ORLOOM_CHECK_POLICY;
+if (checkPolicy !== 'node-validate-syntax' && checkPolicy !== 'node-repo-suite-v1') process.exit(64);
 const manifest = JSON.parse(await readFile(path.join(input, 'manifest.json'), 'utf8'));
 if (manifest.version !== 'orloom.input-manifest.v1' || !Array.isArray(manifest.files) || manifest.files.length > 4000) process.exit(64);
 let total = 0;
@@ -15,6 +17,14 @@ for (const item of manifest.files) {
   if (hash !== item.sha256 || bytes.length !== item.bytes || bytes.length > 4 * 1024 * 1024) process.exit(65);
   total += bytes.length;
   if (total > 16 * 1024 * 1024) process.exit(65);
+}
+if (checkPolicy === 'node-repo-suite-v1') {
+  const child = spawn('/usr/local/bin/node', ['/opt/orloom-verifier/run-repo-suite.js'], {
+    cwd: path.join(input, 'source'), env: { PATH: '/usr/local/bin:/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C', CI: '1', ORLOOM_CHECK_POLICY: 'node-repo-suite-v1' },
+    stdio: 'inherit', shell: false,
+  });
+  const code = await new Promise(resolve => { child.on('close', (c, signal) => resolve(signal ? 70 : c ?? 70)); child.on('error', () => resolve(70)); });
+  process.exit(code);
 }
 const stdout = [], stderr = [];
 const child = spawn('/usr/local/bin/node', ['--check', 'scripts/validate.mjs'], {

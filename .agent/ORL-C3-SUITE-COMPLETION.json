@@ -1,0 +1,97 @@
+{
+  "packet": "ORL-C3-SUITE",
+  "node": "node-repo-suite-v1",
+  "status": "BUILDER_HANDOFF_LOCAL_GATES_PASS_RUNTIME_PROOF_PENDING",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseSha": "226e4d9ac26f2b83b05b82f678dc07966a1b6bdb",
+  "candidateImplementationTree": "3f03b356fc35cb166341b2b469ec09318a964bab",
+  "changedFiles": [
+    ".env.example",
+    "README.md",
+    "apps/control-plane/src/main.ts",
+    "docs/verification.md",
+    "infra/verifier-isolation/Dockerfile",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "infra/verifier-isolation/run-check.js",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/stage-runner.js",
+    "infra/verifier-isolation/suite-policy.js",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-runner.test.ts",
+    "infra/verifier-isolation/suite-policy.js"
+  ],
+  "validation": [
+    {
+      "command": "npm run typecheck",
+      "exit": 0
+    },
+    {
+      "command": "npm run build",
+      "exit": 0
+    },
+    {
+      "command": "node --test dist/tests/*.test.js",
+      "exit": 0,
+      "result": "69 passed, 0 failed"
+    },
+    {
+      "command": "node scripts/validate.mjs",
+      "exit": 0
+    },
+    {
+      "command": "node --check infra/verifier-isolation/run-check.js",
+      "exit": 0
+    },
+    {
+      "command": "node --check infra/verifier-isolation/run-repo-suite.js",
+      "exit": 0
+    },
+    {
+      "command": "node --check infra/verifier-isolation/stage-runner.js",
+      "exit": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "command": "node --check infra/verifier-isolation/suite-policy.js"
+    }
+  ],
+  "preservedFailures": [
+    {
+      "command": "npm run typecheck",
+      "exit": 1,
+      "reason": "initial workspace had no installed TypeScript dependency; subsequent installation used npm ci --ignore-scripts"
+    },
+    {
+      "command": "node scripts/validate.mjs",
+      "exit": 1,
+      "reason": "initial example selected node-validate-syntax despite validator requiring example configuration values blank; value was cleared and all final gates rerun"
+    }
+  ],
+  "rawFinalGateLog": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-final-gates.log",
+  "runtimeProof": "NOT_RUN; controller must review image scripts, build the pinned image, measure capacity, and separately prove real runsc/PostgreSQL behavior",
+  "scopeLimits": [
+    "No claim of cloud, GitHub Actions, vulnerability audit, deployment, or product acceptance",
+    "The suite uses exact package and lock SHA-256 admission literals; lock changes require image and policy review",
+    "The 1 CPU, 1 GiB, 512 MiB /work and 60 second suite profile remains subject to root measured host acceptance"
+  ],
+  "timing": {
+    "utcStart": "UNKNOWN",
+    "utcFinish": "2026-10-13T09:25:58Z",
+    "planning": "UNKNOWN",
+    "build": "UNKNOWN",
+    "validation": "about 12 seconds for final gates; see raw log",
+    "audit": "NOT_PERFORMED",
+    "repairCount": 2
+  },
+  "lane": "single Luna lane",
+  "model": "UNKNOWN",
+  "configIdentity": "UNKNOWN",
+  "tokens": "UNKNOWN"
+}

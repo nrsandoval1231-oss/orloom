@@ -11,8 +11,9 @@ readonly STATE_ROOT=$SHARED_STATE_PARENT/verifier
 readonly SLOT=$STATE_ROOT/state
 readonly IMAGE=${ORLOOM_VERIFIER_IMAGE:?must set the locally pinned verifier image digest}
 readonly NAME=${1:?trusted caller must provide an allocated sandbox name}
+readonly POLICY=${2:?trusted caller must provide a finite policy id}
 [[ ${EUID:-$(id -u)} -eq 0 ]] || { echo 'must run as host root' >&2; exit 64; }
-[[ $# -eq 1 && $NAME =~ ^orloom-verifier-[a-f0-9-]{1,40}$ ]] || { echo 'invalid verifier sandbox name' >&2; exit 64; }
+[[ $# -eq 2 && $NAME =~ ^orloom-verifier-[a-f0-9-]{1,40}$ && ( $POLICY == node-validate-syntax || $POLICY == node-repo-suite-v1 ) ]] || { echo 'invalid verifier invocation' >&2; exit 64; }
 [[ $IMAGE =~ ^(sha256:[a-f0-9]{64}|[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64})$ ]] || { echo 'image must be digest pinned' >&2; exit 64; }
 [[ -x $DOCKER && -x /usr/bin/flock && -x /usr/bin/sync ]] || { echo 'Docker, flock or sync unavailable' >&2; exit 69; }
 [[ -d /run && ! -L /run && -d /var/lib && ! -L /var/lib && -d $SHARED_STATE_PARENT && ! -L $SHARED_STATE_PARENT ]] || { echo 'trusted state parent is unsafe' >&2; exit 69; }
@@ -77,10 +78,10 @@ name_matches=$("$DOCKER" --config "$config" --host "$SOCKET" ps --all --quiet --
 write_slot '' creating
 container_id=$("$DOCKER" --config "$config" --host "$SOCKET" create --interactive --pull=never \
   --name "$NAME" --label=orloom.packet=ORL-C3 --label="orloom.run=$NAME" --runtime=runsc --network=none --read-only --user=65532:65532 \
-  --cap-drop=ALL --security-opt=no-new-privileges:true --pids-limit=64 --memory=256m \
-  --memory-swap=256m --cpus=0.5 \
+  --cap-drop=ALL --security-opt=no-new-privileges:true --pids-limit="$([[ $POLICY == node-repo-suite-v1 ]] && echo 128 || echo 64)" --memory="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1g || echo 256m)" \
+  --memory-swap="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1g || echo 256m)" --cpus="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1 || echo 0.5)" --env="ORLOOM_CHECK_POLICY=$POLICY" \
   --tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700 \
-  --tmpfs=/work:rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700 \
+  --tmpfs="/work:rw,exec,nosuid,nodev,size=$([[ $POLICY == node-repo-suite-v1 ]] && echo 512m || echo 32m),uid=65532,gid=65532,mode=0700" \
   --entrypoint=/bin/sh "$IMAGE" -ec 'tar -xf - -C /work && cd /work/source && exec /usr/local/bin/node /opt/orloom-verifier/run-check.js')
 [[ $container_id =~ ^[a-f0-9]{64}$ ]] || { container_id=''; echo 'Docker returned an invalid container ID; slot remains quarantined' >&2; exit 70; }
 write_slot "$container_id" running

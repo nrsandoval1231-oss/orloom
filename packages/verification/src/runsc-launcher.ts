@@ -71,7 +71,7 @@ export class LocalRunscLauncher implements SandboxLauncher {
       let stdout = "", launcherStderr = "";
       let launcherExitCode: number | null = null, launcherSignal: string | undefined, launcherTimedOut = false, launcherKilled = false, launcherTruncated = false;
       try {
-        const completed = await exec("/bin/bash", [this.options.launcherScript, name], {
+        const completed = await exec("/bin/bash", [this.options.launcherScript, name, policy.id], {
           timeout: this.options.timeoutMs ?? policy.timeoutMs, maxBuffer: 256 * 1024, encoding: "utf8", windowsHide: true,
           env: { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", ORLOOM_VERIFIER_IMAGE: this.options.image, HOME: "/root", LANG: "C" },
         });
