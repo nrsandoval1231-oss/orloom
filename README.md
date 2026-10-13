@@ -1,6 +1,6 @@
 # Orloom
 
-Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. The worker branch contains a broker, bounded DeepSeek tool protocol, exact-SHA GitHub checkout, and stdin-only credential-free `runsc` runtime path. Those modules are not proof of an installed pinned sandbox image, a live worker, a provider call, trusted CI acceptance, or a deployed verifier.
+Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. The worker branch contains a broker, bounded DeepSeek tool protocol, exact-SHA checkout, and stdin-only credential-free `runsc` runtime path. A bounded remote fixture run exercised production broker/runtime code on the existing DO host and stopped at `awaiting_verification`; it did not call DeepSeek or prove trusted CI acceptance or a deployed verifier. See [the retained runtime checkpoint](work/worker-runtime-proof/RUNTIME-PROOF-RESULT.md).
 
 ## Run locally
 
@@ -34,7 +34,7 @@ Worker claims use `POST /api/worker/claim` with the separately configured `ORLOO
 
 There is no verifier or integration endpoint in this slice. Builder results remain `awaiting_verification`, and dependent slices remain `waiting_dependency` until a later independently reviewed verifier implementation supplies trusted evidence. Arbitrary evidence references cannot advance the gate.
 
-Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. The B worker implementation has not been deployed, run on the DO worker, exercised with real PostgreSQL or DeepSeek, or accepted by an independent verifier.
+Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. The bounded B broker/runtime fixture was exercised on the DO worker, but the production worker service is not deployed, and the path has not been exercised with real PostgreSQL or DeepSeek or accepted by an independent verifier.
 
 ## ORL-005B worker prerequisites
 
@@ -52,7 +52,7 @@ The current durable worker progress sink stores digest-addressed R2 records and 
 
 `db/migrations/001_initial.sql` defines PostgreSQL state and constraints. `SqlJobStore` uses a small query interface and is exercised on embedded PGlite, which runs PostgreSQL-compatible SQL in-process. Cloud mode deliberately refuses startup until a persistent PostgreSQL adapter is wired; it must never silently fall back to memory.
 
-The adapters implement narrow repository-only GitHub checkout tokens separately from check-write installation tokens, webhook HMAC verification, and conditional hash-addressed R2 operations. A typed Codex SDK constructor remains isolated from the DeepSeek worker path. The worker never reads the owner desktop OAuth cache. No actual provider/GitHub/R2 call, remote sandbox run, sustained build, or live acceptance has been performed. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker setup.
+The adapters implement narrow repository-only GitHub checkout tokens separately from check-write installation tokens, webhook HMAC verification, and conditional hash-addressed R2 operations. A typed Codex SDK constructor remains isolated from the DeepSeek worker path. The worker never reads the owner desktop OAuth cache. No actual provider/GitHub/R2 call, sustained build, or live acceptance has been performed; only the bounded remote fixture sandbox/broker path is proven. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker setup.
 
 ## Intended deployment topology
 

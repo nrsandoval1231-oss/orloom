@@ -1,0 +1,29 @@
+{
+  "packet": "ORL-005B remote broker/runtime checkpoint",
+  "primaryRun": {
+    "startUtc": "2026-10-13T18:25:14Z",
+    "finishUtc": "2026-10-13T18:25:20Z",
+    "durationMs": 5381,
+    "lane": "single implementation worker",
+    "model": "UNKNOWN",
+    "configIdentity": "UNKNOWN",
+    "measuredModelTokens": "UNKNOWN; no live provider request",
+    "fixtureCounters": { "inputTokens": 26, "outputTokens": 21, "providerCalls": 5, "meaning": "synthetic provider fixture counters only" }
+  },
+  "controllerRepeat": {
+    "startUtc": "2026-10-13T18:28:21Z",
+    "finishUtc": "2026-10-13T18:28:26Z",
+    "durationMs": 5082,
+    "providerCalls": 0,
+    "compiledFilesCompared": 32,
+    "mismatches": 0
+  },
+  "planningDuration": "UNKNOWN",
+  "implementationDuration": "UNKNOWN",
+  "validationDuration": "UNKNOWN",
+  "independentAuditDuration": "PENDING",
+  "repairCount": 2,
+  "elapsedToIndependentAcceptance": null,
+  "billing": { "deepseekCalls": 0, "confirmedUsd": 0, "reservedUsd": 0, "capUsd": 5 },
+  "failedAttemptsRetained": 3
+}

@@ -1,0 +1,15 @@
+{
+  "version": "orloom.provider-spend-ledger.v1",
+  "currency": "USD",
+  "aggregateCap": 5.00,
+  "confirmedSpend": 0.00,
+  "reservedSpend": 0.00,
+  "remainingUnreserved": 5.00,
+  "status": "READY_FOR_SERIAL_RESERVATION",
+  "scope": "first DeepSeek validation including all probes; no other work may use this allowance",
+  "requests": [],
+  "updatedAtUtc": "2026-10-13T14:39:01Z",
+  "metadataRecheckedAtUtc": "2026-10-13T18:28:26Z",
+  "sharedLedgerPath": "/var/lib/orloom/provider-spend-ledger.json",
+  "clientSecretFile": "ABSENT; metadata only"
+}

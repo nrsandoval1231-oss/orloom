@@ -1,23 +1,21 @@
-# Actual DockerWorkerRuntime proof: current boundary and minimal seam
+# Actual DockerWorkerRuntime proof: current source seam
 
-## Finding
+## Current source finding
 
-The existing `DockerWorkerRuntime` does not expose a local-checkout injection. `DockerWorkerRuntimeOptions` supplies only the `ReadOnlyCheckoutToken` (`createCheckoutToken`), checks, scratch root, Docker path, and image reference. `DockerWorkspace.checkout()` calls `checkoutExact(...)` directly. `checkoutExact()` always fetches `https://github.com/${lease.mission.repository}.git` after requesting a checkout token. Its interface has no Git remote/fetch transport parameter and does not accept a fixture directory. A fake token provider therefore cannot keep the test local: the subsequent Git fetch still targets GitHub.
+The current candidate has a narrow `DockerWorkerRuntimeOptions.checkoutTransport` seam. `DockerWorkspace.checkout()` passes it into production `checkoutExact(...)`. The transport supplies only a source to the fixed fetch operation; `checkoutExact` still validates the repository and full base SHA, executes the constrained Git fetch and detached checkout, and verifies `rev-parse HEAD === lease.mission.baseSha`. No directory or runtime override is needed.
 
-There is a second execution constraint: `DockerWorkspace.checkout()` rejects when `process.platform !== "linux"`. This development host is Windows. The only target Linux host is the dedicated DO host, where no remote work is authorized until the sandbox source is frozen and the controller dispatches it.
+`DockerWorkspace.checkout()` is Linux-only. The development machine is Windows, so proof must run on the existing dedicated DO worker. The old `run_proof.py` remains a sandbox protocol fixture and does not exercise the broker or provider. It cannot be used as PR2 runtime acceptance.
 
-Therefore the current `run_proof.py` remains a compiled `sandbox-entry.js` stdio fixture. It does not instantiate `DockerWorkerRuntime`, claim the checkout/bridge path, or validate the provider/broker. No workaround was attempted using PATH shims, Git config tricks, DNS/TLS redirection, live GitHub access, or a fake runtime.
+## Proof requirements
 
-## Minimal source seam requested
+The live proof uses a disposable bare Git repository, a token provider that fails if called, an immutable built image ID, and a fixed trusted check map. It exercises the actual broker `executeLease`, HTTP control protocol, DeepSeek client, and DockerWorkerRuntime in one lease. It verifies source-to-sandbox transfer, a model tool call, fixed check, candidate commit/bundle, content-addressed evidence readback, awaiting-verification handoff, and exact container cleanup. These checks do not establish GitHub App checkout, R2, production worker bootstrap, representative build capacity, or six-lane capacity.
 
-To run the real runtime against a disposable local Git fixture, add a narrow optional checkout-fetch dependency to the production `checkoutExact` call path (with the normal GitHub HTTPS fetch as the unchanged default). The fixture implementation must fetch from a local bare Git repository without external network. Keep `checkoutExact`'s existing immutable repository/base checks and final `rev-parse HEAD === lease.mission.baseSha` check outside the injected transport so the fixture cannot bypass identity validation. Do not add an unrestricted `checkoutDirectory` override or injectable whole-runtime implementation.
+The earlier source-review findings on abortable write drain and exact ID/label cleanup were addressed in repair 1. Runtime evidence must still inspect exact container IDs/names after `close()` and establish the protected-container snapshot is unchanged; source tests alone do not prove Docker/runsc behavior.
 
-A future test can then create a disposable bare fixture repository, use a fixed synthetic token provider, construct the actual compiled `DockerWorkerRuntime` with a digest-pinned image and fixed trusted check map, and open two workspaces concurrently. It should verify each workspace sees only its fixture checkout, perform read/replace/check/snapshot and candidate-bundle validation, force an abort during a bounded large RPC, call `close`, and verify both exact `orloom-worker-*` container IDs/names have disappeared. These are local transport and runtime lifecycle checks only, not provider or lane-capacity proof.
+## Runtime result (2026-10-13)
 
-## Existing runtime RPC/cleanup notes
+The actual remote runtime path now passes on the existing dedicated DO host. See [retained runtime evidence](runtime-proof-pass.json) and [bounded result](RUNTIME-PROOF-RESULT.md). The run exercised production `executeLease`, local authenticated HTTP claim/result routes, `DockerWorkerRuntime`, exact-SHA checkout through the existing transport seam, `runsc`, candidate/bundle creation, evidence readback, and cancellation cleanup. It used a deterministic provider fixture and ends only at `awaiting_verification`; it is not a DeepSeek call or verification.
 
-The current `DockerRpc.request()` caps JSON request size at 16,000,000 bytes and waits for `stdin.write()` drain before awaiting the response. A large request with an abort during that drain wait deserves a targeted regression after freeze; the abort handler kills the Docker client process, but the drain wait itself has no abort listener. The cleanup method launches `docker rm --force --time 1 <name>` and resolves on process close without checking the exit code, so an actual-runtime test must inspect the exact owned name/ID after `workspace.close()` instead of treating `close()` alone as cleanup proof.
+The run exposed and fixed a production cleanup defect: the Docker CLI does not support `docker rm --time`, so cleanup left its stopped owned containers. Removal now uses the supported `docker rm --force <exact-id>` arguments, guarded by exact ownership checks. The CLI-argv regression and remote proof pass; earlier failed runtime records are retained alongside the pass.
 
-## State
-
-Source review only. No source files edited; no GitHub access, Docker build, SSH, provider call, or host mutation. Source hashes and target runtime state remain UNKNOWN pending freeze and dispatch.
+The host's expected `/etc/orloom/infisical-client-secret` file was absent at the last metadata-only check. No Infisical retrieval or DeepSeek request was made. The shared host ledger remains at USD 0 confirmed and USD 0 reserved of the existing USD 5 cap. Real provider, GitHub App checkout, R2, production service bootstrap, representative build capacity, six-lane capacity, verifier/integration, and product completion remain unproven.

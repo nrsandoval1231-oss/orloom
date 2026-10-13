@@ -84,6 +84,8 @@ export interface DockerContainerControl {
   remove(id: string): Promise<void>;
 }
 
+export function dockerRemoveArgs(id: string): string[] { return ["rm", "--force", id]; }
+
 export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>): Promise<void> {
   if (!/^[a-f0-9]{64}$/i.test(id)) throw new WorkerProtocolError("Docker returned an invalid container identity");
   const current = await control.inspect(id);
@@ -154,7 +156,7 @@ function dockerControl(docker: string, configDirectory: string): DockerContainer
       if (typeof parsed.Id !== "string" || !parsed.Config?.Labels || typeof parsed.Config.Labels !== "object" || Array.isArray(parsed.Config.Labels)) throw new WorkerProtocolError("Docker inspection omitted container identity or ownership labels");
       return { id: parsed.Id, labels: parsed.Config.Labels as Record<string, string> };
     },
-    async remove(id) { await dockerCommand(docker, configDirectory, ["rm", "--force", "--time", "1", id], 7_000); }
+    async remove(id) { await dockerCommand(docker, configDirectory, dockerRemoveArgs(id), 7_000); }
   };
 }
 

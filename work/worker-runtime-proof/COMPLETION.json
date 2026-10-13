@@ -1,70 +1,58 @@
 {
-  "packet": "ORL-B-SANDBOX-PROOF",
-  "status": "PREPARED_FOR_CONTROLLER_REVIEW",
-  "startUtc": "UNKNOWN (initial packet work began before a timestamp was captured)",
-  "finishUtc": "2026-10-13T04:01:04Z",
+  "packet": "ORL-005B remote broker/runtime checkpoint",
+  "status": "PASS_BOUNDED_RUNTIME; LIVE_PROVIDER_AND_INDEPENDENT_REVIEW_PENDING",
   "repository": "outputs/orloom",
   "branch": "feat/deepseek-worker-broker",
+  "committedHead": "8bbcfffbf631e5ad2972e34b41284198afc566e2",
   "baseSha": "2d45b64e24817a14826a6c9466145909680fec0b",
-  "changedFiles": [
-    "work/worker-runtime-proof/README.md",
-    "work/worker-runtime-proof/PACKET.json",
-    "work/worker-runtime-proof/COMPLETION.json",
-    "work/worker-runtime-proof/prepare_context.py",
-    "work/worker-runtime-proof/run_proof.py",
-    "work/worker-runtime-proof/build_candidate.sh",
-    "work/worker-runtime-proof/cleanup_owned.sh",
-    "work/worker-runtime-proof/fixtures/concurrent-workspaces.json"
+  "sourceManifest": {
+    "path": "work/worker-runtime-proof/runtime-source-manifest.json",
+    "sha256": "cc44ff425c91f7ef9b6422817b61f93adf66b1ffa11c841c99294c30332717c5"
+  },
+  "result": {
+    "runId": "orloom-pr2-20261013182514-1d792e61",
+    "startedAtUtc": "2026-10-13T18:25:14Z",
+    "finishedAtUtc": "2026-10-13T18:25:20Z",
+    "result": "awaiting_verification",
+    "evidence": "work/worker-runtime-proof/runtime-proof-pass.json",
+    "evidenceSha256": "bfb0b15be5dba1be08c3ca7326bf9ed65a4825b3c635fe7cf6a26f9fc2ab2bb9",
+    "controllerRepeat": {
+      "runId": "orloom-pr2-20261013182821-7eb00659",
+      "evidence": "work/worker-runtime-proof/controller-runtime-proof.json",
+      "evidenceSha256": "630e56836e1245396d5a718fc28f86e25df0198735868a89cdd9e74ec1ef095c",
+      "result": "awaiting_verification",
+      "compiledDistFilesCompared": 32,
+      "compiledDistMismatches": 0
+    },
+    "provider": "deterministic fixture; live calls 0; fixture counters are not real token usage",
+    "candidateIsNotVerified": true
+  },
+  "changes": [
+    "Fixed Docker cleanup argv to use supported `docker rm --force <exact-id>` after exact ownership checks.",
+    "Added CLI-argv regression test.",
+    "Added bounded production broker/DockerWorkerRuntime fixture harness and retained pass/failure evidence."
   ],
   "validation": {
-    "pythonSyntax": "PASS; bundled Python py_compile plus runner --help",
-    "fixtureAndPacketJson": "PASS; Node JSON parser",
-    "shellSyntax": "PASS; Git Bash bash -n and expected argument-validation exit 2",
-    "remoteBuild": "NOT RUN; frozen candidate and root dispatch required",
-    "remoteDockerProof": "NOT RUN; frozen candidate and root dispatch required",
-    "sourceChanges": "NONE",
-    "protectedContainerMutation": "NONE",
-    "tokens": "UNKNOWN"
+    "nodeCheckProofScript": "PASS",
+    "typecheckBuild": "PASS via npm test build step",
+    "tests": "PASS 40/40",
+    "runtime": "PASS bounded remote fixture only",
+    "providerLive": "NOT RUN; Infisical client-secret file absent",
+    "infisicalRetrieval": "NOT RUN; expected root-owned bootstrap file absent",
+    "spendLedger": "USD 0 confirmed; USD 0 reserved; USD 5 remaining",
+    "protectedCodexContainer": "PASS unchanged",
+    "ownedContainerCleanup": "PASS; no Orloom-owned containers remain",
+    "finalControllerGates": "PASS: npm run typecheck; npm test (build and 40 tests); npm run validate; node --check prove-broker.mjs; git diff --check, all exit 0",
+    "independentReview": "PENDING"
   },
-  "evidenceLimits": "Preparation checkpoint only. Frozen source hashes, protected-container baseline values, resource measurements, remote image build/runtime result, and post-run cleanup proof remain UNKNOWN pending controller dispatch.",
-  "notes": "Parent-verified pinned base digest recorded. No repository source changed. Scripts use generated proof-only image/container names, exact labels, no provider credentials, no volumes, and no binds.",
-  "fileHashes": [
-    {
-      "path": "work/worker-runtime-proof/README.md",
-      "sha256": "c35483477c6c1e27d8cffa44a851dea3cdbfb77c8f0f729d09f96e52bdf4da3f"
-    },
-    {
-      "path": "work/worker-runtime-proof/PACKET.json",
-      "sha256": "69f2ed8aad6e753207c50d14c2ff2b710d5ea4dc47078d708d1541bf4c25d822"
-    },
-    {
-      "path": "work/worker-runtime-proof/prepare_context.py",
-      "sha256": "78c12a0be47dd8532384366b3a28226cda4fd987c77970c844222a0953c4f47f"
-    },
-    {
-      "path": "work/worker-runtime-proof/run_proof.py",
-      "sha256": "8f13e9d154bf9b3e5328c79149c62ec3442b18d0834b36f8377eff3c1c684ed1"
-    },
-    {
-      "path": "work/worker-runtime-proof/build_candidate.sh",
-      "sha256": "10b8d477c5271d8b318f9b2959dfa94b96aad9cda25c0de2d02e989c115d8a6f"
-    },
-    {
-      "path": "work/worker-runtime-proof/cleanup_owned.sh",
-      "sha256": "da4fa3732428d03eb5926840ab5e639478308915b7d6dbeaf701a9dc4de8bb60"
-    },
-    {
-      "path": "work/worker-runtime-proof/fixtures/concurrent-workspaces.json",
-      "sha256": "db8ac395ae779abd7961aa714e44adf30453977cdb309fed59e4db3f4e36c4c7"
-    }
+  "failedAttempts": [
+    "work/worker-runtime-proof/attempt-01-runtime-proof.json",
+    "work/worker-runtime-proof/attempt-02-runtime-proof.json",
+    "work/worker-runtime-proof/attempt-03-runtime-proof.json"
   ],
-  "reviewRepairs": [
-    "Protocol response reader now uses selector-driven incremental reads under a deadline, so partial lines cannot block.",
-    "Protocol frame cap is 16,000,000 bytes and separate from the 64,000-byte check-output assertion.",
-    "Proof image tag is inspected once and containers are created with the immutable image ID.",
-    "All Docker CLI calls use /usr/bin/docker, the explicit local socket, an initially empty private config directory, and a sanitized environment.",
-    "Runner cleanup validates exact container IDs, exact names, and all provenance labels; standalone cleanup requires the same hashes and IDs.",
-    "Runner captures codex-universal ID, StartedAt, RestartCount, and status before and after, failing on change.",
-    "The build context contains exactly the Dockerfile and compiled sandbox entry; identity metadata stays outside the context."
-  ]
+  "limitations": [
+    "No live DeepSeek API/model/pricing measurement or provider outcome.",
+    "GitHub App checkout, R2, production worker service bootstrap, production Hostinger A deployment, real PostgreSQL on this host, representative build capacity, six live lanes, verifier, integration, PR publication, and product completion remain unproven."
+  ],
+  "authority": "No push, merge, deployment, or certification performed."
 }

@@ -1,0 +1,75 @@
+{
+  "version": "orloom.pr2.runtime-proof.v1",
+  "runId": "orloom-pr2-20261013150043-a40cba97",
+  "startedAtUtc": "2026-10-13T15:00:43.678Z",
+  "status": "FAIL",
+  "mode": "fixture",
+  "candidate": {
+    "branch": "feat/deepseek-worker-broker",
+    "head": "8bbcfffbf631e5ad2972e34b41284198afc566e2"
+  },
+  "scope": "actual executeLease / HTTP control protocol / DockerWorkerRuntime; isolated local fixture; no integration, push, verification, or PR",
+  "provider": {
+    "kind": "deterministic test double",
+    "liveCalls": 0
+  },
+  "controls": {
+    "claim": "PASS",
+    "terminalResults": [
+      {
+        "outcome": "UNKNOWN",
+        "evidenceRefCount": 2,
+        "acknowledged": "PASS"
+      }
+    ],
+    "leaseEpoch": 1,
+    "capacitySlot": 1,
+    "baseSha": "7aceeb247881204b0595ececf7a96b2211257ac6",
+    "policyDigest": "fdbe543b6ded2d1fe89b5f3dceb1520c30b7f10b1fe5644c78c2f18300a460ac",
+    "missionId": "8df40f30-673d-4419-b088-ab5483c42028",
+    "sliceId": "slice-runtime",
+    "result": "unknown",
+    "progressSummary": [
+      {
+        "ordinal": 1,
+        "phase": "provider-tool-probe",
+        "status": "started",
+        "providerCalls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      }
+    ],
+    "candidateSha": null,
+    "resultEvidenceRefs": []
+  },
+  "docker": {
+    "imageRef": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+    "protectedBefore": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "protectedAfter": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "containers": []
+  },
+  "artifacts": [],
+  "limitations": [
+    "GitHub App checkout, R2, production worker bootstrap, production Hostinger A deployment, representative build capacity, and six live lanes are not proven."
+  ],
+  "failureType": "Error",
+  "providerFailureMayBeUnknown": false,
+  "finishedAtUtc": "2026-10-13T15:00:46.221Z",
+  "durationMs": 2543,
+  "usage": {
+    "calls": 0,
+    "inputTokens": 0,
+    "outputTokens": 0
+  },
+  "result": "UNKNOWN"
+}
