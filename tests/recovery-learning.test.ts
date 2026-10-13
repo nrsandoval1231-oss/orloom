@@ -29,9 +29,10 @@ const strategies = {
   "strategy:recovery": { checkId: "check:recovery", version: "fixture-v1", expectedSignal: "the same fixture check returns 42 after the approved repair", scopeClasses: ["src"], targetCheckIds: [targetCheckId] },
 };
 
-function config(targetCheckIds: string[] = [targetCheckId], scopeClasses: string[] = ["src"], sharedCheckId = false) {
+function config(targetCheckIds: string[] = [targetCheckId], scopeClasses: string[] = ["src"], sharedCheckId = false, competingAlternative = false) {
   const trustedStrategies = {
     ...strategies,
+    ...(competingAlternative ? { "strategy:other": { ...strategies["strategy:recovery"], targetCheckIds, scopeClasses } } : {}),
     "strategy:baseline": { ...strategies["strategy:baseline"], targetCheckIds, scopeClasses },
     "strategy:recovery": { ...strategies["strategy:recovery"], checkId: sharedCheckId ? "check:baseline" : strategies["strategy:recovery"].checkId, targetCheckIds, scopeClasses },
   };
@@ -75,7 +76,7 @@ function jevTransport(options: { holdFirstRecoveryChoice?: boolean } = {}) {
   return { fetch, started, releaseChoice, calls: () => callCount, setTerminal: (value: boolean) => { terminal = value; } };
 }
 
-async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[]; scopeClasses?: string[]; sharedCheckId?: boolean } = {}) {
+async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[]; scopeClasses?: string[]; sharedCheckId?: boolean; competingAlternative?: boolean } = {}) {
   const db = new PGlite();
   const artifactTempRoot = await mkdtemp(join(tmpdir(), "orloom-c1b-artifacts-"));
   assert(artifactTempRoot.startsWith(join(tmpdir(), "orloom-c1b-artifacts-")));
@@ -108,7 +109,7 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
     },
   };
   let store = new SqlMissionStore(sql);
-  const cfg = config(options.targetCheckIds, options.scopeClasses, options.sharedCheckId);
+  const cfg = config(options.targetCheckIds, options.scopeClasses, options.sharedCheckId, options.competingAlternative);
   await store.configureCapacity(6, cfg.capacityEvidenceDigest!, cfg.capacityEvidenceExpiresAt!);
   const transport = jevTransport(options);
   const jev = new JevClient({ apiKey: "fixture-only-key", modelId, allowedModelIds: new Set([modelId]), limits: { maxInputBytes: 64_000, maxResponseBytes: 32_000, timeoutMs: 2_000 }, fetch: transport.fetch });
@@ -138,7 +139,8 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
   };
   let currentHead = "";
   const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: sha("fixture-image"), verifierId: "fixture-verifier-v1", policyDigest: cfg.trustedCheckPolicyDigest!, leasePolicyDigest: cfg.trustedCheckPolicyDigest!, policyVersion: "fixture-v1", allowedChecks: cfg.trustedCheckPolicy ?? [], attemptLifetimeMs: 60_000 });
-  let server = createControlPlane(cfg, jobs, store, judgmentAdapter, coordinator);
+  const fixtureActivation = { assertAccepted: async () => {} }; // Controlled fixture only; not runtime acceptance.
+  let server = createControlPlane(cfg, jobs, store, judgmentAdapter, coordinator, undefined, fixtureActivation);
   let base = "";
   const listen = async () => {
     await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(0, "127.0.0.1", resolve); });
@@ -168,7 +170,7 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
     reconnect: async () => {
       await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
       store = new SqlMissionStore(sql);
-      server = createControlPlane(cfg, jobs, store, judgmentAdapter, new TrustedCheckCoordinator(store, runner, { imageDigest: sha("fixture-image"), verifierId: "fixture-verifier-v1", policyDigest: cfg.trustedCheckPolicyDigest!, leasePolicyDigest: cfg.trustedCheckPolicyDigest!, policyVersion: "fixture-v1", allowedChecks: cfg.trustedCheckPolicy ?? [], attemptLifetimeMs: 60_000 }));
+      server = createControlPlane(cfg, jobs, store, judgmentAdapter, new TrustedCheckCoordinator(store, runner, { imageDigest: sha("fixture-image"), verifierId: "fixture-verifier-v1", policyDigest: cfg.trustedCheckPolicyDigest!, leasePolicyDigest: cfg.trustedCheckPolicyDigest!, policyVersion: "fixture-v1", allowedChecks: cfg.trustedCheckPolicy ?? [], attemptLifetimeMs: 60_000 }), undefined, fixtureActivation);
       await listen();
       const login = await request("POST", "/session", { token: cfg.sessionToken }); assert.equal(login.status, 204);
     },
@@ -176,12 +178,12 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
   };
 }
 
-async function createMission(ctx: Awaited<ReturnType<typeof setup>>, repository: string, sliceIds: string[], scopeBySlice: Record<string, string[]> = {}) {
+async function createMission(ctx: Awaited<ReturnType<typeof setup>>, repository: string, sliceIds: string[], scopeBySlice: Record<string, string[]> = {}, checks = ["strategy:baseline", "strategy:recovery"]) {
   const { status, value } = await ctx.request("POST", "/api/missions", {
     repository, baseSha: sha(`${repository}-base`).slice(0, 40), objective: "Exercise a real fixed recovery check and durable lesson policy.", acceptance: ["The same fixed check succeeds after an approved repair."], budgetCents: 90_000,
   }, { cookie: ctx.cookie });
   assert.equal(status, 201);
-  const slices = sliceIds.map(id => ({ id, objective: `Run fixed check for ${id}`, dependencies: [], owner: "fixture-owner", scopes: scopeBySlice[id] ?? [`src/recovery/${id}`], checks: ["strategy:baseline", "strategy:recovery"], budgetCents: 10_000 }));
+  const slices = sliceIds.map(id => ({ id, objective: `Run fixed check for ${id}`, dependencies: [], owner: "fixture-owner", scopes: scopeBySlice[id] ?? [`src/recovery/${id}`], checks, budgetCents: 10_000 }));
   assert.equal((await ctx.request("POST", `/api/missions/${value.id}/plan`, { recommendedBy: "owner-fixture", slices }, { cookie: ctx.cookie })).status, 201);
   assert.equal((await ctx.request("POST", `/api/missions/${value.id}/approve`, {}, { cookie: ctx.cookie })).status, 200);
   return value.id as string;
@@ -194,7 +196,7 @@ async function claim(ctx: Awaited<ReturnType<typeof setup>>) {
   const lease = result.value;
   const policyResult = await ctx.request("GET", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/recovery-policy`, undefined, leaseHeaders(lease));
   assert.equal(policyResult.status, 200);
-  assert.deepEqual(Object.keys(policyResult.value.strategies).sort(), ["strategy:baseline", "strategy:recovery"]);
+  assert.deepEqual(Object.keys(policyResult.value.strategies).sort(), Object.keys(ctx.cfg.trustedStrategies!).filter(id => lease.slice.checks.includes(id)).sort());
   return { lease, policy: policyResult.value };
 }
 
@@ -401,8 +403,20 @@ test("trusted recovery evidence is challenged, promoted, selected later, then wi
     assert.equal(selected.value.snapshot.lessonBindings[0].challengeDigest, challenge.value.attestationDigest);
     assert.equal(selected.value.action.strategyId, "strategy:recovery", "Jev sees the promoted strategy first among finite authorized alternatives");
     assert.deepEqual(selected.value.action.lessonBindings, selected.value.snapshot.lessonBindings);
+    assert.equal((await ctx.request("GET", `/api/lessons/${candidate.id}/impact`)).status, 401);
+    const pendingImpact = await ctx.request("GET", `/api/lessons/${candidate.id}/impact`, undefined, { cookie: ctx.cookie });
+    assert.equal(pendingImpact.status, 200);
+    assert.equal(pendingImpact.value.decisions.length, 1);
+    assert.equal(pendingImpact.value.decisions[0].outcome, "pending");
+    assert.equal(pendingImpact.value.measuredImprovement, null);
     const contradiction = await trustedProgress(ctx, later.lease, later.policy, `later-contradiction-${randomUUID()}`, 2, "strategy:recovery", "fail");
     assert.equal((await report(ctx, later.lease, contradiction)).status, 200);
+    const failedImpact = await ctx.request("GET", `/api/lessons/${candidate.id}/impact`, undefined, { cookie: ctx.cookie });
+    assert.equal(failedImpact.status, 200);
+    assert.equal(failedImpact.value.decisions[0].outcome, "fail");
+    assert.equal(failedImpact.value.decisions[0].attemptId, contradiction.trustedAttemptId);
+    assert.equal(failedImpact.value.decisions[0].receiptDigest, contradiction.evidenceRefs[0]!.slice(7));
+    assert.equal(failedImpact.value.measuredImprovement, null, "an applied preference and failure do not prove improvement");
     const withdrawn = await ctx.request("GET", `/api/missions/${laterMission}/lessons`, undefined, { cookie: ctx.cookie });
     assert.equal(withdrawn.value.find((row: any) => row.id === candidate.id)?.status, "withdrawn", "one trusted contradiction withdraws the exact promoted version");
     const freshMission = await createMission(ctx, "fixture/recovery-proof", ["after-withdrawal"]);
@@ -413,6 +427,82 @@ test("trusted recovery evidence is challenged, promoted, selected later, then wi
     assert.equal(freshDecision.status, 200);
     assert.deepEqual(freshDecision.value.snapshot.lessonBindings, [], "withdrawn lessons are absent from fresh decisions");
     assert.equal(ctx.transport.calls(), 6, "each committed Governor judgment used exactly one injected SDK-backed adapter request");
+  } finally { await ctx.close(); }
+});
+
+test("verified lesson changes a later comparable choice and retains pass and UNKNOWN outcomes across reconnect", async () => {
+  const ctx = await setup({ competingAlternative: true });
+  try {
+    const repository = "fixture/measured-choice";
+    const checks = ["strategy:baseline", "strategy:other", "strategy:recovery"];
+    await createMission(ctx, repository, ["before"], {}, checks);
+    const before = await claim(ctx);
+    const baseline = await report(ctx, before.lease, await trustedProgress(ctx, before.lease, before.policy, `before-${randomUUID()}`, 1, "strategy:baseline", "fail"));
+    assert.equal(baseline.value.action.strategyId, "strategy:other");
+    assert.deepEqual(baseline.value.action.lessonBindings, []);
+    const sourceMission = await createMission(ctx, repository, ["source-a", "source-b"]);
+    for (const id of ["source-a", "source-b"]) { const grant = await claim(ctx); await runEpisode(ctx, grant.lease, grant.policy, id); }
+    const candidate = (await ctx.store.lessons(sourceMission))[0]!;
+    const challenge = await ctx.coordinator.challengeLesson(candidate.id);
+    assert.equal(challenge.decision, "accepted");
+    assert.equal((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: challenge.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+    for (const outcome of ["pass", "unknown"] as const) {
+      await createMission(ctx, repository, [`later-${outcome}`], {}, checks);
+      const later = await claim(ctx);
+      const choice = await report(ctx, later.lease, await trustedProgress(ctx, later.lease, later.policy, `${outcome}-baseline-${randomUUID()}`, 1, "strategy:baseline", "fail"));
+      assert.equal(choice.value.snapshot.alternatives[0].id, "strategy:other", "approved alternatives are identical before and after promotion");
+      assert.equal(choice.value.action.strategyId, "strategy:recovery", "verified preference changes the fixed-choice adapter's subsequent decision");
+      assert.equal(choice.value.action.lessonBindings[0].id, candidate.id);
+      const result = await trustedProgress(ctx, later.lease, later.policy, `${outcome}-outcome-${randomUUID()}`, 2, "strategy:recovery", outcome);
+      if (outcome === "pass") assert.equal((await report(ctx, later.lease, result)).status, 200);
+    }
+    await ctx.reconnect();
+    const audit = await ctx.request("GET", `/api/lessons/${candidate.id}/impact`, undefined, { cookie: ctx.cookie });
+    assert.equal(audit.status, 200);
+    assert.deepEqual(audit.value.counts, { applied: 2, pass: 1, fail: 0, unknown: 1, pending: 0 });
+    assert(audit.value.decisions.every((d: any) => d.preferenceChangedOrder && d.attemptId && d.receiptDigest));
+    assert.equal(audit.value.measuredImprovement, null, "choice change is demonstrated; fixtures and UNKNOWN do not establish a live performance gain");
+  } finally { await ctx.close(); }
+});
+
+test("impact retains an authorized outcome if another lease withdraws the lesson before check creation", async () => {
+  const ctx = await setup();
+  try {
+    const repository="fixture/withdraw-before-attempt";
+    const missionId=await createMission(ctx,repository,["a","b"]);
+    for(const id of ["a","b"]){const grant=await claim(ctx);await runEpisode(ctx,grant.lease,grant.policy,id);}
+    const candidate=(await ctx.store.lessons(missionId))[0]!;
+    const challenge=await ctx.coordinator.challengeLesson(candidate.id);
+    assert.equal((await ctx.request("POST",`/api/lessons/${candidate.id}/promote`,{challengeDigest:challenge.attestationDigest},{cookie:ctx.cookie})).status,200);
+    await createMission(ctx,repository,["later","withdrawer"]);
+    const later=await claim(ctx),withdrawer=await claim(ctx);
+    for(const grant of [later,withdrawer]){
+      assert.equal((await report(ctx,grant.lease,await trustedProgress(ctx,grant.lease,grant.policy,`failure-${randomUUID()}`,1,"strategy:baseline","fail"))).status,200);
+    }
+    await trustedProgress(ctx,withdrawer.lease,withdrawer.policy,`contradiction-${randomUUID()}`,2,"strategy:recovery","fail");
+    assert.equal((await ctx.store.getLesson!(candidate.id))?.status,"withdrawn");
+    const receipt=await trustedProgress(ctx,later.lease,later.policy,`after-withdrawal-${randomUUID()}`,2,"strategy:recovery","unknown");
+    const audit=await ctx.request("GET",`/api/lessons/${candidate.id}/impact`,undefined,{cookie:ctx.cookie});
+    assert.equal(audit.status,200);
+    const decision=audit.value.decisions.find((d:any)=>d.sliceId===later.lease.slice.id);
+    assert.equal(decision.attemptId,receipt.trustedAttemptId);
+    assert.equal(decision.outcome,"unknown");
+    assert.equal(decision.lessonStillBoundAtAttempt,false);
+    assert.equal(audit.value.counts.pending,0);
+    assert.equal(audit.value.counts.fail,1);
+    assert.equal(audit.value.counts.unknown,1);
+  }finally{await ctx.close();}
+});
+
+test("independent challenger rejects a candidate cohort differing from its persisted observations", async () => {
+  const ctx = await setup();
+  try {
+    const missionId = await createMission(ctx, "fixture/cohort-binding", ["a", "b"]);
+    for (const id of ["a", "b"]) { const grant = await claim(ctx); await runEpisode(ctx, grant.lease, grant.policy, id); }
+    const candidate = (await ctx.store.lessons(missionId))[0]!;
+    await ctx.db.query("UPDATE operational_lessons SET cohort='docs' WHERE id=$1", [candidate.id]);
+    const challenged = await ctx.coordinator.challengeLesson(candidate.id);
+    assert.equal(challenged.decision, "rejected");
   } finally { await ctx.close(); }
 });
 

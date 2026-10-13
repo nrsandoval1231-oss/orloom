@@ -33,6 +33,15 @@ test("memory scheduling ranks critical path and applies validated advice only at
   assert.equal((await store.getMission(mission.id))?.mission.reservedCents,100);
 });
 
+test("scheduler and optional learning activation retain separate dependency slots",async()=>{
+  const {store,mission}=await memoryPlan([slice("a","src/a.ts"),slice("b","src/b.ts")],1);
+  let adviceCalls=0,activationCalls=0;
+  const governor=new MissionGovernor(store,config,undefined,async choices=>{adviceCalls++;return result(`${mission.id}:${choices.choices[1]!.sliceId}`);},{assertAccepted:async()=>{activationCalls++;}});
+  const grant=await governor.claim();assert(grant);assert.equal(grant.slice.id,"b");assert.equal(adviceCalls,1);
+  await assert.rejects(governor.promoteLesson("missing-lesson","e".repeat(64)));
+  assert.equal(activationCalls,1,"learning activation remains the fifth dependency and is checked before lesson lookup");
+});
+
 test("advice is skipped for zero or one eligible choice and Jev context is capped at 32",async()=>{
   const zero=await memoryPlan([slice("parent","src/parent.ts"),slice("child","src/child.ts",["parent"])],1);assert(await zero.store.claim(300,policy));
   const empty=await zero.store.schedulingSnapshot!(policy,recovery);assert.equal(empty.choices.length,0);
