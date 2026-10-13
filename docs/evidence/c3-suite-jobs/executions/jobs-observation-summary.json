@@ -1,0 +1,263 @@
+{
+  "candidate": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "attempt": "ff440387-899e-45c8-802d-fad73bb3ee51",
+  "outcome": "unknown",
+  "certificates": 0,
+  "elapsedMs": 54818,
+  "image": "386f3393c2900a05cc95910ad441e6a139e928549248e537714e387c7a50807c",
+  "telemetry": {
+    "format": "orloom-c3-memory-observation-stream-v1",
+    "status": "OBSERVED",
+    "intervalMs": 250,
+    "maxRows": 960,
+    "maxBytes": 1048576,
+    "maxElapsedMs": 240000,
+    "bytes": 101293,
+    "unavailableReason": "exact-cgroup-unavailable"
+  },
+  "sampleCount": 176,
+  "first": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T14:04:01.992Z",
+    "elapsedMs": 7953,
+    "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+    "imageDigest": "386f3393c2900a05cc95910ad441e6a139e928549248e537714e387c7a50807c",
+    "sandboxId": "orloom-verifier-cf415045-096b-4e72-a57e-99d0bb4cc19f",
+    "containerId": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 14155776,
+    "memoryStat": {
+      "anon": 10706944,
+      "file": 1396736,
+      "shmem": 434176
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "peak": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T14:04:54.912Z",
+    "elapsedMs": 61215,
+    "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+    "imageDigest": "386f3393c2900a05cc95910ad441e6a139e928549248e537714e387c7a50807c",
+    "sandboxId": "orloom-verifier-cf415045-096b-4e72-a57e-99d0bb4cc19f",
+    "containerId": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 1073688576,
+    "memoryStat": {
+      "anon": 27234304,
+      "file": 1031405568,
+      "shmem": 1029287936
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 96,
+      "oom": 0,
+      "oom_kill": 0
+    }
+  },
+  "last": {
+    "format": "orloom-c3-memory-observation-v1",
+    "observedAt": "2026-10-13T14:04:55.216Z",
+    "elapsedMs": 61519,
+    "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+    "imageDigest": "386f3393c2900a05cc95910ad441e6a139e928549248e537714e387c7a50807c",
+    "sandboxId": "orloom-verifier-cf415045-096b-4e72-a57e-99d0bb4cc19f",
+    "containerId": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+    "cgroupSource": "expected",
+    "memoryCurrentBytes": 212467712,
+    "memoryStat": {
+      "anon": 3293184,
+      "file": 206045184,
+      "shmem": 206036992
+    },
+    "memoryEvents": {
+      "low": 0,
+      "high": 0,
+      "max": 202,
+      "oom": 1,
+      "oom_kill": 1
+    }
+  },
+  "frames": [
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "dependency-lock-admission",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "dependency-lock-admission",
+      "phase": "end",
+      "elapsedMs": 292,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "typecheck",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "typecheck",
+      "phase": "end",
+      "elapsedMs": 19054,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "clean-build",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "clean-build",
+      "phase": "end",
+      "elapsedMs": 19661,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "test-discovery",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "test-discovery",
+      "phase": "end",
+      "elapsedMs": 4,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 1,
+      "testFile": "canonical-json.test.js"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "end",
+      "elapsedMs": 606,
+      "ordinal": 1,
+      "testFile": "canonical-json.test.js",
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 2,
+      "testFile": "config-adapters.test.js"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "end",
+      "elapsedMs": 1334,
+      "ordinal": 2,
+      "testFile": "config-adapters.test.js",
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 3,
+      "testFile": "http.test.js"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "end",
+      "elapsedMs": 2122,
+      "ordinal": 3,
+      "testFile": "http.test.js",
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 4,
+      "testFile": "jev-adapter.test.js"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "end",
+      "elapsedMs": 712,
+      "ordinal": 4,
+      "testFile": "jev-adapter.test.js",
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 5,
+      "testFile": "jev-client.test.js"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "end",
+      "elapsedMs": 871,
+      "ordinal": 5,
+      "testFile": "jev-client.test.js",
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v3",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0,
+      "ordinal": 6,
+      "testFile": "jobs.test.js"
+    }
+  ],
+  "events": [
+    {
+      "action": "create",
+      "cid": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+      "time": 1791900241
+    },
+    {
+      "action": "attach",
+      "cid": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+      "time": 1791900241
+    },
+    {
+      "action": "start",
+      "cid": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+      "time": 1791900241
+    },
+    {
+      "action": "oom",
+      "cid": "47a404c7a0602cbd67da8c7a94bb6881ccfab33f32d77e50bf2fba7167216a01",
+      "time": 1791900294
+    }
+  ]
+}

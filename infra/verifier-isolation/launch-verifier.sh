@@ -43,6 +43,7 @@ write_slot() {
 }
 clear_slot() { rm -f -- "$SLOT" && /usr/bin/sync -f "$STATE_ROOT"; }
 identity() { "$DOCKER" --config "$config" --host "$SOCKET" inspect --format '{{.Id}}|{{index .Config.Labels "orloom.packet"}}|{{index .Config.Labels "orloom.run"}}|{{.Config.Image}}' "$1"; }
+resource_profile() { "$DOCKER" --config "$config" --host "$SOCKET" inspect --format '{{.HostConfig.Memory}}|{{.HostConfig.MemorySwap}}|{{.HostConfig.NanoCpus}}|{{.HostConfig.PidsLimit}}|{{.HostConfig.NetworkMode}}|{{.HostConfig.ReadonlyRootfs}}|{{.Config.User}}|{{.HostConfig.Runtime}}|{{json .HostConfig.CapDrop}}|{{json .HostConfig.SecurityOpt}}|{{index .HostConfig.Tmpfs "/tmp"}}|{{index .HostConfig.Tmpfs "/work"}}' "$1"; }
 reconcile_prior() {
   [[ -e $SLOT ]] || return 0
   [[ -f $SLOT && ! -L $SLOT ]] || { echo 'verifier slot record is unsafe' >&2; return 1; }
@@ -78,8 +79,8 @@ name_matches=$("$DOCKER" --config "$config" --host "$SOCKET" ps --all --quiet --
 write_slot '' creating
 container_id=$("$DOCKER" --config "$config" --host "$SOCKET" create --interactive --pull=never \
   --name "$NAME" --label=orloom.packet=ORL-C3 --label="orloom.run=$NAME" --runtime=runsc --network=none --read-only --user=65532:65532 \
-  --cap-drop=ALL --security-opt=no-new-privileges:true --pids-limit="$([[ $POLICY == node-repo-suite-v1 ]] && echo 128 || echo 64)" --memory="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1g || echo 256m)" \
-  --memory-swap="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1g || echo 256m)" --cpus="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1 || echo 0.5)" --env="ORLOOM_CHECK_POLICY=$POLICY" \
+  --cap-drop=ALL --security-opt=no-new-privileges:true --pids-limit="$([[ $POLICY == node-repo-suite-v1 ]] && echo 128 || echo 64)" --memory="$([[ $POLICY == node-repo-suite-v1 ]] && echo 2g || echo 256m)" \
+  --memory-swap="$([[ $POLICY == node-repo-suite-v1 ]] && echo 2g || echo 256m)" --cpus="$([[ $POLICY == node-repo-suite-v1 ]] && echo 1 || echo 0.5)" --env="ORLOOM_CHECK_POLICY=$POLICY" \
   --tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700 \
   --tmpfs="/work:rw,exec,nosuid,nodev,size=$([[ $POLICY == node-repo-suite-v1 ]] && echo 512m || echo 32m),uid=65532,gid=65532,mode=0700" \
   --entrypoint=/bin/sh "$IMAGE" -ec 'tar -xf - -C /work && cd /work/source && exec /usr/local/bin/node /opt/orloom-verifier/run-check.js')
@@ -87,6 +88,13 @@ container_id=$("$DOCKER" --config "$config" --host "$SOCKET" create --interactiv
 write_slot "$container_id" running
 created=$(identity "$container_id")
 [[ $created == "$container_id|ORL-C3|$NAME|$IMAGE" ]] || { echo 'created container identity did not match this invocation' >&2; exit 70; }
+observed_profile=$(resource_profile "$container_id") || { echo 'created verifier resource profile cannot be inspected' >&2; exit 70; }
+if [[ $POLICY == node-repo-suite-v1 ]]; then
+  expected_profile='2147483648|2147483648|1000000000|128|none|true|65532:65532|runsc|["ALL"]|["no-new-privileges:true"]|rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700|rw,exec,nosuid,nodev,size=512m,uid=65532,gid=65532,mode=0700'
+else
+  expected_profile='268435456|268435456|500000000|64|none|true|65532:65532|runsc|["ALL"]|["no-new-privileges:true"]|rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700|rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700'
+fi
+[[ $observed_profile == "$expected_profile" ]] || { echo 'created verifier resource profile did not match the selected fixed policy' >&2; exit 70; }
 set +e
 attach_timeout=$([[ $POLICY == node-repo-suite-v1 ]] && echo 210s || echo 60s)
 tar -C "/run/orloom-verifier-input/$NAME" -cf - . | timeout --signal=TERM --kill-after=2s "$attach_timeout" "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"

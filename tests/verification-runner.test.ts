@@ -70,11 +70,15 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v3");
+  assert.equal(suite.version, "orloom.node-repo-suite.v4");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
   assert.equal(suite.timeoutMs, 225_000);
   assert.equal(suite.maxConcurrent, 1);
+  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g");
+  assert.equal(NODE_REPO_SUITE_BINDING.resources.memoryBytes, 2 * 1024 * 1024 * 1024);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
+  assert.equal(suite.digest, "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8");
+  assert.notEqual(suite.digest, "51403fa00e34ad51fba34ef8739b7ff09a34ef9a21946ddf40b2f217e9fcad8b", "suite memory profile changes must invalidate the previous policy digest");
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.pids, 128);
@@ -98,7 +102,16 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   const orderSource = runner.match(/const POLICY_STAGE_ORDER = Object\.freeze\((\[[^\]]+\])\)/)?.[1];
   assert.ok(orderSource); assert.deepEqual(JSON.parse(orderSource), NODE_REPO_SUITE_BINDING.stages.map(stage => stage.name));
   const isolation = await readFile("infra/verifier-isolation/launch-verifier.sh", "utf8");
-  for (const bound of ["echo 128", "echo 1g", "echo 512m", "--network=none", "--read-only"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
+  assert.match(isolation, /\( \$POLICY == node-validate-syntax \|\| \$POLICY == node-repo-suite-v1 \)/);
+  assert.match(isolation, /--memory="\$\(\[\[ \$POLICY == node-repo-suite-v1 \]\] && echo 2g \|\| echo 256m\)"/);
+  assert.match(isolation, /--memory-swap="\$\(\[\[ \$POLICY == node-repo-suite-v1 \]\] && echo 2g \|\| echo 256m\)"/);
+  assert.match(isolation, /resource_profile\(\).*HostConfig\.Memory.*HostConfig\.MemorySwap.*HostConfig\.NanoCpus.*HostConfig\.PidsLimit.*HostConfig\.NetworkMode.*HostConfig\.ReadonlyRootfs.*Config\.User.*HostConfig\.Runtime.*HostConfig\.CapDrop.*HostConfig\.SecurityOpt.*HostConfig\.Tmpfs/s);
+  assert.match(isolation, /\[\[ \$observed_profile == "\$expected_profile" \]\].*created verifier resource profile did not match/s);
+  for (const profile of [
+    '2147483648|2147483648|1000000000|128|none|true|65532:65532|runsc|["ALL"]|["no-new-privileges:true"]|rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700|rw,exec,nosuid,nodev,size=512m,uid=65532,gid=65532,mode=0700',
+    '268435456|268435456|500000000|64|none|true|65532:65532|runsc|["ALL"]|["no-new-privileges:true"]|rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700|rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700',
+  ]) assert(isolation.includes(`expected_profile='${profile}'`), "launcher inspects and enforces the exact fixed resource profile");
+  for (const bound of ["echo 128", "echo 64", "echo 256m", "echo 1", "echo 0.5", "echo 512m", "--runtime=runsc", "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL", "--security-opt=no-new-privileges:true", "size=16m"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
   assert.match(isolation, /echo 210s \|\| echo 60s/);
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
   assert.match(suiteRunner, /const limit = 180_000/);
