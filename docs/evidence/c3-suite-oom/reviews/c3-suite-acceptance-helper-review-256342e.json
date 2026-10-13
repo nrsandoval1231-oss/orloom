@@ -1,0 +1,20 @@
+{
+  "verdict": "PASS",
+  "scope": "Bounded pre-execution repair review of Bash declaration expansion; all other previously reviewed helper and transfer bytes unchanged",
+  "candidateSha": "9ebc9d91c880be907adb4b38c3e912300bf14816",
+  "helperManifestSha256": "256342ec04988e44b95349d2e9d47d1c77ec324dd36f308c3799340b5128c538",
+  "priorManifestSha256": "5226495b0fc5f45f2e5ef6ffe09b58899c2d1c7eb30276149ab164758ecef789",
+  "changedFiles": [
+    "preflight-acceptance.sh",
+    "stage-acceptance.sh"
+  ],
+  "evidence": [
+    "The original preflight same-line ROOT/INCOMING/OUT declaration fails under set -euo pipefail with ROOT unbound in a literal Bash stdin smoke, matching the stopped host preflight.",
+    "The repaired preflight and stage scripts assign ROOT, INCOMING, and OUT on separate completed readonly commands; their remaining current call-chain guards were rechecked against the prior review.",
+    "All 12 files and byte counts match the new frozen manifest. Comparison with the retained old manifest finds only the two expected shell file hashes changed; source candidate, source manifest, bundle, runtime payload, and stage bindings are unchanged.",
+    "Each of the seven top-level shell scripts passed bash -n and an isolated literal declaration-only smoke under set -euo pipefail with the relevant variables unset. The smoke does not perform host or Docker operations.",
+    "The controller's read-only host check reports acceptance root and incoming/preflight absent after the initial abort; no setup or acceptance attempt has run."
+  ],
+  "boundary": "This verdict covers safe declaration startup and exact packet identity before host execution. It does not certify PostgreSQL, runsc, suite, certificate, cleanup, or protected-host postflight outcomes.",
+  "findings": []
+}

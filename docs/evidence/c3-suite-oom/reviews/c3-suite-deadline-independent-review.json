@@ -1,0 +1,33 @@
+{
+  "packet": "ORL-C3-SUITE-DEADLINE-REPLAN",
+  "reviewType": "independent bounded source review",
+  "verdict": "FIX",
+  "scope": "source only; no image, host, runsc, PostgreSQL, provider, or certificate action",
+  "reviewedAtUtc": "2026-10-13T11:04:21Z",
+  "candidate": {
+    "repository": "work/orloom-suite",
+    "branch": "feat/trusted-verification-suite",
+    "baseSha": "727de8607202307f6c45186ca11546d1fcdc338b",
+    "headSha": "022e7b7207c48b84a03e69467428614ce8584954",
+    "manifestPath": ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "manifestSha256": "fe96a66cb14bd3e44e9ce06ce7f202f449b7bf1ccfd129ec6f4312faa6bbe290",
+    "manifestEntriesReported": 117,
+    "worktreeCleanAtReview": true
+  },
+  "findings": [
+    {
+      "severity": "blocking",
+      "location": "infra/verifier-isolation/run-repo-suite.js:65-78 and infra/verifier-isolation/stage-runner.js:35-43",
+      "issue": "The declared 180,000 ms whole-suite ceiling is consulted before each stage, but a stage.execute callback is awaited without a deadline and the suite does not check elapsed time again before emitting a PASS marker. The final offline-security-policy stage can start just before the deadline, finish after it, and still produce PASS during the longer 210-second Docker attach window. Admission and final marker generation likewise need to be covered by the whole-suite PASS condition.",
+      "deterministicReproduction": "A 1 ms scaled budget with one stage.execute callback delayed 30 ms returned {outcome:'pass', elapsedMs:38, remainingMs:-37} from the actual executeStages implementation. This establishes the control-flow gap without a 180-second wait; it is not a target-host timing measurement.",
+      "smallestRequiredCorrection": "Within the allowed suite runner surface, ensure the final outcome cannot be PASS if monotonic elapsed time since suite start exceeds 180,000 ms, including admission and the last callback. Treat over-budget completion as UNKNOWN, with no certifying PASS marker. Add a controlled-clock or short scaled-budget behavioral regression for a final callback that finishes after its budget. Preserve fixed stage argv/order and the existing outer Docker, host, and request deadlines. Re-freeze the repaired source and rerun required gates and independent review."
+    }
+  ],
+  "evidence": [
+    "The policy catalog binds 180,000/210,000/225,000/240,000 ms suite/Docker/host/request values under the suite digest, while the syntax policy remains at 60,000 ms with its prior digest.",
+    "The selected policy id supplies the coordinator attemptLifetimeMs through trusted control-plane wiring; constructor bounds it by the unchanged 600,000 ms contract maximum and preserves the 120,000 ms reporting grace.",
+    "The Docker wrapper applies 210s only to node-repo-suite-v1; the LocalRunscLauncher uses the selected policy's 225,000 ms timeout. Ambiguous launcher exits and late terminal results remain fail-closed in the inspected paths.",
+    "The controller gate log in docs/evidence/c3-suite-deadline reports exit 0 for typecheck, clean build, 73 tests with no failures, foundation validation, JavaScript syntax checks, shell syntax, and diff check. These gates do not exercise a final callback crossing the inner deadline."
+  ],
+  "acceptanceBoundary": "Prior PostgreSQL suite attempt and diagnostic remain UNKNOWN with zero certificates. No full-suite positive/negative runsc/PostgreSQL proof or operational completion is established. Do not rebuild or run the pinned image on this FIX candidate."
+}

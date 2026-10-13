@@ -1,0 +1,10 @@
+{
+  "file": "acceptance-after-cleanup.tar.gz",
+  "bytes": 46474,
+  "sha256": "af1f1d14cd441175f600db38acd81061663774790767fb3c117885bd5c51c013",
+  "command": "tar -czf - -C /var/lib/orloom/c3-suite-acceptance-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json capacity-observation.json verifier-image.id image-binding.json stage-bindings.json runtime-started.json staging/identity.txt",
+  "startedUtc": "2026-10-13T12:05:11.095Z",
+  "finishedUtc": "2026-10-13T12:05:12.917Z",
+  "exit": 0,
+  "stderr": ""
+}

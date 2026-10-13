@@ -1,0 +1,25 @@
+{
+  "verdict": "PASS",
+  "scope": "Pre-execution independent review of the frozen C3 suite acceptance helper and transfer packet only; no host execution or product certification",
+  "candidateSha": "9ebc9d91c880be907adb4b38c3e912300bf14816",
+  "sourceManifestSha256": "a37ea16aadd4e06ca3de424e5bc607f0ce6894100c4da7211b76c0c856637ca8",
+  "helperManifestSha256": "5226495b0fc5f45f2e5ef6ffe09b58899c2d1c7eb30276149ab164758ecef789",
+  "bundleSha256": "df741c271b2ee63b9e1b7b1645d49934c87ed7c0f733d655a33a92f773d67360",
+  "runtimePayloadManifestSha256": "7ab3768b58fbe02b66c5dd6ede28a493780137b8129f081acbb99e5abf8b5b01",
+  "evidence": [
+    "All 12 files in work/c3-suite-acceptance/helper-manifest.json match their stated SHA-256 and byte counts; the manifest itself matches the frozen hash.",
+    "The exact clean source checkout is at the candidate SHA; its 117-file source manifest hash, transfer bundle hash, candidate identity, ten-key stage bindings, and 152 payload file hashes match the frozen packet.",
+    "The separate runtime derivation record reports PASS for 24 compiled modules from this candidate; seven top-level shell helpers pass bash -n and four top-level Node helpers pass node --check locally.",
+    "stage-acceptance.sh validates bundle ancestry, source and payload inventories, helper hashes, then installs the pinned Node, runtime entry, exporter shell/module, and fixture helper. run-acceptance.sh passes the runtime module and all 13 required runtime environment values from the source checkout.",
+    "run-acceptance.sh refuses an existing start marker, nonempty canonical verifier state, busy host flock, mismatched protected container tuple, unbound image, or unhealthy isolated database before recording a one-shot start marker.",
+    "The snapshot exporter performs a bounded PostgreSQL BEGIN READ ONLY query and emits allowlisted attempt/certificate fields. It fails closed on query or schema errors; existing snapshots must equal the fresh query result. No fabricated empty snapshot fallback remains.",
+    "cleanup-acceptance.sh validates every recorded surviving resource before mutation, handles partial seed/database/network/volume ledgers, and requires a bound querySucceeded snapshot and checksum after runtime start before exact resource removal."
+  ],
+  "allowedHostEffects": "One fixed packet root and incoming sibling, one labeled internal PostgreSQL network, data and secret volumes, seed and database containers, one labeled verifier image, controlled local Git fixture store, packet evidence/artifacts, and the product's one-lane runsc verifier container; no new provider or paid resource calls authorized by this review.",
+  "boundaries": [
+    "The original 06a74ac full-suite attempt and later a7c25a6 direct diagnostic remain UNKNOWN; this review does not revise those outcomes.",
+    "The full positive suite certificate, reconnect/stale-ref behavior, negative fixtures, host cleanup, PostgreSQL snapshot contents, resource profile, and protected host tuple require execution and postflight evidence; none are certified by helper inspection.",
+    "Execution must use this exact helper manifest and candidate transfer; any changed helper or binding requires re-freeze and re-review."
+  ],
+  "findings": []
+}

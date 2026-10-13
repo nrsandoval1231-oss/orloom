@@ -1,0 +1,11 @@
+{
+  "scriptName": "export-acceptance-snapshot.sh",
+  "args": [],
+  "scriptSha256": "ed101170cd19c3f79b2e7712d73a57d499f75b19a0ae55715730ee35d292fc21",
+  "start": "2026-10-13T12:04:48.628Z",
+  "finish": "2026-10-13T12:04:50.129Z",
+  "elapsedMs": 1501,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-acceptance-executions\\2026-10-13T12-04-48-626Z-export-acceptance-snapshot.sh"
+}
