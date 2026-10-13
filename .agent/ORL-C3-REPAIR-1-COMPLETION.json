@@ -1,0 +1,60 @@
+{
+  "packet": "ORL-C3 integrated repair 1",
+  "status": "IMPLEMENTED_LOCAL; HOST_RUNTIME_PROOF_PENDING",
+  "candidateCommit": "UNKNOWN; source changes are uncommitted",
+  "repository": "work/orloom-ci",
+  "branch": "feat/trusted-verification",
+  "baseSha": "c790bfd9c09eafed25370a77d1a1edfdfc05be3f",
+  "rejectedCandidate": "515ab82847398a9ab67657ecf1966eee6a662a78",
+  "files": [
+    "apps/control-plane/src/main.ts",
+    "docs/verification.md",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runner.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-runner.test.ts"
+  ],
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/verification-runner.test.js dist/tests/verification-certification.test.js", "exitCode": 0, "passed": 7, "failed": 0 },
+    { "command": "bash -n infra/verifier-isolation/launch-verifier.sh", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "evidence": {
+    "processResultFixtures": [
+      "pass marker plus infrastructure failure is UNKNOWN",
+      "timeout and signal after marker are UNKNOWN",
+      "missing, duplicate, malformed, truncated, and disagreeing marker/process results are UNKNOWN",
+      "matching process/marker exit 0 is PASS-eligible and exit 1 is FAIL-eligible"
+    ],
+    "hostSlot": "nonblocking host-wide flock plus root-owned persistent invocation record under /var/lib/orloom/verifier/state; shared /var/lib/orloom parent is validated without chmod; unknown pre-CID intent remains quarantined; cleanup/restart reconciliation only acts on a recorded exact CID with matching ORL-C3, invocation-name, and pinned-image identity",
+    "shutdown": "stops new verification dispatch, awaits active verification and lease reconciler, then closes HTTP and PostgreSQL",
+    "policyCwd": "signed cwd /work/source matches run-check.js child cwd and fixed launcher extraction path",
+    "hostRuntimeProof": "UNKNOWN; not executed in this builder lane",
+    "databaseJoin": "fixture PGlite tests passed; real runsc/PostgreSQL joined proof remains open",
+    "firstValidationFailure": "Initial typecheck exposed main.ts jobs typing and exactOptionalPropertyTypes issues; bounded source correction was applied, then all focused checks passed.",
+    "failedIntegrationObservation": "Initial repair untarred the staging archive into /work/source even though it contains manifest.json plus source/ and run-check.js reads /work/manifest.json plus /work/source. The launcher now extracts into /work; regression coverage checks the actual launcher, reader paths, and policy cwd."
+  },
+  "limits": [
+    "Local fixtures and shell syntax validation do not prove actual two-process flock denial, hard-restart state recovery, Docker/runsc behavior, or joined PostgreSQL certification.",
+    "A prior intent without a recorded container ID is deliberately quarantined and requires explicit operator reconciliation.",
+    "No host execution, host mutation, provider action, commit, push, merge, or deployment was performed.",
+    "No completion, integration, budget-release, or lesson-promotion claim is made."
+  ],
+  "execution": {
+    "startedAt": "UNKNOWN",
+    "finishedAt": "2026-10-13T08:01:16Z",
+    "planningDuration": "UNKNOWN",
+    "buildDuration": "UNKNOWN",
+    "validationDuration": "UNKNOWN",
+    "auditDuration": "UNKNOWN",
+    "repairAttempts": 2,
+    "model": "UNKNOWN",
+    "configIdentity": "UNKNOWN",
+    "tokens": "UNKNOWN",
+    "elapsedToIndependentAcceptance": "UNKNOWN"
+  }
+}

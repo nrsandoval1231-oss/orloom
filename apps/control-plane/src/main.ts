@@ -9,7 +9,7 @@ import { TrustedCheckCoordinator } from "../../../packages/governor/src/governor
 import { createTrustedVerificationRunner, getCheckPolicy } from "../../verifier/src/index.js";
 
 const config = loadConfig(process.env);
-let jobs;
+let jobs: MemoryJobStore | PostgresJobStore;
 let missions;
 try { jobs = config.mode === "cloud" ? await PostgresJobStore.connect(config.databaseUrl!) : new MemoryJobStore(); }
 catch { process.stderr.write("Orloom cloud startup failed: database initialization or readiness check failed.\n"); process.exit(1); }
@@ -23,18 +23,34 @@ try {
 } catch { process.stderr.write("Orloom lease reconciliation startup failed closed.\n"); process.exit(1); }
 let trustedChecks:TrustedCheckCoordinator|undefined;
 let verificationTimer:ReturnType<typeof setInterval>|undefined;
-let verificationBusy=false;
+let verificationTask:Promise<void>|undefined;
+let shuttingDown=false;
+async function reconcileVerification():Promise<void>{
+  if(shuttingDown||verificationTask)return;
+  verificationTask=(async()=>{try{await trustedChecks?.reconcile(1);await trustedChecks?.expire();}catch{process.stderr.write("Orloom verification reconciliation failed closed.\n");}})();
+  try{await verificationTask;}finally{verificationTask=undefined;}
+}
 try {
   const runner=await createTrustedVerificationRunner(process.env);
   if(runner&&missions instanceof SqlMissionStore&&config.trustedCheckPolicyDigest&&config.trustedVerifierId&&config.trustedVerifierImageDigest){
     const checkId="node-validate-syntax",policy=getCheckPolicy(checkId,process.env.ORLOOM_VERIFIER_IMAGE,config.trustedVerifierImageDigest);
     if(config.trustedCheckPolicy?.includes(checkId)&&policy.imageDigest===config.trustedVerifierImageDigest&&(!config.trustedVerificationPolicyVersion||config.trustedVerificationPolicyVersion===policy.version)){
       trustedChecks=new TrustedCheckCoordinator(missions,runner,{imageDigest:policy.imageDigest,verifierId:config.trustedVerifierId,policyDigest:policy.digest,leasePolicyDigest:config.trustedCheckPolicyDigest,policyVersion:policy.version,allowedChecks:[checkId]});
-      verificationTimer=setInterval(()=>{if(verificationBusy)return;verificationBusy=true;void trustedChecks?.reconcile(1).then(()=>trustedChecks?.expire()).catch(()=>process.stderr.write("Orloom verification reconciliation failed closed.\n")).finally(()=>{verificationBusy=false;});},5_000);verificationTimer.unref();
+      verificationTimer=setInterval(()=>{void reconcileVerification();},5_000);verificationTimer.unref();
     }
   }
 }catch{process.stderr.write("Orloom trusted verifier configuration failed closed.\n");process.exit(1);}
 const controls=createControlPlane(config,jobs,missions,undefined,trustedChecks);
 const host = config.mode === "cloud" ? (process.env.ORLOOM_BIND ?? "0.0.0.0") : "127.0.0.1";
 controls.listen(config.port, host, () => process.stdout.write(`Orloom ${config.mode} control plane listening on ${host}:${config.port}\n`));
-for (const signal of ["SIGTERM", "SIGINT"] as const) process.once(signal, () => { if(verificationTimer)clearInterval(verificationTimer);void stopLeaseReconciler().finally(() => controls.close(async () => { if (jobs instanceof PostgresJobStore) await jobs.close(); process.exit(0); })); });
+async function shutdown():Promise<void>{
+  if(shuttingDown)return;
+  shuttingDown=true;
+  if(verificationTimer)clearInterval(verificationTimer);
+  await verificationTask;
+  await stopLeaseReconciler();
+  await new Promise<void>((resolve)=>controls.close(()=>resolve()));
+  if(jobs instanceof PostgresJobStore)await jobs.close();
+  process.exit(0);
+}
+for (const signal of ["SIGTERM", "SIGINT"] as const) process.once(signal, () => { void shutdown().catch(()=>{process.stderr.write("Orloom shutdown did not complete cleanly.\n");process.exit(1);}); });

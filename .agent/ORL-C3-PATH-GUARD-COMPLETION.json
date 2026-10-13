@@ -1,0 +1,19 @@
+{
+  "node": "ORL-C3-PATH-GUARD",
+  "status": "PASS",
+  "base_head": "515ab82",
+  "changed_files": ["apps/verifier/src/index.ts", "tests/verification-config.test.ts"],
+  "validation": [
+    {"command": "npm run typecheck", "exit_code": 0},
+    {"command": "npm run build", "exit_code": 0},
+    {"command": "node --test dist/tests/verification-config.test.js", "exit_code": 0, "passed": 3, "failed": 0},
+    {"command": "git diff --check", "exit_code": 0}
+  ],
+  "attempt_history": [
+    {"attempt": 1, "result": "focused test failed: temp-root fixture hit the checkout path policy; changed fixture location, then object-store assertion still hit artifact-root validation"},
+    {"attempt": 2, "result": "focused test passed; controller requested filesystem-free configuration tests and bidirectional object-store overlap protection"}
+  ],
+  "runtime_certification": "NOT_CLAIMED",
+  "timings": "UNKNOWN",
+  "token_usage": "UNKNOWN"
+}

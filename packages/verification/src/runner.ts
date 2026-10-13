@@ -4,7 +4,7 @@ import { parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, type
 import { DurableArtifactStore } from "./artifact-store.js";
 import { getCheckPolicy, type CheckPolicy } from "./policy.js";
 import { extractCandidateBundle, readApprovedHead, type InputBundle, type RepositoryConfig } from "./repository.js";
-export interface SandboxResult { sandboxId: string; exitCode: number | null; signal?: string; timedOut?: boolean; stdout: Buffer; stderr: Buffer; truncated?: boolean; }
+export interface SandboxResult { sandboxId: string; exitCode: number | null; signal?: string; timedOut?: boolean; stdout: Buffer; stderr: Buffer; truncated?: boolean; launcherExitCode?: number | null; launcherSignal?: string; launcherTimedOut?: boolean; launcherTruncated?: boolean; }
 export interface SandboxLauncher { launch(policy: CheckPolicy, bundle: InputBundle): Promise<SandboxResult>; }
 export interface TrustedVerificationRunnerOptions { repositories: Readonly<Record<string, RepositoryConfig>>; artifacts: DurableArtifactStore; launcher: SandboxLauncher; verifierId: string; image: string; imageDigest: string; now?: () => Date; }
 function sha(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }

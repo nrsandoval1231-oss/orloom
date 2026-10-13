@@ -1,0 +1,37 @@
+{
+  "candidate": "515ab82847398a9ab67657ecf1966eee6a662a78",
+  "role": "independent C3 source reviewer",
+  "verdict": "FIX",
+  "scope": "Frozen local syntax-check runner, artifact persistence, coordinator, PostgreSQL certification, launcher and C3 contract. No host execution, provider action, or deployment performed.",
+  "evidence": {
+    "sourceManifestSha256": "4042800a30c3ccc3264fe1ee9452e0e1558cbdfd7af3953df77e6820853b6a1e",
+    "controllerGates": "work/c3-controller-gates-initial.txt records npm ci, typecheck, build, 61 tests, validate, and diff check PASS",
+    "hostProof": "OPEN",
+    "integrationAndProductFinish": "OPEN"
+  },
+  "findings": [
+    {
+      "severity": "blocking",
+      "title": "A Docker launcher error can be certified from a prior PASS marker",
+      "location": ["packages/verification/src/runsc-launcher.ts:56", "packages/verification/src/runsc-launcher.ts:61", "packages/verification/src/runsc-launcher.ts:72", "infra/verifier-isolation/launch-verifier.sh:40"],
+      "evidence": "execFile rejection is accepted whenever stdout contains ORLOOM-RESULT. The adapter discards the actual shell exit code, signal, killed/timeout state and Docker transport status, then maps marker exitCode 0 to PASS. The fixed run-check process emits its marker before it exits, so a subsequent Docker attach/launcher failure can leave a valid marker and a nonzero infrastructure exit. The packet requires nonzero infrastructure exit, timeout, signal, or lost process to be UNKNOWN.",
+      "repair": "Preserve the launcher process result; accept a marker only with a matching successful Docker/shell exit for PASS, or a matching check-failure exit for FAIL. Classify timeout, signal, transport or cleanup error, and exit-marker disagreement as UNKNOWN. Add an injected launcher-process negative test that emits a PASS marker then exits with infrastructure error."
+    },
+    {
+      "severity": "blocking",
+      "title": "One-check capacity is only per process and shutdown does not await the active sandbox",
+      "location": ["packages/verification/src/runner.ts:14", "packages/verification/src/runner.ts:48", "apps/control-plane/src/main.ts:26", "apps/control-plane/src/main.ts:33", "apps/control-plane/src/main.ts:40"],
+      "evidence": "The one-active guard is a runner instance field and verificationBusy is a process-local timer flag. PostgreSQL reserves attempts, but has no host-wide active sandbox lease. On SIGTERM, main clears the timer and exits after the HTTP server closes without waiting for an in-flight verifySlice or launcher process. A successor process or another instance can start a different attempt while the earlier runsc container remains active, violating the packet's one concurrent check and measured host cap. An interrupted attempt remains UNKNOWN, but the actual container may continue and the host slot is released in memory.",
+      "repair": "Add a durable host-wide execution slot or equivalent exclusive local lock with recovery of an active container, and await or terminate the active launcher before normal shutdown. Demonstrate restart/interruption and two-instance negative behavior before enabling the operator policy."
+    },
+    {
+      "severity": "contract",
+      "title": "Policy digest describes a different working directory than the executed command",
+      "location": ["packages/verification/src/policy.ts:9", "infra/verifier-isolation/run-check.js:19"],
+      "evidence": "The digested policy says cwd=/input/source, while run-check.js executes under /work/source. The signed policy therefore does not exactly describe the sandbox command it certifies.",
+      "repair": "Make the catalogued cwd match the enforced sandbox cwd and test that the launcher executes the declared argv and cwd, or remove unused fields from the signed policy before the final freeze."
+    }
+  ],
+  "acceptedBoundaries": ["Worker and owner HTTP routes do not expose verifier submission capability", "Certificate insertion is transactionally fenced to mission, slice, epoch, candidate, plan and local head", "Artifact reads verify content hashes and receipt is persisted", "No C3 certificate is represented as full CI, remote GitHub freshness, C1b promotion or product completion"],
+  "limits": "Read-only source review. The asserted infrastructure-error path is a code-level counterexample; no runsc host proof was executed. A repair requires a new exact candidate, deterministic gates, then independent review."
+}

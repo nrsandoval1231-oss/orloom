@@ -22,6 +22,22 @@ async function makePrivateDir(directory: string, mode = 0o700): Promise<void> {
   await chmod(directory, mode);
 }
 
+export interface LauncherProcessResult { exitCode: number | null; signal?: string | null; timedOut?: boolean; killed?: boolean; truncated?: boolean; stderr?: string; }
+
+/** Maps an injected launcher-process result to check status; only an exact clean exit/marker match is determinate. */
+export function classifyLauncherOutput(stdout: string, processResult: LauncherProcessResult, maxLogBytes: number): SandboxResult {
+  const markers = stdout.split(/\r?\n/).filter((line) => line.startsWith("ORLOOM-RESULT:"));
+  const unknown = (): ReturnType<typeof classifyLauncherOutput> => ({ sandboxId: "unavailable", exitCode: null, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: true, timedOut: true, launcherExitCode: processResult.exitCode, ...(processResult.signal ? { launcherSignal: processResult.signal } : {}), launcherTimedOut: processResult.timedOut === true || processResult.killed === true, launcherTruncated: processResult.truncated === true });
+  if (markers.length !== 1 || processResult.exitCode === null || processResult.signal || processResult.timedOut || processResult.killed || processResult.truncated || processResult.stderr || ![0, 1].includes(processResult.exitCode)) return unknown();
+  try {
+    const parsed = JSON.parse(Buffer.from(markers[0]!.slice("ORLOOM-RESULT:".length), "base64").toString("utf8")) as Record<string, unknown>;
+    if (Object.keys(parsed).sort().join(",") !== "exitCode,stderr,stderrBytes,stdout,stdoutBytes,truncated" || ![0, 1].includes(parsed.exitCode as number) || parsed.exitCode !== processResult.exitCode || parsed.truncated !== false || typeof parsed.stdoutBytes !== "number" || typeof parsed.stderrBytes !== "number" || typeof parsed.stdout !== "string" || typeof parsed.stderr !== "string" || parsed.stdoutBytes < 0 || parsed.stderrBytes < 0) return unknown();
+    const out = Buffer.from(parsed.stdout, "base64"), err = Buffer.from(parsed.stderr, "base64");
+    if (out.length > maxLogBytes || err.length > maxLogBytes || out.length !== parsed.stdoutBytes || err.length !== parsed.stderrBytes) return unknown();
+    return { sandboxId: "launcher-result", exitCode: parsed.exitCode as 0 | 1, stdout: out, stderr: err, truncated: false, timedOut: false, launcherExitCode: processResult.exitCode, launcherTimedOut: false, launcherTruncated: false };
+  } catch { return unknown(); }
+}
+
 /** Host-side adapter for the fixed runsc launcher. Requires Linux and the protected root service account. */
 export class LocalRunscLauncher implements SandboxLauncher {
   constructor(private readonly options: { image: string; launcherScript: string; inputRoot?: string; outputRoot?: string; timeoutMs?: number }) {
@@ -52,25 +68,23 @@ export class LocalRunscLauncher implements SandboxLauncher {
       }
       for (const dir of [...dirs].sort((a, b) => b.length - a.length)) await chmod(path.join(source, ...dir.split("/")), 0o555);
       await chmod(source, 0o555); await chmod(input, 0o555);
-      let stdout = "";
+      let stdout = "", launcherStderr = "";
+      let launcherExitCode: number | null = null, launcherSignal: string | undefined, launcherTimedOut = false, launcherKilled = false, launcherTruncated = false;
       try {
-        ({ stdout } = await exec("/bin/bash", [this.options.launcherScript, name], {
+        const completed = await exec("/bin/bash", [this.options.launcherScript, name], {
           timeout: this.options.timeoutMs ?? policy.timeoutMs, maxBuffer: 256 * 1024, encoding: "utf8", windowsHide: true,
           env: { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", ORLOOM_VERIFIER_IMAGE: this.options.image, HOME: "/root", LANG: "C" },
-        }));
+        });
+        stdout = completed.stdout; launcherStderr = completed.stderr; launcherExitCode = 0;
       } catch (error) {
-        const failed = error as NodeJS.ErrnoException & { stdout?: string };
-        if (typeof failed.stdout !== "string" || !failed.stdout.includes("ORLOOM-RESULT:")) throw error;
-        stdout = failed.stdout;
+        const failed = error as NodeJS.ErrnoException & { stdout?: string; stderr?: string; signal?: string; killed?: boolean; code?: string | number };
+        stdout = typeof failed.stdout === "string" ? failed.stdout : ""; launcherStderr = typeof failed.stderr === "string" ? failed.stderr : "";
+        launcherExitCode = typeof failed.code === "number" ? failed.code : null; launcherSignal = failed.signal; launcherKilled = failed.killed === true;
+        launcherTimedOut = failed.killed === true || failed.code === "ETIMEDOUT";
+        launcherTruncated = failed.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER";
       }
-      const marker = stdout.split(/\r?\n/).find((line) => line.startsWith("ORLOOM-RESULT:"));
-      if (!marker) throw new Error("sandbox result is missing");
-      const result = JSON.parse(Buffer.from(marker.slice("ORLOOM-RESULT:".length), "base64").toString("utf8")) as Record<string, unknown>;
-      if (Object.keys(result).sort().join(",") !== "exitCode,stderr,stderrBytes,stdout,stdoutBytes,truncated" || typeof result.truncated !== "boolean" || typeof result.stdoutBytes !== "number" || typeof result.stderrBytes !== "number" || typeof result.stdout !== "string" || typeof result.stderr !== "string" || result.stdoutBytes < 0 || result.stderrBytes < 0) throw new Error("sandbox result metadata is invalid");
-      const stdoutBytes = Buffer.from(result.stdout, "base64"), stderrBytes = Buffer.from(result.stderr, "base64");
-      if (stdoutBytes.length > policy.maxLogBytes || stderrBytes.length > policy.maxLogBytes || stdoutBytes.length !== Math.min(result.stdoutBytes, policy.maxLogBytes) || stderrBytes.length !== Math.min(result.stderrBytes, policy.maxLogBytes)) throw new Error("sandbox logs are missing or truncated");
-      const exitCode = result.exitCode === 0 || result.exitCode === 1 ? result.exitCode : null;
-      return { sandboxId: name, exitCode, stdout: stdoutBytes, stderr: stderrBytes, truncated: result.truncated === true, timedOut: exitCode === null };
+      const classified = classifyLauncherOutput(stdout, { exitCode: launcherExitCode, ...(launcherSignal ? { signal: launcherSignal } : {}), timedOut: launcherTimedOut, killed: launcherKilled, truncated: launcherTruncated, stderr: launcherStderr }, policy.maxLogBytes);
+      return { ...classified, sandboxId: name };
     } finally {
       // Names are generated locally and both bases are fixed operator paths.
       await rm(input, { recursive: true, force: true });
