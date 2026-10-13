@@ -10,6 +10,14 @@ export interface DecisionSnapshotV1 {
   trustedCheckPolicyDigest: string;
   recoveryPolicyDigest: string;
   leaseExpiresAt: string;
+  /** Governor-derived budget ceilings and committed reservations at capture time. */
+  missionBudgetCents: number;
+  sliceBudgetCents: number;
+  reservedBudgetCents: number;
+  /** Worker-reported counters are context only, not trusted metered spend. */
+  reportedUsage: { providerCalls: number; inputTokens: number; outputTokens: number; wallMs: number };
+  /** Digest references only; never raw output or source content. */
+  evidenceRefs: string[];
   eventId: string;
   targetCheckId: string;
   status: ProgressStatus;

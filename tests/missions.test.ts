@@ -4,8 +4,11 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { MemoryMissionStore } from "../packages/contracts/src/memory-mission-store.js";
 import { SqlMissionStore, TransactionalSql } from "../packages/contracts/src/sql-mission-store.js";
-import { MissionConflictError, SliceInput, scopesOverlap } from "../packages/contracts/src/mission.js";
+import { MissionConflictError, ProgressV1, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "../packages/contracts/src/mission.js";
 import { startLeaseReconciler } from "../packages/governor/src/lease-reconciler.js";
+import type { DecisionSnapshotV1, JudgmentV1 } from "../packages/judgment/src/types.js";
+import { canonicalJson } from "../packages/judgment/src/canonical.js";
+import { createHash } from "node:crypto";
 
 const baseSha="a".repeat(40), evidenceDigest="b".repeat(64), future=()=>new Date(Date.now()+60_000).toISOString();
 const slice=(id:string,scope:string,dependencies:string[]=[],budgetCents=100):SliceInput=>({id,objective:`do ${id}`,dependencies,owner:"core",scopes:[scope],checks:["check:unit"],budgetCents});
@@ -57,6 +60,83 @@ test("dependency wait does not block overlapping parent and mixed-case repositor
   await store.complete(parentMission.id,parent.slice.id,parent.epoch,parent.leaseToken,parent.capabilityToken,"d".repeat(40),["candidate://ref"]);
   assert.equal((await store.getMission(parentMission.id))!.mission.status,"awaiting_verification");
   assert.equal(await store.claim(300,"c".repeat(64)),null);
+});
+
+test("memory recovery fences terminal judgments and excludes cross-target lesson pairs",async()=>{
+  const store=new MemoryMissionStore();await store.configureCapacity(2,evidenceDigest,future());
+  const policyDigest="c".repeat(64),recoveryDigest="e".repeat(64);
+  const m=await store.submit({repository:"owner/recovery",baseSha,objective:"memory policy parity",acceptance:["fenced"],budgetCents:1000});
+  const recoverySlice=(id:string):SliceInput=>({id,objective:id,dependencies:[],owner:"core",scopes:[`src/${id}.ts`],checks:["strategy:baseline","strategy:recovery"],budgetCents:100});
+  await store.recommendPlan(m.id,[recoverySlice("one"),recoverySlice("two")],"owner-session");await store.approvePlan(m.id);
+  const leases=await Promise.all([store.claim(300,policyDigest,new Date(),recoveryDigest),store.claim(300,policyDigest,new Date(),recoveryDigest)]);
+  assert(leases[0]&&leases[1]);
+  const strategies:Record<string,TrustedStrategyPolicy>={
+    "strategy:baseline":{checkId:"check:baseline",version:"v1",expectedSignal:"target A fails",scopeClasses:["src"],targetCheckIds:["target:a"]},
+    "strategy:recovery":{checkId:"check:recovery",version:"v1",expectedSignal:"recovery check passes",scopeClasses:["src"],targetCheckIds:["target:a","target:b"]},
+  };
+  const makeProgress=(lease:NonNullable<typeof leases[number]>,eventId:string,ordinal:number,strategyId:string,status:ProgressV1["status"],targetCheckId:string,reasonCode:ProgressV1["reasonCode"]):ProgressV1=>({
+    version:"orloom.progress.v1",eventId,missionId:m.id,sliceId:lease.slice.id,leaseEpoch:lease.epoch,ordinal,planDigest:lease.planDigest,
+    trustedCheckPolicyDigest:policyDigest,recoveryPolicyDigest:recoveryDigest,phase:"trusted_check",status,reasonCode,strategyId,targetCheckId,
+    checkId:strategies[strategyId]!.checkId,counters:{providerCalls:0,inputTokens:0,outputTokens:0,wallMs:1},evidenceRefs:[`sha256:${"f".repeat(64)}`],
+  });
+  const leaseA=leases[0],leaseB=leases[1];if(!leaseA||!leaseB)throw new Error("expected two independent memory leases");
+  for(const [index,lease] of [leaseA,leaseB].entries()){
+    const failed=makeProgress(lease,`fail-${index}`,1,"strategy:baseline","failed","target:a","check_failed");
+    const action=await store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies);
+    assert.equal(action.action.strategyId,"strategy:recovery");
+    const passed=makeProgress(lease,`pass-${index}`,2,"strategy:recovery","passed","target:b","check_passed");
+    await store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies);
+  }
+  assert.deepEqual(await store.lessons(m.id),[],"passes for target B cannot form lessons from target A failures");
+
+  const terminalStore=new MemoryMissionStore();await terminalStore.configureCapacity(1,evidenceDigest,future());
+  const terminalMission=await terminalStore.submit({repository:"owner/terminal",baseSha,objective:"terminal reports",acceptance:["quarantine"],budgetCents:100});
+  await terminalStore.recommendPlan(terminalMission.id,[recoverySlice("terminal")],"owner-session");await terminalStore.approvePlan(terminalMission.id);
+  const terminalLease=await terminalStore.claim(300,policyDigest,new Date(),recoveryDigest);assert(terminalLease);
+  const terminalProgress=(status:"blocked"|"unknown",eventId:string):ProgressV1=>({
+    version:"orloom.progress.v1",eventId,missionId:terminalMission.id,sliceId:terminalLease.slice.id,leaseEpoch:terminalLease.epoch,ordinal:1,planDigest:terminalLease.planDigest,
+    trustedCheckPolicyDigest:policyDigest,recoveryPolicyDigest:recoveryDigest,phase:"trusted_check",status,reasonCode:status==="blocked"?"scope_conflict":"provider_unavailable",
+    strategyId:"strategy:baseline",targetCheckId:"target:a",checkId:"check:baseline",counters:{providerCalls:0,inputTokens:0,outputTokens:0,wallMs:1},evidenceRefs:[`sha256:${"f".repeat(64)}`],
+  });
+  const before=(await terminalStore.getMission(terminalMission.id))!.mission.reservedCents;
+  const blockedReceipt=await terminalStore.recordProgress(terminalProgress("blocked","blocked-event"),terminalLease.leaseToken,terminalLease.capabilityToken,strategies);
+  assert.equal(blockedReceipt.action.action,"escalate");
+  assert.equal((await terminalStore.getMission(terminalMission.id))!.slices[0]!.status,"blocked");
+  assert.equal((await terminalStore.getMission(terminalMission.id))!.mission.reservedCents,before);
+
+  const unknownStore=new MemoryMissionStore();await unknownStore.configureCapacity(1,evidenceDigest,future());
+  const unknownMission=await unknownStore.submit({repository:"owner/unknown",baseSha,objective:"unknown reports",acceptance:["quarantine"],budgetCents:100});
+  await unknownStore.recommendPlan(unknownMission.id,[recoverySlice("unknown")],"owner-session");await unknownStore.approvePlan(unknownMission.id);
+  const unknownLease=await unknownStore.claim(300,policyDigest,new Date(),recoveryDigest);assert(unknownLease);
+  const unknown=terminalProgress("unknown","unknown-event");unknown.missionId=unknownMission.id;unknown.sliceId=unknownLease.slice.id;unknown.leaseEpoch=unknownLease.epoch;unknown.planDigest=unknownLease.planDigest;
+  const continueJudge=async(snapshot:DecisionSnapshotV1):Promise<JudgmentV1>=>({version:"orloom.judgment.v1",snapshotDigest:createHash("sha256").update(canonicalJson(snapshot)).digest("hex"),source:"jev",answer:"continue",strategyId:null,checkId:null,policyVersion:"v1",policyDigest:recoveryDigest,modelId:"fixture-model",confidence:1,usage:{inputTokens:0,outputTokens:0}});
+  const unknownBefore=(await unknownStore.getMission(unknownMission.id))!.mission.reservedCents;
+  await assert.rejects(unknownStore.recordProgress(unknown,unknownLease.leaseToken,unknownLease.capabilityToken,strategies,continueJudge),MissionConflictError);
+  assert.equal((await unknownStore.getMission(unknownMission.id))!.slices[0]!.status,"unknown");
+  assert.equal((await unknownStore.getMission(unknownMission.id))!.mission.reservedCents,unknownBefore);
+});
+
+test("memory two-phase judgment quarantines when mission reservation changes after snapshot",async()=>{
+  const store=new MemoryMissionStore();await store.configureCapacity(2,evidenceDigest,future());
+  const policyDigest="c".repeat(64),recoveryDigest="e".repeat(64);
+  const m=await store.submit({repository:"owner/snapshot-fence",baseSha,objective:"stale budget context",acceptance:["fenced"],budgetCents:1000});
+  await store.recommendPlan(m.id,[slice("first","src/first.ts",[],100),slice("second","src/second.ts",[],100)],"owner-session");await store.approvePlan(m.id);
+  const first=await store.claim(300,policyDigest,new Date(),recoveryDigest);assert(first);
+  const strategies:Record<string,TrustedStrategyPolicy>={"check:unit":{checkId:"check:unit",version:"v1",expectedSignal:"starts",scopeClasses:["src"],targetCheckIds:["target:unit"]}};
+  const p:ProgressV1={version:"orloom.progress.v1",eventId:"budget-fence-event",missionId:m.id,sliceId:first.slice.id,leaseEpoch:first.epoch,ordinal:1,planDigest:first.planDigest,trustedCheckPolicyDigest:policyDigest,recoveryPolicyDigest:recoveryDigest,phase:"trusted_check",status:"started",reasonCode:"other",strategyId:"check:unit",targetCheckId:"target:unit",checkId:"check:unit",counters:{providerCalls:0,inputTokens:0,outputTokens:0,wallMs:1},evidenceRefs:[`sha256:${"a".repeat(64)}`]};
+  let release!: (judgment:JudgmentV1)=>void;let signalStarted!:()=>void;
+  const started=new Promise<void>(resolve=>signalStarted=resolve);
+  const pendingJudgment=new Promise<JudgmentV1>(resolve=>release=resolve);
+  let captured:DecisionSnapshotV1|undefined;
+  const pending=store.recordProgress(p,first.leaseToken,first.capabilityToken,strategies,async(snapshot)=>{captured=snapshot;signalStarted();return pendingJudgment;});
+  await started;
+  assert.equal(captured?.reservedBudgetCents,100);
+  const second=await store.claim(300,policyDigest,new Date(),recoveryDigest);assert(second);
+  release({version:"orloom.judgment.v1",snapshotDigest:createHash("sha256").update(canonicalJson(captured)).digest("hex"),source:"deterministic",answer:"continue",strategyId:null,checkId:null,policyVersion:"v1",policyDigest:recoveryDigest,modelId:null,confidence:null,usage:null});
+  await assert.rejects(pending,MissionConflictError);
+  const after=await store.getMission(m.id);assert(after);
+  assert.equal(after.slices.find(x=>x.id===first.slice.id)?.status,"unknown");
+  assert.equal(after.mission.reservedCents,200,"both lease reservations remain held after stale judgment quarantine");
 });
 
 test("PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart",async()=>{

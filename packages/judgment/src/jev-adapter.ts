@@ -15,7 +15,8 @@ const snapshotDigest = (snapshot: unknown) => createHash("sha256").update(canoni
  */
 export function createJevRecoveryAdapter(client: JevClient): RecoveryJudgmentAdapter {
   return async (snapshot) => {
-    if (snapshot.status === "failed" && snapshot.alternatives.length === 0) {
+    if (snapshot.status === "blocked" || snapshot.status === "unknown"
+      || (snapshot.status === "failed" && snapshot.alternatives.length === 0)) {
       return deterministicRecovery(snapshot);
     }
     if (snapshot.alternatives.length > 29) return deterministicRecovery(snapshot);

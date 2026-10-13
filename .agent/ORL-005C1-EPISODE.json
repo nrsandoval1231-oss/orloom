@@ -1,0 +1,22 @@
+{
+  "episode": "C1a-first-independent-review",
+  "candidate": "ec3dd0ffa0168cdfef5973835db4cc646bc274de",
+  "state": "Local deterministic gates passed; real PostgreSQL and independent acceptance pending",
+  "decision": "Submit the bounded recovery checkpoint to independent source review before cloud proof or publication",
+  "action": "Controller reproduced npm ci, typecheck, build/41 tests, structure validation and diff check; reviewer inspected exact candidate",
+  "outcome": "FIX: unknown/blocked continuation, mismatched target-check candidate provenance, and missing judgment budget/evidence context",
+  "deterministicEvaluation": "Existing tests passed but did not prove these three required invariants. New regressions and candidate revalidation are required.",
+  "attribution": "Independent source review found coverage gaps; passing existing tests was insufficient acceptance evidence",
+  "candidateLesson": {
+    "rule": "For adaptive recovery, derive eligible actions from every terminal progress status and recheck them independently at the commit boundary",
+    "metric": "unauthorized continuation acceptance rate",
+    "direction": "decrease to zero in the tested terminal-state matrix",
+    "evidence": "docs/evidence/c1a-review/REVIEW-ec3dd0f.json",
+    "status": "candidate; repair and regression evidence pending",
+    "reversibility": "Revise or withdraw if counterexamples invalidate the proposed action matrix"
+  },
+  "nextDirection": "CORRECT via ORL-005C1-REPAIR-1.md; do not promote this execution lesson or claim measured performance improvement",
+  "formalRepairCount": 1,
+  "tokens": "UNKNOWN",
+  "elapsedToAccepted": "UNKNOWN; candidate not accepted"
+}

@@ -9,7 +9,7 @@ const newSecret = () => randomBytes(32).toString("base64url");
 export class MemoryMissionStore implements MissionStore {
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private slots = new Map<number, { digest: string; expires: string; enabled: boolean }>(); private occupied = new Map<string, number>();
-  private progress = new Map<string, ProgressV1>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
+  private progress = new Map<string, ProgressV1>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
   async configureCapacity(count:number,digest:string|null,expires:string|null){for(let i=1;i<=6;i++){if(i<=count&&digest&&expires)this.slots.set(i,{digest,expires,enabled:true});else{const old=this.slots.get(i);if(old)this.slots.set(i,{...old,enabled:false});}}}
   private event(id: string, type: string, data: Record<string, unknown>) { this.eventsLog.push({ cursor: ++this.cursor, missionId: id, type, data, createdAt: new Date().toISOString() }); }
   async submit(input: MissionInput) { const id = randomUUID(), now = new Date().toISOString(); const m = { ...input, repository: canonicalRepository(input.repository), acceptance: [...input.acceptance], id, status: "planning" as const, reservedCents: 0, createdAt: now }; this.missions.set(id, m); this.event(id, "mission.submitted", { repository: m.repository, baseSha: input.baseSha }); return m; }
@@ -41,7 +41,9 @@ export class MemoryMissionStore implements MissionStore {
     const previous=this.receipts.get(p.eventId);if(previous){if(canonicalJson(this.progress.get(p.eventId))!==canonicalJson(p))throw new MissionConflictError("Progress event ID was reused with different content");return{duplicate:true,action:previous,snapshot:this.snapshots.get(p.eventId)!,judgment:this.judgments.get(p.eventId)!};}
     const slice=this.mustRunning(p.missionId,p.sliceId,p.leaseEpoch,token,cap),plan=this.plans.get(p.missionId)!;
     const binding=this.leaseBindings.get(`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`),strategy=strategies[p.strategyId];if(!plan||!binding||binding.planDigest!==p.planDigest||binding.policyDigest!==p.trustedCheckPolicyDigest+":"+p.recoveryPolicyDigest||hash(canonicalJson(plan.slices))!==p.planDigest||p.phase!=="trusted_check"||!slice.checks.includes(p.strategyId)||!strategy||strategy.checkId!==p.checkId||!strategy.targetCheckIds.includes(p.targetCheckId))throw new MissionConflictError("Progress is outside its lease policy");
-    const key=`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`,ordinal=(this.revisions.get(key)??0)+1;if(p.ordinal!==ordinal)throw new MissionConflictError("Progress ordinal is stale or has a gap");
+    const key=`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`;
+    if(this.pendingJudgments.has(key))throw new MissionConflictError("A prior judgment is unresolved; blind retry is forbidden");
+    const ordinal=(this.revisions.get(key)??0)+1;if(p.ordinal!==ordinal)throw new MissionConflictError("Progress ordinal is stale or has a gap");
     if(p.ordinal>1){
       const previous=[...this.progress.entries()].find(([,value])=>value.missionId===p.missionId&&value.sliceId===p.sliceId&&value.leaseEpoch===p.leaseEpoch&&value.ordinal===p.ordinal-1);
       const previousAction=previous?this.receipts.get(previous[0]):undefined;
@@ -53,33 +55,53 @@ export class MemoryMissionStore implements MissionStore {
     const applicable=(id:string)=>Boolean(strategies[id]?.targetCheckIds.includes(p.targetCheckId)&&(strategies[id]?.scopeClasses.includes("*")||strategies[id]?.scopeClasses.includes(cohort)));
     const next=p.status==="failed"&&tried.size<2?slice.checks.find(x=>x!==p.strategyId&&!tried.has(x)&&applicable(x))??null:null;
     const available=slice.checks.filter(applicable).map(id=>({id,policy:strategies[id]!}));
-    const snapshot:DecisionSnapshotV1={version:"orloom.decision-snapshot.v1",missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,revision:ordinal,planDigest:p.planDigest,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,leaseExpiresAt:slice.leaseExpiresAt!,eventId:p.eventId,targetCheckId:p.targetCheckId,status:p.status,reasonCode:p.reasonCode,strategyId:p.strategyId,checkId:p.checkId,triedStrategies:[...tried,p.strategyId],alternatives:next?available.filter(x=>!tried.has(x.id)&&x.id!==p.strategyId):[],lessonIds:[],lessonBindings:[],preferredStrategyId:null};
+    const snapshot:DecisionSnapshotV1={version:"orloom.decision-snapshot.v1",missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,revision:ordinal,planDigest:p.planDigest,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,leaseExpiresAt:slice.leaseExpiresAt!,missionBudgetCents:mission.budgetCents,sliceBudgetCents:slice.budgetCents,reservedBudgetCents:mission.reservedCents,reportedUsage:{...p.counters},evidenceRefs:[...p.evidenceRefs],eventId:p.eventId,targetCheckId:p.targetCheckId,status:p.status,reasonCode:p.reasonCode,strategyId:p.strategyId,checkId:p.checkId,triedStrategies:[...tried,p.strategyId],alternatives:next?available.filter(x=>!tried.has(x.id)&&x.id!==p.strategyId):[],lessonIds:[],lessonBindings:[],preferredStrategyId:null};
+    this.revisions.set(key,ordinal);
+    this.pendingJudgments.set(key,p.eventId);
     let judgment:JudgmentV1;
     try { judgment=judge?await judge(snapshot):deterministicRecovery(snapshot); }
     catch { this.quarantineUnknown(p,slice,mission,snapshot);throw new MissionConflictError("Judgment outcome is unknown; lease remains quarantined"); }
-    if(judgment.snapshotDigest!==hash(canonicalJson(snapshot))||judgment.policyDigest!==p.recoveryPolicyDigest||judgment.answer==="change_strategy"&&!snapshot.alternatives.some(x=>x.id===judgment.strategyId&&x.id!==p.strategyId&&x.policy.checkId===judgment.checkId)||judgment.answer!=="change_strategy"&&(judgment.strategyId!==null||judgment.checkId!==null)||p.status==="failed"&&judgment.answer==="continue"){
+    const terminalStatus=p.status==="blocked"||p.status==="unknown";
+    if(judgment.snapshotDigest!==hash(canonicalJson(snapshot))||judgment.policyDigest!==p.recoveryPolicyDigest||(terminalStatus&&judgment.answer!=="escalate")||judgment.answer==="change_strategy"&&!snapshot.alternatives.some(x=>x.id===judgment.strategyId&&x.id!==p.strategyId&&x.policy.checkId===judgment.checkId)||judgment.answer!=="change_strategy"&&(judgment.strategyId!==null||judgment.checkId!==null)||p.status==="failed"&&judgment.answer==="continue"){
       this.quarantineUnknown(p,slice,mission,snapshot);
       throw new MissionConflictError("Judgment is outside the fenced recovery policy; lease remains quarantined");
+    }
+    try {
+      const current=this.mustRunning(p.missionId,p.sliceId,p.leaseEpoch,token,cap);
+      if(this.pendingJudgments.get(key)!==p.eventId
+        ||this.revisions.get(key)!==snapshot.revision
+        ||current.leaseExpiresAt!==snapshot.leaseExpiresAt
+        ||mission.budgetCents!==snapshot.missionBudgetCents
+        ||current.budgetCents!==snapshot.sliceBudgetCents
+        ||mission.reservedCents!==snapshot.reservedBudgetCents
+        ||canonicalJson(p.counters)!==canonicalJson(snapshot.reportedUsage)
+        ||canonicalJson(p.evidenceRefs)!==canonicalJson(snapshot.evidenceRefs)){
+        throw new MissionConflictError("Judgment snapshot context changed");
+      }
+    } catch {
+      this.quarantineUnknown(p,slice,mission,snapshot);
+      throw new MissionConflictError("Judgment fence changed; lease remains quarantined");
     }
     const chosen=judgment.strategyId?strategies[judgment.strategyId]!:strategy;
     const action:GovernorActionV1={version:"orloom.governor-action.v1",eventId:p.eventId,revision:ordinal,action:judgment.answer,strategyId:judgment.strategyId,checkId:judgment.checkId,expectedSignal:chosen.expectedSignal,policyVersion:judgment.policyVersion,policyDigest:judgment.policyDigest,lessonIds:snapshot.lessonIds};
     this.progress.set(p.eventId,p);this.receipts.set(p.eventId,action);this.snapshots.set(p.eventId,snapshot);this.judgments.set(p.eventId,judgment);this.revisions.set(key,ordinal);this.event(p.missionId,"slice.progress",{sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId,ordinal:p.ordinal,revision:ordinal,phase:p.phase,status:p.status,reasonCode:p.reasonCode,targetCheckId:p.targetCheckId,checkId:p.checkId,strategyId:p.strategyId,evidenceRefs:p.evidenceRefs,snapshotDigest:judgment.snapshotDigest,judgmentSource:judgment.source,action:action.action,nextStrategyId:judgment.strategyId});
     if(action.action==="escalate"||action.action==="request_replan"){
-      slice.status=action.action==="escalate"?"unknown":"blocked";
+      slice.status=p.status==="blocked"?"blocked":"unknown";
       slice.leaseToken=null;
       slice.leaseExpiresAt=null;
       mission.status=this.missionStatus(p.missionId);
       if(action.action==="request_replan")this.event(p.missionId,"sol.replan_requested",{sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId,reasonCode:p.reasonCode});
     }
+    this.pendingJudgments.delete(key);
     if(p.status==="passed")this.maybeLesson(p,mission.repository,cohort,strategy);
     return{duplicate:false,action,snapshot,judgment};
   }
   private maybeLesson(p:ProgressV1,repository:string,cohort:string,strategy:TrustedStrategyPolicy){
-    const successes=[...this.progress.entries()].filter(([,x])=>x.missionId===p.missionId&&x.status==="passed"&&x.strategyId===p.strategyId&&x.targetCheckId===p.targetCheckId);
+    const successes=[...this.progress.entries()].filter(([,x])=>this.missions.get(x.missionId)?.repository===repository&&x.status==="passed"&&x.strategyId===p.strategyId&&x.targetCheckId===p.targetCheckId&&x.recoveryPolicyDigest===p.recoveryPolicyDigest&&x.trustedCheckPolicyDigest===p.trustedCheckPolicyDigest);
     const episodes=new Map<string,{fail:ProgressV1;pass:ProgressV1;failId:string;passId:string}>();
     for(const[passId,pass]of successes){
-      const failEntry=[...this.progress.entries()].find(([,x])=>x.missionId===pass.missionId&&x.sliceId===pass.sliceId&&x.leaseEpoch===pass.leaseEpoch&&x.status==="failed"&&x.strategyId!==pass.strategyId&&x.targetCheckId===pass.targetCheckId&&x.ordinal<pass.ordinal);
-      if(failEntry)episodes.set(pass.sliceId,{fail:failEntry[1],pass,failId:failEntry[0],passId});
+      const failEntry=[...this.progress.entries()].find(([,x])=>x.missionId===pass.missionId&&x.sliceId===pass.sliceId&&x.leaseEpoch===pass.leaseEpoch&&x.status==="failed"&&x.strategyId!==pass.strategyId&&x.targetCheckId===pass.targetCheckId&&x.recoveryPolicyDigest===pass.recoveryPolicyDigest&&x.trustedCheckPolicyDigest===pass.trustedCheckPolicyDigest&&x.ordinal<pass.ordinal);
+      if(failEntry)episodes.set(`${pass.missionId}:${pass.sliceId}:${pass.leaseEpoch}`,{fail:failEntry[1],pass,failId:failEntry[0],passId});
     }
     if(episodes.size<2)return;
     const ids=[...episodes.values()].flatMap(x=>[x.failId,x.passId]).sort();
@@ -93,6 +115,7 @@ export class MemoryMissionStore implements MissionStore {
     this.event(p.missionId,"lesson.candidate",{lessonId:id,lessonVersion:latestVersion+1,cohort,fromCheckId,strategyId:p.strategyId,evidenceEventIds:ids,metric:"trusted_check_pass_rate",direction:"increase",challengeDigest:challenge});
   }
   private quarantineUnknown(p:ProgressV1,slice:MissionSlice,mission:Mission,snapshot:DecisionSnapshotV1){
+    this.pendingJudgments.delete(`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`);
     this.progress.set(p.eventId,p);
     this.snapshots.set(p.eventId,snapshot);
     this.revisions.set(`${p.missionId}:${p.sliceId}:${p.leaseEpoch}`,snapshot.revision);

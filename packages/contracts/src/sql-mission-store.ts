@@ -41,7 +41,7 @@ export class SqlMissionStore implements MissionStore {
   async recordProgress(p:ProgressV1,token:string,cap:string,strategies:Record<string,import("./mission.js").TrustedStrategyPolicy>,judge?: (snapshot:DecisionSnapshotV1)=>Promise<JudgmentV1>):Promise<ProgressReceipt>{
     const prepared=await this.db.transaction(async tx=>{
       await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
-      const active=await tx.query("SELECT s.*,m.repository FROM mission_slices s JOIN missions m ON m.id=s.mission_id JOIN capacity_slots c ON c.slot_id=s.capacity_slot AND c.enabled=true AND c.evidence_expires_at>now() WHERE s.mission_id=$1 AND s.id=$2 AND s.status='running' AND s.lease_epoch=$3 AND s.lease_token_hash=$4 AND s.capability_hash=$5 AND s.lease_expires_at>now() FOR UPDATE OF s",[p.missionId,p.sliceId,p.leaseEpoch,digest(token),digest(cap)]);
+      const active=await tx.query("SELECT s.*,m.repository,m.budget_cents AS mission_budget_cents,m.reserved_cents AS mission_reserved_cents FROM mission_slices s JOIN missions m ON m.id=s.mission_id JOIN capacity_slots c ON c.slot_id=s.capacity_slot AND c.enabled=true AND c.evidence_expires_at>now() WHERE s.mission_id=$1 AND s.id=$2 AND s.status='running' AND s.lease_epoch=$3 AND s.lease_token_hash=$4 AND s.capability_hash=$5 AND s.lease_expires_at>now() FOR UPDATE OF s",[p.missionId,p.sliceId,p.leaseEpoch,digest(token),digest(cap)]);
       const row=active.rows[0];
       if(!row)throw new MissionConflictError("Lease is stale, expired, or unauthorized");
       const replay=await tx.query("SELECT progress,action,snapshot,judgment,decision_status FROM mission_recovery_progress WHERE event_id=$1",[p.eventId]);
@@ -72,7 +72,7 @@ export class SqlMissionStore implements MissionStore {
       const choices=(row.checks as string[]).filter(id=>applicable(id)&&!tried.has(id));
       const alternatives=(p.status==="failed"&&tried.size<=1?choices:[]).map(id=>({id,policy:strategies[id]!}));
       const lessonBindings:DecisionSnapshotV1["lessonBindings"]=[];
-      const snapshot:DecisionSnapshotV1={version:"orloom.decision-snapshot.v1",missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,revision:Number(current.revision)+1,planDigest:p.planDigest,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,leaseExpiresAt:new Date(String(row.lease_expires_at)).toISOString(),eventId:p.eventId,targetCheckId:p.targetCheckId,status:p.status,reasonCode:p.reasonCode,strategyId:p.strategyId,checkId:p.checkId,triedStrategies:[...tried],alternatives,lessonIds:lessonBindings.map(x=>x.id),lessonBindings,preferredStrategyId:null};
+      const snapshot:DecisionSnapshotV1={version:"orloom.decision-snapshot.v1",missionId:p.missionId,sliceId:p.sliceId,leaseEpoch:p.leaseEpoch,revision:Number(current.revision)+1,planDigest:p.planDigest,trustedCheckPolicyDigest:p.trustedCheckPolicyDigest,recoveryPolicyDigest:p.recoveryPolicyDigest,leaseExpiresAt:new Date(String(row.lease_expires_at)).toISOString(),missionBudgetCents:Number(row.mission_budget_cents),sliceBudgetCents:Number(row.budget_cents),reservedBudgetCents:Number(row.mission_reserved_cents),reportedUsage:{...p.counters},evidenceRefs:[...p.evidenceRefs],eventId:p.eventId,targetCheckId:p.targetCheckId,status:p.status,reasonCode:p.reasonCode,strategyId:p.strategyId,checkId:p.checkId,triedStrategies:[...tried],alternatives,lessonIds:lessonBindings.map(x=>x.id),lessonBindings,preferredStrategyId:null};
       await tx.query("INSERT INTO mission_recovery_progress(event_id,mission_id,slice_id,lease_epoch,ordinal,progress,snapshot,decision_status) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,'prepared')",[p.eventId,p.missionId,p.sliceId,p.leaseEpoch,p.ordinal,canonicalJson(p),canonicalJson(snapshot)]);
       await tx.query("UPDATE mission_recovery_state SET revision=$3,last_ordinal=$4 WHERE mission_id=$1 AND slice_id=$2",[p.missionId,p.sliceId,snapshot.revision,p.ordinal]);
       return {snapshot,strategy,repository,cohort};
@@ -84,9 +84,22 @@ export class SqlMissionStore implements MissionStore {
     if(!this.validJudgment(judgment,prepared.snapshot)){await this.markJudgmentUnknown(prepared.snapshot,"invalid_judgment");throw new MissionConflictError("Judgment was invalid; lease remains quarantined");}
     const outcome=await this.db.transaction(async tx=>{
       await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
-      const active=await tx.query("SELECT s.*,m.repository FROM mission_slices s JOIN missions m ON m.id=s.mission_id JOIN capacity_slots c ON c.slot_id=s.capacity_slot AND c.enabled=true AND c.evidence_expires_at>now() WHERE s.mission_id=$1 AND s.id=$2 AND s.status='running' AND s.lease_epoch=$3 AND s.lease_token_hash=$4 AND s.capability_hash=$5 AND s.lease_expires_at>now() FOR UPDATE OF s",[p.missionId,p.sliceId,p.leaseEpoch,digest(token),digest(cap)]);
+      const active=await tx.query("SELECT s.*,m.repository,m.budget_cents AS mission_budget_cents,m.reserved_cents AS mission_reserved_cents FROM mission_slices s JOIN missions m ON m.id=s.mission_id JOIN capacity_slots c ON c.slot_id=s.capacity_slot AND c.enabled=true AND c.evidence_expires_at>now() WHERE s.mission_id=$1 AND s.id=$2 AND s.status='running' AND s.lease_epoch=$3 AND s.lease_token_hash=$4 AND s.capability_hash=$5 AND s.lease_expires_at>now() FOR UPDATE OF s",[p.missionId,p.sliceId,p.leaseEpoch,digest(token),digest(cap)]);
       const row=active.rows[0];
       if(!row||row.lease_plan_digest!==prepared.snapshot.planDigest||row.lease_policy_digest!==prepared.snapshot.trustedCheckPolicyDigest||row.lease_recovery_policy_digest!==prepared.snapshot.recoveryPolicyDigest){return{staleReason:"stale_judgment_fence" as const};}
+      if(Number(row.mission_budget_cents)!==prepared.snapshot.missionBudgetCents
+        ||Number(row.budget_cents)!==prepared.snapshot.sliceBudgetCents
+        ||Number(row.mission_reserved_cents)!==prepared.snapshot.reservedBudgetCents
+        ||canonicalJson(p.counters)!==canonicalJson(prepared.snapshot.reportedUsage)
+        ||canonicalJson(p.evidenceRefs)!==canonicalJson(prepared.snapshot.evidenceRefs)){
+        return{staleReason:"stale_judgment_context" as const};
+      }
+      const preparedRow=await tx.query("SELECT progress,snapshot FROM mission_recovery_progress WHERE event_id=$1 AND decision_status='prepared' FOR UPDATE",[p.eventId]);
+      if(!preparedRow.rows[0]
+        ||canonicalJson(preparedRow.rows[0].progress)!==canonicalJson(p)
+        ||canonicalJson(preparedRow.rows[0].snapshot)!==canonicalJson(prepared.snapshot)){
+        return{staleReason:"prepared_snapshot_changed" as const};
+      }
       const state=await tx.query("SELECT revision,last_ordinal FROM mission_recovery_state WHERE mission_id=$1 AND slice_id=$2 FOR UPDATE",[p.missionId,p.sliceId]);
       if(Number(state.rows[0]?.revision)!==prepared.snapshot.revision||Number(state.rows[0]?.last_ordinal)!==p.ordinal)return{staleReason:"stale_snapshot_revision" as const};
       const repo=canonicalRepository(String(row.repository)),cohort=(row.scopes as string[]).slice().sort()[0]!.split("/")[0]!.toLowerCase();
@@ -96,7 +109,7 @@ export class SqlMissionStore implements MissionStore {
       await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'slice.progress',$2::jsonb)",[p.missionId,JSON.stringify({sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId,ordinal:p.ordinal,revision:prepared.snapshot.revision,status:p.status,reasonCode:p.reasonCode,targetCheckId:p.targetCheckId,checkId:p.checkId,strategyId:p.strategyId,evidenceRefs:p.evidenceRefs,snapshotDigest:judgment.snapshotDigest,judgmentSource:judgment.source,judgmentModelId:judgment.modelId,judgmentUsage:judgment.usage,action:action.action,nextStrategyId:next})]);
       if(p.status==="passed")await this.maybeCreateLesson(tx,p,repo,cohort,prepared.strategy);
       if(action.action==="escalate"||action.action==="request_replan"){
-        const terminalStatus=action.action==="escalate"?"unknown":"blocked";
+      const terminalStatus=p.status==="blocked"?"blocked":"unknown";
         await tx.query("UPDATE mission_slices SET status=$3,lease_token_hash=NULL,capability_hash=NULL,lease_expires_at=NULL WHERE mission_id=$1 AND id=$2 AND lease_epoch=$4 AND status='running'",[p.missionId,p.sliceId,terminalStatus,p.leaseEpoch]);
         await this.refreshMissionStatus(tx,p.missionId);
         if(action.action==="request_replan")await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'sol.replan_requested',$2::jsonb)",[p.missionId,JSON.stringify({sliceId:p.sliceId,epoch:p.leaseEpoch,eventId:p.eventId,reasonCode:p.reasonCode})]);
@@ -112,7 +125,10 @@ export class SqlMissionStore implements MissionStore {
   private validJudgment(value:JudgmentV1,snapshot:DecisionSnapshotV1){
     const usageValid=value?.usage===null||Boolean(value?.usage&&Number.isSafeInteger(value.usage.inputTokens)&&value.usage.inputTokens>=0&&Number.isSafeInteger(value.usage.outputTokens)&&value.usage.outputTokens>=0);
     const confidenceValid=value?.confidence===null||Boolean(typeof value?.confidence==="number"&&Number.isFinite(value.confidence)&&value.confidence>=0&&value.confidence<=1);
-    const actionValid=value?.answer==="change_strategy"
+    const terminalStatus=snapshot.status==="blocked"||snapshot.status==="unknown";
+    const actionValid=terminalStatus
+      ? value?.answer==="escalate"&&value.strategyId===null&&value.checkId===null
+      : value?.answer==="change_strategy"
       ? snapshot.alternatives.some(x=>x.id===value.strategyId&&x.id!==snapshot.strategyId&&x.policy.checkId===value.checkId&&x.policy.version===value.policyVersion)
       : value?.strategyId===null&&value?.checkId===null&&!(snapshot.status==="failed"&&value.answer==="continue");
     const modelValid=value?.source==="deterministic"?value.modelId===null&&value.usage===null&&value.confidence===null:value?.source==="jev"&&typeof value.modelId==="string"&&value.modelId.length>0&&value.modelId.length<=160&&value.usage!==null&&value.confidence!==null;
@@ -121,13 +137,13 @@ export class SqlMissionStore implements MissionStore {
   }
   private async markJudgmentUnknown(snapshot:DecisionSnapshotV1,reason:string){await this.db.transaction(async tx=>{await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");await tx.query("UPDATE mission_recovery_progress SET decision_status='unknown' WHERE event_id=$1 AND decision_status='prepared'",[snapshot.eventId]);const q=await tx.query("UPDATE mission_slices SET status='unknown',lease_token_hash=NULL,capability_hash=NULL,lease_expires_at=NULL WHERE mission_id=$1 AND id=$2 AND lease_epoch=$3 AND status='running' RETURNING mission_id",[snapshot.missionId,snapshot.sliceId,snapshot.leaseEpoch]);if(q.rows[0]){await this.refreshMissionStatus(tx,snapshot.missionId);await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'slice.judgment_unknown',$2::jsonb)",[snapshot.missionId,JSON.stringify({sliceId:snapshot.sliceId,epoch:snapshot.leaseEpoch,eventId:snapshot.eventId,reason})]);}});}
   private async maybeCreateLesson(tx:SqlExecutor,p:ProgressV1,repository:string,cohort:string,strategy:import("./mission.js").TrustedStrategyPolicy){
-    const query=await tx.query("SELECT f.event_id AS failure_id, ok.event_id AS success_id, f.slice_id, f.progress->>'targetCheckId' AS from_check_id FROM mission_recovery_progress f JOIN mission_recovery_progress ok ON ok.mission_id=f.mission_id AND ok.slice_id=f.slice_id AND ok.lease_epoch=f.lease_epoch AND ok.ordinal>f.ordinal JOIN mission_slices s ON s.mission_id=f.mission_id AND s.id=f.slice_id JOIN missions m ON m.id=s.mission_id WHERE f.progress->>'status'='failed' AND ok.progress->>'status'='passed' AND ok.progress->>'strategyId'=$1 AND ok.progress->>'strategyId'<>f.progress->>'strategyId' AND f.progress->>'targetCheckId'=$2 AND m.repository=$3 AND lower(split_part(s.scopes->>0,'/',1))=$4",[p.strategyId,p.targetCheckId,repository,cohort]);
+    const query=await tx.query("SELECT f.mission_id, f.event_id AS failure_id, ok.event_id AS success_id, f.slice_id, f.progress->>'targetCheckId' AS from_check_id FROM mission_recovery_progress f JOIN mission_recovery_progress ok ON ok.mission_id=f.mission_id AND ok.slice_id=f.slice_id AND ok.lease_epoch=f.lease_epoch AND ok.ordinal>f.ordinal AND ok.progress->>'targetCheckId'=f.progress->>'targetCheckId' AND ok.progress->>'recoveryPolicyDigest'=f.progress->>'recoveryPolicyDigest' AND ok.progress->>'trustedCheckPolicyDigest'=f.progress->>'trustedCheckPolicyDigest' JOIN mission_slices s ON s.mission_id=f.mission_id AND s.id=f.slice_id JOIN missions m ON m.id=s.mission_id WHERE f.progress->>'status'='failed' AND ok.progress->>'status'='passed' AND ok.progress->>'strategyId'=$1 AND ok.progress->>'strategyId'<>f.progress->>'strategyId' AND f.progress->>'targetCheckId'=$2 AND f.progress->>'recoveryPolicyDigest'=$5 AND ok.progress->>'recoveryPolicyDigest'=$5 AND f.progress->>'trustedCheckPolicyDigest'=$6 AND ok.progress->>'trustedCheckPolicyDigest'=$6 AND m.repository=$3 AND lower(split_part(s.scopes->>0,'/',1))=$4",[p.strategyId,p.targetCheckId,repository,cohort,p.recoveryPolicyDigest,p.trustedCheckPolicyDigest]);
     // A lesson requires two independent slice episodes; the current slice is counted from its own durable history.
     const own=await tx.query("SELECT event_id,progress FROM mission_recovery_progress WHERE mission_id=$1 AND slice_id=$2 ORDER BY ordinal",[p.missionId,p.sliceId]);
-    const failed=own.rows.find(x=>(x.progress as ProgressV1).status==="failed"&&(x.progress as ProgressV1).targetCheckId===p.targetCheckId&&(x.progress as ProgressV1).strategyId!==p.strategyId);
-    const episode=failed?{failure_id:failed.event_id,success_id:p.eventId,slice_id:p.sliceId,from_check_id:p.targetCheckId}:null;
+    const failed=own.rows.find(x=>(x.progress as ProgressV1).status==="failed"&&(x.progress as ProgressV1).targetCheckId===p.targetCheckId&&(x.progress as ProgressV1).strategyId!==p.strategyId&&(x.progress as ProgressV1).recoveryPolicyDigest===p.recoveryPolicyDigest&&(x.progress as ProgressV1).trustedCheckPolicyDigest===p.trustedCheckPolicyDigest);
+    const episode=failed?{failure_id:failed.event_id,success_id:p.eventId,slice_id:p.sliceId,mission_id:p.missionId,from_check_id:p.targetCheckId}:null;
     const pairs=[...query.rows,...(episode?[episode]:[])];
-    const byKey=new Map<string,Map<string,{failure:string;success:string}>>();for(const x of pairs){const key=String(x.from_check_id);const slices=byKey.get(key)??new Map<string,{failure:string;success:string}>();slices.set(String(x.slice_id),{failure:String(x.failure_id),success:String(x.success_id)});byKey.set(key,slices);}
+    const byKey=new Map<string,Map<string,{failure:string;success:string}>>();for(const x of pairs){const key=String(x.from_check_id);const slices=byKey.get(key)??new Map<string,{failure:string;success:string}>();slices.set(`${x.mission_id}:${x.slice_id}`,{failure:String(x.failure_id),success:String(x.success_id)});byKey.set(key,slices);}
     for(const[fromCheckId,distinct]of byKey){
       if(distinct.size<2)continue;
       const existing=await tx.query("SELECT 1 FROM operational_lessons WHERE repository=$1 AND cohort=$2 AND from_check_id=$3 AND strategy_id=$4 AND status='candidate' LIMIT 1",[repository,cohort,fromCheckId,p.strategyId]);

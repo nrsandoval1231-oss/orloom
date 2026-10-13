@@ -24,12 +24,17 @@ const strategies = {
   "strategy:recovery": { checkId: "check:recovery", version: "fixture-v1", expectedSignal: "the same fixture check returns 42 after the approved repair", scopeClasses: ["src"], targetCheckIds: [targetCheckId] },
 };
 
-function config() {
+function config(targetCheckIds: string[] = [targetCheckId]) {
+  const trustedStrategies = {
+    ...strategies,
+    "strategy:baseline": { ...strategies["strategy:baseline"], targetCheckIds },
+    "strategy:recovery": { ...strategies["strategy:recovery"], targetCheckIds },
+  };
   return loadConfig({
     ORLOOM_MODE: "local", PORT: "3000", ORLOOM_SESSION_TOKEN: "owner-fixture-session", ORLOOM_WORKER_TOKEN: "worker-fixture-bootstrap",
     ORLOOM_MAX_LANES: "3", ORLOOM_CAPACITY_SLOTS: "3", ORLOOM_CAPACITY_EVIDENCE_VERIFIED: "true",
     ORLOOM_CAPACITY_EVIDENCE_SHA256: sha("isolated PGlite recovery test fixture"), ORLOOM_CAPACITY_EVIDENCE_EXPIRES_AT: new Date(Date.now() + 3_600_000).toISOString(),
-    ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["check:baseline", "check:recovery", targetCheckId]), ORLOOM_TRUSTED_STRATEGIES_JSON: JSON.stringify(strategies),
+    ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["check:baseline", "check:recovery", ...targetCheckIds]), ORLOOM_TRUSTED_STRATEGIES_JSON: JSON.stringify(trustedStrategies),
     ORLOOM_WORKER_MAX_PROVIDER_CALLS: "1", ORLOOM_WORKER_MAX_INPUT_TOKENS: "1", ORLOOM_WORKER_MAX_OUTPUT_TOKENS: "1", ORLOOM_WORKER_MAX_WALL_SECONDS: "1",
     ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON: "[\"fixture\"]", ORLOOM_WORKER_ALLOWED_MODELS_JSON: "[\"fixture-model\"]",
   });
@@ -65,7 +70,7 @@ function jevTransport(options: { holdFirstRecoveryChoice?: boolean } = {}) {
   return { fetch, started, releaseChoice, calls: () => callCount, setTerminal: (value: boolean) => { terminal = value; } };
 }
 
-async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter } = {}) {
+async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[] } = {}) {
   const db = new PGlite();
   await db.exec(await readFile("db/migrations/001_initial.sql", "utf8"));
   await db.exec(await readFile("db/migrations/002_missions.sql", "utf8"));
@@ -90,7 +95,7 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
     },
   };
   let store = new SqlMissionStore(sql);
-  const cfg = config();
+  const cfg = config(options.targetCheckIds);
   await store.configureCapacity(3, cfg.capacityEvidenceDigest!, cfg.capacityEvidenceExpiresAt!);
   const transport = jevTransport(options);
   const jev = new JevClient({ apiKey: "fixture-only-key", modelId, allowedModelIds: new Set([modelId]), limits: { maxInputBytes: 64_000, maxResponseBytes: 32_000, timeoutMs: 2_000 }, fetch: transport.fetch });
@@ -165,13 +170,13 @@ function applyApprovedRecovery(workspace: { source: string }, strategyId: string
   workspace.source = workspace.source.replace("answer = 41;", "answer = 42;");
 }
 
-function progress(lease: any, policy: any, eventId: string, ordinal: number, strategyId: string, check: ReturnType<typeof runFixedCheck>) {
+function progress(lease: any, policy: any, eventId: string, ordinal: number, strategyId: string, check: ReturnType<typeof runFixedCheck>, target = targetCheckId) {
   const passed = check.exitCode === 0;
   return {
     version: "orloom.progress.v1", eventId, missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, ordinal,
     planDigest: policy.planDigest, trustedCheckPolicyDigest: policy.trustedCheckPolicyDigest, recoveryPolicyDigest: policy.recoveryPolicyDigest,
     phase: "trusted_check", status: passed ? "passed" : "failed", reasonCode: passed ? "check_passed" : "check_failed",
-    strategyId, targetCheckId, checkId: policy.strategies[strategyId].checkId,
+    strategyId, targetCheckId: target, checkId: policy.strategies[strategyId].checkId,
     counters: { providerCalls: 0, inputTokens: 0, outputTokens: 0, wallMs: 1 }, evidenceRefs: [digestRef(check.receipt)],
   };
 }
@@ -204,6 +209,13 @@ async function runEpisode(ctx: Awaited<ReturnType<typeof setup>>, lease: any, po
   assert.equal(failed.value.action.action, "change_strategy");
   assert.equal(failed.value.action.strategyId, "strategy:recovery");
   assert.equal(failed.value.judgment.source, "jev");
+  assert.equal(failed.value.judgment.snapshotDigest, sha(canonicalJson(failed.value.snapshot)), "judgment binds the canonical immutable snapshot");
+  assert.equal(failed.value.snapshot.missionBudgetCents, 90_000);
+  assert.equal(failed.value.snapshot.sliceBudgetCents, 10_000);
+  assert.equal(failed.value.snapshot.reservedBudgetCents, 20_000, "the snapshot binds mission-wide reservations for both claimed slices");
+  assert.equal(failed.value.snapshot.missionBudgetCents - failed.value.snapshot.reservedBudgetCents, 70_000);
+  assert.deepEqual(failed.value.snapshot.reportedUsage, baseline.counters);
+  assert.deepEqual(failed.value.snapshot.evidenceRefs, baseline.evidenceRefs);
   const wrongCapabilityAfterCommit = leaseHeaders(lease);
   wrongCapabilityAfterCommit.authorization = "Bearer wrong-capability";
   assert.equal((await ctx.request("POST", `/api/worker/missions/${lease.mission.id}/slices/${lease.slice.id}/progress`, baseline, wrongCapabilityAfterCommit)).status, 409, "committed replay still requires the lease capability");
@@ -297,6 +309,34 @@ test("authenticated HTTP and PGlite retain executable recovery evidence and an u
   } finally { await ctx.close(); }
 });
 
+test("episodes with different target checks cannot form one comparable lesson candidate", async () => {
+  const otherTarget = "target:other-check";
+  const ctx = await setup({ targetCheckIds: [targetCheckId, otherTarget] });
+  try {
+    const missionId = await createMission(ctx, "fixture/mixed-target-proof", ["target-a", "target-b"]);
+    for (const [index, id] of ["target-a", "target-b"].entries()) {
+      const { lease, policy } = await claim(ctx);
+      assert.equal(lease.mission.id, missionId);
+      assert.equal(lease.slice.id, id);
+      const workspace = fixtureWorkspace();
+      const failure = runFixedCheck(workspace);
+      assert.equal(failure.exitCode, 1);
+      const failed = await report(ctx, lease, progress(lease, policy, `mixed-${index}-failed-${randomUUID()}`, 1, "strategy:baseline", failure, targetCheckId));
+      assert.equal(failed.status, 200);
+      assert.equal(failed.value.action.strategyId, "strategy:recovery");
+      applyApprovedRecovery(workspace, failed.value.action.strategyId);
+      const success = runFixedCheck(workspace);
+      assert.equal(success.exitCode, 0);
+      const passed = await report(ctx, lease, progress(lease, policy, `mixed-${index}-passed-${randomUUID()}`, 2, "strategy:recovery", success, otherTarget));
+      assert.equal(passed.status, 200);
+      assert.equal(passed.value.judgment.answer, "continue");
+    }
+    const lessons = await ctx.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: ctx.cookie });
+    assert.equal(lessons.status, 200);
+    assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, "a failed check for target A and pass for target B are not comparable evidence");
+  } finally { await ctx.close(); }
+});
+
 test("an in-flight adapter result is fenced after lease expiry and the unresolved slice remains quarantined", async () => {
   const ctx = await setup({ holdFirstRecoveryChoice: true });
   try {
@@ -339,9 +379,33 @@ test("an in-flight adapter result is fenced after lease expiry and the unresolve
   } finally { await ctx.close(); }
 });
 
+test("an in-flight decision is quarantined if authoritative mission budget changes after snapshot", async () => {
+  const ctx = await setup({ holdFirstRecoveryChoice: true });
+  try {
+    const missionId = await createMission(ctx, "fixture/snapshot-budget-fence", ["budget-fenced"]);
+    const { lease, policy } = await claim(ctx);
+    const failed = runFixedCheck(fixtureWorkspace());
+    const event = progress(lease, policy, `budget-fence-${randomUUID()}`, 1, "strategy:baseline", failed);
+    const inFlight = report(ctx, lease, event);
+    await ctx.transport.started;
+    const changed = await ctx.db.query("UPDATE missions SET budget_cents=budget_cents+1 WHERE id=$1", [missionId]);
+    assert.equal(changed.rowCount, 1, "the isolated fixture changed authoritative budget while the adapter was pending");
+    ctx.transport.releaseChoice();
+    assert.equal((await inFlight).status, 409, "a stale snapshot cannot commit after budget context changes");
+    const row = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [event.eventId]);
+    assert.equal(row.rows[0]?.decision_status, "unknown");
+    assert.equal(row.rows[0]?.action, null);
+    const current = await ctx.store.getMission(missionId);
+    assert.equal(current?.mission.budgetCents, 90_001);
+    assert.equal(current?.mission.reservedCents, 10_000);
+    assert.equal(current?.slices.find(item => item.id === "budget-fenced")?.status, "unknown");
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "budget-fenced UNKNOWN remains quarantined");
+  } finally { await ctx.close(); }
+});
+
 test("an impossible model continue on a failed check commits no decision and quarantines the slice", async () => {
   const invalidContinue: RecoveryJudgmentAdapter = async (snapshot: DecisionSnapshotV1) => ({
-    version: "orloom.judgment.v1", snapshotDigest: sha(JSON.stringify(snapshot)), source: "jev", answer: "continue",
+    version: "orloom.judgment.v1", snapshotDigest: sha(canonicalJson(snapshot)), source: "jev", answer: "continue",
     strategyId: null, checkId: null, policyVersion: "fixture-v1", policyDigest: snapshot.recoveryPolicyDigest,
     modelId, confidence: 1, usage: { inputTokens: 1, outputTokens: 1 },
   });
@@ -360,5 +424,31 @@ test("an impossible model continue on a failed check commits no decision and qua
     assert.equal(current?.slices.find(item => item.id === "invalid")?.status, "unknown");
     assert.equal(current?.mission.reservedCents, 10_000);
     assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null);
+  } finally { await ctx.close(); }
+});
+
+test("blocked and unknown progress cannot be continued by an injected judgment", async () => {
+  const invalidContinue: RecoveryJudgmentAdapter = async (snapshot: DecisionSnapshotV1) => ({
+    version: "orloom.judgment.v1", snapshotDigest: sha(canonicalJson(snapshot)), source: "jev", answer: "continue",
+    strategyId: null, checkId: null, policyVersion: "fixture-v1", policyDigest: snapshot.recoveryPolicyDigest,
+    modelId, confidence: 1, usage: { inputTokens: 1, outputTokens: 1 },
+  });
+  const ctx = await setup({ judgmentAdapter: invalidContinue });
+  try {
+    for (const status of ["blocked", "unknown"] as const) {
+      const missionId = await createMission(ctx, `fixture/${status}-continue`, [status]);
+      const { lease, policy } = await claim(ctx);
+      assert.equal(lease.mission.id, missionId);
+      const check = runFixedCheck(fixtureWorkspace());
+      const event = { ...progress(lease, policy, `${status}-continue-${randomUUID()}`, 1, "strategy:baseline", check), status, reasonCode: "provider_unavailable" as const };
+      assert.equal((await report(ctx, lease, event)).status, 409);
+      const stored = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [event.eventId]);
+      assert.equal(stored.rows[0]?.decision_status, "unknown");
+      assert.equal(stored.rows[0]?.action, null);
+      const current = await ctx.store.getMission(missionId);
+      assert.equal(current?.slices.find(item => item.id === status)?.status, "unknown");
+      assert.equal(current?.mission.reservedCents, 10_000);
+    }
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "both ambiguous outcomes stay quarantined");
   } finally { await ctx.close(); }
 });

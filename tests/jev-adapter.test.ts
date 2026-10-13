@@ -21,7 +21,9 @@ test("Jev recovery adapter exposes only approved alternative IDs and binds the a
   const snapshot: DecisionSnapshotV1 = {
     version: "orloom.decision-snapshot.v1", missionId: "mission", sliceId: "slice", leaseEpoch: 1, revision: 1,
     planDigest: "a".repeat(64), trustedCheckPolicyDigest: "b".repeat(64), recoveryPolicyDigest: "c".repeat(64),
-    leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(), eventId: "event-1", targetCheckId: "target:build",
+    leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(), missionBudgetCents: 1000, sliceBudgetCents: 300,
+    reservedBudgetCents: 300, reportedUsage: { providerCalls: 1, inputTokens: 20, outputTokens: 3, wallMs: 500 },
+    evidenceRefs: ["sha256:" + "d".repeat(64)], eventId: "event-1", targetCheckId: "target:build",
     status: "failed", reasonCode: "check_failed", strategyId: "strategy:baseline", checkId: "check:baseline",
     triedStrategies: ["strategy:baseline"], alternatives: [{ id: "strategy:recovery", policy: { checkId: "check:recovery", version: "v1", expectedSignal: "fixture passes", scopeClasses: ["src"], targetCheckIds: ["target:build"] } }],
     lessonIds: [], lessonBindings: [], preferredStrategyId: null,
@@ -37,4 +39,29 @@ test("Jev recovery adapter exposes only approved alternative IDs and binds the a
     source: "jev", answer: "change_strategy", strategyId: "strategy:recovery", checkId: "check:recovery",
     policyVersion: "v1", policyDigest: "c".repeat(64), modelId, confidence: 0.75, usage: { inputTokens: 20, outputTokens: 3 },
   });
+});
+
+test("blocked and unknown snapshots are terminal without consulting Jev", async () => {
+  const modelId = "operator-pinned-model-v1";
+  const client = new JevClient({
+    apiKey: "injected-test-key", modelId, allowedModelIds: new Set([modelId]),
+    limits: { maxInputBytes: 16_384, maxResponseBytes: 16_384, timeoutMs: 1000 },
+    fetch: async () => { throw new Error("terminal snapshot must not call provider"); },
+  });
+  const base: DecisionSnapshotV1 = {
+    version: "orloom.decision-snapshot.v1", missionId: "mission", sliceId: "slice", leaseEpoch: 1, revision: 1,
+    planDigest: "a".repeat(64), trustedCheckPolicyDigest: "b".repeat(64), recoveryPolicyDigest: "c".repeat(64),
+    leaseExpiresAt: new Date(Date.now() + 60_000).toISOString(), missionBudgetCents: 1000, sliceBudgetCents: 300,
+    reservedBudgetCents: 300, reportedUsage: { providerCalls: 1, inputTokens: 20, outputTokens: 3, wallMs: 500 },
+    evidenceRefs: ["sha256:" + "d".repeat(64)], eventId: "event-2", targetCheckId: "target:build",
+    status: "blocked", reasonCode: "scope_conflict", strategyId: "strategy:baseline", checkId: "check:baseline",
+    triedStrategies: ["strategy:baseline"], alternatives: [], lessonIds: [], lessonBindings: [], preferredStrategyId: null,
+  };
+
+  for (const status of ["blocked", "unknown"] as const) {
+    const judgment = await createJevRecoveryAdapter(client)({ ...base, status });
+    assert.equal(judgment.source, "deterministic");
+    assert.equal(judgment.answer, "escalate");
+    assert.equal(judgment.strategyId, null);
+  }
 });
