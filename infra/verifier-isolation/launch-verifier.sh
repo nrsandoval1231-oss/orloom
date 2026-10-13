@@ -88,7 +88,8 @@ write_slot "$container_id" running
 created=$(identity "$container_id")
 [[ $created == "$container_id|ORL-C3|$NAME|$IMAGE" ]] || { echo 'created container identity did not match this invocation' >&2; exit 70; }
 set +e
-tar -C "/run/orloom-verifier-input/$NAME" -cf - . | timeout --signal=TERM --kill-after=2s 60s "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"
+attach_timeout=$([[ $POLICY == node-repo-suite-v1 ]] && echo 210s || echo 60s)
+tar -C "/run/orloom-verifier-input/$NAME" -cf - . | timeout --signal=TERM --kill-after=2s "$attach_timeout" "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"
 pipeline_status=("${PIPESTATUS[@]}")
 set -e
 start_status=${pipeline_status[1]}

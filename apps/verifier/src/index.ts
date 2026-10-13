@@ -1,5 +1,5 @@
 /** Process adapter boundary; privileged launch implementations stay in trusted host configuration. */
-export { TrustedVerificationRunner, DurableArtifactStore, CHECK_POLICIES, getCheckPolicy, extractCandidateBundle } from "../../../packages/verification/src/index.js";
+export { TrustedVerificationRunner, DurableArtifactStore, CHECK_POLICIES, getCheckPolicy, getCheckAttemptLifetimeMs, extractCandidateBundle } from "../../../packages/verification/src/index.js";
 export type { TrustedVerificationRunnerOptions, SandboxLauncher, SandboxResult, InputBundle, RepositoryConfig } from "../../../packages/verification/src/index.js";
 
 import path from "node:path";

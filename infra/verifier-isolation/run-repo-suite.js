@@ -5,7 +5,7 @@ import { classifySuiteStage, executeStages } from './stage-runner.js';
 import { emitSuiteDiagnostic } from './suite-diagnostics.js';
 
 const root = '/work/source';
-const limit = 60_000, logLimit = 65_536, start = Date.now();
+const limit = 180_000, logLimit = 65_536, start = Date.now();
 const POLICY_STAGE_ORDER = Object.freeze(["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"]);
 const out = [], err = []; let outSize = 0, errSize = 0, overflow = false, activeStage;
 let admittedManifest;

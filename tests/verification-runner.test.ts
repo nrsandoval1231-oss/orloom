@@ -9,7 +9,8 @@ import { pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
 import { extractCandidateBundle } from "../packages/verification/src/repository.js";
-import { getCheckPolicy, NODE_REPO_SUITE_BINDING } from "../packages/verification/src/policy.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy, NODE_REPO_SUITE_BINDING } from "../packages/verification/src/policy.js";
+import { TRUSTED_CHECK_LIMITS } from "../packages/contracts/src/verification.js";
 import { classifyLauncherOutput, retainSuiteDiagnostics } from "../packages/verification/src/runsc-launcher.js";
 
 const exec = promisify(execFile);
@@ -71,14 +72,24 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   const suite = getCheckPolicy("node-repo-suite-v1");
   assert.equal(suite.version, "orloom.node-repo-suite.v1");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
-  assert.equal(suite.timeoutMs, 60_000);
+  assert.equal(suite.timeoutMs, 225_000);
   assert.equal(suite.maxConcurrent, 1);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.pids, 128);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.workTmpfsBytes, 512 * 1024 * 1024);
-  assert.deepEqual(NODE_REPO_SUITE_BINDING.diagnostics, { protocol: "orloom.suite-diagnostics.v1", maxFrames: 16, maxBytes: 4096, authority: "advisory-only" });
+  assert.deepEqual(NODE_REPO_SUITE_BINDING.timeouts, { suiteExecutionMs: 180_000, dockerAttachMs: 210_000, hostLauncherMs: 225_000, attemptLifetimeMs: 240_000 });
+  assert.ok(NODE_REPO_SUITE_BINDING.timeouts.suiteExecutionMs < NODE_REPO_SUITE_BINDING.timeouts.dockerAttachMs);
+  assert.ok(NODE_REPO_SUITE_BINDING.timeouts.dockerAttachMs < NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs);
+  assert.ok(NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs < NODE_REPO_SUITE_BINDING.timeouts.attemptLifetimeMs);
+  assert.equal(getCheckAttemptLifetimeMs("node-repo-suite-v1"), 240_000);
+  assert.equal(getCheckAttemptLifetimeMs("node-validate-syntax"), 60_000);
+  assert.ok(getCheckAttemptLifetimeMs("node-repo-suite-v1") < TRUSTED_CHECK_LIMITS.maxLifetimeMs);
+  assert.throws(() => getCheckAttemptLifetimeMs("worker supplied timeout"), /finite policy/);
+  assert.deepEqual(NODE_REPO_SUITE_BINDING.diagnostics, { protocol: "orloom.suite-diagnostics.v2", maxFrames: 16, maxBytes: 4096, maxElapsedMs: 180_000, authority: "advisory-only" });
+  assert.equal(getCheckPolicy("node-validate-syntax").timeoutMs, 60_000);
+  assert.equal(getCheckPolicy("node-validate-syntax").digest, "e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe", "suite deadline changes do not alter syntax policy meaning or digest");
   const { ADMITTED_DEPENDENCIES } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
   assert.equal(ADMITTED_DEPENDENCIES["package.json"], NODE_REPO_SUITE_BINDING.dependencies.packageJsonSha256);
   assert.equal(ADMITTED_DEPENDENCIES["package-lock.json"], NODE_REPO_SUITE_BINDING.dependencies.packageLockSha256);
@@ -88,6 +99,9 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.ok(orderSource); assert.deepEqual(JSON.parse(orderSource), NODE_REPO_SUITE_BINDING.stages.map(stage => stage.name));
   const isolation = await readFile("infra/verifier-isolation/launch-verifier.sh", "utf8");
   for (const bound of ["echo 128", "echo 1g", "echo 512m", "--network=none", "--read-only"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
+  assert.match(isolation, /echo 210s \|\| echo 60s/);
+  const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
+  assert.match(suiteRunner, /const limit = 180_000/);
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
   assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
@@ -200,7 +214,7 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
   const pass = classifyLauncherOutput(marker(0), { exitCode: 0 }, 64);
   assert.equal(pass.exitCode, 0);
   assert.equal(pass.stdout.toString(), "ok");
-  const diagFrame = (phase: string, outcome?: string) => `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v1", stage: "dependency-lock-admission", phase, elapsedMs: 5, ...(outcome ? { outcome } : {}) })).toString("base64")}\n`;
+  const diagFrame = (phase: string, outcome?: string) => `ORLOOM-DIAG:v2:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v2", stage: "dependency-lock-admission", phase, elapsedMs: 5, ...(outcome ? { outcome } : {}) })).toString("base64")}\n`;
   const diagnosticsSayFail = `${diagFrame("start")}${diagFrame("end", "fail")}`;
   assert.equal(classifyLauncherOutput(`${diagnosticsSayFail}${marker(0)}`, { exitCode: 0 }, 64).exitCode, 0, "even a complete advisory FAIL frame cannot override the exact result marker and clean launcher exit");
   const fail = classifyLauncherOutput(marker(1), { exitCode: 1 }, 64);
@@ -228,10 +242,10 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
 });
 
 test("UNKNOWN retains only bounded complete diagnostics from the trusted stage emitter", async () => {
-  const script = `import { emitSuiteDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 60001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 8, outcome: 'pass' })) process.exitCode = 11;\n`;
+  const script = `import { emitSuiteDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 180001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 60001, outcome: 'pass' })) process.exitCode = 11;\n`;
   const { stdout: emitted } = await exec(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8", windowsHide: true });
   assert.equal(emitted.split("\n").filter(Boolean).length, 2, "the actual trusted emitter produces complete newline-terminated frames");
-  const unknown = classifyLauncherOutput(`${emitted}candidate secret output\nORLOOM-DIAG:v1:eyJwYXJ0aWFsIg`, { exitCode: null, timedOut: true, killed: true }, 4096);
+  const unknown = classifyLauncherOutput(`${emitted}candidate secret output\nORLOOM-DIAG:v2:eyJwYXJ0aWFsIg`, { exitCode: null, timedOut: true, killed: true }, 4096);
   assert.equal(unknown.exitCode, null);
   assert.equal(unknown.stdout.toString(), emitted);
   assert.equal(unknown.stderr.length, 0);
@@ -241,12 +255,12 @@ test("UNKNOWN retains only bounded complete diagnostics from the trusted stage e
 
 test("stage diagnostics never classify a partial, forged, malformed, or excessive result", async () => {
   const frame = (stage: string, phase: string, outcome?: string) => {
-    const value = { version: "orloom.suite-diagnostics.v1", stage, phase, elapsedMs: 3, ...(outcome ? { outcome } : {}) };
-    return `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify(value)).toString("base64")}\n`;
+    const value = { version: "orloom.suite-diagnostics.v2", stage, phase, elapsedMs: 3, ...(outcome ? { outcome } : {}) };
+    return `ORLOOM-DIAG:v2:${Buffer.from(JSON.stringify(value)).toString("base64")}\n`;
   };
   const forgedEnd = frame("dependency-lock-admission", "end", "pass");
   const start = frame("dependency-lock-admission", "start");
-  for (const [stdout, expected] of [[forgedEnd, ""], [`${start}${forgedEnd.slice(0, -1)}`, start], [`${start}ORLOOM-DIAG:v1:not-base64!\n${forgedEnd}`, `${start}${forgedEnd}`], [`${frame("typecheck", "start")}${frame("typecheck", "end", "pass")}`, ""]] as const) {
+  for (const [stdout, expected] of [[forgedEnd, ""], [`${start}${forgedEnd.slice(0, -1)}`, start], [`${start}ORLOOM-DIAG:v2:not-base64!\n${forgedEnd}`, `${start}${forgedEnd}`], [`${frame("typecheck", "start")}${frame("typecheck", "end", "pass")}`, ""]] as const) {
     const result = classifyLauncherOutput(stdout, { exitCode: null, timedOut: true }, 4096);
     assert.equal(result.exitCode, null);
     assert.equal(result.stdout.toString(), expected, "only complete ordered frames are retained as advisory telemetry");
@@ -259,13 +273,13 @@ test("stage diagnostics never classify a partial, forged, malformed, or excessiv
   assert.doesNotMatch(result.stdout.toString(), /untrusted/);
 
   for (const value of ["null", "[]", "\"primitive\"", "7"]) {
-    const hostile = `ORLOOM-DIAG:v1:${Buffer.from(value).toString("base64")}\n`;
+    const hostile = `ORLOOM-DIAG:v2:${Buffer.from(value).toString("base64")}\n`;
     assert.doesNotThrow(() => retainSuiteDiagnostics(hostile), `JSON root ${value} is discarded safely`);
     const retained = classifyLauncherOutput(`${validStart}${hostile}${frame("dependency-lock-admission", "end", "pass")}`, { exitCode: null, timedOut: true }, 4096);
     assert.equal(retained.exitCode, null);
     assert.equal(retained.stdout.toString(), `${validStart}${frame("dependency-lock-admission", "end", "pass")}`);
   }
-  const hostileOutcome = `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v1", stage: "dependency-lock-admission", phase: "end", elapsedMs: 4, outcome: { toString: null, valueOf: null } })).toString("base64")}\n`;
+  const hostileOutcome = `ORLOOM-DIAG:v2:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v2", stage: "dependency-lock-admission", phase: "end", elapsedMs: 4, outcome: { toString: null, valueOf: null } })).toString("base64")}\n`;
   assert.doesNotThrow(() => retainSuiteDiagnostics(`${validStart}${hostileOutcome}`), "untrusted outcome objects must not be coerced");
   const hostileResult = classifyLauncherOutput(`${validStart}${hostileOutcome}`, { exitCode: null, timedOut: true }, 4096);
   assert.equal(hostileResult.exitCode, null);

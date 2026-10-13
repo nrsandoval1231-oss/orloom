@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import { Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
-import { CheckCertificateV1, parseTrustedCheckRequestV1, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
+import { CheckCertificateV1, parseTrustedCheckRequestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 
 export interface TrustedCheckRunner {
@@ -12,7 +12,9 @@ export interface TrustedCheckRunner {
 }
 export class TrustedCheckCoordinator implements TrustedCheckService {
   private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}}>();
-  constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[]},private readonly clock=()=>new Date()){}
+  constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[];attemptLifetimeMs:number},private readonly clock=()=>new Date()){
+    if(!Number.isSafeInteger(settings.attemptLifetimeMs)||settings.attemptLifetimeMs<1||settings.attemptLifetimeMs>TRUSTED_CHECK_LIMITS.maxLifetimeMs)throw new Error("trusted check attempt lifetime is outside contract bounds");
+  }
   async prepare(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1>{
     if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
     if(!this.settings.allowedChecks.includes(checkId))throw new MissionConflictError("Check is outside trusted operator policy");
@@ -23,7 +25,7 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     let head:{sha:string;observedAt:string;digest:string};
     try{head=await this.runner.observeHead(record.mission.repository);}catch{await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
     if(head.sha!==slice.candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){await this.store.recordVerificationUnavailable?.(missionId,sliceId,slice.leaseEpoch,checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
-    const now=this.clock(),expires=new Date(now.getTime()+60_000),attemptId=randomUUID();
+    const now=this.clock(),expires=new Date(now.getTime()+this.settings.attemptLifetimeMs),attemptId=randomUUID();
     const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId,sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha:slice.candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
     const capability=randomBytes(32).toString("base64url");
     await this.store.createVerificationAttempt({request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest});

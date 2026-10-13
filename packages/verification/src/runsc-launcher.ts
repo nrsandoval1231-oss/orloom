@@ -24,7 +24,7 @@ async function makePrivateDir(directory: string, mode = 0o700): Promise<void> {
 
 export interface LauncherProcessResult { exitCode: number | null; signal?: string | null; timedOut?: boolean; killed?: boolean; truncated?: boolean; stderr?: string; }
 
-const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v1:";
+const DIAGNOSTIC_PREFIX = "ORLOOM-DIAG:v2:";
 const DIAGNOSTIC_BYTES_MAX = 4096, DIAGNOSTIC_FRAMES_MAX = 16, DIAGNOSTIC_LINE_MAX = 512;
 const DIAGNOSTIC_STAGES = ["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"] as const;
 
@@ -49,9 +49,9 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
     const frame = parsed as Record<string, unknown>;
     const phase = frame.phase;
     const keys = Object.keys(frame).sort().join(",");
-    const common = frame.version === "orloom.suite-diagnostics.v1"
+    const common = frame.version === "orloom.suite-diagnostics.v2"
       && typeof frame.stage === "string" && Number.isSafeInteger(frame.elapsedMs)
-      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 60_000;
+      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 180_000;
     if (!common) continue;
     const stage = frame.stage as string;
     if (phase === "start" && keys === "elapsedMs,phase,stage,version" && openStage === undefined
@@ -84,7 +84,7 @@ export function classifyLauncherOutput(stdout: string, processResult: LauncherPr
 
 /** Host-side adapter for the fixed runsc launcher. Requires Linux and the protected root service account. */
 export class LocalRunscLauncher implements SandboxLauncher {
-  constructor(private readonly options: { image: string; launcherScript: string; inputRoot?: string; outputRoot?: string; timeoutMs?: number }) {
+  constructor(private readonly options: { image: string; launcherScript: string; inputRoot?: string; outputRoot?: string }) {
     if (!/^(?:sha256:[a-f0-9]{64}|[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64})$/.test(options.image)) throw new Error("verifier image must be pinned by immutable digest or local image ID");
     if (!path.isAbsolute(options.launcherScript)) throw new Error("launcher script path must be absolute");
   }
@@ -116,7 +116,7 @@ export class LocalRunscLauncher implements SandboxLauncher {
       let launcherExitCode: number | null = null, launcherSignal: string | undefined, launcherTimedOut = false, launcherKilled = false, launcherTruncated = false;
       try {
         const completed = await exec("/bin/bash", [this.options.launcherScript, name, policy.id], {
-          timeout: this.options.timeoutMs ?? policy.timeoutMs, maxBuffer: 256 * 1024, encoding: "utf8", windowsHide: true,
+          timeout: policy.timeoutMs, maxBuffer: 256 * 1024, encoding: "utf8", windowsHide: true,
           env: { PATH: "/usr/sbin:/usr/bin:/sbin:/bin", ORLOOM_VERIFIER_IMAGE: this.options.image, HOME: "/root", LANG: "C" },
         });
         stdout = completed.stdout; launcherStderr = completed.stderr; launcherExitCode = 0;

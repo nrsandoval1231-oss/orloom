@@ -6,7 +6,7 @@ import { MemoryMissionStore } from "../../../packages/contracts/src/memory-missi
 import { SqlMissionStore } from "../../../packages/contracts/src/sql-mission-store.js";
 import { startLeaseReconciler } from "../../../packages/governor/src/lease-reconciler.js";
 import { TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
-import { createTrustedVerificationRunner, getCheckPolicy } from "../../verifier/src/index.js";
+import { createTrustedVerificationRunner, getCheckPolicy, getCheckAttemptLifetimeMs } from "../../verifier/src/index.js";
 
 const config = loadConfig(process.env);
 let jobs: MemoryJobStore | PostgresJobStore;
@@ -35,7 +35,7 @@ try {
   if(runner&&missions instanceof SqlMissionStore&&config.trustedCheckPolicyDigest&&config.trustedVerifierId&&config.trustedVerifierImageDigest){
     const checkId=process.env.ORLOOM_VERIFIER_CHECK_ID??"node-validate-syntax",policy=getCheckPolicy(checkId,process.env.ORLOOM_VERIFIER_IMAGE,config.trustedVerifierImageDigest);
     if(config.trustedCheckPolicy?.includes(checkId)&&policy.imageDigest===config.trustedVerifierImageDigest&&(!config.trustedVerificationPolicyVersion||config.trustedVerificationPolicyVersion===policy.version)){
-      trustedChecks=new TrustedCheckCoordinator(missions,runner,{imageDigest:policy.imageDigest,verifierId:config.trustedVerifierId,policyDigest:policy.digest,leasePolicyDigest:config.trustedCheckPolicyDigest,policyVersion:policy.version,allowedChecks:[checkId]});
+      trustedChecks=new TrustedCheckCoordinator(missions,runner,{imageDigest:policy.imageDigest,verifierId:config.trustedVerifierId,policyDigest:policy.digest,leasePolicyDigest:config.trustedCheckPolicyDigest,policyVersion:policy.version,allowedChecks:[checkId],attemptLifetimeMs:getCheckAttemptLifetimeMs(checkId)});
       verificationTimer=setInterval(()=>{void reconcileVerification();},5_000);verificationTimer.unref();
     }
   }

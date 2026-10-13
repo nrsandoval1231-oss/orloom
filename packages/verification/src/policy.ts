@@ -10,8 +10,9 @@ function bindPolicy(image: string, imageDigest: Sha256): CheckPolicy {
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const NODE_REPO_SUITE_BINDING = Object.freeze({
-  manifestVersion: "node-repo-suite-v1.stages.v1",
-  diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v1", maxFrames: 16, maxBytes: 4096, authority: "advisory-only" }),
+  manifestVersion: "node-repo-suite-v1.deadline.v1",
+  timeouts: Object.freeze({ suiteExecutionMs: 180_000, dockerAttachMs: 210_000, hostLauncherMs: 225_000, attemptLifetimeMs: 240_000 }),
+  diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v2", maxFrames: 16, maxBytes: 4096, maxElapsedMs: 180_000, authority: "advisory-only" }),
   dependencies: Object.freeze({
     packageJsonSha256: "ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df",
     packageLockSha256: "1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4",
@@ -26,11 +27,11 @@ export const NODE_REPO_SUITE_BINDING = Object.freeze({
     Object.freeze({ name: "foundation-validation", argv: Object.freeze(["/usr/local/bin/node", "scripts/validate.mjs"]) }),
     Object.freeze({ name: "offline-security-policy", argv: Object.freeze(["trusted lock/workflow/credential/dependency-path checks"]) }),
   ]),
-  resources: Object.freeze({ timeoutMs: 60_000, maxInputBytes: 16_777_216, maxLogBytes: 65_536, maxConcurrent: 1, cpus: 1, memoryBytes: 1_073_741_824, pids: 128, workTmpfsBytes: 536_870_912, tempTmpfsBytes: 16_777_216, network: "none", readOnlyRoot: true, uid: 65532 }),
+  resources: Object.freeze({ maxInputBytes: 16_777_216, maxLogBytes: 65_536, maxConcurrent: 1, cpus: 1, memoryBytes: 1_073_741_824, pids: 128, workTmpfsBytes: 536_870_912, tempTmpfsBytes: 16_777_216, network: "none", readOnlyRoot: true, uid: 65532 }),
 });
 function bindSuite(image: string, imageDigest: Sha256): CheckPolicy {
   const resources = NODE_REPO_SUITE_BINDING.resources;
-  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v1", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: resources.timeoutMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
+  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v1", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const CHECK_POLICIES: Readonly<Record<string, CheckPolicy>> = Object.freeze({
@@ -41,4 +42,10 @@ export const CHECK_POLICIES: Readonly<Record<string, CheckPolicy>> = Object.free
 export function getCheckPolicy(id: string, image?: string, imageDigest?: Sha256): CheckPolicy {
   if (!Object.prototype.hasOwnProperty.call(CHECK_POLICIES, id)) throw new Error("check ID is not in the trusted finite policy catalog");
   return image && imageDigest ? (id === "node-repo-suite-v1" ? bindSuite(image, imageDigest) : bindPolicy(image, imageDigest)) : CHECK_POLICIES[id]!;
+}
+
+/** Request lifetime comes only from the finite trusted policy catalog. */
+export function getCheckAttemptLifetimeMs(id: string): number {
+  if (!Object.prototype.hasOwnProperty.call(CHECK_POLICIES, id)) throw new Error("check ID is not in the trusted finite policy catalog");
+  return id === "node-repo-suite-v1" ? NODE_REPO_SUITE_BINDING.timeouts.attemptLifetimeMs : CHECK_POLICIES[id]!.timeoutMs;
 }
