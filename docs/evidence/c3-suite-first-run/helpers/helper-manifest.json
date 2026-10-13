@@ -1,0 +1,32 @@
+{
+  "format": "orloom-c3-suite-helper-manifest-v1",
+  "candidate": "06a74acfb456b5835cb19dcf71c73fa11f278d0f",
+  "base": "226e4d9ac26f2b83b05b82f678dc07966a1b6bdb",
+  "sourceManifestSha256": "15a0d1330ed53cad8d0560568f25bf4569f93b1e530d1b8b709e154a979ce8a2",
+  "helpers": {
+    "build-suite-image.sh": "64d78510c1fc13335dd388c44262343b8d1d2adc116634f8ab35dedf3077b0f8",
+    "cleanup-disposable-postgres.sh": "19471649bf5925ddc7f08363a5bfa84b24d6fcc8df95ae4159acdc00c693b788",
+    "prepare-fixtures.mjs": "3cbed7a9509aa6e42fc7202dc2ea660e88dab71f26f0ec787b4220a55d721924",
+    "prepare-runtime-files.mjs": "e44069c321d4563a9a86969ee44ee57a87f0a2c5aed300c254aa1f942dcb61c4",
+    "prepare-transfer.mjs": "650a8e5fb07c038edd30bc6ca2d9e40451cea502511c95222e14951e36c57054",
+    "README.md": "3497a9119e20651677cd4f795eda881ee830116ba0212874d67358fc07f80f6b",
+    "run-proof.sh": "396113fe2ed241f5b2064ba62c6220084fdae8e9e48badffdb04f472827ee8f9",
+    "runtime-proof-entry.mjs": "00c9c940c9faac86659e562ce6a1d7361bf57b36c4011e862a0930e9972fce07",
+    "runtime-proof.mjs": "d5e9dde2b34c589e40009d27288a2fedcd0fb5983d470243243bc8dc8045a66f",
+    "setup-disposable-postgres.sh": "a2a0ee3cb491c45f9ed16717b982241754142b48654d0bec1222bde15e8176c9",
+    "stage-runtime.sh": "6a64ca026ffff44b939fa6cbdb63e8b681f12dba8dcd294c170e893dfc648fef"
+  },
+  "artifacts": {
+    "bundleSha256": "3e283adc0ca2448ffa4d4e33c448cd5813bfacd62d6466aecbbeb8d22879989e",
+    "runtimeFilesManifestSha256": "9e855602ce8db0db7778fdb65918cf248f757268feb6c7f59b5c4090bcd1efdc",
+    "fixtureManifestSha256": "cf3c627ca52f87ef124d3fd90005fb82f49a0198c270079cf72b31b9ba1a68f7"
+  },
+  "checks": {
+    "shellSyntax": "PASS",
+    "nodeSyntax": "PASS",
+    "fixtureDryrun": "PASS",
+    "bundleAndPayloadPreparation": "PASS",
+    "runtimeModuleImports": "PASS",
+    "hostExecution": "NOT RUN"
+  }
+}

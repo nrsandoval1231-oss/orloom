@@ -1,0 +1,8 @@
+{
+  "file": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-cloud-executions\\initial-suite-failure.tar.gz",
+  "bytes": 36691,
+  "sha256": "587b73f1fcb0be5e0ac31e4a176ceafdd528ecaa12f04a3bb0b6553a0a149973",
+  "exit": 0,
+  "observedUtc": "2026-10-13T10:01:40.744Z",
+  "allowlist": "tar -czf - -C /var/lib/orloom/c3-suite-proof-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json setup-capacity.json database-inspect.json verifier-image.id verifier-image-inspect.json staging/staging-identity.txt incoming/candidate-identity.json"
+}

@@ -1,0 +1,42 @@
+{
+  "packet": "ORL-C3-SUITE",
+  "reviewType": "independent bounded source re-review",
+  "verdict": "PASS",
+  "scope": "source acceptance only; image, runsc, PostgreSQL, target-host capacity, and product acceptance are unproven",
+  "candidate": {
+    "repository": "work/orloom-suite",
+    "branch": "feat/trusted-verification-suite",
+    "baseSha": "226e4d9ac26f2b83b05b82f678dc07966a1b6bdb",
+    "headSha": "06a74acfb456b5835cb19dcf71c73fa11f278d0f",
+    "treeSha": "a21985172f0f5989afe8edb78b04efd0df898e92",
+    "manifestPath": ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "manifestSha256": "15a0d1330ed53cad8d0560568f25bf4569f93b1e530d1b8b709e154a979ce8a2",
+    "manifestEntries": 116,
+    "manifestMismatches": 0,
+    "sourceWorktreeCleanAtReview": true
+  },
+  "supersedesReviewArtifact": "work/c3-suite-independent-review-aa84188-FIX.json",
+  "findings": [],
+  "resolvedPriorFinding": {
+    "location": "infra/verifier-isolation/Dockerfile:12-17",
+    "previousIssue": "npm received /dev/null as both user and global configuration and rejected double-loading the same source",
+    "resolution": "The Dockerfile creates separate empty user.npmrc and global.npmrc files, passes their distinct absolute paths to the bundled npm CLI, and removes them after the scripts-disabled locked install.",
+    "regressionEvidence": "tests/verification-runner.test.ts:95-129 checks the Dockerfile's two created distinct paths and executes npm config get with separate fresh config files and a sanitized environment. Controller final log reports both tests passing with zero skips."
+  },
+  "evidence": [
+    "Diff from aa84188b992a1c5acb758b42e7812cda88283e62 to the new head changes only the Dockerfile, verification-runner tests, repair handoff, and source manifest; previously reviewed suite policy, launcher, run-check, stage runner, and control-plane bytes remain identical.",
+    "The image still verifies exact Node/package/lock digests and invokes the bundled npm ci with --include=dev, --ignore-scripts, --no-audit and --no-fund in a sanitized environment; the repair does not widen policy, network, or resource authority.",
+    "The complete base-to-head diff contains no protected PR2 broker, Governor, schema, lesson promotion, provider, or deployment modifications.",
+    "Manifest SHA-256 and all 116 listed file hashes were recomputed from the clean source checkout with zero mismatches.",
+    "Controller final-gate log work/suite-controller-gates-2026-10-13T09-43-21-649Z.log records exit 0 for typecheck, build, 71 Node tests with zero failures or skips, foundation validation, four JavaScript syntax checks, and diff check.",
+    "The new behavioral npm probe passed locally. The builder's npm ci --ignore-scripts success is a local dependency-install check, not an image-build result."
+  ],
+  "boundaries": [
+    "The exact pinned verifier image/npm pair has not been built or inspected in this review.",
+    "No real runsc suite check or PostgreSQL certificate was reviewed; source PASS cannot advance runtime acceptance.",
+    "The 60-second, 1 CPU, 1 GiB, 512 MiB /work profile still requires target-host measurement.",
+    "The offline security check is a path/dependency-integrity policy, not a credential content scanner or vulnerability audit.",
+    "Frozen PR #2 at 8bbcfffbf631e5ad2972e34b41284198afc566e2 remains outside this review."
+  ],
+  "nextDirection": "VALIDATE exact image and measured real runsc/PostgreSQL positive and negative suite proof before operational acceptance"
+}

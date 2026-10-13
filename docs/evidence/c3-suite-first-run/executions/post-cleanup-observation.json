@@ -1,0 +1,59 @@
+{
+  "observedUtc": "2026-10-13T10:06:13.819Z",
+  "operations": {
+    "containers": {
+      "command": "docker ps -a --filter label=orloom.packet=ORL-C3-SUITE-PROOF --format \"{{.ID}}\"",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "networks": {
+      "command": "docker network ls --filter label=orloom.packet=ORL-C3-SUITE-PROOF --format \"{{.ID}}\"",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "volumes": {
+      "command": "docker volume ls --filter label=orloom.packet=ORL-C3-SUITE-PROOF --format \"{{.Name}}\"",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "protected": {
+      "command": "docker inspect --format \"{{.Id}} {{.State.StartedAt}} {{.RestartCount}} {{.State.Status}}\" codex-universal",
+      "exit": 0,
+      "stdout": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67 2026-10-12T23:51:46.164222792Z 0 running\n",
+      "stderr": ""
+    },
+    "verifierCid": {
+      "command": "docker inspect --format \"{{.Id}} {{.State.Status}}\" 77a228e4e41c3bf72975632b62c13fede825c5b51fc694b47d41d595715ae14f",
+      "exit": 1,
+      "stdout": "\n",
+      "stderr": "error: no such object: 77a228e4e41c3bf72975632b62c13fede825c5b51fc694b47d41d595715ae14f\n"
+    },
+    "slot": {
+      "command": "test ! -e /var/lib/orloom/verifier/state && test ! -L /var/lib/orloom/verifier/state",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "credential": {
+      "command": "test ! -e /var/lib/orloom/c3-suite-proof-20261013/staging/database-url",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "lock": {
+      "command": "flock -n /run/orloom-verifier-lock/slot.lock /bin/true",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "events": {
+      "command": "docker events --since 2026-10-13T10:00:00Z --until 2026-10-13T10:02:00Z --filter container=77a228e4e41c3bf72975632b62c13fede825c5b51fc694b47d41d595715ae14f --format \"{{json .}}\"",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+}

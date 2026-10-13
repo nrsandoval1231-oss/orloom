@@ -1,0 +1,1 @@
+postgres_setup=READY database=d7705d3ca61a29fe7d0094480851d6e10dda908ebe599c1a03366b1f2afc2b22 network=5687e669f797ebd08001670c43fb18dd50adac8c791f66104123141d0b42f1a3 image=sha256:b0f956... ports=none bind_mounts=none credential_file=root-only

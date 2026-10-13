@@ -1,0 +1,55 @@
+{
+  "reviewType": "independent read-only audit of initial actual suite run",
+  "status": "RUNTIME_ACCEPTANCE_FAILED",
+  "sourceCandidate": "06a74acfb456b5835cb19dcf71c73fa11f278d0f",
+  "sourceReview": "PASS was limited to source; this failed runtime attempt does not change the source review",
+  "initialArchive": {
+    "path": "work/suite-cloud-executions/initial-suite-failure.tar.gz",
+    "sha256": "587b73f1fcb0be5e0ac31e4a176ceafdd528ecaa12f04a3bb0b6553a0a149973"
+  },
+  "durableStateArchive": {
+    "path": "work/suite-cloud-executions/suite-failure-durable-state.tar.gz",
+    "sha256": "c139f8e5bb62e101cb5552de8c99356b4c6d271a420ee52d7f584366ada20ac3",
+    "observedUtc": "2026-10-13T10:03:51.795Z"
+  },
+  "conclusion": {
+    "positiveSuiteAccepted": false,
+    "positiveCertificatePersisted": false,
+    "originalAttemptOutcome": "UNKNOWN",
+    "otherScenariosExecuted": false,
+    "causeOfTimeout": "UNKNOWN"
+  },
+  "observed": [
+    "Setup, source staging, and pinned image build scripts exited 0. The image was inspected as sha256:4a8053965426e875897b1435b523e1500f2603e9c7f40603187643702d851d0b and labeled with the exact candidate.",
+    "The positive request selected node-repo-suite-v1 for candidate 06a74acfb456b5835cb19dcf71c73fa11f278d0f, policy digest c9e58cefd35e4ed09ec8440e35d9377a16b8e9b28cba4b92f11d9c985e01312c, and that exact image digest.",
+    "Attempt d024f891-ffa3-4540-9355-c22980ddd14c started at 2026-10-13T10:00:04.546Z and finished at 10:01:05.460Z, 60914 ms later and 958 ms after the request's 10:01:04.502Z expiry. Its persisted receipt says outcome unknown and exitCode null.",
+    "The observed exact runsc container had network none, read-only root, UID/GID 65532, no mounts, dropped capabilities, no-new-privileges, 1 CPU, 1 GiB memory, 128 PIDs, and bounded /work and /tmp tmpfs. Peak CPU and memory were not measured.",
+    "Receipt stdout and stderr each refer to the empty SHA-256 artifact. The input manifest artifact was retained and bound to the request. Empty output is not proof that no stage ran because the trusted adapter discards incomplete output when launcher process state is ambiguous.",
+    "runtime-proof.mjs stopped at line 114 when the actual UNKNOWN outcome disagreed with expected PASS; run-proof.sh exited 1. No per-stage log index or attempt-summary was written for this case.",
+    "A later read-only PostgreSQL query retained in evidence/attempt-state-after-failure.json found exactly one verification_attempts row, that same UNKNOWN attempt, and check_certificates count 0. No positive certificate was issued.",
+    "The proof stopped at the first positive case. Failing-test, lock-mismatch, hanging-test, reconnect, stale-ref, and cleanup results are not established by this run."
+  ],
+  "evidenceBoundaries": [
+    "The archive does not contain a completed trusted stage marker, stage timings, Docker attach result, Docker exit/OOM state after timeout, or measured cgroup resource usage. It cannot distinguish slow admission/typecheck/build/tests from container startup, resource contention, attach delay, or interrupted cleanup.",
+    "The archived runsc profile captures a running container configuration during the attempt, not its final process state or resource peak.",
+    "The controller reported that the verifier slot was absent after launcher cleanup, but the received archives do not independently preserve a post-timeout slot/lock/CID observation. Treat that as a separate controller observation until retained."
+  ],
+  "actionableHelperGap": {
+    "location": "work/c3-suite-proof/runtime-proof.mjs:109-141",
+    "effect": "The proof asserts the expected outcome at line 114 before recording actual certificate absence, stage index, timeout slot state, and attempt summary. The separate read-only SQL query recovered certificate absence, but the initial proof artifact alone could not establish it.",
+    "direction": "For a revised diagnostic helper, persist the actual receipt/outcome, certificate query result, and exact timeout/slot observations before asserting scenario expectations; bind its new hash and review it before host use. Preserve this original failed artifact unchanged."
+  },
+  "runtimeDesignRisk": {
+    "location": "packages/verification/src/policy.ts and runsc-launcher.ts",
+    "assessment": "The suite policy, request expiry, and outer launcher each use a 60-second limit. Container startup, stage execution, result transport, cleanup, and receipt timestamp all consume that same budget. This is a plausible deadline collision, not a proven explanation for the observed stall.",
+    "constraint": "Do not silently extend the Governor or policy deadline, change resource caps, or turn this UNKNOWN receipt into PASS. Any policy or image change needs a new exact candidate and independent review."
+  },
+  "diagnosticEvidenceNeeded": [
+    "Retain a read-only exact-CID post-timeout Docker inspect/events or equivalent exit/OOM observation, plus exact verifier slot record and host flock state, if still available; never enumerate or remove unrelated containers.",
+    "Measure phase elapsed time for candidate extraction, tar/staging, Docker create/start/attach, admission, each fixed suite stage, result transport, and cleanup under a separately reviewed diagnostic plan. Keep candidate output untrusted and outside the parent verdict.",
+    "Capture bounded stdout/stderr and stage markers from the exact runsc process before the outer process timeout when possible, or preserve a trusted sidecar phase trace; label missing data UNKNOWN.",
+    "Measure actual CPU/memory and /work usage on the target host for this one-check profile; compare against the fixed 1 CPU, 1 GiB, 512 MiB /work and 60-second cap before selecting a different reviewed profile.",
+    "After diagnosis, use a new fixture or exact candidate with separately bound request/image/policy evidence. The existing d024f891 attempt must remain UNKNOWN and must not be redispatched or retroactively certified."
+  ],
+  "hostActionsByReviewer": "NONE"
+}

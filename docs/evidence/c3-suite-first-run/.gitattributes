@@ -1,0 +1,2 @@
+# Preserve the executed observation script, including its final blank line.
+suite-observe-attempt.cjs whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
