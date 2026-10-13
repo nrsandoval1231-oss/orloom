@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { performance } from 'node:perf_hooks';
 
 export function classifySuiteStage(result) {
   if (!result || result.timedOut || result.spawnError || result.truncated || result.exitCode === null || result.signal) return 'unknown';
@@ -29,6 +30,38 @@ export async function runStage(file, args, { cwd, timeoutMs, maxLogBytes = 65_53
       resolve({ exitCode: timedOut || spawnError || childSignal ? null : exitCode, timedOut, spawnError, signal, truncated, stdoutBytes, stderrBytes, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) });
     });
   });
+}
+
+/** Runs every trusted discovered basename once, serially, with bounded combined logs. */
+export async function runSerialTestFiles(testFiles, {
+  run = runStage, remainingMs, emit = () => {}, cwd, env, maxLogBytes = 65_536,
+  now = () => performance.now(),
+} = {}) {
+  if (!Array.isArray(testFiles) || testFiles.some(file => typeof file !== 'string' || !/^[A-Za-z0-9._-]+\.test\.js$/.test(file))) {
+    throw new Error('test file list must contain trusted discovered basenames');
+  }
+  const stdout = [], stderr = []; let stdoutBytes = 0, stderrBytes = 0;
+  for (let index = 0; index < testFiles.length; index++) {
+    const testFile = testFiles[index], ordinal = index + 1, began = now();
+    emit({ testFile, ordinal, phase: 'start', elapsedMs: 0 });
+    if (remainingMs() <= 0) {
+      emit({ testFile, ordinal, phase: 'end', elapsedMs: Math.floor(Math.max(0, now() - began)), outcome: 'unknown' });
+      return { exitCode: null, timedOut: true, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr), truncated: false };
+    }
+    const result = await run('/usr/local/bin/node', ['--test', '--test-concurrency=1', `dist/tests/${testFile}`], {
+      cwd, env, timeoutMs: remainingMs(), maxLogBytes,
+    });
+    const elapsedMs = Math.floor(Math.max(0, now() - began));
+    const boundedResult = enforceSuiteDeadline(result, remainingMs);
+    const outcome = classifySuiteStage(boundedResult);
+    emit({ testFile, ordinal, phase: 'end', elapsedMs, outcome });
+    const nextOut = stdoutBytes + boundedResult.stdout.length, nextErr = stderrBytes + boundedResult.stderr.length;
+    if (nextOut > maxLogBytes || nextErr > maxLogBytes) return { exitCode: null, truncated: true, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
+    stdout.push(boundedResult.stdout); stdoutBytes = nextOut;
+    stderr.push(boundedResult.stderr); stderrBytes = nextErr;
+    if (outcome !== 'pass') return { ...boundedResult, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
+  }
+  return { exitCode: 0, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr), truncated: false };
 }
 
 /** Executes a trusted internal iterable serially and never starts a later stage after a non-pass. */

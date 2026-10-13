@@ -2,7 +2,7 @@ import { readFile, readdir, symlink, chmod, mkdir, rm } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import { ADMITTED_DEPENDENCIES, SuiteAdmissionError, admitSuiteInput, discoverSuiteTests, verifySuiteInputUnchanged } from './suite-policy.js';
-import { classifySuiteStage, enforceSuiteDeadline, executeStages, runStage } from './stage-runner.js';
+import { enforceSuiteDeadline, executeStages, runSerialTestFiles } from './stage-runner.js';
 import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostics.js';
 
 const root = '/work/source';
@@ -29,29 +29,9 @@ async function* fixedStages() {
     if (!tests.length) throw new SuiteAdmissionError('test discovery found no tests');
     return { exitCode: 0, stdout: Buffer.from(`selected ${tests.length} Node test files\n`), stderr: Buffer.alloc(0), truncated: false };
   } };
-  yield { name: POLICY_STAGE_ORDER[4], execute: async () => {
-    const stdout = [], stderr = []; let stdoutBytes = 0, stderrBytes = 0;
-    for (let index = 0; index < tests.length; index++) {
-      const testFile = tests[index], ordinal = index + 1, began = performance.now();
-      emitSuiteTestDiagnostic({ testFile, ordinal, phase: 'start', elapsedMs: 0 });
-      if (remainingMs() <= 0) {
-        emitSuiteTestDiagnostic({ testFile, ordinal, phase: 'end', elapsedMs: Math.floor(performance.now() - began), outcome: 'unknown' });
-        return { exitCode: null, timedOut: true, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr), truncated: false };
-      }
-      const result = await runStage('/usr/local/bin/node', ['--test', '--test-concurrency=1', `dist/tests/${testFile}`], {
-        cwd: root, env, timeoutMs: remainingMs(), maxLogBytes: logLimit,
-      });
-      const elapsedMs = Math.floor(Math.max(0, performance.now() - began));
-      const outcome = classifySuiteStage(result);
-      emitSuiteTestDiagnostic({ testFile, ordinal, phase: 'end', elapsedMs, outcome });
-      const nextOut = stdoutBytes + result.stdout.length, nextErr = stderrBytes + result.stderr.length;
-      if (nextOut > logLimit || nextErr > logLimit) return { exitCode: null, truncated: true, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
-      stdout.push(result.stdout); stdoutBytes = nextOut;
-      stderr.push(result.stderr); stderrBytes = nextErr;
-      if (outcome !== 'pass') return { ...result, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr) };
-    }
-    return { exitCode: 0, stdout: Buffer.concat(stdout), stderr: Buffer.concat(stderr), truncated: false };
-  } };
+  yield { name: POLICY_STAGE_ORDER[4], execute: () => runSerialTestFiles(tests, {
+    cwd: root, env, maxLogBytes: logLimit, remainingMs, emit: emitSuiteTestDiagnostic,
+  }) };
   yield { name: POLICY_STAGE_ORDER[5], file: '/usr/local/bin/node', args: ['scripts/validate.mjs'], cwd: root, env, maxLogBytes: logLimit };
   yield { name: POLICY_STAGE_ORDER[6], execute: async () => {
     await verifySuiteInputUnchanged(root, admittedManifest.files);

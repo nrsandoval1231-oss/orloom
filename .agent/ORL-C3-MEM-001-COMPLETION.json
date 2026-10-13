@@ -1,14 +1,16 @@
 {
   "packet": "ORL-C3-MEM-001",
-  "status": "SOURCE_PASS_RUNTIME_UNKNOWN",
+  "status": "SOURCE_REPAIR1_PASS_RUNTIME_UNKNOWN",
   "baseSha": "6b4d6832cfa2e58997fc1e0d1d0a22fa68ba1af9",
   "branch": "feat/trusted-verification-suite",
-  "finishedUtc": "2026-10-13T12:44:28Z",
+  "repairBaseSha": "0b85d05c3c53c0d6667803078033a52dd190664d",
+  "finishedUtc": "2026-10-13T12:51:41Z",
   "changedFiles": [
     ".agent/ORL-C3-SUITE-MANIFEST.sha256",
     ".agent/ORL-C3-MEM-001.md",
     ".agent/ORL-C3-MEM-001-COMPLETION.json",
     "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/stage-runner.js",
     "infra/verifier-isolation/suite-diagnostics.js",
     "packages/verification/src/policy.ts",
     "packages/verification/src/runsc-launcher.ts",
@@ -16,21 +18,23 @@
   ],
   "validation": [
     { "command": "npm run build", "exitCode": 0 },
-    { "command": "node --test --test-concurrency=1 --test-name-pattern=\"repository suite|UNKNOWN retains|stage diagnostics|launcher process-result\" dist/tests/verification-runner.test.js", "exitCode": 0, "passed": 7, "failed": 0 },
-    { "command": "npm test", "exitCode": 0, "passed": 74, "failed": 0, "skipped": 0 },
+    { "command": "node --test --test-concurrency=1 --test-name-pattern=\"production serial test runner|repository suite|UNKNOWN retains|stage diagnostics|launcher process-result\" dist/tests/verification-runner.test.js", "exitCode": 0, "passed": 8, "failed": 0 },
+    { "command": "npm test", "exitCode": 0, "passed": 75, "failed": 0, "skipped": 0 },
     { "command": "npm run validate", "exitCode": 0 },
     { "command": "node --check infra/verifier-isolation/run-repo-suite.js", "exitCode": 0 },
+    { "command": "node --check infra/verifier-isolation/stage-runner.js", "exitCode": 0 },
     { "command": "node --check infra/verifier-isolation/suite-diagnostics.js", "exitCode": 0 },
     { "command": "bash -n infra/verifier-isolation/launch-verifier.sh", "exitCode": 0 },
     { "command": "git diff --check", "exitCode": 0 }
   ],
   "sourceHashesSha256": {
-    "infra/verifier-isolation/run-repo-suite.js": "36d602ae338b3a6ee4066f4e6052dfe1f0249e75f2ee94369b1fd6529da0a5e8",
+    "infra/verifier-isolation/run-repo-suite.js": "e3e7630b7feed4988a7b623f680b4b7d993610aeff210971f12131254a5a6212",
+    "infra/verifier-isolation/stage-runner.js": "f73230283f3c4589051358ef1f429b5d8dc2aa451f9fdf27a590604ba2c2de58",
     "infra/verifier-isolation/suite-diagnostics.js": "0393f559dc6a49b9d78eeebdfbc2fd42863b42ff815d20ec32853e7f6ffab1a4",
     "packages/verification/src/runsc-launcher.ts": "3e3d369068986a868a5dcb08a6e1d727e06015b0afbc35e33a03ca277da4307b",
     "packages/verification/src/policy.ts": "15d3bf9b8105f19d3f472f235a4893ea1939faf592fad5269de9be000f6d3b20",
-    "tests/verification-runner.test.ts": "30d9c0802d4173ca79c23f2033c685b39fbc1832eebe57204b10f6fb06069efe",
-    ".agent/ORL-C3-SUITE-MANIFEST.sha256": "c94c1a3537a762c1e9313123da49c455136da954fff0c719fdcb648c240b11f1"
+    "tests/verification-runner.test.ts": "9e11f04e613d6b7c7de0a658e6240d5155b83f4768522bc6db7c7db9c131f424",
+    ".agent/ORL-C3-SUITE-MANIFEST.sha256": "51519361c6552ad52f12ee815761744031282100dc43e7c0fbf6ce3812aaa39b"
   },
   "limitsAndAuthority": {
     "testSelectionOrFiltering": "none",
@@ -41,6 +45,7 @@
     "operationalAcceptanceClaim": false,
     "commitPushMerge": "none"
   },
-  "candidateIdentity": "Uncommitted working tree based on baseSha; controller must freeze and independently review exact candidate before runtime use.",
+  "priorSourceReview": { "verdict": "FIX", "candidate": "0b85d05c3c53c0d6667803078033a52dd190664d", "evidence": "work/c3-memory-source-review.json" },
+  "candidateIdentity": "Repair-1 working tree based on repairBaseSha; controller must freeze and independently review exact candidate before runtime use.",
   "measuredUsage": "UNKNOWN"
 }

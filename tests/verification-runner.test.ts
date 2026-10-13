@@ -102,9 +102,7 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.match(isolation, /echo 210s \|\| echo 60s/);
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
   assert.match(suiteRunner, /const limit = 180_000/);
-  assert.match(suiteRunner, /for \(let index = 0; index < tests\.length; index\+\+\)/);
-  assert.match(suiteRunner, /\['--test', '--test-concurrency=1', `dist\/tests\/\$\{testFile\}`\]/);
-  assert.match(suiteRunner, /emitSuiteTestDiagnostic\(\{ testFile, ordinal, phase: 'start'/);
+  assert.match(suiteRunner, /runSerialTestFiles\(tests/);
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
   assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
@@ -127,10 +125,65 @@ test("repository suite runs every discovered test file serially and binds the ne
   assert.equal(commands.length, tests.length);
   assert.deepEqual(commands.map(command => command[2]), tests.map(file => `dist/tests/${file}`), "each discovered test gets one serial invocation in stable order");
   const runner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
-  assert.match(runner, /for \(let index = 0; index < tests\.length; index\+\+\)/);
-  assert.match(runner, /emitSuiteTestDiagnostic\(\{ testFile, ordinal, phase: 'start'/);
-  assert.match(runner, /if \(outcome !== 'pass'\) return/);
-  assert.match(runner, /if \(remainingMs\(\) <= 0\) \{[\s\S]*?return \{ exitCode: null, timedOut: true/);
+  assert.match(runner, /runSerialTestFiles\(tests/);
+});
+
+test("production serial test runner executes trusted files in order and stops fail-closed", async () => {
+  const { runSerialTestFiles } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/stage-runner.js")).href);
+  const fileNames = ["a.test.js", "b.test.js", "c.test.js"];
+  const calls: Array<{ file: string; args: string[]; timeoutMs: number }> = [];
+  const pass = () => ({ exitCode: 0, stdout: Buffer.from("ok"), stderr: Buffer.alloc(0), truncated: false });
+  const success = await runSerialTestFiles(fileNames, {
+    cwd: "/work/source", env: {}, remainingMs: () => 1000,
+    run: async (_bin: string, args: string[], options: { timeoutMs: number }) => { calls.push({ file: args[2]!, args, timeoutMs: options.timeoutMs }); return pass(); },
+  });
+  assert.equal(success.exitCode, 0);
+  assert.deepEqual(calls.map(call => call.file), fileNames.map(file => `dist/tests/${file}`));
+  assert(calls.every(call => JSON.stringify(call.args) === JSON.stringify(["--test", "--test-concurrency=1", call.file])));
+  assert(calls.every(call => call.timeoutMs === 1000));
+
+  for (const result of [
+    { exitCode: 1, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: false },
+    { exitCode: null, timedOut: true, stdout: Buffer.alloc(0), stderr: Buffer.alloc(0), truncated: false },
+  ]) {
+    const attempted: string[] = [];
+    const stopped = await runSerialTestFiles(fileNames, {
+      cwd: "/work/source", env: {}, remainingMs: () => 1000,
+      run: async (_bin: string, args: string[]) => { attempted.push(args[2]!); return result; },
+    });
+    assert.equal(attempted.length, 1, "FAIL and UNKNOWN stop subsequent file invocations");
+    assert.equal(stopped.exitCode, result.exitCode);
+  }
+
+  const lateCalls: string[] = []; let deadlineChecks = 0;
+  const latePass = await runSerialTestFiles(fileNames, {
+    cwd: "/work/source", env: {}, remainingMs: () => ++deadlineChecks < 3 ? 100 : 0,
+    run: async (_bin: string, args: string[]) => { lateCalls.push(args[2]!); return pass(); },
+  });
+  assert.equal(lateCalls.length, 1);
+  assert.equal(latePass.exitCode, null, "a result that arrives after the shared deadline becomes UNKNOWN");
+  assert.equal(latePass.timedOut, true);
+
+  const largeCalls: string[] = [];
+  const overflow = await runSerialTestFiles(fileNames, {
+    cwd: "/work/source", env: {}, remainingMs: () => 1000, maxLogBytes: 65_536,
+    run: async (_bin: string, args: string[]) => { largeCalls.push(args[2]!); return { ...pass(), stdout: Buffer.alloc(40_000) }; },
+  });
+  assert.equal(largeCalls.length, 2);
+  assert.equal(overflow.exitCode, null);
+  assert.equal(overflow.truncated, true, "combined logs remain capped at 65,536 bytes and fail closed");
+
+  const manyFiles = Array.from({ length: 65 }, (_, index) => `suite-${String(index + 1).padStart(3, "0")}.test.js`);
+  const manyCalls: string[] = [], emittedOrdinals: number[] = [];
+  const many = await runSerialTestFiles(manyFiles, {
+    cwd: "/work/source", env: {}, remainingMs: () => 1000,
+    emit: (frame: { ordinal: number }) => { if (frame.ordinal <= 64) emittedOrdinals.push(frame.ordinal); return frame.ordinal <= 64; },
+    run: async (_bin: string, args: string[]) => { manyCalls.push(args[2]!); return pass(); },
+  });
+  assert.equal(many.exitCode, 0);
+  assert.equal(manyCalls.length, 65, "the telemetry ordinal cap never limits test selection or execution");
+  assert.deepEqual(manyCalls, manyFiles.map(file => `dist/tests/${file}`));
+  assert.equal(emittedOrdinals.includes(65), false);
 });
 
 test("verifier image installs with two isolated npm config files", async () => {
