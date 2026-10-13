@@ -37,3 +37,5 @@ C4 checkpoint: local direct-child integration source5856fd5 and scratch fixture 
 Latest C4: exact078ed12 source98testPASS/independentPASS after f669 FIX, evidence docs/evidence/c4-source. C5 source READY/active on feat/live-loom from078; realPG proof preparation independent. Operational integration and cloud certification remain OPEN.
 
 C5 source3d1be84 implemented; final gates/browser/independent review pending on composition with C4 evidence037. No operational or PostgreSQL acceptance. Delivery core proceeds on a separate branch and waits for serialized server route integration.
+
+C5 checkpoint: 19abb354 source105PASS but independentFIX (visual, pagination, closure). Repair1 0c8c85de retained; final scope/camera correction and controller gates/browser/review next. Source does not establish runtime certification. Delivery core preserved f51d364 on separate branch; preliminary independentFIX for concurrency, per-effect recovery and external identity readback; repair in progress before serialized server integration.

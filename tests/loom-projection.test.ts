@@ -67,6 +67,20 @@ test("approved plan membership and exact proof causality are required for closur
   assert.equal(projectLoom(mission("verified"),plan(),[{...slice("verified"),owner:"other"}],[...good]).closed,false);
   assert.equal(projectLoom(mission("verified"),plan(),[{...slice("verified"),checks:["different-check"]}],good).closed,false);
   assert.equal(projectLoom(mission("verified"),plan(),[{...slice("verified"),dependencies:["missing"]}],good).closed,false);
+  assert.equal(projectLoom(mission("verified"),plan(),[{...slice("verified"),scopes:["other/**"]}],good).closed,false);
+  assert.equal(projectLoom(mission("verified"),plan(),[{...slice("verified"),budgetCents:9}],good).closed,false);
   assert.equal(projectLoom(mission("verified"),plan(),[slice("verified")],[ev(2,"slice.integration_pending",good[1]!.data),ev(8,"check.certified",good[0]!.data),good[2]!]).closed,false,"strictly increasing cursors do not make a pending intent before certification causal");
   assert.equal(projectLoom(mission("verified"),plan(),[slice("verified")],[good[0]!,good[2]!,ev(21,"slice.integration_pending",good[1]!.data)]).closed,false,"an integration cannot precede its pending intent");
+});
+
+test("pending certificate IDs bind to certified checks independent of check order",()=>{
+  const twoChecks={...slice("verified"),checks:["check:z","check:a"]};
+  const twoCheckPlan={...plan(),slices:[{...plan().slices[0]!,checks:["check:z","check:a"]}]};
+  const events=[
+    ev(2,"check.certified",{sliceId:"s-1",certificateId:"cert-z",checkId:"check:z",leaseEpoch:1,candidateSha:"b".repeat(40)}),
+    ev(4,"check.certified",{sliceId:"s-1",certificateId:"cert-a",checkId:"check:a",leaseEpoch:1,candidateSha:"b".repeat(40)}),
+    ev(8,"slice.integration_pending",{sliceId:"s-1",leaseEpoch:1,candidateSha:"b".repeat(40),treeSha:"d".repeat(40),expectedIntegrationSha:"e".repeat(40),reviewArtifactDigest:"f".repeat(64),certificateIds:["cert-a","cert-z"],certificateDigests:["a".repeat(64),"c".repeat(64)]}),
+    ev(13,"slice.integrated",{sliceId:"s-1",leaseEpoch:1,candidateSha:"b".repeat(40),treeSha:"d".repeat(40),reviewArtifactDigest:"f".repeat(64)})
+  ];
+  assert.equal(projectLoom(mission("verified"),twoCheckPlan,[twoChecks],events).closed,true);
 });

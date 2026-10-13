@@ -1,8 +1,8 @@
 {
   "packet": "C5-LOOM-001",
-  "baseSha": "19abb354ad01433689a57e71e716ea1afca069c9",
+  "baseSha": "0c8c85de102121795d41158163dde79729b996ab",
   "branch": "feat/live-loom",
-  "result": "SOURCE_HANDOFF_READY_REPAIR_1",
+  "result": "SOURCE_HANDOFF_READY_REPAIR_2",
   "changedFiles": [
     "apps/control-plane/src/server.ts",
     "apps/control-plane/src/loom-page.ts",
@@ -17,9 +17,14 @@
     "The owner-cookie authenticated, read-only Loom route now reads the approved plan and paginates mission-local event history in 1,000-row cursor pages. It enforces an 8-second read deadline and 10,000-event overall evidence cap; exactly 1,000 rows does not itself mean overflow.",
     "The shared typed projector requires complete unique approved-plan slice membership and matching objective, ownership, checks and dependencies. Closure binds each current candidate and lease epoch to all exact certified check IDs, pending intent certificate IDs and SHA-256 digests, then a strictly later integration with matching candidate, tree and review digest; contradictory checks and durable UNKNOWN keep it open.",
     "The browser catches up using after-cursor pages, permits global cursor gaps while checking strict monotonicity, bounds requests and event history, uses a 5-second success poll and bounded exponential failure backoff, and shows stale history without implying live completion.",
-    "Named inspector rows cover scheduling decisions, recovery, and lesson candidate/promoted/withdrawn evidence; untrusted labels remain textContent and certificate links are validated same-origin URLs."
+    "Named inspector rows cover scheduling decisions, recovery, and lesson candidate/promoted/withdrawn evidence; untrusted labels remain textContent and certificate links are validated same-origin URLs.",
+    "Final bounded correction: closure also requires approved-plan scopes and budgets to exactly match the current slice snapshot, and maps every pending certificate ID to a certified check without assuming check-array order. Camera magnification now increases for plus/zoom-in and decreases for minus/zoom-out, with wheel direction aligned."
   ],
   "validation": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
     {
       "command": "npm run build",
       "exitCode": 0
@@ -27,24 +32,11 @@
     {
       "command": "node --test dist/tests/loom-projection.test.js dist/tests/loom-http.test.js",
       "exitCode": 0,
-      "passed": 9,
+      "passed": 10,
       "failed": 0
     },
     {
-      "command": "npm run typecheck",
-      "exitCode": 0
-    },
-    {
-      "command": "npm run validate",
-      "exitCode": 0,
-      "result": "Foundation structure validation passed"
-    },
-    {
       "command": "git diff --check",
-      "exitCode": 0
-    },
-    {
-      "check": "served inline browser script syntax via node:vm.Script in focused HTTP test",
       "exitCode": 0
     }
   ],
@@ -64,21 +56,21 @@
     "unchanged": true
   },
   "work": {
-    "taskStartedAtUtc": "UNKNOWN; earliest task timestamp sampled at 2026-10-13 21:03:26 UTC",
-    "sourceHandoffAtUtc": "2026-10-13 21:12:13 UTC",
+    "taskStartedAtUtc": "UNKNOWN; this final repair turn start was not sampled",
+    "sourceHandoffAtUtc": "2026-10-13 22:36:01 UTC",
     "planningDuration": "UNKNOWN",
-    "implementationDuration": "UNKNOWN; observed window from earliest timestamp sample to handoff was 8m 8s, work began earlier",
-    "focusedValidationDuration": "UNKNOWN; final focused tests reported 174.9713 ms Node test duration",
+    "implementationDuration": "UNKNOWN",
+    "focusedValidationDuration": "UNKNOWN; final Node test duration 170.3356 ms",
     "independentAuditDuration": "PENDING",
-    "repairCount": 1,
+    "repairCount": 2,
     "lane": "single primary builder",
     "modelIdentity": "UNKNOWN from runtime metadata",
     "tokenUsage": "UNKNOWN; no measured usage source available",
     "elapsedToAcceptance": "PENDING independent review"
   },
   "notCompletedHere": [
-    "Exact-candidate root review and final repository gates",
-    "Actual browser screenshots and desktop/mobile/keyboard/WebGL fallback visual proof",
+    "Root exact-candidate review and final repository gates",
+    "Actual browser visual, keyboard, camera zoom and WebGL fallback proof on final frozen candidate",
     "PostgreSQL-backed event transition and reconnect proof"
   ],
   "commitCreated": false,
