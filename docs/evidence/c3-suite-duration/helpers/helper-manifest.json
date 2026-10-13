@@ -1,0 +1,85 @@
+{
+  "format": "orloom-c3-suite-duration-helper-manifest-v1",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "files": [
+    {
+      "file": "build-suite-image.sh",
+      "sha256": "02a7af6e9ba804d0c38a9b42a4be9dd201f866aa58e28645d595cbfbb7e02b9f",
+      "bytes": 2472,
+      "executedLfSha256": "02a7af6e9ba804d0c38a9b42a4be9dd201f866aa58e28645d595cbfbb7e02b9f"
+    },
+    {
+      "file": "cgroup-observer.mjs",
+      "sha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+      "bytes": 2164,
+      "executedLfSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce"
+    },
+    {
+      "file": "cleanup-acceptance.sh",
+      "sha256": "52346295fc52cafa40a9d4315ca8281081a6fc2faa199d0b5f98785a1e24d45b",
+      "bytes": 5581,
+      "executedLfSha256": "52346295fc52cafa40a9d4315ca8281081a6fc2faa199d0b5f98785a1e24d45b"
+    },
+    {
+      "file": "export-acceptance-snapshot.sh",
+      "sha256": "e25900fb8b5bcc4f129d30a7fbe47e4e528aceba951db2068aee48405bfefc94",
+      "bytes": 2851,
+      "executedLfSha256": "e25900fb8b5bcc4f129d30a7fbe47e4e528aceba951db2068aee48405bfefc94"
+    },
+    {
+      "file": "preflight-acceptance.sh",
+      "sha256": "be689fc4893d3a14c241fbc35c6b098b9f99a0b4f4cc718182bf856c109285d6",
+      "bytes": 2922,
+      "executedLfSha256": "be689fc4893d3a14c241fbc35c6b098b9f99a0b4f4cc718182bf856c109285d6"
+    },
+    {
+      "file": "prepare-acceptance-fixtures.mjs",
+      "sha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd",
+      "bytes": 4528,
+      "executedLfSha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd"
+    },
+    {
+      "file": "run-acceptance.sh",
+      "sha256": "3c35a7076005f72128304a099a07df5f82cd2815c12eaa536ac4e49d2dc4ea93",
+      "bytes": 13646,
+      "executedLfSha256": "3c35a7076005f72128304a099a07df5f82cd2815c12eaa536ac4e49d2dc4ea93"
+    },
+    {
+      "file": "runtime-acceptance-entry.mjs",
+      "sha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+      "bytes": 1444,
+      "executedLfSha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec"
+    },
+    {
+      "file": "runtime-acceptance.mjs",
+      "sha256": "2c661ac1543c122cf6b4111dbf65431fe8a15ef14f24ee1640e950e362a9c91c",
+      "bytes": 22634,
+      "executedLfSha256": "2c661ac1543c122cf6b4111dbf65431fe8a15ef14f24ee1640e950e362a9c91c"
+    },
+    {
+      "file": "runtime-snapshot-export.mjs",
+      "sha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6",
+      "bytes": 9349,
+      "executedLfSha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6"
+    },
+    {
+      "file": "setup-disposable-postgres.sh",
+      "sha256": "4d86672d24b90485f8a4d8f3a25dc820276d7a02830f40fc3c273d4ba8d60ff5",
+      "bytes": 6427,
+      "executedLfSha256": "4d86672d24b90485f8a4d8f3a25dc820276d7a02830f40fc3c273d4ba8d60ff5"
+    },
+    {
+      "file": "stage-acceptance.sh",
+      "sha256": "96cf6a732295f1b715075288527b7035cc34e3b18edff6a26abe6b31949d50e7",
+      "bytes": 9578,
+      "executedLfSha256": "96cf6a732295f1b715075288527b7035cc34e3b18edff6a26abe6b31949d50e7"
+    },
+    {
+      "file": "stage-bindings.json",
+      "sha256": "cda631a03beff5296137c7b0ae8db920cb7ca21bd207bd7485c33d06a1d93d2d",
+      "bytes": 932,
+      "executedLfSha256": "cda631a03beff5296137c7b0ae8db920cb7ca21bd207bd7485c33d06a1d93d2d"
+    }
+  ]
+}

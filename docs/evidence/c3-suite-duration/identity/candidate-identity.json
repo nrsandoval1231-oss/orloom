@@ -1,0 +1,10 @@
+{
+  "format": "orl-c3-suite-acceptance-transfer-v1",
+  "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "baseSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceRef": "refs/heads/feat/integrated-harness",
+  "suiteManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "suiteFileCount": 123,
+  "bundleSha256": "d747e6c0eae9d26652eb5f30d30b782ec35a241166b559c3e3c44006a3c3191d",
+  "payloadManifestSha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a"
+}

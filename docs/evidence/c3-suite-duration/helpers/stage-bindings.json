@@ -1,0 +1,13 @@
+{
+  "approvedRef": "refs/heads/feat/integrated-harness",
+  "baseSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "candidateSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "fixtureHelperSha256": "f7cdd404a022792094d2380a28134e643e2b55e8a52713eef1db4d267f8726dd",
+  "observerHelperSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+  "runtimeEntrySha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+  "runtimeHelperSha256": "2c661ac1543c122cf6b4111dbf65431fe8a15ef14f24ee1640e950e362a9c91c",
+  "runtimePayloadSha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a",
+  "runtimeSnapshotSha256": "d4a63eea645cee0ae8853d1e3f2eb7af931823ce60761d59de5d2786dd6604a6",
+  "runtimeSnapshotShellSha256": "e25900fb8b5bcc4f129d30a7fbe47e4e528aceba951db2068aee48405bfefc94",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12"
+}

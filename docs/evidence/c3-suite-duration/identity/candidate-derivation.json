@@ -1,0 +1,131 @@
+{
+  "status": "PASS",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "startedUtc": "2026-10-13T18:29:01.449Z",
+  "finishedUtc": "2026-10-13T18:29:03.851Z",
+  "compilerCommand": [
+    "node",
+    "node_modules/typescript/bin/tsc",
+    "--outDir",
+    "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-duration\\candidate-8f271de\\fresh-compile"
+  ],
+  "compiledFiles": [
+    {
+      "file": "dist/packages/contracts/src/sql-mission-store.js",
+      "sha256": "14a57832c5e7420c6b8e550f8cb06212f32c2657548bbbf7662748473592c54f"
+    },
+    {
+      "file": "dist/packages/judgment/src/canonical.js",
+      "sha256": "174d21a0ac3fa18800c1ddd8b53fcc065bd1b2262390263113ad2110980e650b"
+    },
+    {
+      "file": "dist/packages/verification/src/runsc-launcher.js",
+      "sha256": "1c087a812579049d3697f42bc6fa555bd7cadb6d71198d6561af4bce7d65256f"
+    },
+    {
+      "file": "dist/packages/contracts/src/postgres-store.js",
+      "sha256": "2651880214fcfb05c879ddeab25202236557bb2ebf3266bf8dfca40f914c88e8"
+    },
+    {
+      "file": "dist/packages/judgment/src/jev-adapter.js",
+      "sha256": "3d8fa9ea31a55e0aa29d95d9869d3b036c906c1e09a34e456ffc7022b7a4be7c"
+    },
+    {
+      "file": "dist/packages/contracts/src/mission.js",
+      "sha256": "418343ef997fbc234afcafd095d98d3517578c7a70d3e5f46c46965449b5cc8d"
+    },
+    {
+      "file": "dist/packages/contracts/src/memory-store.js",
+      "sha256": "4c586c253c6eafc27d5860285001d89be1930eb7fdeeb42cf01359dc07dc72fc"
+    },
+    {
+      "file": "dist/packages/verification/src/artifact-store.js",
+      "sha256": "5000afa0ec6038be3a25f21fdc474854671ab6b818b112c65502bd9f923c772b"
+    },
+    {
+      "file": "dist/packages/learning/src/activation.js",
+      "sha256": "50176d2c3504a38f47fdeccfb4cf8b1df0ea2cc2af3e6e9b80fb1cba5ce301b0"
+    },
+    {
+      "file": "dist/packages/learning/src/lesson-policy.js",
+      "sha256": "5bef2a1e7251d982a288b5f319fd735470d30a14d001acbfa033c8d96c38e281"
+    },
+    {
+      "file": "dist/packages/contracts/src/scheduling.js",
+      "sha256": "5ccb0927e3f30e8046135bbd8d7329857aa65860c4e4f400e76f5af601be2242"
+    },
+    {
+      "file": "dist/packages/learning/src/challenger.js",
+      "sha256": "66fbfbe975b6d3a440f9551a769a484e2b8cbe4a5cad206ff071a54f28648e5a"
+    },
+    {
+      "file": "dist/packages/contracts/src/verification.js",
+      "sha256": "6a119e9ce3adc9b8ed169ee23c0a322e6bbe727f4415961bedaf0a6878357b32"
+    },
+    {
+      "file": "dist/packages/contracts/src/memory-mission-store.js",
+      "sha256": "6c192594d5b8f72801074eb0956cead8ca5e8ecbca86b79c5d1b8a3e257eb4f9"
+    },
+    {
+      "file": "dist/packages/contracts/src/sql-store.js",
+      "sha256": "7704ba0d19540e5d56afe64fdc9434fbc565883e6182ca3f3122a9af3d7c0f98"
+    },
+    {
+      "file": "dist/packages/contracts/src/job.js",
+      "sha256": "85af7cbbb641d02164da7c3583a6bc541b2a0a2097f463a98ad1570ad424fdbf"
+    },
+    {
+      "file": "dist/packages/judgment/src/types.js",
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    {
+      "file": "dist/apps/verifier/src/index.js",
+      "sha256": "bb74564e1fe3ac7b9a18b2466d3ed27d70d295963e88898c0c4f89144a6d4019"
+    },
+    {
+      "file": "dist/packages/contracts/src/worker-protocol.js",
+      "sha256": "bebf28ab8ba152083edc1850126920e52486d0fda73a8a42c7e8a19963abdcd8"
+    },
+    {
+      "file": "dist/packages/verification/src/policy.js",
+      "sha256": "c5d4e6cdcef60e9fb19e76ea88d2cd4a1c0c858eaf756f01b6f0160d03320d09"
+    },
+    {
+      "file": "dist/packages/verification/src/runner.js",
+      "sha256": "cba7ab4dc7461d458873d05af8f0af027a1d910f7a636e07e642d05858cb355c"
+    },
+    {
+      "file": "dist/packages/judgment/src/jev-client.js",
+      "sha256": "d11c9601bf17db4e9dc7fc8ee47866480ed81c9b49a53f1f9a6d8d659aa72ee1"
+    },
+    {
+      "file": "dist/packages/verification/src/repository.js",
+      "sha256": "dc48d997c88efd1655144cb72dafe92504060007842bdb1ff071715f503b496d"
+    },
+    {
+      "file": "dist/packages/governor/src/lease-reconciler.js",
+      "sha256": "dca861b477e754d88063fea47eba1636c9a0de8ce1bfcaa451b41c8ad53fe809"
+    },
+    {
+      "file": "dist/packages/governor/src/governor.js",
+      "sha256": "e34f19bc785022ab4597a3cea1ca4a2886463636e3d37e96410c81d09056d527"
+    },
+    {
+      "file": "dist/packages/verification/src/index.js",
+      "sha256": "ea056b7fd79618aa0b3599b6e5c092351861ecd29008a3b53b5b975e9fe1871a"
+    },
+    {
+      "file": "dist/packages/stuck-resolver/src/recovery.js",
+      "sha256": "ea3efd21485b9f0c31463cc704f24139b77d282895df33b173d02626b0f5211a"
+    }
+  ],
+  "dependencyCopyMatches": 127,
+  "dependencyProvenance": "Byte matches controlled installed dependency tree; not a fresh registry integrity verification.",
+  "packageJsonExcluded": "type:module wrapper metadata only; not compiled code",
+  "hostExecution": false,
+  "base": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceRef": "refs/heads/feat/integrated-harness",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "runtimePayloadManifestSha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a"
+}

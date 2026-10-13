@@ -1,0 +1,7 @@
+# Exact combined cloud suite: FAIL
+
+Source 8f271de796e643a3a0b9b47b80fc1de3e3646d9d; attempt 1fdeee6f-9344-4845-a985-6a601ae150d3. The trusted receipt is FAIL after 297,978 ms, with zero certificates. The proof wrapper returned UNKNOWN because its required positive outcome was absent. The final test file failed when its scratch copy of package-lock.json retained read-only mode and a mutation raised EACCES under the non-root Linux sandbox. Earlier test files passed; final foundation/security stages and prescribed negative scenarios did not run. No C1b learning activation or provider execution occurred.
+
+The exact runsc profile stayed at 2 GiB, one CPU, no network, read-only root, non-root user and no host mounts. 968 exact-CID samples peaked at 1,284,440,064 bytes, with no OOM observed in retained samples. This is not a performance improvement claim. Image 83f0eab13bdf13952085afceb7b61763180139fee042c5f4d417af5b607ee329.
+
+Allowlisted database and artifact evidence was archived before exact-ledger cleanup. Postflight confirmed disposable containers, network, volumes and DSN removed, verifier slot free and protected host unchanged. After-cleanup archive SHA256 82b6c100593a295f65f892dcc922f91cd88de8f543e76ba8ff383e53b2443ba9. Source/image/artifacts remain retained as failed evidence and may not authorize C1b reuse. Next direction: repair only the scratch fixture, retain sandbox restrictions, and verify a new combined candidate.

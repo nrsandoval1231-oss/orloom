@@ -1,0 +1,42 @@
+{
+  "format": "orloom-independent-preexecution-helper-review-v1",
+  "verdict": "PASS",
+  "scope": "C3 suite-duration local package and executable wrappers only; no host or runtime result",
+  "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "base": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceRef": "refs/heads/feat/integrated-harness",
+  "sourceManifestSha256": "1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12",
+  "sourceManifestFileCount": 123,
+  "sourceTestFileCount": 16,
+  "previousAcceptedHelperManifestSha256": "db12a335f4a16a5a5eaae5809eaff4914f6228a5a54d101c170de8cd308d01b5",
+  "helperManifestSha256": "1fa9168336fa7b1945519c156a8c1af8816f7f6f15128c2780fcf2efa3de77fa",
+  "helperFileCount": 13,
+  "reviewPackageSha256": "0655121bbe64a0075fd7fc6fe2462bb011b7fc7e60c13e5fc2bd7e5cf492f155",
+  "reviewPackageFileCount": 34,
+  "runtimePayloadManifestSha256": "6f72310f3d98d7817f41049bbc1d4683b90e951c187fb0cd84b57d664d1e483a",
+  "runtimePayloadFileCount": 155,
+  "bundleSha256": "d747e6c0eae9d26652eb5f30d30b782ec35a241166b559c3e3c44006a3c3191d",
+  "wrappers": {
+    "work/upload-duration-candidate.cjs": "6636420312b3b15743bcecc41e9dd916383367d75097eaf0a83c7adc18ddb780",
+    "work/run-duration-suite-script.cjs": "e4f8a90d695d0089c1d86f6e471a8f065f335faea12dbbf92b095a12a840d7d8",
+    "work/retain-duration-suite-evidence.cjs": "ed6bceb05a7f4616e2608bac79be0acadb0b47a14b55286fe0feb9ab6dd9a8d0",
+    "work/postflight-duration-suite.cjs": "1438860eede89771c069169455a3026f19734e309fb776fa235066adaab9bd50"
+  },
+  "evidence": [
+    "Independently hashed all 13 local helpers and their transfer copies against the manifest; no mismatches. Independently hashed all 155 transferred runtime payload files and all 34 review-package records; no mismatches.",
+    "Candidate identity, base, ref, 123-entry source manifest, bundle, payload manifest, and stage-bindings agree across selected-transfer, candidate-identity, runtime-files-identity, helper manifest, and review package.",
+    "Diff against accepted resource helper manifest db12 confines executable changes to the packet root and labels, source bindings, the trusted-catalog 420000 ms assertion, 30-minute capacity lease, and bounded 420000 ms/1680-row/2 MiB cgroup observation; cgroup observer, fixture preparer, runtime entry, and snapshot exporter code are byte-identical.",
+    "The source candidate was independently accepted in work/integrated-source-review-8f271de.json. Its trusted suite profile is 360000/390000/405000/420000 ms and 2 GiB. Runtime helper checks catalog attempt lifetime and 2 GiB runsc memory/swap, while shell and runtime perform fresh capacity admission before dispatch and each scenario.",
+    "Upload/run/retention/postflight wrappers require an independently supplied reviewed manifest hash and recheck transferred helper bytes. Retention excludes staging/database-url and other credential locations; postflight checks the protected container tuple, no disposable database URL, no C3 containers/network/volumes, and a free canonical verifier slot.",
+    "Package derivation records fresh compilation matching 27 packaged JavaScript files and 127 copied dependency files; dependency copy is explicitly not fresh registry integrity proof. The previous PENDING derivation was retained as historical and the final derivation is exact-bound."
+  ],
+  "controllerConditions": [
+    "Pass the reviewed helper manifest digest above to every wrapper; recheck exact wrapper and package hashes before host execution. Any differing byte requires a new review.",
+    "Capacity remains NOT-OBSERVED and runtime remains NOT-RUN. Observe current protected identity, fresh memory/disk, DB health, and canonical slot before dispatch. One runtime-started marker forbids blind redispatch.",
+    "Preserve C3 source/image/artifacts/evidence for C1b reuse only after a verified C3 PASS. For UNKNOWN or failed proof, first retain the allowlisted evidence and PostgreSQL snapshot, then invoke only the exact-ledger cleanup and complete a separate bounded disposition of retained artifacts/image. The cleanup helper deliberately refuses destructive DB cleanup if the snapshot is absent; treat that as unresolved UNKNOWN requiring recovery, never as cleanup success."
+  ],
+  "limits": [
+    "No host helper was executed and no runsc/PostgreSQL certificate or C3 runtime PASS is claimed.",
+    "The read-only local re-invocation of verify-duration-derivation.cjs exited EEXIST because its fresh-compile directory already existed; its earlier derivation PASS is recorded, and independent inventory hashes above were checked instead."
+  ]
+}

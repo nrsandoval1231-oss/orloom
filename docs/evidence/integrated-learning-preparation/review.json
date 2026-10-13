@@ -1,0 +1,46 @@
+{
+  "review": "C1b integrated helper independent pre-execution review",
+  "verdict": "PASS",
+  "reviewedAtUtc": "2026-10-13T18:41:32Z",
+  "sourceHead": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "helperRoot": "rootwork/c1b-integrated-proof",
+  "completionFile": "rootwork/c1b-integrated-proof/completion.json",
+  "exactHelperSha256": {
+    "c3-approved-ref.mjs": "c04fa0e80fa366673be39d9ba9a6df68c77254d8443621e41690694241971f0a",
+    "check-local-guards.mjs": "e486ea2f481cab13b2a218f21ec052b8ccb5721f3e3d413651336d894a4a7ef0",
+    "install-fixture.mjs": "738e0d2d3373561f23d25bf0ce54e6e5b31b51c050a505743779e91a293a9bfd",
+    "prepare-fixture.mjs": "19ba46234e8148cf53ccc1b1f25fea2296b421bfe8c5a02eea392280337804b4",
+    "prepare-runtime-payload.mjs": "5d6a0584ad03a0e193a5fbc37a27c302d53bf2f352b2a6be2622cfeb3627ba67",
+    "proof-guards.mjs": "ce683d8d09ea8d7ebc28b8bda4d20b83f97cb0fc2f6c0e848161940f3bb0f620",
+    "resource-cleanup.mjs": "196d223fb8c53d196e8550d9f8d518d44f0f650a91f301c81c4c4ecf8148d9eb",
+    "runtime-proof.mjs": "d42a5c5c74de4387a6bea936adee7746a7c1d15c78b8e66b10f0a005ff57bc0d",
+    "README.md": "bd34c1fe949f4ef3c634e35cc3e768160f1264481c8e12a1ee58af06fd1e1868"
+  },
+  "runtimePayloadManifestSha256": "a1a14660fc2af3db6605f0bb7c52003607e73915e8d4184f18bcfacbb90579d5",
+  "runtimePayloadFileCount": 163,
+  "fixtureBundleSha256": "c7733fd7d49035516e8d1ef0868c8412236f3f3fb2ba41237c77db7abe71ecb2",
+  "scope": "Read-only review of frozen helper, integrated source contracts, payload and fixture hashes, and local guard behavior. No PostgreSQL, runsc, host, provider, certificate lookup, or live Jev action.",
+  "findings": [
+    {
+      "id": "C1B-I1",
+      "result": "PASS",
+      "evidence": "All nine completion-listed helper and README hashes match on disk; the 163-row clean-build payload manifest and fixture bundle match the recorded exact digests. The integrated checkout is clean at the pinned SHA. Eight helper scripts pass node --check."
+    },
+    {
+      "id": "C1B-I2",
+      "result": "PASS",
+      "evidence": "The C3 activation uses compiled SqlMissionStore, TrustedCheckCoordinator, and CertifiedLearningActivation with a read-only retained-C3 pool and actual approved-ref runner. The C1b control plane gets that activation through its existing argument; separate C1b PostgreSQL and syntax fixture inputs are required. Source getCertificate rechecks request policy, mission/slice/candidate/lease, and observed approved-ref head on each promotion."
+    },
+    {
+      "id": "C1B-I3",
+      "result": "PASS",
+      "evidence": "The helper requires a pinned image digest, exact source and clean payload, root-owned restricted DSN files, distinct paths, pinned fixture commits and bundle, and finite runtime windows. Optional C3 ref restoration is guarded by observed-negative compare-and-swap to the bound runtime SHA followed by a certificate requery. Failed lookup and ambiguous cleanup remain UNKNOWN. Local guard command exited 0 and covered tamper, absent certificate, CAS, deadlines, and measured counters."
+    },
+    {
+      "id": "C1B-I4",
+      "result": "PASS",
+      "evidence": "The positive path retains actual trusted attempts, receipt/artifact readback, natural candidate, independent challenge, promotion, later Governor use, contradiction and withdrawal. Synthetic contention is separate. Success emits only BEHAVIOR_PASS_PENDING_CONTROLLER_CLEANUP."
+    }
+  ],
+  "limits": "This is a helper source PASS, not runtime acceptance or C3 suite certification. The controller must supply the independently verified exact payload digest, fixture and retained C3 certificate bindings, run the prescribed C3 positive and negatives first, inspect the read-only C3 requery and C1b runtime evidence, and complete exact cleanup/postflight before making a broader claim. The old 7a6165e helper review does not cover this candidate."
+}
