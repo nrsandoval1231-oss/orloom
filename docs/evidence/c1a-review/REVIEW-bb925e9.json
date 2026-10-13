@@ -1,0 +1,35 @@
+{
+  "review": "ORL-005C1 C1a repair 1 independent read-only review",
+  "candidateSha": "bb925e904d32dbc871f72de028e60d504c0a4773",
+  "manifestSha256": "12700f390d5dfd93e2f25effb6c9d2d270bebe479dc1314b50f28b292d3a7c99",
+  "verdict": "FIX",
+  "scope": "C1a repair 1 only; lesson promotion, later-task application, withdrawal, C1b, and product finish remain open",
+  "priorFindings": [
+    {"id":"terminal-status-continue","result":"CLOSED in source","evidence":"Jev adapter deterministically escalates blocked/unknown; both stores reject injected nonterminal decisions; new tests cover the path."},
+    {"id":"cross-target-candidate","result":"CLOSED in source","evidence":"SQL episode join requires equal targetCheckId and policy digests; memory filters those fields; new tests cover a multi-target strategy."},
+    {"id":"snapshot-budget-evidence","result":"CLOSED in source","evidence":"Versioned snapshot now carries authoritative mission/slice/reserved budget, reported usage, and digest-only evidence refs; SQL compares persisted snapshot plus current budget context before commit."}
+  ],
+  "findings": [
+    {
+      "severity":"P1",
+      "title":"Unresolved pass can become lesson candidate success evidence",
+      "evidence":["packages/contracts/src/sql-mission-store.ts:138-140","packages/contracts/src/memory-mission-store.ts:100-104","packages/contracts/src/memory-mission-store.ts:117-125"],
+      "reason":"An invalid or uncertain judgment after a worker-reported pass persists progress with decision_status=unknown in SQL or with no committed receipt in memory. The later candidate scan checks only progress.status=passed, so a subsequent committed pass from another slice can pair the unresolved pass with an earlier failure and create a candidate claiming two completed recoveries. The C1a candidate record must retain accurate event provenance even while promotion is closed.",
+      "repair":"Select only committed SQL failure/pass actions and only memory progress events with committed receipts. Add a two-episode regression where one pass judgment becomes UNKNOWN and no candidate is emitted."
+    },
+    {
+      "severity":"P2",
+      "title":"Comparable scope cohort is not consistently enforced across stores",
+      "evidence":["packages/contracts/src/memory-mission-store.ts:53","packages/contracts/src/memory-mission-store.ts:100-110","packages/contracts/src/sql-mission-store.ts:140","packages/contracts/src/mission.ts:74"],
+      "reason":"Memory candidate scanning groups prior passes by repository, target, strategy, and policy but never checks the prior slice's derived scope cohort; a docs episode can count toward a src candidate under a wildcard-approved strategy. SQL derives the current cohort from sorted scopes, but its prior-episode filter uses scopes[0]; valid unsorted multi-scope plans can therefore disagree with memory and lose comparable episodes.",
+      "repair":"Use one deterministic cohort derivation for current and historical episodes in both stores, and add cross-cohort plus unsorted multi-scope parity tests."
+    }
+  ],
+  "validationEvidence": {
+    "controller":"Root reported exact-candidate npm ci, typecheck, build, 47 tests, validate, diff check PASS; work/c1a-controller-gates-bb925e9.txt. Reviewer did not run shared builds.",
+    "realPostgres":"PENDING at review time",
+    "provider":"No live Jev call or spend evidenced"
+  },
+  "sourceEdits":"none",
+  "nextDirection":"One bounded repair for candidate evidence eligibility and cohort parity, then freeze/revalidate exact candidate and obtain independent review."
+}

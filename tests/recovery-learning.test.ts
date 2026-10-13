@@ -24,11 +24,11 @@ const strategies = {
   "strategy:recovery": { checkId: "check:recovery", version: "fixture-v1", expectedSignal: "the same fixture check returns 42 after the approved repair", scopeClasses: ["src"], targetCheckIds: [targetCheckId] },
 };
 
-function config(targetCheckIds: string[] = [targetCheckId]) {
+function config(targetCheckIds: string[] = [targetCheckId], scopeClasses: string[] = ["src"]) {
   const trustedStrategies = {
     ...strategies,
-    "strategy:baseline": { ...strategies["strategy:baseline"], targetCheckIds },
-    "strategy:recovery": { ...strategies["strategy:recovery"], targetCheckIds },
+    "strategy:baseline": { ...strategies["strategy:baseline"], targetCheckIds, scopeClasses },
+    "strategy:recovery": { ...strategies["strategy:recovery"], targetCheckIds, scopeClasses },
   };
   return loadConfig({
     ORLOOM_MODE: "local", PORT: "3000", ORLOOM_SESSION_TOKEN: "owner-fixture-session", ORLOOM_WORKER_TOKEN: "worker-fixture-bootstrap",
@@ -70,7 +70,7 @@ function jevTransport(options: { holdFirstRecoveryChoice?: boolean } = {}) {
   return { fetch, started, releaseChoice, calls: () => callCount, setTerminal: (value: boolean) => { terminal = value; } };
 }
 
-async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[] } = {}) {
+async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapter?: RecoveryJudgmentAdapter; targetCheckIds?: string[]; scopeClasses?: string[] } = {}) {
   const db = new PGlite();
   await db.exec(await readFile("db/migrations/001_initial.sql", "utf8"));
   await db.exec(await readFile("db/migrations/002_missions.sql", "utf8"));
@@ -95,7 +95,7 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
     },
   };
   let store = new SqlMissionStore(sql);
-  const cfg = config(options.targetCheckIds);
+  const cfg = config(options.targetCheckIds, options.scopeClasses);
   await store.configureCapacity(3, cfg.capacityEvidenceDigest!, cfg.capacityEvidenceExpiresAt!);
   const transport = jevTransport(options);
   const jev = new JevClient({ apiKey: "fixture-only-key", modelId, allowedModelIds: new Set([modelId]), limits: { maxInputBytes: 64_000, maxResponseBytes: 32_000, timeoutMs: 2_000 }, fetch: transport.fetch });
@@ -132,12 +132,12 @@ async function setup(options: { holdFirstRecoveryChoice?: boolean; judgmentAdapt
   };
 }
 
-async function createMission(ctx: Awaited<ReturnType<typeof setup>>, repository: string, sliceIds: string[]) {
+async function createMission(ctx: Awaited<ReturnType<typeof setup>>, repository: string, sliceIds: string[], scopeBySlice: Record<string, string[]> = {}) {
   const { status, value } = await ctx.request("POST", "/api/missions", {
     repository, baseSha: sha(`${repository}-base`).slice(0, 40), objective: "Exercise a real fixed recovery check and durable lesson policy.", acceptance: ["The same fixed check succeeds after an approved repair."], budgetCents: 90_000,
   }, { cookie: ctx.cookie });
   assert.equal(status, 201);
-  const slices = sliceIds.map(id => ({ id, objective: `Run fixed check for ${id}`, dependencies: [], owner: "fixture-owner", scopes: [`src/recovery/${id}`], checks: ["strategy:baseline", "strategy:recovery"], budgetCents: 10_000 }));
+  const slices = sliceIds.map(id => ({ id, objective: `Run fixed check for ${id}`, dependencies: [], owner: "fixture-owner", scopes: scopeBySlice[id] ?? [`src/recovery/${id}`], checks: ["strategy:baseline", "strategy:recovery"], budgetCents: 10_000 }));
   assert.equal((await ctx.request("POST", `/api/missions/${value.id}/plan`, { recommendedBy: "owner-fixture", slices }, { cookie: ctx.cookie })).status, 201);
   assert.equal((await ctx.request("POST", `/api/missions/${value.id}/approve`, {}, { cookie: ctx.cookie })).status, 200);
   return value.id as string;
@@ -156,6 +156,21 @@ async function claim(ctx: Awaited<ReturnType<typeof setup>>) {
 
 function leaseHeaders(lease: any) {
   return { authorization: `Bearer ${lease.capabilityToken}`, "x-orloom-lease-token": lease.leaseToken, "x-orloom-lease-epoch": String(lease.leaseEpoch) };
+}
+
+function committedEpisodeAdapter(unknownOnPassSlice?: string): RecoveryJudgmentAdapter {
+  return async (snapshot: DecisionSnapshotV1) => {
+    const invalidPass = snapshot.status === "passed" && snapshot.sliceId === unknownOnPassSlice;
+    const change = snapshot.status === "failed" || invalidPass;
+    return {
+      version: "orloom.judgment.v1", snapshotDigest: sha(canonicalJson(snapshot)), source: "jev",
+      answer: change ? "change_strategy" : "continue",
+      strategyId: change && !invalidPass ? "strategy:recovery" : null,
+      checkId: change && !invalidPass ? "check:recovery" : null,
+      policyVersion: "fixture-v1", policyDigest: snapshot.recoveryPolicyDigest,
+      modelId, confidence: 1, usage: { inputTokens: 1, outputTokens: 1 },
+    };
+  };
 }
 
 function fixtureWorkspace() { return { source: "const answer = 41;\n" }; }
@@ -212,8 +227,9 @@ async function runEpisode(ctx: Awaited<ReturnType<typeof setup>>, lease: any, po
   assert.equal(failed.value.judgment.snapshotDigest, sha(canonicalJson(failed.value.snapshot)), "judgment binds the canonical immutable snapshot");
   assert.equal(failed.value.snapshot.missionBudgetCents, 90_000);
   assert.equal(failed.value.snapshot.sliceBudgetCents, 10_000);
-  assert.equal(failed.value.snapshot.reservedBudgetCents, 20_000, "the snapshot binds mission-wide reservations for both claimed slices");
-  assert.equal(failed.value.snapshot.missionBudgetCents - failed.value.snapshot.reservedBudgetCents, 70_000);
+  const missionAtDecision = await ctx.store.getMission(lease.mission.id);
+  assert.equal(failed.value.snapshot.reservedBudgetCents, missionAtDecision?.mission.reservedCents, "the snapshot binds current mission-wide reservations");
+  assert.equal(failed.value.snapshot.missionBudgetCents - failed.value.snapshot.reservedBudgetCents, 90_000 - (missionAtDecision?.mission.reservedCents ?? 0));
   assert.deepEqual(failed.value.snapshot.reportedUsage, baseline.counters);
   assert.deepEqual(failed.value.snapshot.evidenceRefs, baseline.evidenceRefs);
   const wrongCapabilityAfterCommit = leaseHeaders(lease);
@@ -335,6 +351,81 @@ test("episodes with different target checks cannot form one comparable lesson ca
     assert.equal(lessons.status, 200);
     assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, "a failed check for target A and pass for target B are not comparable evidence");
   } finally { await ctx.close(); }
+});
+
+test("candidate extraction excludes UNKNOWN pass evidence in either episode order", async () => {
+  for (const order of [["unknown-first", "valid-second"], ["valid-first", "unknown-second"]] as const) {
+    const sliceIds = order.map((kind, index) => `episode-${index}-${kind}`);
+    const unknownSlice = sliceIds[order.findIndex(value => value.startsWith("unknown"))]!;
+    const ctx = await setup({ judgmentAdapter: committedEpisodeAdapter(unknownSlice), scopeClasses: ["src", "docs"] });
+    try {
+      const missionId = await createMission(ctx, `fixture/unresolved-pass-${unknownSlice}`, sliceIds, {
+        [sliceIds[0]!]: ["src/unresolved/a"], [sliceIds[1]!]: ["src/unresolved/b"],
+      });
+      for (const [index, kind] of order.entries()) {
+        const { lease, policy } = await claim(ctx);
+        const sliceId = sliceIds[index]!;
+        assert.equal(lease.mission.id, missionId);
+        assert.equal(lease.slice.id, sliceId);
+        const workspace = fixtureWorkspace();
+        const failedCheck = runFixedCheck(workspace);
+        const failed = await report(ctx, lease, progress(lease, policy, `${kind}-failed-${randomUUID()}`, 1, "strategy:baseline", failedCheck));
+        assert.equal(failed.status, 200);
+        assert.equal(failed.value.action.strategyId, "strategy:recovery");
+        applyApprovedRecovery(workspace, failed.value.action.strategyId);
+        const passedCheck = runFixedCheck(workspace);
+        const passedEvent = progress(lease, policy, `${kind}-passed-${randomUUID()}`, 2, "strategy:recovery", passedCheck);
+        const passResult = await report(ctx, lease, passedEvent);
+        if (kind.startsWith("unknown")) {
+          assert.equal(passResult.status, 409);
+          const saved = await ctx.db.query<{ decision_status: string; action: unknown }>("SELECT decision_status,action FROM mission_recovery_progress WHERE event_id=$1", [passedEvent.eventId]);
+          assert.equal(saved.rows[0]?.decision_status, "unknown");
+          assert.equal(saved.rows[0]?.action, null);
+        } else {
+          assert.equal(passResult.status, 200);
+          assert.equal(passResult.value.judgment.answer, "continue");
+        }
+      }
+      const lessons = await ctx.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: ctx.cookie });
+      assert.equal(lessons.status, 200);
+      assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, `${unknownSlice} must not count as one of two committed success observations`);
+    } finally { await ctx.close(); }
+  }
+});
+
+test("mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence", async () => {
+  const mixed = await setup({ scopeClasses: ["src", "docs"] });
+  try {
+    const missionId = await createMission(mixed, "fixture/mixed-cohort-proof", ["source", "docs"], {
+      source: ["src/recovery/source"], docs: ["docs/recovery/docs"],
+    });
+    for (const id of ["source", "docs"]) {
+      const { lease, policy } = await claim(mixed);
+      assert.equal(lease.mission.id, missionId);
+      await runEpisode(mixed, lease, policy, `mixed-${id}-${randomUUID()}`);
+    }
+    const lessons = await mixed.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: mixed.cookie });
+    assert.equal(lessons.status, 200);
+    assert.equal(lessons.value.some((lesson: any) => lesson.status === "candidate"), false, "src and docs are distinct comparable cohorts");
+  } finally { await mixed.close(); }
+
+  const unsorted = await setup({ scopeClasses: ["src", "docs"] });
+  try {
+    const missionId = await createMission(unsorted, "fixture/unsorted-cohort-proof", ["unsorted-a", "unsorted-b"], {
+      "unsorted-a": ["src/z", "docs/a"], "unsorted-b": ["docs/b", "src/y"],
+    });
+    for (const id of ["unsorted-a", "unsorted-b"]) {
+      const { lease, policy } = await claim(unsorted);
+      assert.equal(lease.mission.id, missionId);
+      await runEpisode(unsorted, lease, policy, `unsorted-${id}-${randomUUID()}`);
+    }
+    const lessons = await unsorted.request("GET", `/api/missions/${missionId}/lessons`, undefined, { cookie: unsorted.cookie });
+    assert.equal(lessons.status, 200);
+    const candidate = lessons.value.find((lesson: any) => lesson.status === "candidate");
+    assert(candidate, "two committed episodes with the same derived cohort form positive evidence");
+    assert.equal(candidate.cohort, "docs", "cohort is based on the lexical minimum scope, not the supplied first scope");
+    assert.equal(candidate.evidenceEventIds.length, 4);
+  } finally { await unsorted.close(); }
 });
 
 test("an in-flight adapter result is fenced after lease expiry and the unresolved slice remains quarantined", async () => {

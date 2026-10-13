@@ -9,6 +9,7 @@ import { startLeaseReconciler } from "../packages/governor/src/lease-reconciler.
 import type { DecisionSnapshotV1, JudgmentV1 } from "../packages/judgment/src/types.js";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { createHash } from "node:crypto";
+import { eligibleLessonPair, lessonEpisodeKey, type LessonEpisodeObservation } from "../packages/learning/src/lesson-policy.js";
 
 const baseSha="a".repeat(40), evidenceDigest="b".repeat(64), future=()=>new Date(Date.now()+60_000).toISOString();
 const slice=(id:string,scope:string,dependencies:string[]=[],budgetCents=100):SliceInput=>({id,objective:`do ${id}`,dependencies,owner:"core",scopes:[scope],checks:["check:unit"],budgetCents});
@@ -137,6 +138,60 @@ test("memory two-phase judgment quarantines when mission reservation changes aft
   const after=await store.getMission(m.id);assert(after);
   assert.equal(after.slices.find(x=>x.id===first.slice.id)?.status,"unknown");
   assert.equal(after.mission.reservedCents,200,"both lease reservations remain held after stale judgment quarantine");
+});
+
+test("memory lesson candidates require two committed same-cohort episodes",async()=>{
+  const policyDigest="c".repeat(64),recoveryDigest="e".repeat(64);
+  const strategies:Record<string,TrustedStrategyPolicy>={
+    "strategy:baseline":{checkId:"check:baseline",version:"v1",expectedSignal:"baseline",scopeClasses:["*"],targetCheckIds:["target:unit"]},
+    "strategy:recovery":{checkId:"check:recovery",version:"v1",expectedSignal:"recovery",scopeClasses:["*"],targetCheckIds:["target:unit"]},
+  };
+  const run=async(scopes:string[][],unknownAt:number|null)=>{
+    const store=new MemoryMissionStore();await store.configureCapacity(scopes.length,evidenceDigest,future());
+    const mission=await store.submit({repository:"owner/lesson",baseSha,objective:"cohort eligibility",acceptance:["committed comparable episodes"],budgetCents:1000});
+    const inputs:SliceInput[]=scopes.map((paths,index)=>({id:`slice-${index}`,objective:`slice ${index}`,dependencies:[],owner:"core",scopes:paths,checks:["strategy:baseline","strategy:recovery"],budgetCents:100}));
+    await store.recommendPlan(mission.id,inputs,"owner-session");await store.approvePlan(mission.id);
+    const leases=await Promise.all(scopes.map(()=>store.claim(300,policyDigest,new Date(),recoveryDigest)));
+    assert(leases.every(Boolean));
+    const makeProgress=(lease:NonNullable<typeof leases[number]>,eventId:string,ordinal:number,strategyId:string,status:ProgressV1["status"]):ProgressV1=>({
+      version:"orloom.progress.v1",eventId,missionId:mission.id,sliceId:lease.slice.id,leaseEpoch:lease.epoch,ordinal,planDigest:lease.planDigest,
+      trustedCheckPolicyDigest:policyDigest,recoveryPolicyDigest:recoveryDigest,phase:"trusted_check",status,
+      reasonCode:status==="failed"?"check_failed":"check_passed",strategyId,targetCheckId:"target:unit",checkId:strategies[strategyId]!.checkId,
+      counters:{providerCalls:0,inputTokens:0,outputTokens:0,wallMs:1},evidenceRefs:[`sha256:${"f".repeat(64)}`],
+    });
+    for(let index=0;index<leases.length;index++){
+      const lease=leases[index];assert(lease);
+      const failed=makeProgress(lease,`failure-${index}`,1,"strategy:baseline","failed");
+      const failureReceipt=await store.recordProgress(failed,lease.leaseToken,lease.capabilityToken,strategies);
+      assert.equal(failureReceipt.action.strategyId,"strategy:recovery");
+      const passed=makeProgress(lease,`success-${index}`,2,"strategy:recovery","passed");
+      if(index===unknownAt){
+        const invalidJudge=async(snapshot:DecisionSnapshotV1):Promise<JudgmentV1>=>({
+          version:"orloom.judgment.v1",snapshotDigest:"0".repeat(64),source:"deterministic",answer:"continue",
+          strategyId:null,checkId:null,policyVersion:"v1",policyDigest:recoveryDigest,modelId:null,confidence:null,usage:null,
+        });
+        await assert.rejects(store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies,invalidJudge),MissionConflictError);
+        assert.equal((await store.getMission(mission.id))!.slices.find((slice)=>slice.id===lease.slice.id)?.status,"unknown");
+      }else{
+        await store.recordProgress(passed,lease.leaseToken,lease.capabilityToken,strategies);
+      }
+    }
+    return store.lessons(mission.id);
+  };
+
+  assert.deepEqual(await run([["src/unknown.ts"],["src/valid.ts"]],0),[]);
+  assert.deepEqual(await run([["src/valid.ts"],["src/unknown.ts"]],1),[]);
+  assert.deepEqual(await run([["src/one.ts"],["docs/two.md"]],null),[]);
+  const sameCohort=await run([["src/z","docs/a"],["docs/b","src/y"]],null);
+  assert.equal(sameCohort.length,1);
+  assert.equal(sameCohort[0]?.cohort,"docs");
+});
+
+test("lesson episode count deduplicates epochs but pairs evidence only within one epoch",()=>{
+  const observation=(leaseEpoch:number):LessonEpisodeObservation=>({eventId:`event-${leaseEpoch}`,repository:"owner/repo",missionId:"mission",sliceId:"slice",leaseEpoch,ordinal:1,status:"failed",decisionStatus:"committed",targetCheckId:"target",strategyId:"baseline",trustedCheckPolicyDigest:"a",recoveryPolicyDigest:"b",cohort:"src"});
+  const epoch1=observation(1),epoch2={...observation(2),status:"passed",strategyId:"recovery",ordinal:2};
+  assert.equal(lessonEpisodeKey(epoch1),lessonEpisodeKey(epoch2));
+  assert.equal(eligibleLessonPair(epoch1,epoch2),false,"different lease epochs cannot form a failure/pass pair");
 });
 
 test("PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart",async()=>{

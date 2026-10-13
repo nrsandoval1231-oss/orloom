@@ -3,7 +3,7 @@ import { canonicalRepository, GovernorActionV1, Lane, LeaseGrant, LessonCandidat
 import { SqlExecutor } from "./sql-store.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { lessonChallengeDigest, lessonRule } from "../../learning/src/lesson-policy.js";
+import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule, scopeCohort, type LessonEpisodeObservation } from "../../learning/src/lesson-policy.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 export interface TransactionalSql extends SqlExecutor { transaction<T>(work: (tx: SqlExecutor) => Promise<T>): Promise<T>; }
 const digest=(s:string)=>createHash("sha256").update(s).digest("hex");
@@ -64,7 +64,8 @@ export class SqlMissionStore implements MissionStore {
         const authorizedStrategy=previousAction.action==="change_strategy"?previousAction.strategyId:previousAction.action==="continue"&&previousProgress.status==="started"?previousProgress.strategyId:null;
         if(!authorizedStrategy||p.strategyId!==authorizedStrategy)throw new MissionConflictError("Progress strategy is not the prior Governor-authorized action");
       }
-      const repository=canonicalRepository(String(row.repository)),cohort=(row.scopes as string[]).slice().sort()[0]!.split("/")[0]!.toLowerCase();
+      const repository=canonicalRepository(String(row.repository)),cohort=scopeCohort(row.scopes);
+      if(!cohort)throw new MissionConflictError("A stable scope cohort is unavailable for this lease");
       const attempts=await tx.query("SELECT progress->>'strategyId' AS strategy_id FROM mission_recovery_progress WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3",[p.missionId,p.sliceId,p.leaseEpoch]);
       const tried=new Set(attempts.rows.map(x=>String(x.strategy_id)));
       tried.add(p.strategyId);
@@ -102,7 +103,8 @@ export class SqlMissionStore implements MissionStore {
       }
       const state=await tx.query("SELECT revision,last_ordinal FROM mission_recovery_state WHERE mission_id=$1 AND slice_id=$2 FOR UPDATE",[p.missionId,p.sliceId]);
       if(Number(state.rows[0]?.revision)!==prepared.snapshot.revision||Number(state.rows[0]?.last_ordinal)!==p.ordinal)return{staleReason:"stale_snapshot_revision" as const};
-      const repo=canonicalRepository(String(row.repository)),cohort=(row.scopes as string[]).slice().sort()[0]!.split("/")[0]!.toLowerCase();
+      const repo=canonicalRepository(String(row.repository)),cohort=scopeCohort(row.scopes);
+      if(!cohort)return{staleReason:"scope_cohort_changed" as const};
       const next=judgment.strategyId,nextPolicy=next?strategies[next]!:prepared.strategy;
       const action:GovernorActionV1={version:"orloom.governor-action.v1",eventId:p.eventId,revision:prepared.snapshot.revision,action:judgment.answer,strategyId:next,checkId:judgment.checkId,expectedSignal:nextPolicy.expectedSignal,policyVersion:judgment.policyVersion,policyDigest:judgment.policyDigest,lessonIds:prepared.snapshot.lessonIds};
       await tx.query("UPDATE mission_recovery_progress SET judgment=$2::jsonb,action=$3::jsonb,decision_status='committed' WHERE event_id=$1 AND decision_status='prepared'",[p.eventId,JSON.stringify(judgment),JSON.stringify(action)]);
@@ -137,19 +139,27 @@ export class SqlMissionStore implements MissionStore {
   }
   private async markJudgmentUnknown(snapshot:DecisionSnapshotV1,reason:string){await this.db.transaction(async tx=>{await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");await tx.query("UPDATE mission_recovery_progress SET decision_status='unknown' WHERE event_id=$1 AND decision_status='prepared'",[snapshot.eventId]);const q=await tx.query("UPDATE mission_slices SET status='unknown',lease_token_hash=NULL,capability_hash=NULL,lease_expires_at=NULL WHERE mission_id=$1 AND id=$2 AND lease_epoch=$3 AND status='running' RETURNING mission_id",[snapshot.missionId,snapshot.sliceId,snapshot.leaseEpoch]);if(q.rows[0]){await this.refreshMissionStatus(tx,snapshot.missionId);await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'slice.judgment_unknown',$2::jsonb)",[snapshot.missionId,JSON.stringify({sliceId:snapshot.sliceId,epoch:snapshot.leaseEpoch,eventId:snapshot.eventId,reason})]);}});}
   private async maybeCreateLesson(tx:SqlExecutor,p:ProgressV1,repository:string,cohort:string,strategy:import("./mission.js").TrustedStrategyPolicy){
-    const query=await tx.query("SELECT f.mission_id, f.event_id AS failure_id, ok.event_id AS success_id, f.slice_id, f.progress->>'targetCheckId' AS from_check_id FROM mission_recovery_progress f JOIN mission_recovery_progress ok ON ok.mission_id=f.mission_id AND ok.slice_id=f.slice_id AND ok.lease_epoch=f.lease_epoch AND ok.ordinal>f.ordinal AND ok.progress->>'targetCheckId'=f.progress->>'targetCheckId' AND ok.progress->>'recoveryPolicyDigest'=f.progress->>'recoveryPolicyDigest' AND ok.progress->>'trustedCheckPolicyDigest'=f.progress->>'trustedCheckPolicyDigest' JOIN mission_slices s ON s.mission_id=f.mission_id AND s.id=f.slice_id JOIN missions m ON m.id=s.mission_id WHERE f.progress->>'status'='failed' AND ok.progress->>'status'='passed' AND ok.progress->>'strategyId'=$1 AND ok.progress->>'strategyId'<>f.progress->>'strategyId' AND f.progress->>'targetCheckId'=$2 AND f.progress->>'recoveryPolicyDigest'=$5 AND ok.progress->>'recoveryPolicyDigest'=$5 AND f.progress->>'trustedCheckPolicyDigest'=$6 AND ok.progress->>'trustedCheckPolicyDigest'=$6 AND m.repository=$3 AND lower(split_part(s.scopes->>0,'/',1))=$4",[p.strategyId,p.targetCheckId,repository,cohort,p.recoveryPolicyDigest,p.trustedCheckPolicyDigest]);
-    // A lesson requires two independent slice episodes; the current slice is counted from its own durable history.
-    const own=await tx.query("SELECT event_id,progress FROM mission_recovery_progress WHERE mission_id=$1 AND slice_id=$2 ORDER BY ordinal",[p.missionId,p.sliceId]);
-    const failed=own.rows.find(x=>(x.progress as ProgressV1).status==="failed"&&(x.progress as ProgressV1).targetCheckId===p.targetCheckId&&(x.progress as ProgressV1).strategyId!==p.strategyId&&(x.progress as ProgressV1).recoveryPolicyDigest===p.recoveryPolicyDigest&&(x.progress as ProgressV1).trustedCheckPolicyDigest===p.trustedCheckPolicyDigest);
-    const episode=failed?{failure_id:failed.event_id,success_id:p.eventId,slice_id:p.sliceId,mission_id:p.missionId,from_check_id:p.targetCheckId}:null;
-    const pairs=[...query.rows,...(episode?[episode]:[])];
-    const byKey=new Map<string,Map<string,{failure:string;success:string}>>();for(const x of pairs){const key=String(x.from_check_id);const slices=byKey.get(key)??new Map<string,{failure:string;success:string}>();slices.set(`${x.mission_id}:${x.slice_id}`,{failure:String(x.failure_id),success:String(x.success_id)});byKey.set(key,slices);}
-    for(const[fromCheckId,distinct]of byKey){
-      if(distinct.size<2)continue;
-      const existing=await tx.query("SELECT 1 FROM operational_lessons WHERE repository=$1 AND cohort=$2 AND from_check_id=$3 AND strategy_id=$4 AND status='candidate' LIMIT 1",[repository,cohort,fromCheckId,p.strategyId]);
-      if(existing.rows.length)continue;
-      const selected=[...distinct.entries()].sort(([a],[b])=>a.localeCompare(b)).slice(0,2).map(([,episode])=>episode);
-      const ids=selected.flatMap(x=>[x.failure,x.success]).sort(),baseline={failed:2,observed:2},outcome={passed:2,observed:2},challenge=lessonChallengeDigest({repository,cohort,fromCheckId,strategyId:p.strategyId,policyVersion:strategy.version,policyDigest:p.recoveryPolicyDigest,evidenceEventIds:ids,metric:"trusted_check_pass_rate",direction:"increase",baseline,outcome}),rule=lessonRule({fromCheckId,strategyId:p.strategyId,cohort}),id=randomUUID();
+    const query=await tx.query(
+      "SELECT f.mission_id,f.slice_id,f.lease_epoch,f.ordinal AS failure_ordinal,ok.ordinal AS success_ordinal,f.event_id AS failure_id,ok.event_id AS success_id,f.progress AS failure_progress,ok.progress AS success_progress,f.decision_status AS failure_decision_status,ok.decision_status AS success_decision_status,s.scopes,m.repository FROM mission_recovery_progress f JOIN mission_recovery_progress ok ON ok.mission_id=f.mission_id AND ok.slice_id=f.slice_id AND ok.lease_epoch=f.lease_epoch AND ok.ordinal>f.ordinal JOIN mission_slices s ON s.mission_id=f.mission_id AND s.id=f.slice_id JOIN missions m ON m.id=s.mission_id WHERE f.progress->>'status'='failed' AND ok.progress->>'status'='passed' AND f.decision_status='committed' AND ok.decision_status='committed' AND ok.progress->>'strategyId'=$1 AND ok.progress->>'strategyId'<>f.progress->>'strategyId' AND f.progress->>'targetCheckId'=$2 AND ok.progress->>'targetCheckId'=$2 AND f.progress->>'recoveryPolicyDigest'=$4 AND ok.progress->>'recoveryPolicyDigest'=$4 AND f.progress->>'trustedCheckPolicyDigest'=$5 AND ok.progress->>'trustedCheckPolicyDigest'=$5 AND m.repository=$3 ORDER BY ok.created_at DESC LIMIT 5000",
+      [p.strategyId,p.targetCheckId,repository,p.recoveryPolicyDigest,p.trustedCheckPolicyDigest]);
+
+    const episodes=new Map<string,{failure:string;success:string}>();
+    for(const row of query.rows){
+      const derivedCohort=scopeCohort(row.scopes);
+      if(!derivedCohort||derivedCohort!==cohort)continue;
+      const failureProgress=row.failure_progress as ProgressV1;
+      const successProgress=row.success_progress as ProgressV1;
+      const common={repository:String(row.repository),missionId:String(row.mission_id),sliceId:String(row.slice_id),leaseEpoch:Number(row.lease_epoch)};
+      const failure:LessonEpisodeObservation={eventId:String(row.failure_id),...common,ordinal:Number(row.failure_ordinal),status:failureProgress.status,decisionStatus:String(row.failure_decision_status),targetCheckId:failureProgress.targetCheckId,strategyId:failureProgress.strategyId,trustedCheckPolicyDigest:failureProgress.trustedCheckPolicyDigest,recoveryPolicyDigest:failureProgress.recoveryPolicyDigest,cohort:derivedCohort};
+      const success:LessonEpisodeObservation={eventId:String(row.success_id),...common,ordinal:Number(row.success_ordinal),status:successProgress.status,decisionStatus:String(row.success_decision_status),targetCheckId:successProgress.targetCheckId,strategyId:successProgress.strategyId,trustedCheckPolicyDigest:successProgress.trustedCheckPolicyDigest,recoveryPolicyDigest:successProgress.recoveryPolicyDigest,cohort:derivedCohort};
+      if(eligibleLessonPair(failure,success))episodes.set(lessonEpisodeKey(failure),{failure:failure.eventId,success:success.eventId});
+    }
+    if(episodes.size<2)return;
+    const fromCheckId=p.targetCheckId;
+    const existing=await tx.query("SELECT 1 FROM operational_lessons WHERE repository=$1 AND cohort=$2 AND from_check_id=$3 AND strategy_id=$4 AND status='candidate' LIMIT 1",[repository,cohort,fromCheckId,p.strategyId]);
+    if(existing.rows.length)return;
+    const selected=[...episodes.entries()].sort(([a],[b])=>a.localeCompare(b)).slice(0,2).map(([,episode])=>episode);
+    const ids=selected.flatMap(x=>[x.failure,x.success]).sort(),baseline={failed:2,observed:2},outcome={passed:2,observed:2},challenge=lessonChallengeDigest({repository,cohort,fromCheckId,strategyId:p.strategyId,policyVersion:strategy.version,policyDigest:p.recoveryPolicyDigest,evidenceEventIds:ids,metric:"trusted_check_pass_rate",direction:"increase",baseline,outcome}),rule=lessonRule({fromCheckId,strategyId:p.strategyId,cohort}),id=randomUUID();
       const versionQuery=await tx.query("SELECT COALESCE(MAX(lesson_version),0)+1 AS next_version FROM operational_lessons WHERE repository=$1 AND cohort=$2 AND from_check_id=$3 AND strategy_id=$4",[repository,cohort,fromCheckId,p.strategyId]);
       const version=Number(versionQuery.rows[0]?.next_version??1);
       const inserted=await tx.query("INSERT INTO operational_lessons(id,repository,cohort,from_check_id,strategy_id,rule,lesson_version,metric,direction,baseline_failed,baseline_observed,outcome_passed,outcome_observed,policy_version,policy_digest,status,evidence_event_ids,challenge_digest,proposed_by) VALUES($1,$2,$3,$4,$5,$6,$7,'trusted_check_pass_rate','increase',2,2,2,2,$8,$9,'candidate',$10::jsonb,$11,$12) ON CONFLICT DO NOTHING RETURNING *",[id,repository,cohort,fromCheckId,p.strategyId,rule,version,strategy.version,p.recoveryPolicyDigest,JSON.stringify(ids),challenge,`worker:${p.missionId}:${p.sliceId}:${p.leaseEpoch}`]);
@@ -157,7 +167,6 @@ export class SqlMissionStore implements MissionStore {
         await tx.query("INSERT INTO operational_lesson_events(lesson_id,lesson_version,state,data) VALUES($1,$2,'candidate',$3::jsonb)",[id,version,JSON.stringify({evidenceEventIds:ids,metric:"trusted_check_pass_rate",baseline:{failed:2,observed:2},outcome:{passed:2,observed:2},policyVersion:strategy.version,policyDigest:p.recoveryPolicyDigest})]);
         await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'lesson.candidate',$2::jsonb)",[p.missionId,JSON.stringify({lessonId:id,lessonVersion:version,cohort,fromCheckId,strategyId:p.strategyId,evidenceEventIds:ids,metric:"trusted_check_pass_rate",direction:"increase",challengeDigest:challenge})]);
       }
-    }
   }
   async lessons(missionId:string){const q=await this.db.query("SELECT l.* FROM operational_lessons l JOIN missions m ON m.repository=l.repository WHERE m.id=$1 ORDER BY l.created_at",[missionId]);return q.rows.map(lesson);}
   async recoveryPolicyLease(missionId:string,id:string,epoch:number,token:string,cap:string):Promise<RecoveryPolicyLease>{const q=await this.db.query("SELECT lease_plan_digest,lease_policy_digest,lease_recovery_policy_digest FROM mission_slices s JOIN capacity_slots c ON c.slot_id=s.capacity_slot AND c.enabled=true AND c.evidence_expires_at>now() WHERE s.mission_id=$1 AND s.id=$2 AND s.status='running' AND s.lease_epoch=$3 AND s.lease_token_hash=$4 AND s.capability_hash=$5 AND s.lease_expires_at>now()",[missionId,id,epoch,digest(token),digest(cap)]);const r=q.rows[0];if(!r||!r.lease_plan_digest||!r.lease_policy_digest||!r.lease_recovery_policy_digest)throw new MissionConflictError("Lease is stale, expired, or unauthorized");return{planDigest:String(r.lease_plan_digest),trustedCheckPolicyDigest:String(r.lease_policy_digest),recoveryPolicyDigest:String(r.lease_recovery_policy_digest)};}

@@ -1,5 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { lessonChallengeDigest, lessonRule } from "../../learning/src/lesson-policy.js";
+import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule, scopeCohort } from "../../learning/src/lesson-policy.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
@@ -50,7 +50,8 @@ export class MemoryMissionStore implements MissionStore {
       const authorizedStrategy=previous&&previousAction?.action==="change_strategy"?previousAction.strategyId:previous&&previousAction?.action==="continue"&&previous[1].status==="started"?previous[1].strategyId:null;
       if(!authorizedStrategy||p.strategyId!==authorizedStrategy)throw new MissionConflictError("Progress strategy is not the prior Governor-authorized action");
     }
-    const mission=this.missions.get(p.missionId)!,cohort=slice.scopes.slice().sort()[0]!.split("/")[0]!.toLowerCase();
+    const mission=this.missions.get(p.missionId)!,cohort=scopeCohort(slice.scopes);
+    if(!cohort)throw new MissionConflictError("A stable scope cohort is unavailable for this lease");
     const tried=new Set([...this.progress.values()].filter(x=>x.missionId===p.missionId&&x.sliceId===p.sliceId&&x.leaseEpoch===p.leaseEpoch).map(x=>x.strategyId));
     const applicable=(id:string)=>Boolean(strategies[id]?.targetCheckIds.includes(p.targetCheckId)&&(strategies[id]?.scopeClasses.includes("*")||strategies[id]?.scopeClasses.includes(cohort)));
     const next=p.status==="failed"&&tried.size<2?slice.checks.find(x=>x!==p.strategyId&&!tried.has(x)&&applicable(x))??null:null;
@@ -97,14 +98,44 @@ export class MemoryMissionStore implements MissionStore {
     return{duplicate:false,action,snapshot,judgment};
   }
   private maybeLesson(p:ProgressV1,repository:string,cohort:string,strategy:TrustedStrategyPolicy){
-    const successes=[...this.progress.entries()].filter(([,x])=>this.missions.get(x.missionId)?.repository===repository&&x.status==="passed"&&x.strategyId===p.strategyId&&x.targetCheckId===p.targetCheckId&&x.recoveryPolicyDigest===p.recoveryPolicyDigest&&x.trustedCheckPolicyDigest===p.trustedCheckPolicyDigest);
-    const episodes=new Map<string,{fail:ProgressV1;pass:ProgressV1;failId:string;passId:string}>();
-    for(const[passId,pass]of successes){
-      const failEntry=[...this.progress.entries()].find(([,x])=>x.missionId===pass.missionId&&x.sliceId===pass.sliceId&&x.leaseEpoch===pass.leaseEpoch&&x.status==="failed"&&x.strategyId!==pass.strategyId&&x.targetCheckId===pass.targetCheckId&&x.recoveryPolicyDigest===pass.recoveryPolicyDigest&&x.trustedCheckPolicyDigest===pass.trustedCheckPolicyDigest&&x.ordinal<pass.ordinal);
-      if(failEntry)episodes.set(`${pass.missionId}:${pass.sliceId}:${pass.leaseEpoch}`,{fail:failEntry[1],pass,failId:failEntry[0],passId});
+    const episodes=new Map<string,{failure:string;success:string}>();
+    for(const[successId,success]of this.progress.entries()){
+      const successMission=this.missions.get(success.missionId);
+      const successSlice=this.slices.get(`${success.missionId}:${success.sliceId}`);
+      const successCohort=scopeCohort(successSlice?.scopes);
+      if(successMission?.repository!==repository||!successCohort||successCohort!==cohort||success.status!=="passed"
+        ||success.strategyId!==p.strategyId||success.targetCheckId!==p.targetCheckId
+        ||success.recoveryPolicyDigest!==p.recoveryPolicyDigest
+        ||success.trustedCheckPolicyDigest!==p.trustedCheckPolicyDigest
+        ||!this.receipts.has(successId))continue;
+
+      const successObservation={
+        eventId:successId,repository:successMission.repository,missionId:success.missionId,sliceId:success.sliceId,
+        leaseEpoch:success.leaseEpoch,ordinal:success.ordinal,status:success.status,
+        decisionStatus:"committed",targetCheckId:success.targetCheckId,strategyId:success.strategyId,
+        trustedCheckPolicyDigest:success.trustedCheckPolicyDigest,recoveryPolicyDigest:success.recoveryPolicyDigest,
+        cohort:successCohort,
+      };
+      for(const[failureId,failure]of this.progress.entries()){
+        if(failure.missionId!==success.missionId||failure.sliceId!==success.sliceId||failure.leaseEpoch!==success.leaseEpoch
+          ||!this.receipts.has(failureId))continue;
+        const failureSlice=this.slices.get(`${failure.missionId}:${failure.sliceId}`);
+        const failureCohort=scopeCohort(failureSlice?.scopes);
+        if(!failureCohort)continue;
+        const failureObservation={
+          eventId:failureId,repository:this.missions.get(failure.missionId)?.repository??"",missionId:failure.missionId,sliceId:failure.sliceId,
+          leaseEpoch:failure.leaseEpoch,ordinal:failure.ordinal,status:failure.status,
+          decisionStatus:"committed",targetCheckId:failure.targetCheckId,strategyId:failure.strategyId,
+          trustedCheckPolicyDigest:failure.trustedCheckPolicyDigest,recoveryPolicyDigest:failure.recoveryPolicyDigest,
+          cohort:failureCohort,
+        };
+        if(eligibleLessonPair(failureObservation,successObservation)){
+          episodes.set(lessonEpisodeKey(successObservation),{failure:failureId,success:successId});
+        }
+      }
     }
     if(episodes.size<2)return;
-    const ids=[...episodes.values()].flatMap(x=>[x.failId,x.passId]).sort();
+    const ids=[...episodes.values()].flatMap(x=>[x.failure,x.success]).sort();
     const fromCheckId=p.targetCheckId,policyVersion=strategy.version,policyDigest=p.recoveryPolicyDigest;
     const metric="trusted_check_pass_rate" as const,direction="increase" as const,baseline={failed:2,observed:2},outcome={passed:2,observed:2};
     const challenge=lessonChallengeDigest({repository,cohort,fromCheckId,strategyId:p.strategyId,policyVersion,policyDigest,evidenceEventIds:ids,metric,direction,baseline,outcome});

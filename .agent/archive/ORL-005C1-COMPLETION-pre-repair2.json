@@ -1,0 +1,82 @@
+{
+  "packet": "ORL-005C1 repair 1",
+  "status": "PASS_LOCAL_REPAIR_CANDIDATE_NOT_COMPLETE",
+  "repository": "C:/Users/nrsan/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-3/work/orloom-main-review",
+  "branch": "feat/judgment-recovery",
+  "baseSha": "ec3dd0ffa0168cdfef5973835db4cc646bc274de",
+  "headSha": "ec3dd0ffa0168cdfef5973835db4cc646bc274de (uncommitted frozen tree)",
+  "priorCandidateReview": "FIX, docs/evidence/c1a-review/REVIEW-ec3dd0f.json",
+  "manifest": ".agent/ORL-005C1-MANIFEST.sha256",
+  "previousManifest": ".agent/archive/ORL-005C1-MANIFEST-pre-repair1.sha256",
+  "previousCompletion": ".agent/archive/ORL-005C1-COMPLETION-pre-repair1.json",
+  "finishedUtc": "2026-10-13T06:12:05Z",
+  "timings": {
+    "audit": "UNKNOWN",
+    "planning": "UNKNOWN",
+    "build": "UNKNOWN",
+    "validation": "UNKNOWN",
+    "elapsedToAccepted": "NOT APPLICABLE: independent acceptance pending"
+  },
+  "repairCount": 1,
+  "usage": {
+    "liveSpend": "0 USD observed; no live Jev call made",
+    "tokens": "UNKNOWN",
+    "providerCalls": 0,
+    "testFixtureSpend": "0 USD"
+  },
+  "validation": [
+    {
+      "exitCode": 0,
+      "result": "99 packages installed; 0 vulnerabilities reported",
+      "command": "npm ci"
+    },
+    {
+      "exitCode": 0,
+      "result": "TypeScript passed",
+      "command": "npm run typecheck"
+    },
+    {
+      "exitCode": 0,
+      "result": "47 tests passed, 0 failed",
+      "command": "npm test"
+    },
+    {
+      "exitCode": 0,
+      "result": "Foundation structure validation passed",
+      "command": "npm run validate"
+    },
+    {
+      "exitCode": 0,
+      "result": "Passed; existing controller-state CRLF normalization warning only",
+      "command": "git diff --check"
+    }
+  ],
+  "repairCoverage": [
+    "Blocked and unknown snapshots expose only deterministic escalation; injected nonterminal actions are rejected and quarantine the slice",
+    "Memory and SQL lesson extraction require same target check and matching recovery/trusted-check policy digests across each failure/pass episode",
+    "Snapshot binds authoritative mission budget, slice allocation, mission-wide reserved cents, bounded worker-reported counters, and evidence digests",
+    "SQL commit rereads the prepared persisted progress and snapshot with canonical JSON and verifies live budget context against the immutable judgment snapshot",
+    "Memory commit rechecks active lease and budget context after asynchronous judgment; stale context becomes UNKNOWN with reservations held"
+  ],
+  "focusedTests": [
+    "memory recovery fences terminal judgments and excludes cross-target lesson pairs",
+    "memory two-phase judgment quarantines when mission reservation changes after snapshot",
+    "blocked and unknown snapshots are terminal without consulting Jev",
+    "episodes with different target checks cannot form one comparable lesson candidate",
+    "blocked and unknown progress cannot be continued by an injected judgment",
+    "an in-flight decision is quarantined if authoritative mission budget changes after snapshot"
+  ],
+  "explicitOpen": [
+    "C1b promotion/application/withdrawal remains open pending C3 independent verifier; candidates remain unpromoted and unused",
+    "Real PostgreSQL multi-connection proof is pending; PGlite is development evidence only",
+    "Live Jev identity/capability/provider behavior and spend remain UNKNOWN; no provider call made",
+    "Broader resolver signals and full continuous self-improvement are not implemented or claimed"
+  ],
+  "independentReview": "Pending on refreshed exact candidate; builder does not certify own result",
+  "controllerHandoff": "Root to commit/refreeze and rerun gates before releasing independent real-PostgreSQL proof and review",
+  "overallImplementationStartUtc": "2026-10-13T05:11:46Z",
+  "repairStartedUtc": "UNKNOWN (dispatch time not recorded)",
+  "lane": "Luna primary builder",
+  "modelIdentity": "UNKNOWN (worker model name not exposed)",
+  "configurationIdentity": "UNKNOWN (runtime configuration identity not exposed)"
+}
