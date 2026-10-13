@@ -1,0 +1,161 @@
+{
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "copiedAtUtc": "2026-10-13T22:50:03.722Z",
+  "attempts": [
+    {
+      "name": "startup-wrapper",
+      "runtimeDirectory": "1791930947205-067ddc64-ac07-49ee-aa78-168ad8b6ee1f",
+      "runnerSha256": "b450fab994691429d8b6c5ea407c1221a00155e5e94997f7fc0a287af67ec14b",
+      "scenarioSha256": "78d77c5db5bc093c0b72aa403f65ba3b76b46e6340d2272816504907ae7141a9",
+      "outcome": "FAIL",
+      "cleanup": "STOPPED_OWNED_CLUSTER"
+    },
+    {
+      "name": "fixture-path",
+      "runtimeDirectory": "1791931306167-b8e8f49e-fbdf-40ef-8d5e-368ccc69c707",
+      "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+      "scenarioSha256": "78d77c5db5bc093c0b72aa403f65ba3b76b46e6340d2272816504907ae7141a9",
+      "outcome": "FAIL",
+      "cleanup": "STOPPED_OWNED_CLUSTER"
+    },
+    {
+      "name": "concurrent-replay",
+      "runtimeDirectory": "1791931522476-b8912e97-c069-4ff0-bd93-c947242d677b",
+      "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+      "scenarioSha256": "dbeb8980f69b6a19b20dec20874178a70bd3c2ea3e2b9e38e8301d6e6471e2c3",
+      "outcome": "FAIL",
+      "cleanup": "STOPPED_OWNED_CLUSTER"
+    }
+  ],
+  "files": [
+    {
+      "path": "startup-wrapper/manifest.json",
+      "sha256": "3613c38bef5e0ee3a7fc71ef62acab80ea15c43fceba87e0d1a787188d0b1b69",
+      "bytes": 285
+    },
+    {
+      "path": "startup-wrapper/runner.jsonl",
+      "sha256": "b43d7bee7b7058c280c42f5f7f35a5e5e65470593386c4c6ef9b9cfeb753586f",
+      "bytes": 83
+    },
+    {
+      "path": "startup-wrapper/postgres.log",
+      "sha256": "7baf4c4cb722fea50d62da318b0a0e3cc9aafc1929828f68826c79dccaed80b6",
+      "bytes": 1202
+    },
+    {
+      "path": "fixture-path/manifest.json",
+      "sha256": "2b87426f28e6e66a7950d21ba045aa3e304d881669824e587348583ea4cb3cc6",
+      "bytes": 426
+    },
+    {
+      "path": "fixture-path/preflight.json",
+      "sha256": "5a0998bcabc361039c88d188cb8b2d0705ae8bef36649e3021a8f8ef256b6249",
+      "bytes": 5805
+    },
+    {
+      "path": "fixture-path/runner.jsonl",
+      "sha256": "585ea5c3d0175f3bf70f78e8c3d36687507e0cb67f47b367c1a50b87f5ff44e5",
+      "bytes": 108
+    },
+    {
+      "path": "fixture-path/scenario.jsonl",
+      "sha256": "83660ce339f5ca2aea3c95840b4bd25079064b191dc9d0f9fcf630af5ee17b13",
+      "bytes": 147
+    },
+    {
+      "path": "fixture-path/scenario-failure.json",
+      "sha256": "cf64020dbc87c89ba1a1fccb2f23fb8d28377df773c2f4b918a0185924444e42",
+      "bytes": 599
+    },
+    {
+      "path": "fixture-path/postgres.log",
+      "sha256": "5974599a9049646a1ab1ab8c29baa663f5b58f446c3367ab086f02f6de04bb95",
+      "bytes": 1213
+    },
+    {
+      "path": "concurrent-replay/manifest.json",
+      "sha256": "e3487f47ae87c1f0766110263c63bd622e2ce9374b9b52aeafe8b9a0b8fe3ccd",
+      "bytes": 426
+    },
+    {
+      "path": "concurrent-replay/preflight.json",
+      "sha256": "5a0998bcabc361039c88d188cb8b2d0705ae8bef36649e3021a8f8ef256b6249",
+      "bytes": 5805
+    },
+    {
+      "path": "concurrent-replay/runner.jsonl",
+      "sha256": "444032dbba2fa5ef07a32dc264e9eef0a0e92d77d73296f6a4c318a035cd338d",
+      "bytes": 108
+    },
+    {
+      "path": "concurrent-replay/scenario.jsonl",
+      "sha256": "c042f1de753fce4c363e303a45bdbb595f38a534e1df20055be77c48c235d294",
+      "bytes": 763
+    },
+    {
+      "path": "concurrent-replay/scenario-failure.json",
+      "sha256": "e7972dacaf3b5981d903b277fe0c30bda4940d5c2e9d9ed823bbb18cc3995715",
+      "bytes": 162
+    },
+    {
+      "path": "concurrent-replay/postgres.log",
+      "sha256": "a3b6229c3fa8c66a639c08e5b9bca493457338e7bbc08307a0315f23dc1d883a",
+      "bytes": 1213
+    },
+    {
+      "path": "helpers/run.mjs",
+      "sha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+      "bytes": 8652
+    },
+    {
+      "path": "helpers/scenario.mjs",
+      "sha256": "dbeb8980f69b6a19b20dec20874178a70bd3c2ea3e2b9e38e8301d6e6471e2c3",
+      "bytes": 24621
+    },
+    {
+      "path": "helpers/compiled-078ed12.json",
+      "sha256": "3ec95a715b2ba6489bed55487bd0dd5449dfa2916f3bbc82358477b1301daee6",
+      "bytes": 5888
+    },
+    {
+      "path": "helpers/startup-wait-repair1.json",
+      "sha256": "931f71cbeb8bb962313e7aa8abc2c7d5e8217d077a34106287549599ee700470",
+      "bytes": 2904
+    },
+    {
+      "path": "helpers/scenario-reconstruction.json",
+      "sha256": "b678884c49be1b5f6917b8e55e55606e5ea9070d19c44136d8591beb89b22b49",
+      "bytes": 5792
+    },
+    {
+      "path": "helpers/prior/run-before-startup-wait-repair.mjs",
+      "sha256": "b450fab994691429d8b6c5ea407c1221a00155e5e94997f7fc0a287af67ec14b",
+      "bytes": 6750
+    },
+    {
+      "path": "helpers/prior/source-builder-reconstruction-v4.mjs",
+      "sha256": "78d77c5db5bc093c0b72aa403f65ba3b76b46e6340d2272816504907ae7141a9",
+      "bytes": 23867
+    },
+    {
+      "path": "c4-pg-runner-safety-review.json",
+      "sha256": "5a7c7572b85ca916be05177af8917fbf5a34b5d7b8bfd7fbdc573ce9592977f3",
+      "bytes": 3488
+    },
+    {
+      "path": "c4-pg-runner-safety-review-successor.json",
+      "sha256": "39384c5f36f2141a0c49c9c43b501734a35b1a5a94e9d51fd944148cef8f7416",
+      "bytes": 2421
+    },
+    {
+      "path": "c4-race-direction.md",
+      "sha256": "c226e5aa84fce031b49fe95f2b70ea5af00ca8b7605fc5eacf7da78004bd08f2",
+      "bytes": 4595
+    }
+  ],
+  "limits": [
+    "Allowlisted evidence only; no cluster files, credentials, connection JSON or environment copied.",
+    "Controlled receipt/review fixtures; not authentic cloud verification or provider evidence."
+  ]
+}

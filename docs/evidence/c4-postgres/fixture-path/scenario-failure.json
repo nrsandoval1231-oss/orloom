@@ -1,0 +1,5 @@
+{
+  "scenario": "ordinary-positive",
+  "errorCode": "128",
+  "message": "Command failed: git -c core.hooksPath=NUL -c core.attributesFile=NUL -c core.fsmonitor=false -c diff.external= --no-pager -C C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c4-postgres-proof\\runtime\\1791931306167-b8e8f49e-fbdf-40ef-8d5e-368ccc69c707\\fixtures\\ordinary-positive clone -q --bare --template=C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c4-postgres-proof\\runtime\\1791931306167-b8e8f49e-fbdf-40ef-8"
+}

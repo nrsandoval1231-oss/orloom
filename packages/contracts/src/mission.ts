@@ -72,7 +72,7 @@ export interface MissionStore {
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;
   createIntegrationIntent?(request:IntegrationRequestV1,treeSha:string,certificateIds:string[],certificateDigests:string[],binding:{planDigest:string;policyDigest:string}):Promise<IntegrationIntentV1>;
   getIntegrationIntent?(request:IntegrationRequestV1):Promise<IntegrationIntentV1|null>;
-  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string):Promise<MissionSlice>;
+  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string,binding:{planDigest:string;policyDigest:string}):Promise<MissionSlice>;
   markIntegrationUnknown?(request:IntegrationRequestV1,observedSha:string|null,reason:string):Promise<void>;
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
   recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;

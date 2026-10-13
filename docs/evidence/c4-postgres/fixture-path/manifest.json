@@ -1,0 +1,15 @@
+{
+  "candidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "cleanup": "STOPPED_OWNED_CLUSTER",
+  "outcome": "FAIL",
+  "failedPhase": "scenario",
+  "failure": {
+    "phase": "scenario",
+    "code": "Error",
+    "message": "Bounded child failed: exit 1"
+  },
+  "startedUtc": "2026-10-13T22:41:46.217Z",
+  "finishedUtc": "2026-10-13T22:41:51.082Z",
+  "execution": "EXECUTED",
+  "limitations": "Controlled fixtures only."
+}
