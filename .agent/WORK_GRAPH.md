@@ -1,20 +1,18 @@
-# Orloom Work Graph
+# Orloom Work Graph — revised owner directive
 
-Canonical parent: docs/architecture/CANONICAL_HARNESS.md and the owner's complete harness directive. A bounded checkpoint never completes this parent. Only focused branches/PRs; no further direct-main commits or unverified merges.
+Canonical parent: docs/architecture/CANONICAL_HARNESS.md. Full product acceptance remains open.
 
-| Node | Dependencies | State | Evidence / acceptance boundary |
-| --- | --- | --- | --- |
-| ORL-001 foundation | none | ACCEPTED LOCALLY | Foundation review and deterministic gates; no live worker |
-| ORL-002 cloud connections | ORL-001 | PARTIAL | DO SSH/Codex subscription request and private R2 bucket proven; DeepSeek, runtime R2 credentials and Orloom GitHub App not connected |
-| ORL-004 queue deployment | ORL-001 | DEPLOYED QUEUE ONLY | Main 41643d8, Hostinger HTTPS/auth/PostgreSQL persistence/restore proof; owner browser acceptance unresolved |
-| ORL-ISO-001 worker isolation | ORL-002 | ACCEPTED SMOKE ONLY | infra/worker-isolation reviewed exact bytes; two gVisor probes; sustained build/six-lane capacity UNKNOWN |
-| ORL-005A mission control | ORL-001 | ACCEPTED BOUNDED | Repair 1 closes four findings; frozen c418a11 manifest, 21 tests and independent PASS |
-| ORL-PG-001 real database proof | repaired ORL-005A | PASS / CLEANED | Eight real connections, races, persistence, rollback and quarantine; controller repeat PASS; disposable resources removed |
-| ORL-005B broker + DeepSeek | accepted A, ISO | READY FOR IMPLEMENTATION | Actual lease/checkout/tool-loop/candidate/evidence path; real model probe and secure credentials required for live acceptance |
-| ORL-005C active stuck + learning | A, B | DEPENDENT | Bounded strategy change and replanning; validated/versioned lessons influence active work; comparable-outcome measurements |
-| ORL-005D integration + CI + PR | B, C | DEPENDENT | Serialized exact-head integration, clean independent checks/reviewer, immutable R2 evidence, scoped App publication; owner retains merge authority |
-| ORL-005E real Living Loom | actual A-D events | DEPENDENT | Browser-to-verified-PR cloud proof and actual event weave; V1-V4 history preserved |
+| Node | Dependencies | State | Evidence and acceptance boundary |
+|---|---|---|---|
+| Mission control PR1 | foundation | MERGED VERIFIED BOUNDED | main 6110c692, exact-head independent review, 21 tests and fresh real PG proof; docs/evidence/pr1-revalidation |
+| Worker broker PR2 | PR1 | FROZEN | 8bbcfffb, unchanged; no work on branch or broker implementation |
+| C1a Jev + bounded recovery + lesson candidates | merged PR1 | IMPLEMENTING | .agent/ORL-005C1.md; official SDK0.6.0, fenced progress/decision contract, Governor authority, durable PG events; promotion closed pending independent evidence verifier |
+| C1a real PG proof | frozen C1a source | PREPARING | Actual controlled executable recovery, candidate durability, promotion denial; no provider or learning-gain claims from fixtures |
+| C1b full recovery signals + validated learning loop | C1a, C3 verifier | OPEN | Original C1 acceptance remains: independent challenge, versioned promotion/withdrawal, later comparable decision changes; also broader stuck signals and evaluation |
+| C2 Athena adaptive scheduling | C1a, C1b for lessons | DEPENDENT | Eligible critical-path/cost/risk alternatives only, same deterministic scheduler and budgets |
+| C3 Orloom CI | PR1, trusted policy | NEXT AFTER C1a | Exact commit, isolated real execution, immutable evidence, independent review, stale certification rejection; required before lesson promotion |
+| C4 integration and PR delivery | C3 | DEPENDENT | Serial dependency-aware integration, conflicts, scope isolation, GitHub App; no product auto-merge |
+| C5 real-event Living Loom | C1-C4 events | DEPENDENT | Existing circular design and V1-V4 history preserved; no synthetic completion |
+| Cloud end-to-end/recovery | C1-C5, credentials | BLOCKED EXTERNAL AND IMPLEMENTATION | Jev/DeepSeek/App/R2 runtime auth, real model/capacity and independent outcomes not yet proven |
 
-Reference sources were inspected read-only at Aura dc0466ee24de1c97205a21f66bbb2aec57d41e11 and Forge 462ce48294b3ee2f336a49a9cf475e24b541f29a. They supply reviewed concepts, not a pre-proven six-builder runtime. No source checkout was modified.
-
-Current direction: CONTINUE B from independently accepted A and isolation-smoke checkpoints. Secure secrets-manager connection question is pending. No new spending authorized; no live provider results, throughput gains, learning gains or full-product completion established.
+Current direction: REDIRECT the implementation order to C1a -> C3 -> C1b/C2. This preserves the full learning requirement while preventing worker assertions from becoming verified lessons. PR2 is not an integration dependency. Core builder owns contracts/store/migration/gateway/recovery/lessons/routes; second builder owns tests/recovery-learning.test.ts and root work/c1-runtime-proof. Controller owns canonical state, graph and prior proof records. No production deployment or new paid resources. Jev live spend is not authorized. The earlier $5 allowance is only for first DeepSeek validation, whose frozen broker is untouched.

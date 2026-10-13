@@ -1,4 +1,5 @@
 /** Logical scope owner. Execution capacity is represented only by attested slots. */
+import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 export type Lane = string;
 export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown";
 export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown";
@@ -9,7 +10,26 @@ export interface MissionPlan { missionId: string; slices: SliceInput[]; recommen
 export interface Mission extends MissionInput { id: string; status: MissionStatus; reservedCents: number; createdAt: string; }
 export interface MissionSlice extends SliceInput { missionId: string; status: SliceStatus; leaseEpoch: number; leaseToken: string | null; leaseExpiresAt: string | null; candidateSha: string | null; evidenceRefs: string[]; }
 export interface MissionEvent { cursor: number; missionId: string; type: string; data: Record<string, unknown>; createdAt: string; }
-export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; }
+export type ProgressStatus = "started" | "passed" | "failed" | "blocked" | "unknown";
+export interface ProgressV1 {
+  version: "orloom.progress.v1"; eventId: string; missionId: string; sliceId: string; leaseEpoch: number;
+  ordinal: number; planDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string; phase: "trusted_check" | "provider" | "candidate"; status: ProgressStatus;
+  reasonCode: "check_failed" | "check_passed" | "provider_unavailable" | "budget_exhausted" | "scope_conflict" | "other";
+  strategyId: string; targetCheckId: string; checkId: string; counters: { providerCalls: number; inputTokens: number; outputTokens: number; wallMs: number };
+  evidenceRefs: string[];
+}
+export interface GovernorActionV1 {
+  version: "orloom.governor-action.v1"; eventId: string; revision: number;
+  action: "continue" | "change_strategy" | "request_replan" | "escalate";
+  strategyId: string | null; checkId: string | null; expectedSignal: string; policyVersion: string; policyDigest: string;
+  lessonIds: string[];
+}
+export interface ProgressReceipt { duplicate: boolean; action: GovernorActionV1; snapshot: DecisionSnapshotV1; judgment: JudgmentV1; }
+export interface TrustedStrategyPolicy { checkId: string; version: string; expectedSignal: string; scopeClasses: string[]; targetCheckIds: string[]; }
+export interface LessonCandidate { id: string; lessonVersion: number; repository: string; cohort: string; fromCheckId: string; strategyId: string; rule: string; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; policyVersion: string; policyDigest: string; status: "candidate" | "promoted" | "withdrawn"; challengeDigest: string; evidenceEventIds: string[]; }
+export interface LessonValidationChallenge { version: "orloom.lesson-challenge.v1"; lessonId: string; repository: string; cohort: string; fromCheckId: string; strategyId: string; policyVersion: string; policyDigest: string; evidenceEventIds: string[]; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; }
+export interface RecoveryPolicyLease { planDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string; }
+export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; planDigest: string; }
 export interface MissionStore {
   configureCapacity(count: number, evidenceDigest: string | null, expiresAt: string | null): Promise<void>;
   submit(input: MissionInput): Promise<Mission>;
@@ -17,11 +37,15 @@ export interface MissionStore {
   approvePlan(missionId: string): Promise<Mission>;
   getMission(missionId: string): Promise<{ mission: Mission; plan: MissionPlan | null; slices: MissionSlice[] } | null>;
   events(missionId: string, after: number): Promise<MissionEvent[]>;
-  claim(leaseSeconds: number, policyDigest: string, now?: Date): Promise<LeaseGrant | null>;
+  claim(leaseSeconds: number, policyDigest: string, now?: Date, recoveryPolicyDigest?: string): Promise<LeaseGrant | null>;
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;
   complete(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, candidateSha: string, evidenceRefs: string[]): Promise<MissionSlice>;
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
+  recordProgress(progress: ProgressV1, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;
+  lessons(missionId: string): Promise<LessonCandidate[]>;
+  promoteLesson(lessonId: string, challenge: LessonValidationChallenge, reviewer: string): Promise<LessonCandidate>;
+  recoveryPolicyLease(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string): Promise<RecoveryPolicyLease>;
   expire(now?: Date, limit?: number): Promise<number>;
 }
 

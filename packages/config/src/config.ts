@@ -16,6 +16,8 @@ export interface Config {
   capacityEvidenceExpiresAt?: string | null;
   trustedCheckPolicy?: string[];
   trustedCheckPolicyDigest?: string | null;
+  trustedStrategies?: Record<string, { checkId: string; version: string; expectedSignal: string; scopeClasses: string[]; targetCheckIds: string[] }>;
+  recoveryPolicyDigest?: string | null;
   workerMaxProviderCalls?: number;
   workerMaxInputTokens?: number;
   workerMaxOutputTokens?: number;
@@ -109,6 +111,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     catch { throw new Error("ORLOOM_TRUSTED_CHECK_POLICY_JSON must be a non-empty array of trusted check identifiers"); }
   }
   const trustedCheckPolicyDigest = trustedCheckPolicy.length ? createHash("sha256").update(JSON.stringify(trustedCheckPolicy)).digest("hex") : null;
+  let trustedStrategies:Config["trustedStrategies"]={};try{const parsed:unknown=JSON.parse(env.ORLOOM_TRUSTED_STRATEGIES_JSON?.trim()||"{}");if(!parsed||typeof parsed!=="object"||Array.isArray(parsed)||Object.keys(parsed).length>100)throw new Error();for(const[id,value]of Object.entries(parsed)){if(!/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/.test(id)||!value||typeof value!=="object"||Array.isArray(value))throw new Error();const v=value as Record<string,unknown>;if(typeof v.checkId!=="string"||!trustedCheckPolicy.includes(v.checkId)||typeof v.version!=="string"||!/^[a-zA-Z0-9_.-]{1,64}$/.test(v.version)||typeof v.expectedSignal!=="string"||!v.expectedSignal.trim()||v.expectedSignal.length>256||!Array.isArray(v.scopeClasses)||v.scopeClasses.length<1||v.scopeClasses.length>32||v.scopeClasses.some(x=>typeof x!=="string"||! /^[a-zA-Z0-9_-]{1,64}$/.test(x))||!Array.isArray(v.targetCheckIds)||v.targetCheckIds.length<1||v.targetCheckIds.length>100||v.targetCheckIds.some(x=>typeof x!=="string"||!trustedCheckPolicy.includes(x)))throw new Error();trustedStrategies![id]={checkId:v.checkId,version:v.version,expectedSignal:v.expectedSignal,scopeClasses:[...v.scopeClasses] as string[],targetCheckIds:[...v.targetCheckIds] as string[]};}}catch{throw new Error("ORLOOM_TRUSTED_STRATEGIES_JSON must map strategy IDs to trusted checks, versions, expected signals, scope classes and target check IDs");}
+  const recoveryPolicyDigest=Object.keys(trustedStrategies??{}).length?createHash("sha256").update(JSON.stringify(trustedStrategies)).digest("hex"):null;
   const workerMaxProviderCalls=Number(env.ORLOOM_WORKER_MAX_PROVIDER_CALLS??"0"),workerMaxInputTokens=Number(env.ORLOOM_WORKER_MAX_INPUT_TOKENS??"0"),workerMaxOutputTokens=Number(env.ORLOOM_WORKER_MAX_OUTPUT_TOKENS??"0"),workerMaxWallSeconds=Number(env.ORLOOM_WORKER_MAX_WALL_SECONDS??"0");
   if([workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds].some(x=>!Number.isSafeInteger(x)||x<0))throw new Error("Worker execution limits must be nonnegative integers");
   let workerAllowedProviders:string[]=[];try{const parsed:unknown=JSON.parse(env.ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON?.trim()||"[]");if(!Array.isArray(parsed)||parsed.some(x=>typeof x!=="string"||! /^[a-zA-Z0-9_.:-]{1,128}$/.test(x)))throw new Error();workerAllowedProviders=parsed;}catch{throw new Error("ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON must be an array of provider identifiers");}
@@ -124,6 +128,8 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     capacityEvidenceExpiresAt: capacitySlots ? new Date(capacityEvidenceExpiresAt!).toISOString() : null,
     trustedCheckPolicy,
     trustedCheckPolicyDigest,
+    trustedStrategies,
+    recoveryPolicyDigest,
     workerMaxProviderCalls,workerMaxInputTokens,workerMaxOutputTokens,workerMaxWallSeconds,workerAllowedProviders,workerAllowedModels,
     ...(publicOrigin ? { publicOrigin } : {}),
     ...(env.ORLOOM_HOST ? { host: env.ORLOOM_HOST.toLowerCase() } : {}),

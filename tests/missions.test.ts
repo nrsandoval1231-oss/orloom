@@ -60,7 +60,7 @@ test("dependency wait does not block overlapping parent and mixed-case repositor
 });
 
 test("PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart",async()=>{
-  const db=new PGlite();await db.exec(await readFile("db/migrations/001_initial.sql","utf8"));await db.exec(await readFile("db/migrations/002_missions.sql","utf8"));
+  const db=new PGlite();await db.exec(await readFile("db/migrations/001_initial.sql","utf8"));await db.exec(await readFile("db/migrations/002_missions.sql","utf8"));await db.exec(await readFile("db/migrations/003_recovery.sql","utf8"));
   let gate=Promise.resolve();
   const sql:TransactionalSql={query:async(text,params)=>await db.query(text,params as never) as never,transaction:async work=>{let release!:()=>void;const prior=gate;gate=new Promise<void>(resolve=>release=resolve);await prior;try{await db.exec("BEGIN");const result=await work({query:async(text,params)=>await db.query(text,params as never) as never});await db.exec("COMMIT");return result;}catch(error){await db.exec("ROLLBACK");throw error;}finally{release();}}};
   try{
@@ -82,7 +82,7 @@ test("PostgreSQL mission SQL persists dependency wait and reconciles expired lea
 });
 
 test("PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity",async()=>{
-  const db=new PGlite();await db.exec(await readFile("db/migrations/001_initial.sql","utf8"));await db.exec(await readFile("db/migrations/002_missions.sql","utf8"));
+  const db=new PGlite();await db.exec(await readFile("db/migrations/001_initial.sql","utf8"));await db.exec(await readFile("db/migrations/002_missions.sql","utf8"));await db.exec(await readFile("db/migrations/003_recovery.sql","utf8"));
   let gate=Promise.resolve();const sql:TransactionalSql={query:async(text,params)=>await db.query(text,params as never) as never,transaction:async work=>{let release!:()=>void;const prior=gate;gate=new Promise<void>(resolve=>release=resolve);await prior;try{await db.exec("BEGIN");const result=await work({query:async(text,params)=>await db.query(text,params as never) as never});await db.exec("COMMIT");return result;}catch(error){await db.exec("ROLLBACK");throw error;}finally{release();}}};
   try{
     const store=new SqlMissionStore(sql);await store.configureCapacity(2,evidenceDigest,future());

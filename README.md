@@ -1,6 +1,8 @@
 # Orloom
 
-Orloom is a single-operator engineering harness. This checkout adds an authenticated mission API and durable PostgreSQL mission scheduler beside the original queue API. It does not include a worker runtime, live provider adapter, trusted CI executor, or deployed verification service.
+Orloom is a single-operator engineering harness being developed into the platform defined by [the canonical harness specification](docs/architecture/CANONICAL_HARNESS.md). PR #1's authenticated mission API and durable PostgreSQL scheduler are merged at `6110c692f47202978b2d22d22f6522aa4aa59277`. Its bounded verification evidence is retained [here](docs/evidence/pr1-revalidation/EVIDENCE.md). This does not establish a working end-to-end engineering platform.
+
+PR #2 and its DeepSeek worker broker are frozen at `8bbcfffbf631e5ad2972e34b41284198afc566e2`. Development on this branch proceeds independently; it does not modify or depend on that broker. The [work graph](.agent/WORK_GRAPH.md) records current implementation and open acceptance gates.
 
 ## Run locally
 
@@ -34,23 +36,23 @@ Worker claims use `POST /api/worker/claim` with the separately configured `ORLOO
 
 There is no verifier or integration endpoint in this slice. Builder results remain `awaiting_verification`, and dependent slices remain `waiting_dependency` until a later independently reviewed verifier implementation supplies trusted evidence. Arbitrary evidence references cannot advance the gate.
 
-Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. This feature branch has not been deployed or exercised against real PostgreSQL or a live worker/verifier.
+Running lease expiry becomes `unknown`, retains the mission budget reservation, and quarantines its capacity slot and overlapping repository scope. There is no automatic retry or automatic budget refund. PR #1 passed an independently repeated disposable PostgreSQL proof with eight connections, six concurrent claims, rollback, restart durability, and expiry quarantine. It has not been deployed to production or exercised with a live builder/verifier.
 
 ## Storage and adapters
 
-`db/migrations/001_initial.sql` defines PostgreSQL state and constraints. `SqlJobStore` uses a small query interface and is exercised on embedded PGlite, which runs PostgreSQL-compatible SQL in-process. Cloud mode deliberately refuses startup until a persistent PostgreSQL adapter is wired; it must never silently fall back to memory.
+The migrations under `db/migrations/` define queue, mission, and subsequent additive state. Local tests use embedded PGlite; cloud mode uses `PostgresJobStore` and `SqlMissionStore` with a real PostgreSQL pool and fails startup if initialization or readiness checks fail. It never silently falls back to memory.
 
-The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. Worker configuration rejects API-key billing. OAuth cache presence is not proof of a completed login; no live call has been made or proven. Worker-to-control-plane lease protocol remains future work. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
+The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. The Codex adapter configuration rejects API-key billing. OAuth cache presence is not proof of an operational product integration. The control plane exposes fenced worker leases, but this branch does not provide a live worker consuming them. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
 
 ## Intended deployment topology
 
-The eventual topology is a frontend served with the control-plane service, managed PostgreSQL for durable state, a separate isolated DigitalOcean worker, R2 for evidence objects, and an external Forge service that validates candidates and publishes GitHub checks. The browser never holds provider credentials. GitHub Actions workflows are intentionally absent; GitHub installation permissions and external runtime secrets belong to the server-side Forge/control-plane boundary. This topology is documented only; cloud deployment and worker isolation are not implemented.
+The target topology uses Cloudflare web delivery and protection, a cloud control plane, PostgreSQL, isolated DigitalOcean execution workers, R2 evidence, and a scoped GitHub App. Orloom-owned trusted CI executes checks; GitHub Actions is not an execution dependency. Hostinger currently hosts the earlier queue-only baseline. A separate DigitalOcean host has bounded isolation smoke evidence, which does not prove six live builders, production verification, or full cloud recovery. The browser never holds provider credentials.
 
 ## Trust boundaries
 
 Browser code never receives a GitHub, R2, database, or Codex credential. The session token is entered into the dashboard and retained only in a strict HttpOnly cookie; use TLS and a managed session design before remote hosting. Tokens and private keys should be entered later through the provider dashboard or dedicated secret manager, not chat, source, build arguments, or repository variables.
 
-Forge must own trusted validation commands outside the untrusted target checkout. Do not add GitHub Actions workflows to Orloom. A target repository must not be allowed to replace the validation policy used to grade its own changes. The current local `scripts/validate.mjs` only checks this foundation's structure and is not a secure hostile-code sandbox.
+Orloom-owned CI must keep trusted validation commands outside the untrusted target checkout. Do not add GitHub Actions workflows to Orloom. A target repository must not be allowed to replace the validation policy used to grade its own changes. The current local `scripts/validate.mjs` only checks this foundation's structure and is not a secure hostile-code sandbox.
 
 ## Read next
 

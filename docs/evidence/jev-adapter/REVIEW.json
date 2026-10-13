@@ -1,0 +1,28 @@
+{
+  "reviewId": "JEV-SDK-DEADLINE-REPAIR1",
+  "reviewedAtUtc": "2026-10-13T05:35:06Z",
+  "scope": "Independent read-only re-review of Jev adapter deadline finding only; no live provider calls or shared full build",
+  "candidate": {
+    "source": "work/orloom-main-review/packages/judgment/src/jev-client.ts",
+    "sourceSha256": "6dff1329c62f627d4a1999e14e9f19fbf01c6693b571ca7824d2f7401ff182fd",
+    "test": "work/orloom-main-review/tests/jev-client.test.ts",
+    "testSha256": "1a37ce51766ff586e8c5c25d61018464323ac13d7732be6bd475042d18ec3f8f",
+    "sdk": "@typesafe-ai/sdk 0.6.0"
+  },
+  "originalFinding": {
+    "sourceSha256": "a65bebdd35a40d9d88066a4b8558f20c952fc82f5742442bc3a9f02bd256bd6",
+    "testSha256": "50b0b9f95cae8331cc35a98a6710443bf9a497232de41ae7d3b712dbed6db7b",
+    "verdict": "FIX",
+    "issue": "SDK timeout aborts the signal but still awaits transport or body read. An abort-ignoring transport or stalled stream could hang choose indefinitely; the original timeout test cooperated with abort."
+  },
+  "repairAssessment": {
+    "verdict": "PASS",
+    "evidence": [
+      "jev-client.ts:193-225 adds an adapter-owned timer and races the SDK call against a controller-abort rejection; abort and deadline both return sanitized UNKNOWN after dispatch.",
+      "jev-client.ts:132-150 no longer awaits potentially stalled body cancellation, and abort requests cancellation of a stalled reader.",
+      "jev-client.test.ts:138-164 tests an abort-ignoring pending fetch and stalled response stream with one call and bounded wall time."
+    ],
+    "residualLimit": "An injected transport that ignores abort can remain pending after choose returns UNKNOWN; the adapter cannot terminate arbitrary transport work. This does not prevent the bounded caller result and must not authorize a retry.",
+    "validationClaim": "Builder reported focused typecheck and 15 tests passing; this review inspected exact source and tests but did not rerun those checks."
+  }
+}

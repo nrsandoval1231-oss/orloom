@@ -40,6 +40,9 @@ export class PostgresJobStore extends SqlJobStore {
       const missionMigration = await readFile(resolve(process.cwd(), "db/migrations/002_missions.sql"), "utf8");
       await client.query(missionMigration);
       await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["002_missions"]);
+      const recoveryMigration = await readFile(resolve(process.cwd(), "db/migrations/003_recovery.sql"), "utf8");
+      await client.query(recoveryMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["003_recovery"]);
       await client.query("SELECT 1");
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); throw error; }
