@@ -58,7 +58,7 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
       && stage === DIAGNOSTIC_STAGES[nextStage]) {
       openStage = stage;
     } else if (phase === "end" && keys === "elapsedMs,outcome,phase,stage,version" && openStage === stage
-      && ["pass", "fail", "unknown"].includes(String(frame.outcome))) {
+      && typeof frame.outcome === "string" && ["pass", "fail", "unknown"].includes(frame.outcome)) {
       openStage = undefined; nextStage++; halted = frame.outcome !== "pass";
     } else continue;
     const lineBytes = Buffer.byteLength(line) + 1;

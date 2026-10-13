@@ -1,0 +1,38 @@
+{
+  "verdict": "FIX",
+  "scope": "independent source acceptance only; no host, image, runsc, or PostgreSQL action",
+  "candidate": {
+    "repository": "work/orloom-suite",
+    "branch": "feat/trusted-verification-suite",
+    "baseSha": "691d36d9a625ba17e6366d6ec7ca15130a5ecf18",
+    "headSha": "93c3e4758846a64b688b7d48b091702e05dfc928",
+    "sourceManifest": ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "sourceManifestSha256": "29f7b83c83e5710950296a83c2f7823aa0c4795c9a1a2c2f63e2a25e234910e3",
+    "manifestEntriesVerified": 117,
+    "manifestMismatches": 0,
+    "worktreeCleanAtReview": true
+  },
+  "deterministicEvidence": {
+    "controllerLog": "work/suite-controller-gates-2026-10-13T10-19-43-984Z.log",
+    "reportedResults": "73 tests, 0 skipped; typecheck, build, validation, syntax and diff checks PASS",
+    "reviewerDiffCheck": "git diff --check base..head exited 0",
+    "reviewerProbe": "Compiled retainSuiteDiagnostics called with a valid first start frame followed by an otherwise schema-shaped end frame whose JSON outcome is {\"toString\":null}; it threw TypeError: Cannot convert object to primitive value."
+  },
+  "findings": [
+    {
+      "severity": "blocking",
+      "file": "packages/verification/src/runsc-launcher.ts",
+      "line": 61,
+      "issue": "Untrusted diagnostic outcome is coerced with String(frame.outcome) before type validation. A JSON object with a non-callable own toString property throws TypeError. On an ambiguous launcher result, the exception escapes retainSuiteDiagnostics and classifyLauncherOutput instead of discarding the frame and returning UNKNOWN with bounded prior diagnostics.",
+      "evidence": "node --input-type=module probe against dist/packages/verification/src/runsc-launcher.js returned THREW TypeError Cannot convert object to primitive value; existing tests cover primitive JSON roots but not an object-valued outcome with hostile coercion.",
+      "requiredRepair": "Require a primitive string outcome and membership in the finite pass/fail/unknown set without coercion; add a regression covering the hostile JSON outcome and preserving UNKNOWN/no raw text/no certificate. Re-freeze and rerun final gates and independent review."
+    }
+  ],
+  "nonblockingObservations": [
+    "The diagnostic emitter validates fixed stage, phase, finite integer elapsed time <= 60000, finite outcome, 16 frames and 4096 bytes; it drops elapsed values above 60 seconds.",
+    "The new frames are advisory and determinate classification still requires the exact final marker and clean launcher result; a forged stage end cannot itself produce PASS or FAIL.",
+    "Suite policy metadata binds the diagnostic protocol; the syntax policy, 60-second budget, 1 CPU/1 GiB profile, network boundary, Governor, and certificate store are unchanged in this diff.",
+    "The added evidence-manifest files are controller-owned retention material outside the diagnostic builder's source changes; this review does not grade the historical cloud attempt anew."
+  ],
+  "acceptanceBoundary": "Prior attempt remains UNKNOWN with zero certificates. Passing local gates do not establish image/runsc/PostgreSQL suite acceptance. No host execution authorized by this FIX review."
+}

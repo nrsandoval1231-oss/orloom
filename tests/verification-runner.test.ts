@@ -265,6 +265,11 @@ test("stage diagnostics never classify a partial, forged, malformed, or excessiv
     assert.equal(retained.exitCode, null);
     assert.equal(retained.stdout.toString(), `${validStart}${frame("dependency-lock-admission", "end", "pass")}`);
   }
+  const hostileOutcome = `ORLOOM-DIAG:v1:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v1", stage: "dependency-lock-admission", phase: "end", elapsedMs: 4, outcome: { toString: null, valueOf: null } })).toString("base64")}\n`;
+  assert.doesNotThrow(() => retainSuiteDiagnostics(`${validStart}${hostileOutcome}`), "untrusted outcome objects must not be coerced");
+  const hostileResult = classifyLauncherOutput(`${validStart}${hostileOutcome}`, { exitCode: null, timedOut: true }, 4096);
+  assert.equal(hostileResult.exitCode, null);
+  assert.equal(hostileResult.stdout.toString(), validStart, "a hostile end frame is dropped while the valid prefix remains advisory");
 });
 
 test("trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd", async () => {
