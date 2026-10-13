@@ -1,0 +1,51 @@
+{
+  "packet": "C5-PAGE-RECOVERY-01",
+  "baseSha": "df72574e35799cd379a24a734d5e3ae00e86e2f5",
+  "branch": "feat/live-loom",
+  "result": "SOURCE_HANDOFF_READY",
+  "reviewFindingsAddressed": ["C5-F4", "C5-F5", "C5-F6", "C5-F7"],
+  "changedFiles": [
+    "apps/control-plane/src/loom-page.ts",
+    "tests/loom-page.test.ts",
+    ".agent/C5-PAGE-RECOVERY-01.md",
+    ".agent/C5-PAGE-RECOVERY-01-COMPLETION.json"
+  ],
+  "implementation": [
+    "SVG fallback and WebGL canvas visibility now use explicit hidden attributes, which works with the existing [hidden] CSS rule.",
+    "Fallback click and Enter/Space inspection opens the mobile details when needed and focuses/scrolls to the currently visible matching slice row.",
+    "Certificate link eligibility is a single tested pure rule embedded into the page; it requires the current slice, awaiting_verification state, exact candidate reference, and current check. Historical verified certificate rows remain non-clickable text.",
+    "Manual and visibility refreshes clear the existing poll timer. Completion replaces it with one timer while retaining the 10-second abort and exponential error backoff."
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/loom-page.test.js dist/tests/loom-http.test.js", "exitCode": 0, "passed": 4, "failed": 0, "durationMs": 168.4719 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "prototypeSha256": {
+    "prototypes/v1/index.html": "566A87EB6BFFD4ECDD3F7AD359ABA31DB582D1B07FC3083D002DB8FCD2DC5E22",
+    "prototypes/v2/index.html": "564D0A412F83162BF987E8D1E3306CDBA16983CFF6E01746819952AC93C1A1A0",
+    "prototypes/v3/index.html": "D3B28965BAD3C93271209FF123A029EF6F0EAA2F386F1D4F6049E08288B4E574",
+    "prototypes/v4/index.html": "AF5BA66C9CDEFC5EC33CF0C5241B33792C7985BF039824B73A9D18FCD6A0442E"
+  },
+  "prototypeHashesUnchanged": true,
+  "work": {
+    "taskStartedAtUtc": "UNKNOWN; start was not sampled on this repair turn",
+    "sourceHandoffAtUtc": "2026-10-13 22:44:05 UTC",
+    "planningDuration": "UNKNOWN",
+    "implementationDuration": "UNKNOWN",
+    "focusedValidationDuration": "UNKNOWN; test command reported 168.4719 ms",
+    "independentAuditDuration": "PENDING",
+    "repairCount": 1,
+    "lane": "single primary builder",
+    "modelIdentity": "UNKNOWN from runtime metadata",
+    "tokenUsage": "UNKNOWN; no measured usage source available",
+    "elapsedToAcceptance": "PENDING root browser validation and independent review"
+  },
+  "notCompletedHere": [
+    "Frozen-candidate browser checks for desktop, mobile, keyboard fallback, and forced WebGL failure",
+    "Root final repository gates and independent review",
+    "PostgreSQL-backed event transition and reconnect proof"
+  ],
+  "commitCreated": false,
+  "pushOrDeployment": false
+}
