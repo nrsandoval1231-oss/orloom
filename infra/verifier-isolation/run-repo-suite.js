@@ -29,7 +29,7 @@ async function* fixedStages() {
     if (!tests.length) throw new SuiteAdmissionError('test discovery found no tests');
     return { exitCode: 0, stdout: Buffer.from(`selected ${tests.length} Node test files\n`), stderr: Buffer.alloc(0), truncated: false };
   } };
-  yield { name: POLICY_STAGE_ORDER[4], file: '/usr/local/bin/node', args: ['--test', ...tests.map(f => `dist/tests/${f}`)], cwd: root, env, maxLogBytes: logLimit };
+  yield { name: POLICY_STAGE_ORDER[4], file: '/usr/local/bin/node', args: ['--test', '--test-concurrency=1', ...tests.map(f => `dist/tests/${f}`)], cwd: root, env, maxLogBytes: logLimit };
   yield { name: POLICY_STAGE_ORDER[5], file: '/usr/local/bin/node', args: ['scripts/validate.mjs'], cwd: root, env, maxLogBytes: logLimit };
   yield { name: POLICY_STAGE_ORDER[6], execute: async () => {
     await verifySuiteInputUnchanged(root, admittedManifest.files);

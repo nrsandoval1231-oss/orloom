@@ -10,7 +10,7 @@ function bindPolicy(image: string, imageDigest: Sha256): CheckPolicy {
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const NODE_REPO_SUITE_BINDING = Object.freeze({
-  manifestVersion: "node-repo-suite-v1.deadline.v1",
+  manifestVersion: "node-repo-suite-v1.deadline.serial-tests.v2",
   timeouts: Object.freeze({ suiteExecutionMs: 180_000, dockerAttachMs: 210_000, hostLauncherMs: 225_000, attemptLifetimeMs: 240_000 }),
   diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v2", maxFrames: 16, maxBytes: 4096, maxElapsedMs: 180_000, authority: "advisory-only" }),
   dependencies: Object.freeze({
@@ -23,7 +23,7 @@ export const NODE_REPO_SUITE_BINDING = Object.freeze({
     Object.freeze({ name: "typecheck", argv: Object.freeze(["/usr/local/bin/node", "/opt/orloom-verifier/node_modules/typescript/bin/tsc", "--noEmit"]) }),
     Object.freeze({ name: "clean-build", argv: Object.freeze(["/usr/local/bin/node", "/opt/orloom-verifier/node_modules/typescript/bin/tsc"]) }),
     Object.freeze({ name: "test-discovery", argv: Object.freeze(["readdir dist/tests; require one or more *.test.js"]) }),
-    Object.freeze({ name: "node-tests", argv: Object.freeze(["/usr/local/bin/node", "--test", "dist/tests/*.test.js (trusted discovered argv)"]) }),
+    Object.freeze({ name: "node-tests", argv: Object.freeze(["/usr/local/bin/node", "--test", "--test-concurrency=1", "dist/tests/*.test.js (trusted discovered argv)"]) }),
     Object.freeze({ name: "foundation-validation", argv: Object.freeze(["/usr/local/bin/node", "scripts/validate.mjs"]) }),
     Object.freeze({ name: "offline-security-policy", argv: Object.freeze(["trusted lock/workflow/credential/dependency-path checks"]) }),
   ]),
@@ -31,7 +31,7 @@ export const NODE_REPO_SUITE_BINDING = Object.freeze({
 });
 function bindSuite(image: string, imageDigest: Sha256): CheckPolicy {
   const resources = NODE_REPO_SUITE_BINDING.resources;
-  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v1", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
+  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v2", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const CHECK_POLICIES: Readonly<Record<string, CheckPolicy>> = Object.freeze({

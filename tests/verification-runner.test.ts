@@ -70,7 +70,7 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v1");
+  assert.equal(suite.version, "orloom.node-repo-suite.v2");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
   assert.equal(suite.timeoutMs, 225_000);
   assert.equal(suite.maxConcurrent, 1);
@@ -102,9 +102,30 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.match(isolation, /echo 210s \|\| echo 60s/);
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
   assert.match(suiteRunner, /const limit = 180_000/);
+  assert.match(suiteRunner, /args: \['--test', '--test-concurrency=1', \.\.\.tests\.map\(f => `dist\/tests\/\$\{f\}`\)\]/);
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
   assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
+});
+
+test("repository suite runs every discovered test file serially and binds the new policy digest", async () => {
+  const suite = getCheckPolicy("node-repo-suite-v1");
+  const syntax = getCheckPolicy("node-validate-syntax");
+  const nodeTests = NODE_REPO_SUITE_BINDING.stages.find(stage => stage.name === "node-tests");
+  assert.deepEqual(nodeTests?.argv, ["/usr/local/bin/node", "--test", "--test-concurrency=1", "dist/tests/*.test.js (trusted discovered argv)"]);
+  assert.notEqual(suite.digest, "509afb5e1497729e1a99e8b5309599fd6025208336e7b838465a0b3194bf980d", "serial fan-out must change the previously reviewed suite digest");
+  assert.equal(syntax.digest, "e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe", "suite concurrency must not change syntax-check policy");
+
+  const { discoverSuiteTests } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
+  const { readdir, readFile } = await import("node:fs/promises");
+  const tests = discoverSuiteTests(await readdir(path.join(process.cwd(), "dist/tests")));
+  assert.ok(tests.length > 0, "the clean build must discover the complete test suite");
+  assert.deepEqual(tests, [...tests].sort(), "discovery returns every test filename in stable sorted order");
+  const command = ["--test", "--test-concurrency=1", ...tests.map(file => `dist/tests/${file}`)];
+  assert.equal(command.length, tests.length + 2);
+  assert.deepEqual(command.slice(2), tests.map(file => `dist/tests/${file}`), "no discovered test is filtered or omitted from the fixed command");
+  const runner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
+  assert.match(runner, /args: \['--test', '--test-concurrency=1', \.\.\.tests\.map\(f => `dist\/tests\/\$\{f\}`\)\]/);
 });
 
 test("verifier image installs with two isolated npm config files", async () => {
