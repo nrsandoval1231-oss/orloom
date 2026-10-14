@@ -34,6 +34,13 @@ test("fixed uploader advances only the reserved ref in a controlled local bare r
     assert.equal(await git(["--git-dir",remote,"show-ref","--verify","--quiet","refs/heads/main"]).then(()=>true,()=>false),false);
     await assert.rejects(uploader.uploadRef!({branch:"main",candidateSha:candidate,protectedRefs:["main"],token:"fixture-token"}));
     await assert.rejects(uploader.uploadRef!({branch,candidateSha:candidate,protectedRefs:[],token:""}));
+    const racingBranch="orloom/delivery/11111111-1111-4111-8111-111111111111/fedcba987654",racingRef="refs/heads/"+racingBranch;
+    assert.equal(await git(["--git-dir",integration,"merge-base","--is-ancestor",base,candidate]).then(()=>true,()=>false),true);
+    await git(["--git-dir",remote,"update-ref",racingRef,base]);
+    const racingUploader=await BareGitFastForwardIntegrator.openWithTestRemote(integration,"acme/orloom",new URL("file:///"+remote.replaceAll("\\","/")).href);
+    await assert.rejects(racingUploader.uploadRef!({branch:racingBranch,candidateSha:candidate,protectedRefs:[],token:"fixture-token"}),/Remote upload transport failed/);
+    assert.equal(await git(["--git-dir",remote,"rev-parse",racingRef]),base);
+    assert.equal(await git(["--git-dir",integration,"rev-parse","refs/heads/orloom-integration"]),candidate);
     await git(["--git-dir",integration,"config","url.file:///untrusted.insteadOf","https://github.com/acme/orloom.git"]);
     await assert.rejects(uploader.uploadRef!({branch:"orloom/delivery/11111111-1111-4111-8111-111111111111/abcdefabcdef",candidateSha:candidate,protectedRefs:[],token:"fixture-token"}));
     assert.equal(await git(["--git-dir",integration,"rev-parse","refs/heads/orloom-integration"]),candidate);

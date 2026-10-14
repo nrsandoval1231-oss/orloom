@@ -63,7 +63,7 @@ export class BareGitFastForwardIntegrator implements LocalIntegrator {
       const askpass=gitAskpassCommand(helper);
       const env:NodeJS.ProcessEnv={PATH:process.env.PATH??"",SystemRoot:process.env.SystemRoot??"",ComSpec:process.env.ComSpec??"",HOME:process.env.HOME??process.env.USERPROFILE??"",USERPROFILE:process.env.USERPROFILE??"",GIT_CONFIG_NOSYSTEM:"1",GIT_CONFIG_GLOBAL:process.platform==="win32"?"NUL":"/dev/null",GIT_TERMINAL_PROMPT:"0",GIT_NO_REPLACE_OBJECTS:"1",GIT_ASKPASS:askpass,ORLOOM_GIT_UPLOAD_TOKEN:request.token,GIT_TRACE:"0",GIT_TRACE_PACKET:"0",GIT_TRACE_CURL:"0",GIT_TRACE2:"0",GIT_CURL_VERBOSE:"0",GIT_EXEC_PATH:"",GIT_CONFIG_COUNT:"1",GIT_CONFIG_KEY_0:"credential.helper",GIT_CONFIG_VALUE_0:""};
       const disabled=process.platform==="win32"?"NUL":"/dev/null";
-      await run("git",["-c",`core.hooksPath=${disabled}`,"-c","core.fsmonitor=false","--no-pager","-C",this.repository,"push","--no-verify",url,`${request.candidateSha}:refs/heads/${request.branch}`],{encoding:"buffer",maxBuffer:64*1024,timeout:60_000,windowsHide:true,env});
+      await run("git",["-c",`core.hooksPath=${disabled}`,"-c","core.fsmonitor=false","--no-pager","-C",this.repository,"push","--no-verify",`--force-with-lease=refs/heads/${request.branch}:`,url,`${request.candidateSha}:refs/heads/${request.branch}`],{encoding:"buffer",maxBuffer:64*1024,timeout:60_000,windowsHide:true,env});
     }catch{throw new MissionConflictError("Remote upload transport failed; outcome requires exact remote reconciliation");}
   }
   async inspect(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>{
