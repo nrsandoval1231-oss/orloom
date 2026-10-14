@@ -1,0 +1,44 @@
+{
+  "packet": "GITHUB-CHECKOUT-TOKEN",
+  "node": "ORL-005B-checkout-token-adapter",
+  "status": "implementation_ready_for_controller_gates",
+  "repository": "outputs/orloom",
+  "branch": "feat/deepseek-worker-broker",
+  "baseSha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "objective": "Add a GitHub installation token adapter method scoped to one repository with contents:read only, and deterministic request-boundary tests.",
+  "allowedFiles": [
+    "packages/adapters/src/providers.ts",
+    "tests/github-checkout-token.test.ts",
+    ".agent/GITHUB-CHECKOUT-TOKEN-PACKET.json",
+    ".agent/GITHUB-CHECKOUT-TOKEN-COMPLETION.json"
+  ],
+  "excluded": [
+    "all other files",
+    "live GitHub requests or credential use",
+    "npm run build, npm test, or npm run typecheck while the worker builder is active",
+    "commit, push, deploy, or merge"
+  ],
+  "requirements": [
+    "Expose createCheckoutToken(installationId: number, repository: string): Promise<string> on GitHubInstallationClient.",
+    "Use the installation access token endpoint with exactly one repository and permissions { contents: read }; do not request checks:write.",
+    "Validate a positive safe-integer installation id and a short repository name before issuing a request; reject empty, dot, dot-dot, slash, and newline names.",
+    "Reject a missing, empty, or whitespace-only returned token.",
+    "Preserve existing createInstallationToken and createCheckRun behavior.",
+    "Add deterministic request-boundary tests for exact route/scope, invalid input before network, and missing token."
+  ],
+  "validation": [
+    "Inspect changed-file list and git diff.",
+    "Run node --check or focused TypeScript checks only if they do not invoke the shared global build; do not run npm run typecheck until the controller confirms serialized validation is clear.",
+    "Controller owns combined typecheck/build/test gates."
+  ],
+  "risk": "Low; interface additive, no schema or live API changes.",
+  "retryBudget": 2,
+  "handoff": "Completion JSON records exact changed files, UTC times, validation evidence, and UNKNOWN token usage.",
+  "frozenAtUtc": "2026-10-13T03:33:52Z",
+  "validationEvidence": [
+    "Focused TypeScript transpilation completed for config.ts, providers.ts, and github-checkout-token.test.ts.",
+    "node --test focused emitted test: 3 passed, 0 failed.",
+    "git diff --check -- packages/adapters/src/providers.ts tests/github-checkout-token.test.ts: passed."
+  ],
+  "controllerHandoff": "npm run typecheck and combined repository gates remain controller-owned and were not run concurrently."
+}

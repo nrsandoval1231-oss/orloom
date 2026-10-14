@@ -1,0 +1,310 @@
+{
+  "version": "orloom.pr2.runtime-proof.v1",
+  "runId": "orloom-pr2-20261013182444-341960d9",
+  "startedAtUtc": "2026-10-13T18:24:44.079Z",
+  "status": "FAIL",
+  "mode": "fixture",
+  "candidate": {
+    "branch": "feat/deepseek-worker-broker",
+    "head": "8bbcfffbf631e5ad2972e34b41284198afc566e2"
+  },
+  "scope": "actual executeLease / HTTP control protocol / DockerWorkerRuntime; isolated local fixture; no integration, push, verification, or PR",
+  "provider": {
+    "kind": "deterministic test double",
+    "liveCalls": 0
+  },
+  "controls": {
+    "claim": "PASS",
+    "terminalResults": [
+      {
+        "outcome": "CANDIDATE",
+        "evidenceRefCount": 5,
+        "candidateSha": "81eb8990b42f9c287a79cc3bba610b44b9e8274a",
+        "acknowledged": "PASS"
+      }
+    ],
+    "leaseEpoch": 1,
+    "capacitySlot": 1,
+    "baseSha": "149ccfe313335e7c38ed6baf57095a311aa089d0",
+    "policyDigest": "fdbe543b6ded2d1fe89b5f3dceb1520c30b7f10b1fe5644c78c2f18300a460ac",
+    "missionId": "3ce11f95-d210-45bd-8522-0462f4dbbad1",
+    "sliceId": "slice-runtime",
+    "result": "awaiting_verification",
+    "progressSummary": [
+      {
+        "ordinal": 1,
+        "phase": "provider-tool-probe",
+        "status": "started",
+        "providerCalls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "ordinal": 2,
+        "phase": "provider-tool-probe",
+        "status": "completed",
+        "providerCalls": 1,
+        "inputTokens": 2,
+        "outputTokens": 1
+      },
+      {
+        "ordinal": 3,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 1,
+        "inputTokens": 2,
+        "outputTokens": 1
+      },
+      {
+        "ordinal": 4,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 5,
+        "phase": "tool-read_file",
+        "status": "started",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 6,
+        "phase": "tool-read_file",
+        "status": "completed",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 7,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 8,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 9,
+        "phase": "tool-apply_patch",
+        "status": "started",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 10,
+        "phase": "tool-apply_patch",
+        "status": "completed",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 11,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 12,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 13,
+        "phase": "tool-run_check",
+        "status": "started",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 14,
+        "phase": "tool-run_check",
+        "status": "completed",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 15,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 16,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      },
+      {
+        "ordinal": 17,
+        "phase": "candidate",
+        "status": "started",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      },
+      {
+        "ordinal": 18,
+        "phase": "candidate",
+        "status": "completed",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      }
+    ],
+    "candidateSha": "81eb8990b42f9c287a79cc3bba610b44b9e8274a",
+    "resultEvidenceRefs": [
+      "candidate-bundle:sha256/6e6e030b9844a0b257692191deba4d99641dadd24e331da43873c8a0f74d4e4a",
+      "candidate-diff:sha256/8a53451ce7816e616a9d2983a1d0591059bad7a68aa5df6ab48fbfb45550d00b",
+      "evidence-index:sha256/8e27d2906082a19aeb113f25d9120a4a654600c28535ff6aaac8d8cc55f8c682",
+      "provider-usage:sha256/44a586a2bc4046d9a6772a54c914784bab73f8a89c77d38fce7fd84244c66bd9",
+      "sandbox-policy:sha256/bc95622f2a20e29da39d3d7fe4f1e97514c4b791b1642e3cdfb93501408501d9"
+    ]
+  },
+  "docker": {
+    "imageRef": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+    "protectedBefore": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "protectedAfter": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "containers": [
+      {
+        "id": "ca339682f2b810a4fb2592938512e252568505340e96d1461eb3d88194299f3a",
+        "name": "orloom-worker-1-072c134b",
+        "runtime": "runsc",
+        "networkMode": "none",
+        "readonlyRootfs": true,
+        "user": "65532:65532",
+        "mounts": [],
+        "tmpfsPaths": [
+          "/tmp",
+          "/work"
+        ],
+        "capDrop": [
+          "ALL"
+        ],
+        "securityOpt": [
+          "no-new-privileges:true"
+        ],
+        "pidsLimit": 64,
+        "memoryBytes": 268435456,
+        "memorySwapBytes": 268435456,
+        "nanoCpus": 500000000,
+        "image": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+        "labels": {
+          "owned": "true",
+          "leaseEpoch": "1",
+          "instance": "orloom-worker-1-072c134b"
+        },
+        "sensitiveEnvNameCount": 0
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "pricing-snapshot",
+      "key": "sha256/50e0c84a1d7663df696869d7e970c2d10b3b8ec97a4cf2e2a5e2f0b7a7f02ade",
+      "sha256": "50e0c84a1d7663df696869d7e970c2d10b3b8ec97a4cf2e2a5e2f0b7a7f02ade",
+      "bytes": 475
+    },
+    {
+      "name": "sandbox-policy",
+      "key": "sha256/bc95622f2a20e29da39d3d7fe4f1e97514c4b791b1642e3cdfb93501408501d9",
+      "sha256": "bc95622f2a20e29da39d3d7fe4f1e97514c4b791b1642e3cdfb93501408501d9",
+      "bytes": 845
+    },
+    {
+      "name": "provider-attempt-1",
+      "key": "sha256/8f6e225b43c0c2e8de1fe221cd63ac465b95f07ef81c0816da32eb4e6f25e4f0",
+      "sha256": "8f6e225b43c0c2e8de1fe221cd63ac465b95f07ef81c0816da32eb4e6f25e4f0",
+      "bytes": 509
+    },
+    {
+      "name": "provider-usage-probe",
+      "key": "sha256/b4ab3f651ea4222f515b318b568f9d271aa0b67a19ecf5a8b584e990f67aa43f",
+      "sha256": "b4ab3f651ea4222f515b318b568f9d271aa0b67a19ecf5a8b584e990f67aa43f",
+      "bytes": 562
+    },
+    {
+      "name": "provider-attempt-2",
+      "key": "sha256/f2a55a37ab8ed3add58cc117906d1fcfe7adea410b299b5fd37c05268d4ba9a1",
+      "sha256": "f2a55a37ab8ed3add58cc117906d1fcfe7adea410b299b5fd37c05268d4ba9a1",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-2",
+      "key": "sha256/254dc3befd07081f285822ffdcdd48de26f8334ee67162f014c916fb8ba80482",
+      "sha256": "254dc3befd07081f285822ffdcdd48de26f8334ee67162f014c916fb8ba80482",
+      "bytes": 562
+    },
+    {
+      "name": "provider-attempt-3",
+      "key": "sha256/03abf51731957ef6079555e871b4755f8e947786fe4a82c36f3a468b4dc400a3",
+      "sha256": "03abf51731957ef6079555e871b4755f8e947786fe4a82c36f3a468b4dc400a3",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-3",
+      "key": "sha256/8d9163ca485ba8ebd618a39b24ad7bbbde2f4339ad10701790a6b68e378cd276",
+      "sha256": "8d9163ca485ba8ebd618a39b24ad7bbbde2f4339ad10701790a6b68e378cd276",
+      "bytes": 564
+    },
+    {
+      "name": "provider-attempt-4",
+      "key": "sha256/9bd56881ec4e2e7fd250c64257ac13a4aaf9f26596b30f58447e58200840089c",
+      "sha256": "9bd56881ec4e2e7fd250c64257ac13a4aaf9f26596b30f58447e58200840089c",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-4",
+      "key": "sha256/9501302975ddbfd4323b0c2f77d69e0af87654cf45ac501c1ae7c792951396fd",
+      "sha256": "9501302975ddbfd4323b0c2f77d69e0af87654cf45ac501c1ae7c792951396fd",
+      "bytes": 564
+    }
+  ],
+  "limitations": [
+    "GitHub App checkout, R2, production worker bootstrap, production Hostinger A deployment, representative build capacity, and six live lanes are not proven."
+  ],
+  "failureType": "Error",
+  "providerFailureMayBeUnknown": false,
+  "finishedAtUtc": "2026-10-13T18:24:46.710Z",
+  "durationMs": 2631,
+  "usage": {
+    "calls": 0,
+    "inputTokens": 0,
+    "outputTokens": 0
+  },
+  "result": "UNKNOWN"
+}

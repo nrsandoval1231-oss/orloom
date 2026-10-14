@@ -1,0 +1,14 @@
+# Build only with a digest-pinned official Node base:
+# docker build --build-arg ORLOOM_WORKER_NODE_BASE=node:24-bookworm-slim@sha256:<verified-digest> -f apps/worker/Dockerfile.sandbox .
+ARG ORLOOM_WORKER_NODE_BASE
+FROM ${ORLOOM_WORKER_NODE_BASE}
+USER root
+RUN test -x /usr/local/bin/node \
+ && mkdir -p /opt/orloom \
+ && chown -R root:root /opt/orloom \
+ && chmod 0555 /opt/orloom
+COPY dist/apps/worker/src/sandbox-entry.js /opt/orloom/sandbox-entry.js
+RUN chmod 0444 /opt/orloom/sandbox-entry.js
+USER 65532:65532
+WORKDIR /work
+ENTRYPOINT ["/usr/local/bin/node", "/opt/orloom/sandbox-entry.js"]

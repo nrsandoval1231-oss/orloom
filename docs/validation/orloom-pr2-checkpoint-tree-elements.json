@@ -1,0 +1,20 @@
+[
+  {
+    "path": "docs/checkpoints/CLOUD_SETUP_HISTORICAL.md",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "11edd40bbc46128a2da9dabf12a1e37ab9119c6a"
+  },
+  {
+    "path": "docs/checkpoints/REFERENCE_AUDIT.md",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "c097999f5fbae9f0f64b7f4db50a784f3e87cc2f"
+  },
+  {
+    "path": "docs/checkpoints/WORKER_SAVE_CHECKPOINT.md",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "8aae40d439082387dd3dd529b709eea54f1cd35b"
+  }
+]

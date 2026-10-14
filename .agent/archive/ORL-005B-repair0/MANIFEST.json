@@ -1,0 +1,55 @@
+{
+  "packet": "ORL-005B",
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation files",
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256": "f8b6871396e3723853b7e482a7b951c8530753a79f6b788b9e4ce05f526abdba"
+    },
+    {
+      "path": "README.md",
+      "sha256": "832326e7392a24f3e3eee269ce7df2b0a4bf06ac582533dccb832e577ff7891d"
+    },
+    {
+      "path": "docs/FINISH_CONTRACT.md",
+      "sha256": "4554bcf5080851f4ac785164d926986a5b9f161dc10ee7d01ac30069949abb69"
+    },
+    {
+      "path": "package.json",
+      "sha256": "a193ab06eee0681eb356dce12125cc50f314c41a925206d2b28602851378d03b"
+    },
+    {
+      "path": "apps/worker/Dockerfile.sandbox",
+      "sha256": "395d4515c3ab66110067187cfdf5983eb2d0ded829ffc343e0247750113889c6"
+    },
+    {
+      "path": "apps/worker/src/main.ts",
+      "sha256": "c5b21ee6ae5db636d6b3017d08c2219c14614c27ed6b70581c0ed023885c43e4"
+    },
+    {
+      "path": "apps/worker/src/docker-runtime.ts",
+      "sha256": "11a465d44623288935e330c80bb595191e6405221319104826a6f7a813705f3a"
+    },
+    {
+      "path": "apps/worker/src/sandbox-entry.ts",
+      "sha256": "679be3a47b1ddaa64ae9bd58adcc92f0a518265cd014651faa4afd75434ad364"
+    },
+    {
+      "path": "packages/agents/src/worker.ts",
+      "sha256": "4c3fe0f131dc5a52a282aed4cbaff02f8dce236bca02ce87950f565829112266"
+    },
+    {
+      "path": "packages/agents/src/github-checkout.ts",
+      "sha256": "b2c6bd609622a4f69accd5c4dbe8283fe4b3c3a592b6235af2c11b21c6a96ce0"
+    },
+    {
+      "path": "tests/worker-broker.test.ts",
+      "sha256": "e87ef08812df3e05109ea73340c1eb01f9e6e0e8110b63a4459b8a6d7ccc3748"
+    },
+    {
+      "path": "tests/worker-candidate-bundle.test.ts",
+      "sha256": "c7be8da29ec63a7fa984ca2042896975edd3c9f4b04588e8d09413935b665e01"
+    }
+  ]
+}

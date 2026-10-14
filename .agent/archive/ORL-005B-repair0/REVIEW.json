@@ -1,0 +1,52 @@
+{
+  "packet": "ORL-005B",
+  "verdict": "FIX",
+  "reviewed_at_utc": "2026-10-13T04:09:19Z",
+  "branch": "feat/deepseek-worker-broker",
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation",
+  "worker_manifest": ".agent/WORKER-ORL-005B-MANIFEST.json",
+  "worker_manifest_sha256": "f220d49ed9b41fc3370a35499e4b694a67480096abfda068caffdcc2366d9817",
+  "worker_files_verified": 12,
+  "separate_checkout_token_files": [
+    { "path": "packages/adapters/src/providers.ts", "sha256": "2d675cdfc2b811653abfe4130a9f1c657daf7e009867397e0e2b613c27f34f19" },
+    { "path": "tests/github-checkout-token.test.ts", "sha256": "50efe5298f53de19c472eb4b4c2315f9c8a6a99c9acf84909d848557d150e270" }
+  ],
+  "findings": [
+    {
+      "id": "B-001",
+      "severity": "high",
+      "location": "apps/worker/src/docker-runtime.ts:101",
+      "problem": "DockerRpc.request awaits stdin drain after a potentially large init write. If Docker exits or the stream closes before drain, that wait is not rejected by the request timeout or child error; the lease can hang before finally/cleanup.",
+      "repair": "Make write/drain wait abortable and reject on stream error/close/child exit, bound the entire request, and add a deterministic backpressure-plus-early-exit regression. An interrupted write must resolve to UNKNOWN, not a blind retry."
+    },
+    {
+      "id": "B-002",
+      "severity": "high",
+      "location": "apps/worker/src/docker-runtime.ts:112",
+      "problem": "Sandbox close issues docker rm by name, suppresses all errors and a five-second timeout, and never confirms that the exact owned container is absent. A surviving privileged Docker-managed container is therefore reported as cleaned.",
+      "repair": "Retain the created container identity, verify its ownership label before a fixed removal, then inspect for absence; surface cleanup failure as an unresolved operational incident without removing an unrelated container. Exercise normal, process-crash, and Docker-error paths in the runtime proof."
+    },
+    {
+      "id": "B-003",
+      "severity": "medium",
+      "location": "packages/agents/src/worker.ts:282,348",
+      "problem": "The operator pricing snapshot is checked for expiry once during preflight. The broker can make a later billable capability or completion call after the snapshot expires.",
+      "repair": "Before every billable provider call, including the probe, recheck the frozen snapshot's expiry against the current time and lease deadline. Stop without a new call when stale; test expiry between calls. Keep the original snapshot bytes and digest for evidence."
+    },
+    {
+      "id": "B-004",
+      "severity": "high",
+      "location": "apps/worker/src/main.ts:61",
+      "problem": "One broker process awaits an entire lease before claiming another. The candidate has neither a bounded local pool nor a documented measured multi-process launch contract, so it cannot demonstrate concurrent distinct leases despite the packet's concurrent-lane acceptance criterion.",
+      "repair": "Provide a capacity-gated bounded process/promise pool or an explicit multi-process deployment contract with distinct scratch/container identity, then prove two simultaneous distinct leases and cleanup without changing A's six-slot ceiling. Do not claim six live lanes until host measurement supports them."
+    }
+  ],
+  "positive_evidence": [
+    "Worker manifest hash and all 12 listed file hashes matched the frozen candidate; the separate contents:read-only checkout helper and test hashes are recorded above",
+    "Checkout token helper requests only one repository and contents:read; no provider or GitHub calls were made during this review",
+    "Broker uses fenced A lease/result routes, exact model identity plus function-call probe, local call/token limits, immutable candidate bundle and evidence index, and credential-free networkless sandbox intent",
+    "Controller independently reported typecheck, 31 tests, validate, and diff check exit 0 on the reviewed source"
+  ],
+  "qualification": "This FIX is an exact source review, not a live provider, runsc, capacity, or product acceptance verdict. Runtime proof has not been dispatched; the 32 MiB tmpfs and Node-only image remain fixture-level and cannot establish representative dependency-heavy build checks or six-worker capacity. No independent live checkout, R2, model, cleanup, or provider-cost evidence exists yet. The R2 progress sink provides an awaited STOP seam for C, but it is not A's fenced durable progress decision path."
+}

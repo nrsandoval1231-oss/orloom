@@ -1,0 +1,68 @@
+{
+  "packet": "ORL-005B",
+  "repair": 1,
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation files",
+  "files": [
+    {
+      "path": ".env.example",
+      "sha256": "73731ba936864bdd215f0ca5401c9fef0e3df34addea93eac96de922d8e30ec9"
+    },
+    {
+      "path": "README.md",
+      "sha256": "c897f5d53f7bc27a80ed188d3a8e8d17b67413173ee2a72b9399a018034b382f"
+    },
+    {
+      "path": "docs/FINISH_CONTRACT.md",
+      "sha256": "4554bcf5080851f4ac785164d926986a5b9f161dc10ee7d01ac30069949abb69"
+    },
+    {
+      "path": "package.json",
+      "sha256": "a193ab06eee0681eb356dce12125cc50f314c41a925206d2b28602851378d03b"
+    },
+    {
+      "path": "apps/worker/Dockerfile.sandbox",
+      "sha256": "395d4515c3ab66110067187cfdf5983eb2d0ded829ffc343e0247750113889c6"
+    },
+    {
+      "path": "apps/worker/src/main.ts",
+      "sha256": "21d1d1e6678bd986d131a47465e5036c9698f253be8202e7b74bb739ab505351"
+    },
+    {
+      "path": "apps/worker/src/docker-runtime.ts",
+      "sha256": "425ffa4c70e45a7ea6be2f76eb1d5e5a71e2ac409f6cd76eb328922f48b09ce7"
+    },
+    {
+      "path": "apps/worker/src/sandbox-entry.ts",
+      "sha256": "679be3a47b1ddaa64ae9bd58adcc92f0a518265cd014651faa4afd75434ad364"
+    },
+    {
+      "path": "apps/worker/src/poll-pool.ts",
+      "sha256": "7d8c751301af01c8cd6ff6983fcd9bce5cbb36b3675c8e380982374a3b1d98ca"
+    },
+    {
+      "path": "packages/agents/src/worker.ts",
+      "sha256": "c4d8af56d6b3b580307278cb18971c23855a7abb26f916180776c35829ac74b3"
+    },
+    {
+      "path": "packages/agents/src/github-checkout.ts",
+      "sha256": "06756766e2bcda5f14c0723783500c97ac0e3acab1b8c3aab5a162658eb696e2"
+    },
+    {
+      "path": "tests/worker-broker.test.ts",
+      "sha256": "0c212f25a7596777f1d4573f7f98411933d0134675c0485cc93044e62ef48c79"
+    },
+    {
+      "path": "tests/worker-candidate-bundle.test.ts",
+      "sha256": "c7be8da29ec63a7fa984ca2042896975edd3c9f4b04588e8d09413935b665e01"
+    },
+    {
+      "path": "tests/worker-pool.test.ts",
+      "sha256": "aba7be2d5dacdb442e7a2b3a2140d7f6f884d795e68416faa8d286820d1d195b"
+    },
+    {
+      "path": "tests/worker-git-checkout.test.ts",
+      "sha256": "43b7539288a2c58d17f7345c9b42b1b7c60f7a40bd486f985ef18a145f3a1193"
+    }
+  ]
+}

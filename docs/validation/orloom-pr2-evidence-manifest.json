@@ -1,0 +1,317 @@
+{
+  "source_pr": 2,
+  "source_head": "639bff0759870d3522ae38d2887b75fe6c4297c7",
+  "source_tree_sha": "c8f98ac6b2ad6387b8bc741d87e9f0168b3fbea7",
+  "destination_baseline_pr": 17,
+  "destination_baseline_head": "410882d4afff33e028be50b816ad69eb387eae6d",
+  "checked_at": "2026-10-14T04:26:00Z",
+  "tree_truncated": false,
+  "evidence_scope": [
+    "work/worker-runtime-proof/",
+    ".agent/"
+  ],
+  "counts": {
+    "selected": 83,
+    "identical": 40,
+    "missing": 40,
+    "conflicting": 3
+  },
+  "missing_tree_elements": [
+    {
+      "path": ".agent/GITHUB-CHECKOUT-TOKEN-COMPLETION.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28c1382bd239578152953c221e56957cfba1a0d7"
+    },
+    {
+      "path": ".agent/GITHUB-CHECKOUT-TOKEN-PACKET.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "20fdb9031250d69224e3a62ddd1c1787fbba117f"
+    },
+    {
+      "path": ".agent/RECOVERY-LEARNING-ORL005C.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c9ba11432776fbdcfc41332b468e94b341c406ee"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-COMPLETION.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b3935b8eee7988bc7db975a38a1d6d635b1cc60a"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-MANIFEST.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d710cbbf30b23e182cbc526445fb3c8292d54f6c"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-MANIFEST.sha256",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83f4203fbd40a79dff5095900a0dccf4384da627"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-REPAIR1-REVIEW.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6258e9c0532d18e862c6cc0604afd95222e740dc"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B-REVIEW.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac9cdc5c76c97b966719324f4e3658923d199077"
+    },
+    {
+      "path": ".agent/WORKER-SAVE-STAGED-MANIFEST.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "168c02a500a4c2edbc124b3043ba8c0ff0ce2b88"
+    },
+    {
+      "path": ".agent/archive/CURRENT_STATE-before-B-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d6cb7a35c285137a1bcd0e27febb18c4a8f8d8cc"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/COMPLETION.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cbdc7fbe136d85eb6ba724cdd91828982f691f20"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/MANIFEST.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "97384616d1f6b141c3f909b89d08899c00b36626"
+    },
+    {
+      "path": ".agent/archive/ORL-005B-repair0/REVIEW.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ac9cdc5c76c97b966719324f4e3658923d199077"
+    },
+    {
+      "path": ".agent/archive/WORKER-ORL-005B-builder-checkpoint.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b1e124e8441d9b41f71890ad33c5f0349f9b9256"
+    },
+    {
+      "path": ".agent/archive/WORK_GRAPH-before-B-review.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "37347c922ac77bdb5fa906b5e7867e82eabe75ef"
+    },
+    {
+      "path": "work/worker-runtime-proof/COMPLETION.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "29734a24085a60ebf0364215171543ad58b8016d"
+    },
+    {
+      "path": "work/worker-runtime-proof/CURRENT_STATE.pre-review-guard.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "83f87a798a2cd8324aa6bc44ae31fc4a381543cd"
+    },
+    {
+      "path": "work/worker-runtime-proof/CURRENT_STATE.pre-runtime-proof.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "82643bf459b0b853a27d2575377e2fbe494624e5"
+    },
+    {
+      "path": "work/worker-runtime-proof/METRICS.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ae7f60bf8013f1633951a79b5aeb8401164ed7c9"
+    },
+    {
+      "path": "work/worker-runtime-proof/PACKET.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "98adf323dd6b8945c3ccb6137f49cc095c841f72"
+    },
+    {
+      "path": "work/worker-runtime-proof/PR2-LIVE-PROOF-PACKET.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "27ccae0c1ca3659aa2dbf4f562c7aa5f821bd14e"
+    },
+    {
+      "path": "work/worker-runtime-proof/README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7617765e1e1f0aa41680129442ce2792201ed63a"
+    },
+    {
+      "path": "work/worker-runtime-proof/RUNTIME-PROOF-RESULT.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "25fbbe1861b0d771f92836ed03eb6a63ca01443e"
+    },
+    {
+      "path": "work/worker-runtime-proof/RUNTIME-SEAM.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "40f1cfb8a86fb212eb495bde8941b8168ffb5be9"
+    },
+    {
+      "path": "work/worker-runtime-proof/attempt-01-runtime-proof.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "907f019743727855c9671206159d5d36233609de"
+    },
+    {
+      "path": "work/worker-runtime-proof/attempt-02-runtime-proof.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d4e6347b6a20788f62923244887ce3e12fd2c0b5"
+    },
+    {
+      "path": "work/worker-runtime-proof/attempt-03-runtime-proof.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2c391346402f5b7cda7cbd8da7931f95e281065"
+    },
+    {
+      "path": "work/worker-runtime-proof/build_candidate.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9e086cb57f7d2ce1e3e4354ce0712045026012bd"
+    },
+    {
+      "path": "work/worker-runtime-proof/check-live-disabled.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2b141b786000f9910355e0f2c99263c52b19ab19"
+    },
+    {
+      "path": "work/worker-runtime-proof/cleanup_owned.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7bd5789a81d1ef19bbf3d8d3f9e7ed0c7dfe0fa4"
+    },
+    {
+      "path": "work/worker-runtime-proof/controller-runtime-proof.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "afb384a5227bdc74a4070f6be957ae42dcffd396"
+    },
+    {
+      "path": "work/worker-runtime-proof/fixtures/concurrent-workspaces.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "53fbddd20f3b0affb1f4e032bb59d3ccc5f10134"
+    },
+    {
+      "path": "work/worker-runtime-proof/post-review-runtime-proof.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1962b67d25306c3ea5fb2e8e0de5c2ce0c7e81fd"
+    },
+    {
+      "path": "work/worker-runtime-proof/prepare_context.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "02956130bebf1aa0b4f7b2958dc662230c74a750"
+    },
+    {
+      "path": "work/worker-runtime-proof/prove-broker.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0cbb900b16229f9f13ddd5a44b42085e96ae5238"
+    },
+    {
+      "path": "work/worker-runtime-proof/run_proof.py",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "499502a906a8b74a824ee461ed2398b86742d9dc"
+    },
+    {
+      "path": "work/worker-runtime-proof/runtime-proof-pass.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0c29fd16ab67b2b68df144deffc0294d5b17ee60"
+    },
+    {
+      "path": "work/worker-runtime-proof/runtime-source-manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28f8bb4b807ba150077805a879db656b493c2d25"
+    },
+    {
+      "path": "work/worker-runtime-proof/runtime-source-manifest.pre-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ca01ff004e6fc195feba75d49b45db6ea995536d"
+    },
+    {
+      "path": "work/worker-runtime-proof/spend-ledger.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "820fc456d0525e1b7b12319d85037932f5cc0b0f"
+    }
+  ],
+  "historical_tree_elements": [
+    {
+      "path": ".agent/history/pr2-639bff07/CURRENT_STATE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "0e9bc70f754e516f8ec681d9aa914a265371806a"
+    },
+    {
+      "path": ".agent/history/pr2-639bff07/WORKER-ORL-005B.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2ae5b155b642a57d866cb5643fdceaad149d25e4"
+    },
+    {
+      "path": ".agent/history/pr2-639bff07/WORK_GRAPH.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e49ebe8576689ae44a933873641f16ddf832afc"
+    }
+  ],
+  "canonical_conflicts": [
+    {
+      "path": ".agent/CURRENT_STATE.md",
+      "source_blob_sha": "0e9bc70f754e516f8ec681d9aa914a265371806a",
+      "current_blob_sha": "0309e509eeb9a230cc6d6e8d7ffdf6aae57bf702"
+    },
+    {
+      "path": ".agent/WORKER-ORL-005B.md",
+      "source_blob_sha": "2ae5b155b642a57d866cb5643fdceaad149d25e4",
+      "current_blob_sha": "33e416c50913224d5958a2b97d80ca318bfd6575"
+    },
+    {
+      "path": ".agent/WORK_GRAPH.md",
+      "source_blob_sha": "6e49ebe8576689ae44a933873641f16ddf832afc",
+      "current_blob_sha": "b4db5bf2039850d5d43f32600736027485244159"
+    }
+  ],
+  "other_missing_paths_outside_evidence_scope": [
+    "apps/worker/Dockerfile.sandbox",
+    "apps/worker/src/docker-runtime.ts",
+    "apps/worker/src/poll-pool.ts",
+    "apps/worker/src/sandbox-entry.ts",
+    "docs/checkpoints/CLOUD_SETUP_HISTORICAL.md",
+    "docs/checkpoints/REFERENCE_AUDIT.md",
+    "docs/checkpoints/WORKER_SAVE_CHECKPOINT.md",
+    "infra/secret-bootstrap/README.md",
+    "infra/secret-bootstrap/bootstrap.py",
+    "packages/agents/src/github-checkout.ts",
+    "packages/agents/src/worker.ts",
+    "tests/github-checkout-token.test.ts",
+    "tests/worker-broker.test.ts",
+    "tests/worker-candidate-bundle.test.ts",
+    "tests/worker-git-checkout.test.ts",
+    "tests/worker-pool.test.ts"
+  ],
+  "note": "No source changes. Keep canonical state unchanged. Adding PR2 as a commit parent retains history, but does not merge its tree automatically; use explicit evidence entries and reviewed source composition. Historical proof remains controlled-provider proof and does not accept live provider execution."
+}

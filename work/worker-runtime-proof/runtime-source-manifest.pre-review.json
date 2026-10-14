@@ -1,0 +1,33 @@
+{
+  "version": "orloom.pr2.runtime-source-manifest.v1",
+  "repository": "outputs/orloom",
+  "branch": "feat/deepseek-worker-broker",
+  "committedHead": "8bbcfffbf631e5ad2972e34b41284198afc566e2",
+  "workingTreeState": "modified files listed by this proof manifest",
+  "files": [
+    {
+      "path": "apps/worker/src/docker-runtime.ts",
+      "sha256": "b4ee1a7f4452a75ba98d363110a793569a25b9b6cd23b1dedf88a74ce7cbbf46"
+    },
+    {
+      "path": "dist/apps/worker/src/docker-runtime.js",
+      "sha256": "868abd82654be11e939c9e703b983c5578b0ce111b94f8ae977c4bc35768ee6c"
+    },
+    {
+      "path": "tests/worker-broker.test.ts",
+      "sha256": "cab5e1f425ff6b1da3045d33c0d2205558bb01f983fb179c022a7c20b1c2b00e"
+    },
+    {
+      "path": "work/worker-runtime-proof/prove-broker.mjs",
+      "sha256": "527d36b77f765cd3598bbfe5b67703db908a4c9c55d87a4dc2955a90b8ef5002"
+    },
+    {
+      "path": "apps/worker/Dockerfile.sandbox",
+      "sha256": "395d4515c3ab66110067187cfdf5983eb2d0ded829ffc343e0247750113889c6"
+    },
+    {
+      "path": "dist/apps/worker/src/sandbox-entry.js",
+      "sha256": "6d12437a6907fdbfbe61dc18a8cf1adc3ffdc5d36948f2f5f94b42371d873759"
+    }
+  ]
+}

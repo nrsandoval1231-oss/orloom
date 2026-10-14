@@ -1,0 +1,59 @@
+{
+  "packet": "ORL-005B",
+  "repair_count": 1,
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation files",
+  "manifest": ".agent/WORKER-ORL-005B-MANIFEST.json",
+  "manifest_sha256": "c2e01434a67883038daec2c853b345f9f899987bc31a55a6feb1233dca4b9fce",
+  "status": "repair-1 implementation candidate frozen for independent review and runtime proof; no self-acceptance",
+  "started_utc": "2026-10-13T03:28:22Z",
+  "finished_utc": "2026-10-13T04:22:26Z",
+  "planning_duration": "UNKNOWN",
+  "build_duration": "UNKNOWN",
+  "validation_duration": "UNKNOWN",
+  "audit_duration": "UNKNOWN",
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "validation": [
+    {
+      "exit_code": 0,
+      "command": "npm ci"
+    },
+    {
+      "exit_code": 0,
+      "command": "npm run typecheck"
+    },
+    {
+      "evidence": "39 tests passed; build included",
+      "exit_code": 0,
+      "command": "npm test"
+    },
+    {
+      "exit_code": 0,
+      "command": "npm run validate"
+    },
+    {
+      "exit_code": 0,
+      "command": "git diff --check"
+    }
+  ],
+  "focused_tests": [
+    "Docker RPC drain rejects on abort, close, and child exit with listeners cleaned",
+    "Owned-container cleanup verifies exact ID/labels and absence; uncertainty is surfaced",
+    "Pricing expiry between provider calls blocks further billable calls and preserves frozen snapshot evidence",
+    "Interrupted sandbox RPC is not retried and resolves UNKNOWN",
+    "Uncertain cleanup suppresses candidate callback and records UNKNOWN",
+    "Bounded pool runs two distinct leases concurrently and drains on shutdown",
+    "Narrow checkout fetch seam exercises disposable local Git and verifies exact base SHA",
+    "Candidate bundle reimports to the exact advertised candidate SHA",
+    "High progress volume retains complete immutable evidence index with bounded terminal refs"
+  ],
+  "limitations": [
+    "No DeepSeek/provider calls or credential reads; provider support, live usage/cost, and live handoff remain UNKNOWN.",
+    "No Docker/runsc runtime proof was performed; image build, actual cleanup behavior, representative build capacity, and host multi-slot capacity remain unverified.",
+    "Disposable Git test exercises checkout through an injected in-process transport; it is not proof of the full HTTPS-to-Docker/runsc execution path.",
+    "The bounded pool test demonstrates two concurrent isolated harness executions; actual host capacity and six-lane operation are unverified.",
+    "No independent review/acceptance verdict yet; no external changes, commit, push, deployment, or spending occurred."
+  ]
+}

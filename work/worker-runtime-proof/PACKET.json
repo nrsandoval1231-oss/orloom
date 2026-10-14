@@ -1,0 +1,73 @@
+{
+  "packet": "ORL-B-SANDBOX-PROOF",
+  "status": "preparation_only_waiting_for_candidate_freeze_and_controller_dispatch",
+  "ownership": [
+    "work/worker-runtime-proof/**"
+  ],
+  "repository": "outputs/orloom",
+  "branch": "feat/deepseek-worker-broker",
+  "baseSha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "objective": "Prepare allowlisted proof context, bounded two-container protocol fixture, and name/label-guarded cleanup for later controller-authorized runtime proof.",
+  "dependencies": [
+    "worker sandbox source hardening freeze",
+    "exact source and compiled-entry hashes",
+    "root controller dispatch after read-only protected-container baseline"
+  ],
+  "scope": {
+    "allowed": [
+      "work/worker-runtime-proof/**"
+    ],
+    "excluded": [
+      "repo source",
+      "Hostinger",
+      "production DB",
+      "provider/API credentials",
+      "codex-universal changes",
+      "new paid resources",
+      "remote execution before dispatch"
+    ]
+  },
+  "pinnedBase": {
+    "reference": "node:24-bookworm-slim@sha256:51b1100cc2a83d370c6a60952e3f2989c8a43159d0e38586e090f3b3326efefd",
+    "platform": "linux/amd64",
+    "verification": "parent-reported docker buildx imagetools inspect"
+  },
+  "remoteResources": {
+    "image": "orloom-worker-sandbox-proof:<first-12-source-manifest-sha>",
+    "containers": "orloom-worker-proof-<unix-seconds>-<pid>-<8-hex>-a|b",
+    "labels": {
+      "org.orloom.worker-runtime-proof": "true"
+    },
+    "volumes": [],
+    "hostDirectories": [],
+    "cleanupGuard": "exact randomized name pattern plus exact ownership label; Docker --rm on runner exit"
+  },
+  "acceptance": [
+    "Context includes only Dockerfile, compiled sandbox entrypoint, and identity metadata; frozen hashes match.",
+    "Two runsc containers coexist and Docker inspect proves user, network, rootfs, mounts, capabilities, no-new-privileges, and resource limits.",
+    "Both lanes pass init/read/replace/run_check/snapshot with unique data and snapshot hash verification.",
+    "Traversal and symlink inputs reject; oversized output is bounded; timeout terminates; exact containers disappear.",
+    "Protected container identity/start time/restart count and OAuth status are unchanged, captured read-only by controller.",
+    "Evidence explicitly limits claim to a two-container protocol fixture, not provider proof or six-lane capacity."
+  ],
+  "validationPreparation": {
+    "pythonSyntax": "PASS; bundled Python py_compile and --help",
+    "fixtureAndPacketJson": "PASS; Node JSON parser",
+    "shellSyntax": "PASS; Git Bash bash -n plus both scripts return usage exit 2 without side effects",
+    "remoteExecution": "NOT RUN; root dispatch required",
+    "candidateHashes": "UNKNOWN pending freeze",
+    "protectedContainerBaseline": "UNKNOWN pending read-only runtime capture",
+    "resourceMeasurements": "UNKNOWN pending remote run",
+    "tokens": "UNKNOWN"
+  },
+  "preparedAtUtc": "2026-10-13T04:01:04Z",
+  "reviewFindingsAddressed": [
+    "Protocol response reader now uses selector-driven incremental reads under a deadline, so partial lines cannot block.",
+    "Protocol frame cap is 16,000,000 bytes and separate from the 64,000-byte check-output assertion.",
+    "Proof image tag is inspected once and containers are created with the immutable image ID.",
+    "All Docker CLI calls use /usr/bin/docker, the explicit local socket, an initially empty private config directory, and a sanitized environment.",
+    "Runner cleanup validates exact container IDs, exact names, and all provenance labels; standalone cleanup requires the same hashes and IDs.",
+    "Runner captures codex-universal ID, StartedAt, RestartCount, and status before and after, failing on change.",
+    "The build context contains exactly the Dockerfile and compiled sandbox entry; identity metadata stays outside the context."
+  ]
+}

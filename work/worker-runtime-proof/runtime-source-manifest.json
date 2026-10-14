@@ -1,0 +1,63 @@
+{
+  "files": [
+    {
+      "sha256": "b4ee1a7f4452a75ba98d363110a793569a25b9b6cd23b1dedf88a74ce7cbbf46",
+      "path": "apps/worker/src/docker-runtime.ts"
+    },
+    {
+      "sha256": "868abd82654be11e939c9e703b983c5578b0ce111b94f8ae977c4bc35768ee6c",
+      "path": "dist/apps/worker/src/docker-runtime.js"
+    },
+    {
+      "sha256": "cab5e1f425ff6b1da3045d33c0d2205558bb01f983fb179c022a7c20b1c2b00e",
+      "path": "tests/worker-broker.test.ts"
+    },
+    {
+      "sha256": "f3eaf625017e9ccb814a8275265f746f69474fe0245a671624eb0ce5c337d65b",
+      "path": "work/worker-runtime-proof/prove-broker.mjs"
+    },
+    {
+      "sha256": "8ed07b4bf6e770124c4b9e78c1ebec391eaa4c35da68f7700ef3019203585257",
+      "path": "work/worker-runtime-proof/check-live-disabled.mjs"
+    },
+    {
+      "sha256": "395d4515c3ab66110067187cfdf5983eb2d0ded829ffc343e0247750113889c6",
+      "path": "apps/worker/Dockerfile.sandbox"
+    },
+    {
+      "sha256": "6d12437a6907fdbfbe61dc18a8cf1adc3ffdc5d36948f2f5f94b42371d873759",
+      "path": "dist/apps/worker/src/sandbox-entry.js"
+    },
+    {
+      "sha256": "831a7302d99cc3f0565fb8af7570e1b2b5f76774537fc7e876c0a3fcfc4b7f02",
+      "path": "work/worker-runtime-proof/post-review-runtime-proof.json"
+    },
+    {
+      "sha256": "f3df20e40122424810f7f9543fcdf17a0e0cb11e7d9faa6638dc584ff2ab6a63",
+      "path": "work/worker-runtime-proof/RUNTIME-PROOF-RESULT.md"
+    },
+    {
+      "sha256": "10ac1b42320fa6e468f1f4892ed7572ea8d6aef27795dd56cf83df44b4b03dc9",
+      "path": "work/worker-runtime-proof/PR2-LIVE-PROOF-PACKET.md"
+    },
+    {
+      "sha256": "b5106a1405c44da7d3e7559b5d80e8385f33944270665cf1e8a130093a0f02c1",
+      "path": ".agent/CURRENT_STATE.md"
+    },
+    {
+      "sha256": "0c72218e7bb6d3e7ed11c01d0f2dcc2bc143d7842d6611206658857110ab9928",
+      "path": ".agent/WORK_GRAPH.md"
+    },
+    {
+      "sha256": "86c9215990b2bdec5fd7cad013d9813bb5fc3bba7d9f3b6decc7434ef7847cdb",
+      "path": "docs/FINISH_CONTRACT.md"
+    }
+  ],
+  "repository": "outputs/orloom",
+  "workingTreeState": "review correction: fixture-only proof guard; live provider branch removed",
+  "remoteRunId": "orloom-pr2-20261013183734-9292bfc9",
+  "reviewedCommit": "6a128423d069718f37bcde34207806b9e35e826c",
+  "branch": "feat/deepseek-worker-broker",
+  "version": "orloom.pr2.runtime-source-manifest.v2",
+  "remoteImageId": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad"
+}

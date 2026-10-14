@@ -1,0 +1,65 @@
+{
+  "commit": "639bff0759870d3522ae38d2887b75fe6c4297c7",
+  "files": [
+    {
+      "source": "apps/worker/src/docker-runtime.ts",
+      "target": "apps/worker/src/docker-runtime.ts",
+      "gitBlobSha": "8240b4fa778bde5d5af0728a8c014c945415e37f"
+    },
+    {
+      "source": "apps/worker/src/main.ts",
+      "target": "apps/worker/src/broker-main.ts",
+      "gitBlobSha": "0c47257217639cdee09d3c64cc4149cfb14d009b"
+    },
+    {
+      "source": "apps/worker/src/poll-pool.ts",
+      "target": "apps/worker/src/poll-pool.ts",
+      "gitBlobSha": "5bf5e82ccf54a3d95c71f1df8c802d8d86c07e12"
+    },
+    {
+      "source": "apps/worker/src/sandbox-entry.ts",
+      "target": "apps/worker/src/sandbox-entry.ts",
+      "gitBlobSha": "6afbe7a908d5e8a994cfba28ece6e05d62b0fc29"
+    },
+    {
+      "source": "packages/agents/src/github-checkout.ts",
+      "target": "packages/agents/src/github-checkout.ts",
+      "gitBlobSha": "d6adc44e889ada40d80b45fbd6b3d50abb438a20"
+    },
+    {
+      "source": "packages/agents/src/worker.ts",
+      "target": "packages/agents/src/worker.ts",
+      "gitBlobSha": "2586ae05a356723992b665e593ff0e164fc8f4af"
+    },
+    {
+      "source": "apps/worker/Dockerfile.sandbox",
+      "target": "apps/worker/Dockerfile.sandbox",
+      "gitBlobSha": "0fe50d5805b9882ec91745069affecc9f62be855"
+    },
+    {
+      "source": "tests/worker-broker.test.ts",
+      "target": "tests/worker-broker.test.ts",
+      "gitBlobSha": "8737a00e21f45c83cd9e715920075b091a346303"
+    },
+    {
+      "source": "tests/worker-pool.test.ts",
+      "target": "tests/worker-pool.test.ts",
+      "gitBlobSha": "3e93239f44e1cdaa9f99c071e1434d194971b388"
+    },
+    {
+      "source": "tests/github-checkout-token.test.ts",
+      "target": "tests/github-checkout-token.test.ts",
+      "gitBlobSha": "e7e881cbc3c9f6ae83c2a57e4c97bf194c710681"
+    },
+    {
+      "source": "tests/worker-candidate-bundle.test.ts",
+      "target": "tests/worker-candidate-bundle.test.ts",
+      "gitBlobSha": "1a1061bd4e5a851244810e7e7d538c2d9d82ef72"
+    },
+    {
+      "source": "tests/worker-git-checkout.test.ts",
+      "target": "tests/worker-git-checkout.test.ts",
+      "gitBlobSha": "fe3f3fe34a93d0767da88c27f363994ce7937c7e"
+    }
+  ]
+}
