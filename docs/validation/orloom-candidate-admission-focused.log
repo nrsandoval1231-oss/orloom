@@ -1,0 +1,22 @@
+✔ controller admits exact worker bundle into a private verifier source without moving trusted HEAD (281.445931ms)
+✔ admission rejects forged artifacts, identity, scopes and malformed bundles before publishing (258.66996ms)
+✔ admission serializes concurrent imports, cancels queued work, and rejects private-root symlinks (236.650877ms)
+✔ admission cancellation aborts an outstanding artifact read and releases capacity (171.619328ms)
+✔ candidate runner binds exact source and shares its independent verifier without trusting builder success (311.955557ms)
+✔ correctly hashed hostile bundle envelopes and packs are rejected inside admission (308.514514ms)
+✔ cached commit-object substitution is refused despite matching tree and manifest (209.951959ms)
+✔ distinct concurrent candidates retain independent admission identities and private heads (365.002316ms)
+✔ bounded admission queue saturation stays transient and cancelled waiters never read artifacts (175.30996ms)
+✔ persisted coordinator retries transient admission and binds certificate readback to private candidate head (3873.945621ms)
+✔ same-binding callers have independent cancellation while admission cache stays reusable (571.739432ms)
+✔ admission cache has a hard retained-entry cap without invalidating reusable candidates (1017.708398ms)
+✔ candidate facades share verifier capacity and cannot retarget a prepared source (1085.919765ms)
+✔ bounded candidate reader rejects oversized and tampered bodies and aborts stalled streams (76.143074ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9127.830593

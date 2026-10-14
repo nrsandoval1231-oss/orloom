@@ -2,15 +2,21 @@
 
 Updated 2026-10-14. Canonical authority: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md), the preserved product/Living Loom vision and the latest owner direction.
 
-## Current worker successor and authority
+## Current foundation and authority
 
 - Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving exact reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`.
 - The repair remains independently accepted at its 89-file manifest: 167/167 tests, zero failures/skips/cancellations, including a clean locked-install repeat. [Its validation ledger](../docs/validation/2026-10-14-consolidation.md) is preserved unchanged.
-- The separate worker successor includes PR #2 broker/runtime/checkout source and hardened typed recovery transport, while keeping normal startup disabled. [Worker validation](../docs/validation/2026-10-14-worker-composition.md) records final independent results and publication identity for this distinct source slice.
+- Worker PR #19 is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; publication readback and evidence preservation verified. It includes PR #2 broker/runtime/checkout source and hardened typed recovery transport, while keeping normal startup disabled. [Worker validation](../docs/validation/2026-10-14-worker-composition.md) records final independent results and publication identity for this distinct source slice.
 - Independent worker v2 source review: accepted for bounded source merge with startup disabled; build/typecheck/validate PASS, serial full suite 188/188 with zero skips/failures. The review-time manifest and current documentation overlay are distinguished in the worker ledger.
 - Twelve original PR #2 source/test files retain original Git blob identities. Normal worker main refuses before secrets, claims or network. Preserved broker-main is historical executable source, not an approved deployment entrypoint.
-- Owner-authorized cleanup/advancement of reviewed, ready work continues. No blanket frozen-head/no-merge restriction is current. PR #3–17 disposition belongs to the GitHub PR record; this file does not guess final closure state.
+- Owner-authorized cleanup/advancement of reviewed, ready work continues. No blanket frozen-head/no-merge restriction is current. All 16 original open PRs (#2–17) are resolved; PR #2 was closed as superseded. Open PR count was zero at the verified 2026-10-14 04:40 UTC cleanup checkpoint, before later foundation work.
 - PR #2 evidence preservation includes 40 missing original evidence blobs, three archival state records and three historical checkpoint documents. These proofs remain tied to original source and controlled fixtures.
+
+## Candidate-admission successor
+
+The optional controller-owned admission source validates persisted final-candidate/index/bundle bindings, imports a single direct-child candidate into a private bare store, and binds the existing verifier to independently extracted source and a candidate-local head. Normal startup does not instantiate this bridge. Recovery checkpoint admission remains refused. [The separate foundation validation record](../docs/validation/2026-10-14-foundation.md) governs this successor; neither older ledger is broadened.
+
+Independent final foundation validation passed a fresh locked install, build/typecheck/validate and 202/202 tests with zero failures/skips/cancellations. The 119-file manifest remained unchanged before/after. Initial missing-Git-index harness failure and full successful rerun are both retained in the foundation ledger. Boundary review accepted the inactive source scope with no blocking findings.
 
 ## Implemented source versus operational acceptance
 
@@ -30,11 +36,12 @@ Normal executable startup supplies no live judgment, scheduling or learning-acti
 
 ## Foundation next steps
 
-The [foundation checklist](../docs/FOUNDATION_STATUS.md) separates accepted source groundwork from product activation. Next: an independently tested candidate-admission bridge, then bounded recovery/cancellation execution. Retain the existing architecture and safety boundaries.
+The [foundation checklist](../docs/FOUNDATION_STATUS.md) separates accepted source groundwork from product activation. Next: bounded recovery/cancellation execution and explicitly configured admission/runtime composition, followed by authentic integrated validation. Retain the existing architecture and safety boundaries.
 
 ## Open finish gates
 
-Publication-tree readback of independently accepted worker source and reconciled documentation; controller-owned candidate-bundle importer; recovery checkpoint/strategy executor; cancellation propagation, exact-container reconciliation and conservative spend/quarantine release; clean Docker image acceptance; authentic runsc full-suite certification; live PostgreSQL validation of the combined repairs; secure provider/App/R2 credentials; bounded live Jev and builder execution with spend control; real Sol planning and multiple builders; fresh-task baseline/strategy learning evaluation; operational publication; deployment and cross-component recovery.
+operational composition of the optional candidate-bundle importer; recovery checkpoint/strategy executor; cancellation propagation, exact-container reconciliation and conservative spend/quarantine release; clean Docker image acceptance; authentic runsc full-suite certification; live PostgreSQL validation of the combined repairs; secure provider/App/R2 credentials; bounded live Jev and builder execution with spend control; real Sol planning and multiple builders; fresh-task baseline/strategy learning evaluation; operational publication; deployment and cross-component recovery.
 
 This work does not grant new provider spending, credentials, paid-host authority, automatic retries of UNKNOWN side effects, or production deployment permission. Use secure configuration flows and the actual scoped owner authority for each next step.
+
 

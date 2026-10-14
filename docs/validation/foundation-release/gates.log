@@ -1,0 +1,11 @@
+typecheck start 2026-10-14T04:49:54Z
+typecheck exit=0 end 2026-10-14T04:49:59Z
+build start 2026-10-14T04:49:59Z
+build exit=0 end 2026-10-14T04:50:03Z
+validate start 2026-10-14T04:50:03Z
+validate exit=0 end 2026-10-14T04:50:03Z
+suite start 2026-10-14T04:50:03Z
+initial suite exit=1: materialized copy missing Git index; 201/202 pass, 0 skipped
+local-only Git index created; no commit, no remote, no published checkout identity
+suite retry start 2026-10-14T04:52:00Z
+suite retry exit=0 end 2026-10-14T04:53:30Z

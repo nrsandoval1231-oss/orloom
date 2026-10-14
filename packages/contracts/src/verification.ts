@@ -209,3 +209,16 @@ export function parseCheckCertificateV1(value: unknown): CheckCertificateV1 {
     receiptDigest: digest(c.receiptDigest, "receiptDigest"), certifiedAt: c.certifiedAt as string, scope: "local-exact-commit",
   };
 }
+
+/** Controller-derived identity, never an owner/browser override or a builder pass. */
+export interface CandidateAdmissionBindingV1 {
+  version: "orloom.candidate-admission.v1";
+  missionId: string; sliceId: string; leaseEpoch: number;
+  repository: string; baseSha: string; candidateSha: string;
+  planDigest: string; trustedCheckPolicyDigest: string;
+  scopes: string[]; evidenceRefs: string[];
+}
+
+/** Retryable admission conditions must not permanently invalidate a candidate. */
+export class CandidateAdmissionTransientError extends Error {}
+export class CandidateArtifactInvalidError extends Error {}

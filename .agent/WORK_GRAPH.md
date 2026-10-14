@@ -1,14 +1,15 @@
 # Orloom work graph
 
-Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md). Product completion remains OPEN. Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. The worker source is a separate successor; see [worker validation](../docs/validation/2026-10-14-worker-composition.md).
+Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md). Product completion remains OPEN. Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. Worker PR #19 is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; see [worker validation](../docs/validation/2026-10-14-worker-composition.md).
 
 | Node | State / next gate |
 |---|---|
 | Mission control | PR #1 merged at historical main `6110c692`; bounded source/actual PostgreSQL acceptance. Lease digest, policy-restart and aggregate-state repairs passed combined source regressions. |
 | Consolidation | Seven repairs merged through PR #18 after independent review, 167 tests and clean-install validation. Original repair ledger retained unchanged. |
-| DeepSeek broker | PR #2 broker/runtime/checkout source included in separate successor. Normal startup deliberately disabled; independent v2 source review accepted, 188/188 tests passed with zero skips/failures. Worker ledger governs this bounded acceptance. |
-| Worker activation | Candidate-bundle importer, recovery strategy/checkpoint executor, cancellation propagation, exact-container reconciliation and conservative interrupted-spend/quarantine release OPEN. |
-| Worker historical evidence | Preserve 40 original evidence blobs, three state archives and three historical checkpoint documents. Original controlled-provider proof does not certify this successor. |
+| DeepSeek broker | PR #2 broker/runtime/checkout source merged through PR #19; publication/evidence readback verified. Normal startup deliberately disabled; independent v2 source review accepted, 188/188 tests passed with zero skips/failures. Worker ledger governs this bounded acceptance. |
+| Candidate admission | Optional controller-owned final-candidate importer and bound verifier facade independently accepted as inactive source; clean-install 202/202 tests and build/typecheck/validate PASS; [separate foundation validation](../docs/validation/2026-10-14-foundation.md). No startup wiring, live artifact transport or recovery checkpoint admission. |
+| Worker activation | Operational admission composition, recovery strategy/checkpoint executor, cancellation propagation, exact-container reconciliation and conservative interrupted-spend/quarantine release OPEN. |
+| Worker historical evidence | 40 original evidence blobs, three state archives and three historical checkpoint documents preserved and verified. Original controlled-provider proof does not certify this successor. |
 | Jev/recovery, learning, scheduling | Source composed; negative-evidence freshness and cohort repairs passed combined source acceptance. Live Jev, genuine activation, holdout/baseline evaluation and comparable benefit OPEN. |
 | Orloom CI | Historical actual full-suite `f6023ac` FAIL/271438 ms/zero certificates. Fixture repair is composed; authentic exact-candidate runsc full suite OPEN. |
 | Local integration | Historical `2a02606` source and actual two-pool PostgreSQL replay accepted within retained scope. New candidate is not thereby certified. |
@@ -19,7 +20,8 @@ Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICA
 | Evidence preservation | PR #14's 95 original evidence blobs and two historical state files, plus PR #15's two repair records and two historical state/manifest blobs, are preserved. All 15 PR #3–17 trees have no absent original paths after the 97 evidence additions. Historical records do not certify the containing commit. |
 | Cloud end-to-end | Secure credentials, live workers, authentic verification, operational recovery, deployed campaign and measured learning gains OPEN. |
 
-Direction: preserve source and evidence; validate/review one coherent candidate; perform authorized PR cleanup only after inclusion and acceptance are established. The owner's latest direction supersedes the earlier blanket no-merge restriction. PR #2 cleanup requires reviewed source/evidence inclusion and publication-tree verification; it does not authorize runtime activation. No GitHub Actions CI, competing broker/scheduler, automatic UNKNOWN replay or newly implied paid-host/provider authority.
+Direction: preserve source and evidence; validate/review one coherent candidate; perform authorized PR cleanup only after inclusion and acceptance are established. The owner's latest direction supersedes the earlier blanket no-merge restriction. PR #2 is closed as superseded after verified source/evidence inclusion; all original PRs #2–17 are resolved. That cleanup does not authorize runtime activation. No GitHub Actions CI, competing broker/scheduler, automatic UNKNOWN replay or newly implied paid-host/provider authority.
 
 
-Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDATION_STATUS.md). Candidate admission remains upcoming in this checkpoint; no broad architecture rewrite or live activation is implied.
+Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDATION_STATUS.md). Candidate admission is a bounded optional source bridge; runtime composition and all activation gates remain open. No broad architecture rewrite or live activation is implied.
+

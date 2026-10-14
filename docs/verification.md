@@ -2,6 +2,18 @@
 
 The control plane starts this lane only when the complete trusted runner configuration is present and a PostgreSQL mission store is active. Otherwise certification stays disabled. This produces Orloom-local evidence for one exact commit; it does not publish GitHub Checks, prove remote freshness, or verify integration.
 
+## Controller-owned candidate admission source
+
+An optional `AdmittingVerificationRunner` now bridges persisted worker candidate artifacts to the existing verifier. It is a controller-composed source API, not a new HTTP upload/certification route or environment-variable activation switch. Normal startup does not instantiate it; the operator-configured local-repository runner above remains the executable path. Worker startup remains disabled.
+
+The Governor derives the final-candidate binding from the approved mission, persisted slice, lease epoch, scopes, plan/policy digests and evidence references. Admission requires exactly one content-addressed candidate bundle and evidence index, verifies both SHA-256 bindings, and checks the index identity, exact approved-base prerequisite, single direct-child candidate commit and in-scope diff. It imports into a private bare object store without executing or checking out target code, extracts bounded regular files, and gives the verifier an immutable source manifest and candidate-local observed head. It never moves the operator's approved base ref. Per-candidate facades share the verifier's existing concurrency limit and cannot rebind prepared attempts.
+
+This source path requires Linux `/usr/bin/git` and `/usr/bin/prlimit`, an existing owner-only real admission directory, an operator-owned repository map and an injected bounded artifact reader. Fixed-argument subprocesses disable hooks/config/network protocols and enforce child resource limits, output caps and deadlines. The complete admission deadline is 90 seconds; each Git subprocess is capped at ten seconds. Artifact limits are 20,000,000 bundle bytes and 256,000 index bytes, with at most 12,000 untrusted pack objects. There is one active admission per controller process and at most six cancellable waiters. The dedicated admission root must be used exclusively by one controller process; this source does not provide a cross-process lock. A 16-entry retention cap includes stale staging entries and refuses new imports at capacity. There is no automatic eviction: operator retention/reconciliation remains required.
+
+Published admission receipts and extracted manifests are re-read and checked on reuse, including strict object integrity checks. Malformed or unbound candidates cannot create a trusted pass. Capacity pressure, caller cancellation and transient artifact transport failures before dispatch remain eligible for retry without a permanent dispatch-failure row or a durable verification attempt; invalid candidate preparation is retained conservatively as unavailable/UNKNOWN. No admission failure grants a certificate, integration, budget refund or capacity release. Recovery checkpoint admission is explicitly refused by this optional runner and remains a separate implementation gate.
+
+The [foundation validation record](validation/2026-10-14-foundation.md) defines acceptance for this source addition. Local Git and injected artifact/launcher tests do not establish live R2 transport, a Docker/runsc check, live PostgreSQL, remote publication or a running worker. The disposable PGlite certificate-readback test uses a synthetic controlled launcher response only; it is not a genuine runtime certificate. Once a verifier attempt exists, its conservative UNKNOWN/expiry and no-redispatch semantics are unchanged.
+
 ## Operator setup
 
 Set these values in the protected control-plane environment. `.env.example` contains blank names only.
@@ -28,3 +40,4 @@ The repository-suite image emits bounded `orloom.suite-diagnostics.v4` stage and
 Source `4d1dd56` passed 75 local tests and independent source review. Its real full-suite attempt remains UNKNOWN with zero certificates after sandbox OOM during `jobs.test.js`; five preceding test files completed. The exact container measurements and cleanup evidence are retained in [the diagnostic record](evidence/c3-suite-memory/EVIDENCE.md). The full repository suite has not yet earned cloud certification.
 
 `tests/verification-certification.test.ts` uses PostgreSQL-compatible PGlite and explicitly injected fixture runner boundaries for deterministic behavior tests. It is not a real runsc host proof. A genuine runner-to-PostgreSQL proof still requires the configured protected host, pinned preloaded image, operator repository map, and durable artifact path.
+
