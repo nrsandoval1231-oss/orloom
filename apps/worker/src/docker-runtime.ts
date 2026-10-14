@@ -6,6 +6,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import type { WorkerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { checkoutExact, type CheckoutFetchTransport, type ReadOnlyCheckoutToken } from "../../../packages/agents/src/github-checkout.js";
 import { assertWorkerScopePath, WorkerProtocolError, type WorkerCheckCommand, type WorkerCheckExecution, type WorkerRuntime, type WorkerWorkspace } from "../../../packages/agents/src/worker.js";
+import { ownershipLabelsDigest, type RuntimeIdentity, type RuntimeJournal } from "./runtime-journal.js";
 
 export interface DockerWorkerRuntimeOptions {
   imageRef: string;
@@ -16,6 +17,10 @@ export interface DockerWorkerRuntimeOptions {
   checks: Record<string, WorkerCheckCommand>;
   scratchRoot?: string;
   dockerPath?: string;
+  /** Durable controller-owned runtime intent. When supplied, the exact container
+   * identity is persisted before container creation. Startup composition that
+   * requires it is a separate activation gate. */
+  runtimeJournal?: RuntimeJournal;
 }
 
 const maxFileBytes = 1_000_000;
@@ -85,6 +90,44 @@ export interface DockerContainerControl {
 }
 
 export function dockerRemoveArgs(id: string): string[] { return ["rm", "--force", id]; }
+
+/** The single source of the ownership labels applied to a worker container.
+ * The durable runtime intent binds their digest, so this must stay the only
+ * place these labels are constructed. */
+export function ownershipLabels(name: string, leaseEpoch: number): Record<string, string> {
+  return { "com.orloom.worker-owned": "true", "com.orloom.lease-epoch": String(leaseEpoch), "com.orloom.instance": name };
+}
+
+/** Controller-issued lease facts only. The worker derives this identity from the
+ * signed lease; it never asserts a run identity of its own. */
+export function controllerRunIdFor(lease: WorkerLeaseContract): string {
+  return createHash("sha256").update(JSON.stringify([
+    lease.protocol, lease.mission.id, lease.slice.id, lease.leaseEpoch,
+    lease.planDigest, lease.trustedCheckPolicyDigest, lease.leaseExpiresAt,
+  ])).digest("hex");
+}
+
+export interface DurableContainerCreation {
+  journal: RuntimeJournal;
+  identity: RuntimeIdentity;
+  name: string;
+  imageRef: string;
+  labels: Record<string, string>;
+  create(): Promise<{ id: string }>;
+}
+
+/** Persists controller-owned runtime intent before the container is created and
+ * retains the returned container identity afterwards. A create failure leaves
+ * the durable intent unresolved on purpose: it is evidence of a possible
+ * container, not something to erase. Reconciliation of that evidence is a
+ * separate gate. */
+export async function createContainerWithDurableIntent(options: DurableContainerCreation): Promise<{ id: string }> {
+  const labelsDigest = ownershipLabelsDigest(options.labels);
+  await options.journal.recordIntent({ identity: options.identity, name: options.name, imageRef: options.imageRef, labelsDigest });
+  const created = await options.create();
+  await options.journal.recordCreated(options.identity, created.id, labelsDigest);
+  return created;
+}
 
 export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>): Promise<void> {
   if (!/^[a-f0-9]{64}$/i.test(id)) throw new WorkerProtocolError("Docker returned an invalid container identity");
@@ -182,9 +225,11 @@ class DockerRpc {
     this.child.once("error", error => this.failAll(error));
     this.child.once("close", code => this.failAll(new Error(`Sandbox exited (${code}); ${Buffer.concat(this.stderr).toString("utf8").slice(0, 1_000)}`)));
   }
+  /** The retained Docker container identity for this exact sandbox. */
+  get id(): string { return this.containerId; }
   static async launch(docker: string, configDirectory: string, name: string, leaseEpoch: number, imageRef: string): Promise<DockerRpc> {
     validImageRef(imageRef);
-    const labels = { "com.orloom.worker-owned": "true", "com.orloom.lease-epoch": String(leaseEpoch), "com.orloom.instance": name };
+    const labels = ownershipLabels(name, leaseEpoch);
     const createArgs = ["create", "--interactive", "--pull=never", `--name=${name}`, ...Object.entries(labels).map(([key, value]) => `--label=${key}=${value}`), "--runtime=runsc", "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL", "--security-opt=no-new-privileges:true", "--pids-limit=64", "--memory=256m", "--memory-swap=256m", "--cpus=0.5", "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700", "--tmpfs=/work:rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700", "--workdir=/work", "--entrypoint=/usr/local/bin/node", imageRef, "/opt/orloom/sandbox-entry.js"];
     const control = dockerControl(docker, configDirectory);
     let id: string;
@@ -291,7 +336,28 @@ class DockerWorkspace implements WorkerWorkspace {
     await chmod(config, 0o700);
     this.clientConfig = config;
     const name = `orloom-worker-${this.lease.leaseEpoch}-${randomUUID().slice(0, 8)}`.toLowerCase();
-    this.rpc = await DockerRpc.launch(this.options.dockerPath ?? "/usr/bin/docker", config, name, this.lease.leaseEpoch, this.options.imageRef);
+    const docker = this.options.dockerPath ?? "/usr/bin/docker";
+    const labels = ownershipLabels(name, this.lease.leaseEpoch);
+    let launched: DockerRpc | undefined;
+    const create = async (): Promise<{ id: string }> => {
+      launched = await DockerRpc.launch(docker, config, name, this.lease.leaseEpoch, this.options.imageRef);
+      return { id: launched.id };
+    };
+    const journal = this.options.runtimeJournal;
+    if (journal) {
+      await createContainerWithDurableIntent({
+        journal,
+        identity: { missionId: this.lease.mission.id, sliceId: this.lease.slice.id, leaseEpoch: this.lease.leaseEpoch, controllerRunId: controllerRunIdFor(this.lease) },
+        name,
+        imageRef: this.options.imageRef,
+        labels,
+        create,
+      });
+    } else {
+      await create();
+    }
+    if (!launched) throw new WorkerProtocolError("Sandbox container was not created");
+    this.rpc = launched;
     const files = await collectFiles(this.repoCheckout.directory);
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
