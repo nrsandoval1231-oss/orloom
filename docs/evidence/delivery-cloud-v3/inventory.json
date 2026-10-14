@@ -1,0 +1,295 @@
+{
+  "source": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "files": [
+    {
+      "file": "executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.json",
+      "bytes": 665,
+      "sha256": "6780e79a7b1d3718509bb48b3406b676db2c7c92ae19cae9bba37604c593d23d"
+    },
+    {
+      "file": "executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.json",
+      "bytes": 759,
+      "sha256": "49909b0596bb7970f7750a643afc693901a72adb17c3bb34e9d5c90da3e1f35e"
+    },
+    {
+      "file": "executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.stdout.log",
+      "bytes": 249,
+      "sha256": "2100cb2c19fff4c36bb7c9eb0d73faacee5e66498e305adfff6963a74c72d54a"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.json",
+      "bytes": 657,
+      "sha256": "ded31f7a8ae32673084e2b40c63f750635eaabdd7e942c07d95186b9bde4da3b"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.stderr.log",
+      "bytes": 237,
+      "sha256": "566998c66b2034a31df617c5645abbf37d3d169ead500003a9767497a466a7a9"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.json",
+      "bytes": 659,
+      "sha256": "6dad1a0749775bdbaced2d0e0cf3ac2316c6bbb8c4d2e0d73265e230c2b6d1e9"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.stderr.log",
+      "bytes": 3775,
+      "sha256": "6eb1d8626de318d4e1209e4d48e04dad0ce12d3a0f7104ae858cc6f435b15d98"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.json",
+      "bytes": 655,
+      "sha256": "34e8b8346a1587d42b9aa4d9bd3129f6056c82d1b9a63f69d05aeccc62311143"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.stderr.log",
+      "bytes": 168,
+      "sha256": "6b8cbc474a1a0e60fb1729174e61b4f04e20d4f8ec160ade265d63db6202490e"
+    },
+    {
+      "file": "executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.json",
+      "bytes": 661,
+      "sha256": "14a0fbdba15fb8b618100775f5f253a7b8d6f04a1fb54a63696cfa4909b29cff"
+    },
+    {
+      "file": "executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "file": "executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.stdout.log",
+      "bytes": 122,
+      "sha256": "1bbed05c74d311e08baa5017fcf9aeae5e22ab7099d03ae8d691c2e56c90dd71"
+    },
+    {
+      "file": "executions/postflight.json",
+      "bytes": 1263,
+      "sha256": "db97ee202e17e606c1e978b89e930c9d3477620414e207fb3e8cdc275a0d55f3"
+    },
+    {
+      "file": "executions/runtime-after-cleanup.tar.gz",
+      "bytes": 131736,
+      "sha256": "a7853130a76758c117bce49835009eebcf4f4e5be8566f1065bb40af87af248e"
+    },
+    {
+      "file": "executions/runtime-after-cleanup.tar.gz.json",
+      "bytes": 942,
+      "sha256": "66b5405e13cd4597272216715f66291788bdfab365cc7ed08751b06e6c9fce58"
+    },
+    {
+      "file": "executions/runtime-before-cleanup.tar.gz",
+      "bytes": 131698,
+      "sha256": "4e231c8597a0c083648068e3dfdf628636b714bd585efaebec26b93be75ebbee"
+    },
+    {
+      "file": "executions/runtime-before-cleanup.tar.gz.json",
+      "bytes": 943,
+      "sha256": "d3a41e36eae920f0f691149d6c9ac98021c95f659a9ba16170140fb1bca4ecdf"
+    },
+    {
+      "file": "executions/upload-record.json",
+      "bytes": 5048,
+      "sha256": "3fb31f0ee763c8158a47d9ed2e733a04c3ecfe7b72cad3da6fbcbce793ebdd24"
+    },
+    {
+      "file": "helpers/build-suite-image.sh",
+      "bytes": 2492,
+      "sha256": "7f563a74e9764c1c601e98fdaacfa4250e79f77180ca07cc96ccac0d6ffb54ef"
+    },
+    {
+      "file": "helpers/cgroup-observer.mjs",
+      "bytes": 2164,
+      "sha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce"
+    },
+    {
+      "file": "helpers/cleanup-acceptance.sh",
+      "bytes": 5590,
+      "sha256": "aa26f58dc9326708479a942f2ac619e168ae7a052e46dda0cfb326a8e22b8e39"
+    },
+    {
+      "file": "helpers/export-acceptance-snapshot.sh",
+      "bytes": 2849,
+      "sha256": "e425c507aa2cdf7ef0bffa9e8e9d5e28924810cd042181363a2faa6922e59122"
+    },
+    {
+      "file": "helpers/extract-stage-predicate-cases.mjs",
+      "bytes": 4542,
+      "sha256": "6928e127ab292f91bd8267d07a1100e3c056a769d8f83ff633cc9c0da8cd4274"
+    },
+    {
+      "file": "helpers/helper-manifest-v3.json",
+      "bytes": 3156,
+      "sha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8"
+    },
+    {
+      "file": "helpers/preflight-acceptance.sh",
+      "bytes": 2921,
+      "sha256": "8a377657ee976074562bf57b05914cad2da38ba7202b553fed06f47c1021b340"
+    },
+    {
+      "file": "helpers/prepare-acceptance-fixtures.mjs",
+      "bytes": 4526,
+      "sha256": "575f85ae89f10a5efa7424a99657f224205dfee5dfac516e4bf014350f2b0231"
+    },
+    {
+      "file": "helpers/prepare-delivery-runtime.mjs",
+      "bytes": 9861,
+      "sha256": "0b4ab88c71ba9bed20204cbff4b77049c669bf7f7efe165cd414917df36676f8"
+    },
+    {
+      "file": "helpers/prepare-delivery-transfer.mjs",
+      "bytes": 3511,
+      "sha256": "f18f252c97b733d7242bb95de12ef5145b04403aa1b3397931124a03ac91adca"
+    },
+    {
+      "file": "helpers/run-acceptance.sh",
+      "bytes": 13980,
+      "sha256": "eedceb557d96a1cbe81597674cec5442a2fa557fc8ba8399ccbc7ab39df55796"
+    },
+    {
+      "file": "helpers/run-stage-predicate-cases-stdin.sh",
+      "bytes": 1494,
+      "sha256": "bc3f97a71c66c8bdf24d0d45f6fb5a3f99cf112972364da3125c96faefaa028a"
+    },
+    {
+      "file": "helpers/runtime-acceptance-entry.mjs",
+      "bytes": 1444,
+      "sha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec"
+    },
+    {
+      "file": "helpers/runtime-acceptance.mjs",
+      "bytes": 22634,
+      "sha256": "934dc78de42f860060ed8906fe0fdbb1dca632ff437489b377a7b4d019a43add"
+    },
+    {
+      "file": "helpers/runtime-snapshot-export.mjs",
+      "bytes": 9347,
+      "sha256": "90285cea821756ff1a543e26d20f00b9d4a2cf1e38112539cad47ec38ca6eb91"
+    },
+    {
+      "file": "helpers/setup-disposable-postgres.sh",
+      "bytes": 6428,
+      "sha256": "882c50979fef64047ce8430e5443691ec9e2740e623f6fed50b01f7dddb046d7"
+    },
+    {
+      "file": "helpers/stage-acceptance.sh",
+      "bytes": 11910,
+      "sha256": "33e751c048a532061a832b715c7b7ea94d38196454f8bf1b684bd22b58c0f99d"
+    },
+    {
+      "file": "helpers/stage-bindings-v3.json",
+      "bytes": 1073,
+      "sha256": "d3ba221476cfac14fca5ee985e9eb85aa0815721decc4b13e466556deb17ac1e"
+    },
+    {
+      "file": "wrappers/bind-delivery-cloud-v3.cjs",
+      "bytes": 1385,
+      "sha256": "68ffb8d98814f17a8bde75ca55a20a8fee0133e82b8a6004daf3a919c0d1b19c"
+    },
+    {
+      "file": "wrappers/common-delivery-cloud-v3.cjs",
+      "bytes": 7449,
+      "sha256": "239be9dd1748993c61337554caf5d9ad4888b0f1899ba17eff58adaa733f140e"
+    },
+    {
+      "file": "wrappers/finalize-package-delivery-cloud-v3.cjs",
+      "bytes": 6000,
+      "sha256": "5641bce00ae757f50bab25ca4798a309c35e5991734415bbef01a74aa4051b9e"
+    },
+    {
+      "file": "wrappers/package-delivery-cloud-v3.cjs",
+      "bytes": 6791,
+      "sha256": "b3cb72d8f483d6cd8955a3627a5d573ccdcf19419da7bdc4a5f07ff5ce618324"
+    },
+    {
+      "file": "wrappers/postflight-delivery-cloud-v3.cjs",
+      "bytes": 2253,
+      "sha256": "a1496090bdc1529367fc96d3184777f5192dd77eb85ef4321d1273faf18073cb"
+    },
+    {
+      "file": "wrappers/preserve-delivery-cloud-v3.cjs",
+      "bytes": 3208,
+      "sha256": "2f09912ba8c12a9bfaf3f19e53c84741cc6481e681a8f6d8c0a856e58faa0a5d"
+    },
+    {
+      "file": "wrappers/retain-evidence-delivery-cloud-v3.cjs",
+      "bytes": 1970,
+      "sha256": "8eff73b92c9552d498144c09277d61bbc0abb53c7e0831d60359b5c8825ccddb"
+    },
+    {
+      "file": "wrappers/run-suite-script-delivery-cloud-v3.cjs",
+      "bytes": 2607,
+      "sha256": "6dd95d579e3d5994bfc263184497ceda6423815bef180d2b9e06cdf9f9f203f4"
+    },
+    {
+      "file": "wrappers/upload-candidate-delivery-cloud-v3.cjs",
+      "bytes": 4225,
+      "sha256": "340eab4c75e099a2028abd4a1355651d2b4b9555c44bb27cf1521a47347a9e1c"
+    },
+    {
+      "file": "wrappers/verify-derivation-delivery-cloud-v3.cjs",
+      "bytes": 4106,
+      "sha256": "76e7f77cdd546554d6b37a5fed50591a83476d08bc6950217122e437951f4957"
+    },
+    {
+      "file": "review-package.json",
+      "bytes": 12451,
+      "sha256": "ffe794cf23c1b04be1722657002f3223c4e694b95717da80a50f704cd1d9f05f"
+    },
+    {
+      "file": "source-binding.json",
+      "bytes": 824,
+      "sha256": "2f660c863299af1a681680bae599a9acec32f5dbc249d2c449e9b0d415486061"
+    },
+    {
+      "file": "predicate-execution.json",
+      "bytes": 383,
+      "sha256": "59d3d87459a55fb89f3eeb650efebf7083481045c48b7c474136b7a4d3ec377b"
+    },
+    {
+      "file": "predicate-cases.json",
+      "bytes": 122945,
+      "sha256": "fc402e903709c7533ded6903e948ba7ef5ddd28f63e56d1b00f704dd500c7c74"
+    },
+    {
+      "file": "preexecution-review.json",
+      "bytes": 3399,
+      "sha256": "e73f0c31d9321f0dc9b773c23b2d2dd06947cc815a0d38afd5dcb9ddf2e2e004"
+    },
+    {
+      "file": "runtime-review.json",
+      "bytes": 4035,
+      "sha256": "71380e36d9f2f31fea84815b3263774abe42769e75822dd0768cb39a7c8938b6"
+    }
+  ]
+}

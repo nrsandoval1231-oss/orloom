@@ -1,0 +1,59 @@
+{
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "reviewPackageSha256": "ffe794cf23c1b04be1722657002f3223c4e694b95717da80a50f704cd1d9f05f",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "records": [
+    {
+      "bin": "ssh",
+      "args": [
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "codex-dark-peak-5042",
+        "bash",
+        "-s"
+      ],
+      "startedUtc": "2026-10-14T00:14:35.010Z",
+      "finishedUtc": "2026-10-14T00:14:36.835Z",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "bin": "scp",
+      "args": [
+        "-q",
+        "-r",
+        "-o",
+        "BatchMode=yes",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\runtime-files",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\candidate.bundle",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\candidate-identity.json",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\build-suite-image.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\cgroup-observer.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\cleanup-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\export-acceptance-snapshot.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\extract-stage-predicate-cases.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\preflight-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\prepare-acceptance-fixtures.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\prepare-delivery-runtime.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\prepare-delivery-transfer.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\run-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\run-stage-predicate-cases-stdin.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\runtime-acceptance-entry.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\runtime-acceptance.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\runtime-snapshot-export.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\setup-disposable-postgres.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\stage-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\stage-bindings-v3.json",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\transfer\\helper-manifest.json",
+        "codex-dark-peak-5042:/var/lib/orloom/c3-delivery-v3-20261013.incoming/"
+      ],
+      "startedUtc": "2026-10-14T00:14:36.836Z",
+      "finishedUtc": "2026-10-14T00:15:22.434Z",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

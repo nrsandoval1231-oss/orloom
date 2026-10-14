@@ -1,0 +1,11 @@
+{
+  "startedUtc": "2026-10-14T00:04:29.374Z",
+  "finishedUtc": "2026-10-14T00:04:39.483Z",
+  "scriptSha256": "bc3f97a71c66c8bdf24d0d45f6fb5a3f99cf112972364da3125c96faefaa028a",
+  "casesSha256": "fc402e903709c7533ded6903e948ba7ef5ddd28f63e56d1b00f704dd500c7c74",
+  "exit": 0,
+  "signal": null,
+  "stdout": "predicate_cases=PASS\ncount=46\n",
+  "stderr": "",
+  "hostMutation": false
+}

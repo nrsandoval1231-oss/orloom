@@ -1,0 +1,13 @@
+{
+  "name": "stage-acceptance.sh",
+  "args": [],
+  "scriptSha256": "33e751c048a532061a832b715c7b7ea94d38196454f8bf1b684bd22b58c0f99d",
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "startedUtc": "2026-10-14T00:16:16.204Z",
+  "finishedUtc": "2026-10-14T00:16:22.317Z",
+  "elapsedMs": 6113,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\executions\\2026-10-14T00-16-16-204Z-stage-acceptance.sh"
+}

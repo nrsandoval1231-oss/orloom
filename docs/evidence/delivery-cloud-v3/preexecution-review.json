@@ -1,0 +1,32 @@
+{
+  "format": "orloom-independent-delivery-cloud-preexecution-review-v3-repaired",
+  "verdict": "PASS_PREEXECUTION",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "baseSha": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+  "sourceRef": "refs/heads/feat/certified-delivery",
+  "sourceManifestSha256": "9215357a14e2d83079c8db9aa779969d5f86e53ac556224974979f5750e1923d",
+  "reviewPackage": "work/c3-delivery-cloud-v3/candidate-f6023acade03-v3/review-package-v3-complete.json",
+  "reviewPackageSha256": "ffe794cf23c1b04be1722657002f3223c4e694b95717da80a50f704cd1d9f05f",
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "uploadWrapperSha256": "340eab4c75e099a2028abd4a1355651d2b4b9555c44bb27cf1521a47347a9e1c",
+  "historicalRejectedReview": "work/delivery-cloud-helper-review-v3.json",
+  "predicateEvidence": {
+    "file": "work/c3-delivery-cloud-v3/predicate-execution-1791936279483.json",
+    "result": "PASS 46 exact stage/run/identity jq cases, 4 positive and 42 tamper negative, read-only stdin/no host mutation",
+    "scriptSha256": "bc3f97a71c66c8bdf24d0d45f6fb5a3f99cf112972364da3125c96faefaa028a",
+    "casesSha256": "fc402e903709c7533ded6903e948ba7ef5ddd28f63e56d1b00f704dd500c7c74"
+  },
+  "independentChecks": [
+    "Exact package has 58 file records including all nine v3 wrappers; the upload wrapper record hash matches the currently reviewed wrapper. Helper manifest still binds 17 helper files, and runtime payload identity remains 198 files with 63 dist JavaScript, 7 migration SQL and 13 dependency package manifests.",
+    "The upload wrapper now reads candidateDir(bound)/review-package-v3-complete.json and writes upload records to candidateDir(bound)/executions. Previous rejected f404c099 package bytes are retained under prior/rejected-v3-f404c099b122; the repaired package has a new SHA-256.",
+    "Running the reviewed upload wrapper with exact helper and package hashes in --admission-only mode returned exit 0, candidate f6023ac, the correct reviewFile and executionDir, and hostActionsPerformed=0. This path exercised raw source review binding, all reviewed package file hashes, helper copies, transfer identity, bundle digest, and all 198 payload hashes before the side-effect branch.",
+    "Running the same admission-only path with a tampered package hash returned exit 1 at the exact-package hash fence before any host action.",
+    "Stage and run consume the same exact 16-key binding schema; the retained actual jq checks cover both consumers plus runtime and transfer identities. Protected host tuple, fresh v3 namespace, finite suite limits and snapshot-before-cleanup boundaries remain as reviewed."
+  ],
+  "executionConditions": [
+    "Recheck exact review package, helper manifest and upload wrapper hashes immediately before upload; changed bytes require new review.",
+    "Observe current protected host tuple, fresh namespace, capacity and verifier slot at host preflight. Capacity remains NOT-OBSERVED in this local package.",
+    "Retain upload/stage/runtime evidence, treat timeout or interruption as UNKNOWN, and require source-bound snapshot evidence before destructive cleanup."
+  ],
+  "limits": "This is pre-upload helper admission only. No upload, host resource creation, Docker, PostgreSQL, runsc, provider, delivery publication or cloud runtime acceptance was performed in this review."
+}
