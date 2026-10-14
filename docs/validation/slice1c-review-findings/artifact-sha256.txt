@@ -1,0 +1,14 @@
+# SHA-256 over the committed blob bytes of each retained artifact in docs/validation/slice1c-review-findings.
+# Git normalizes text to LF via .gitattributes, so these hashes are
+# reproducible from the commit rather than from a Windows working tree.
+5788d66de95014588ba7fa680293a879366f77e276e82c7470769ad8a16c435b  build.log
+aa8266266824329c45de49b58a598c5f6348bca7fb3311853406daf7aa7de85a  cap-measurement.log
+0214f1cc132003e1226f3293aa5a7c061b217368ac61e417eaa7015710ada92e  discrimination-before-fix.log
+381227cabb566a3e181201ec9d59e3751847b69cfe00da8d9074600b338d0591  environment.txt
+aacb6c63a44b00c0f56147dac0c8fa0fd2fb0f348882859ee7406552288fde59  focused-review-findings.log
+9d32083be332fd9340c2992b7112a2766c3a42381f93c5c115621272756cf02d  full-suite.log
+131b2368169b85fa3067ea6be86ea47e2d091d347a98dbef25976a9174307250  typecheck.log
+d8edcbe354e5407b0f4d5f1d2ac1b932b643c426d805412e83b4e3089818fa62  validate.log
+1b6728856ecd0887468ffa21df3625b28e30946dbaef76881f6820ae9ee3c066  verification-after.txt
+6f6b905ef0e7ec49940ba788a4ce4ff7c76279a2a0c136eb1207350d1ad68da5  verification-before.log
+51908c00eebd430b6765f381a9aad9c8688acaf0032a9b9699e6eaba9b041e52  verify-1c.mjs

@@ -1,0 +1,11 @@
+branch=slice/01c-review-findings
+parent=31a4f18 (Slice 1)
+base=86a972300708f9bc05f557c5c09efd1c0f7e2ba6
+host=Windows
+node=v24.18.0
+npm=11.16.0
+recorded_at=2026-10-14T11:52:36.4597446-05:00
+accepted_full_suite=tests 248 / pass 234 / fail 13 / skipped 1 / cancelled 0 / 78958.04 ms
+focused_review_findings=tests 4 / pass 4 / fail 0
+failures=the 13 are exactly tests/candidate-admission.test.ts under the documented Linux/POSIX private-root guard; unchanged
+evidence_class=source + fixture only; no live PostgreSQL, Docker/runsc, Linux, provider or publication

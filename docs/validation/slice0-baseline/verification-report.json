@@ -28,7 +28,16 @@
     {
       "command": "npm ci",
       "exit_code": 0,
-      "detail": "locked install from package-lock.json; 99 packages added, 0 vulnerabilities"
+      "detail": "locked install from package-lock.json; 99 packages added, 0 vulnerabilities",
+      "original_run_evidence_retained": false,
+      "re_run_at_stack_tip": {
+        "command": "npm ci --no-audit --no-fund",
+        "exit_code": 0,
+        "duration_ms": 6610.4,
+        "packages_added": 99,
+        "log": "slice0-baseline/npm-ci.log",
+        "note": "Fresh measurement during Slice 1c, not a reconstruction of the original Slice 0 install, whose raw output was not captured."
+      }
     },
     { "command": "npm run typecheck", "exit_code": 0, "duration_seconds": 3.8 },
     { "command": "npm run build", "exit_code": 0, "duration_seconds": 3.9 },
@@ -75,7 +84,7 @@
     "missing_from_checkout": 0,
     "listed_but_not_tracked": 0,
     "result": "Every one of the 119 manifest entries matches this checkout byte-for-byte by size, SHA-256 and Git blob SHA-1. The retained Linux source acceptance therefore binds exactly to this source tree despite core.autocrlf=true, because .gitattributes sets '* text=auto eol=lf'.",
-    "caveat": "The manifest's declared exclusion list omits .agent/**, work/**, infra/**, deploy/**, prototypes/** and .gitattributes, which it also excludes in practice. Verified separately: no unlisted tracked path is a runtime, test, build or configuration input (no path under packages/, apps/, tests/, scripts/, db/, and not tsconfig.json, package.json, package-lock.json, .env.example or .dockerignore). The coverage claim in the manifest's prose is therefore accurate for shipped runtime source but incomplete as written."
+    "caveat": "CORRECTED IN SLICE 1C after an independent review finding. An earlier version of this record claimed that no unlisted tracked path was a runtime, test, build or configuration input. That claim is withdrawn as too broad: deployment configuration is outside the manifest. deploy/hostinger/compose.yml, deploy/hostinger/init-secrets.sh, deploy/hostinger/.env.example and deploy/hostinger/initdb/010-app-role.sh are all tracked and all absent from the 119 entries, and docs/deployment.md treats them as production deployment inputs. A change to service environment, secret generation or database bootstrap therefore leaves all 119 hashes unchanged. The manifest binds the shipped runtime, test and build inputs; it does not bind the deployable tree and does not prove that no unlisted configuration input exists. The frozen foundation-release artifacts were deliberately not rewritten; binding deployment configuration would require a separate additional manifest."
   },
   "evidence_class": {
     "source": "VERIFIED - exact commit and tree, byte-identical to the retained manifest",
@@ -99,6 +108,8 @@
   "unresolved": [
     "Linux execution of the 13 candidate-admission tests is not reproducible from this host; it remains covered only by the retained snapshot evidence.",
     "No PostgreSQL, Docker/runsc, live provider or publication evidence exists at this baseline.",
-    "The retained manifest's declared exclusion list understates the paths it actually excludes."
+    "The retained manifest's declared exclusion list understates the paths it actually excludes.",
+    "Deployment configuration is outside the 119-file manifest (deploy/hostinger/compose.yml, init-secrets.sh, .env.example, initdb/010-app-role.sh), so the manifest does not bind the deployable tree and does not prove that no unlisted configuration input exists.",
+    "The original locked-install output was not retained; the install gate was re-measured and retained during Slice 1c."
   ]
 }
