@@ -1,0 +1,24 @@
+{
+  "review": "C4-DELIVERY-PG-HELPER-PREEXECUTION",
+  "verdict": "PASS_WITH_EXECUTION_CONDITIONS",
+  "reviewedHelpers": {
+    "work/dpg-proof/run.mjs": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "work/dpg-proof/scenario.mjs": "7a54a297ffbc589ca86f2219fc840a1486f88e3e10a8f04c21e8535410da2874"
+  },
+  "pristineBuilderScenarioSha256": "542b3bdbec42bcc51afc50b0aab74cf03e5bc94c67517ab87880405a1daeef86",
+  "findings": [],
+  "evidence": [
+    "Runner binds a clean exact source HEAD to a complete SHA-256 compiled-JS inventory before creating an owned loopback PostgreSQL cluster; it keeps credentials under the private ignored runtime and validates postmaster identity before stopping that cluster.",
+    "Scenario loads production compiled SqlMissionStore, Governor integration, and delivery from the source worktree; applies migrations 001-007; and verifies distinct PostgreSQL backend PIDs across two pools.",
+    "Fixture builds disposable local Git and bare repositories, performs actual Governor verification and integration, preserves integration/review metadata refs, and exposes the already-uploaded-equivalent reserved branch through controlled GitHub readbacks.",
+    "Barriers after effect claims force two independent callers into Check and PR reconciliation; assertions require one POST, observed effect row, and at least one completed delivery call.",
+    "Fresh-pool restart cases require exact recovery after lost Check and PR responses without duplicate POSTs; absent ambiguous Check remains UNKNOWN without retry; separate Check/PR GET identity mismatches reject.",
+    "Scenario closes primary and independent SQL pools in finally, bounds barrier wait to 15 seconds, and redacts the runtime password from failure diagnostics."
+  ],
+  "executionConditions": [
+    "Freeze and independently review a clean delivery source SHA after the active metadata-preserving source repair; build and hash that exact candidate before running the helper.",
+    "Run only the two reviewed helper hashes above; any helper edit requires a fresh pre-execution review.",
+    "Interpret a passing run as local PostgreSQL and bare-Git behavior with controlled external fixtures only; real GitHub App, R2, CI, independent review, remote upload, deployment, and parent completion remain unproven.",
+    "Retain runtime manifest, preflight, scenario summary, and cluster-cleanup evidence for the exact execution."
+  ]
+}

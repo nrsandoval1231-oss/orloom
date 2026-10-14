@@ -1,0 +1,11 @@
+{
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "cleanup": "STOPPED_OWNED_CLUSTER",
+  "outcome": "PASS_DATABASE_BEHAVIOR_ONLY",
+  "failedPhase": null,
+  "failure": null,
+  "startedUtc": "2026-10-13T23:43:46.576Z",
+  "finishedUtc": "2026-10-13T23:43:53.133Z",
+  "execution": "EXECUTED",
+  "limitations": "Controlled fixtures only."
+}

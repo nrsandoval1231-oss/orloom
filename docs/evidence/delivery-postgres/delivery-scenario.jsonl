@@ -1,0 +1,15 @@
+{"at":"2026-10-13T23:21:10.927Z","name":"fresh_migrations_and_independent_backends","migrations":7,"distinctBackendPids":true}
+{"at":"2026-10-13T23:21:10.929Z","name":"fixture-path-budget","logicalCase":"concurrent-check-claim","physicalCase":"1","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:15.428Z","name":"concurrent-check-claim","intent":"pr_created","callers":2,"checkPosts":1,"outcomes":["fulfilled","rejected"]}
+{"at":"2026-10-13T23:21:15.428Z","name":"fixture-path-budget","logicalCase":"concurrent-pr-claim","physicalCase":"2","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:19.774Z","name":"concurrent-pr-claim","intent":"pr_created","callers":2,"prPosts":1,"outcomes":["rejected","fulfilled"]}
+{"at":"2026-10-13T23:21:19.775Z","name":"fixture-path-budget","logicalCase":"restart-after-check-ambiguous-response","physicalCase":"3","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:24.792Z","name":"restart-after-check-ambiguous-response","intent":"pr_created","checkPostsAcrossRestart":1,"recoveredState":"pr_created"}
+{"at":"2026-10-13T23:21:24.794Z","name":"fixture-path-budget","logicalCase":"restart-after-pr-ambiguous-response","physicalCase":"4","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:30.458Z","name":"restart-after-pr-ambiguous-response","intent":"pr_created","originalPosts":{"checkPosts":1,"prPosts":1},"replayPosts":{"checkPosts":0,"prPosts":0},"recoveredState":"pr_created"}
+{"at":"2026-10-13T23:21:30.459Z","name":"fixture-path-budget","logicalCase":"unresolved-absent-check-is-not-retried","physicalCase":"5","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:34.555Z","name":"unresolved-absent-check-is-not-retried","intent":"unknown","firstCheckPosts":1,"replayCheckPosts":0,"prPosts":0}
+{"at":"2026-10-13T23:21:34.556Z","name":"fixture-path-budget","logicalCase":"check-id-mismatch","physicalCase":"6","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:37.943Z","name":"readback-check-id-mismatch","intent":"unknown","state":"unknown","checkPosts":1,"prPosts":0}
+{"at":"2026-10-13T23:21:37.944Z","name":"fixture-path-budget","logicalCase":"pr-number-mismatch","physicalCase":"7","maxObjectPathChars":221,"limitChars":230}
+{"at":"2026-10-13T23:21:42.268Z","name":"readback-pr-number-mismatch","intent":"unknown","state":"unknown","checkPosts":1,"prPosts":1}

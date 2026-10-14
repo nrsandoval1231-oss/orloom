@@ -1,0 +1,96 @@
+{
+  "mission": {
+    "id": "fb685f12-5d0f-49d3-9362-99575201f9b6",
+    "repository": "controlled/loom-browser-proof",
+    "objective": "Controlled PostgreSQL viewer proof (no builder executed)",
+    "status": "running"
+  },
+  "slices": [
+    {
+      "id": "completion-gate",
+      "objective": "Remain open until certified and integrated",
+      "owner": "controlled-fixture",
+      "dependencies": [
+        "viewer-proof"
+      ],
+      "status": "waiting_dependency",
+      "checks": [
+        "fixture-strategy"
+      ],
+      "candidateSha": null,
+      "leaseEpoch": 0
+    },
+    {
+      "id": "viewer-proof",
+      "objective": "Render a persisted owner-visible event",
+      "owner": "controlled-fixture",
+      "dependencies": [],
+      "status": "running",
+      "checks": [
+        "fixture-strategy"
+      ],
+      "candidateSha": null,
+      "leaseEpoch": 1
+    }
+  ],
+  "events": [
+    {
+      "cursor": 1,
+      "time": "2026-10-13T23:43:50.000Z",
+      "type": "mission.submitted",
+      "label": "Mission created",
+      "sliceId": null,
+      "checkId": null,
+      "references": []
+    },
+    {
+      "cursor": 2,
+      "time": "2026-10-13T23:43:50.000Z",
+      "type": "plan.recommended",
+      "label": "Plan recommended",
+      "sliceId": null,
+      "checkId": null,
+      "references": []
+    },
+    {
+      "cursor": 3,
+      "time": "2026-10-13T23:43:50.000Z",
+      "type": "plan.approved",
+      "label": "Plan approved",
+      "sliceId": null,
+      "checkId": null,
+      "references": []
+    },
+    {
+      "cursor": 4,
+      "time": "2026-10-13T23:43:51.000Z",
+      "type": "slice.claimed",
+      "label": "Slice claimed",
+      "sliceId": "viewer-proof",
+      "checkId": null,
+      "references": []
+    },
+    {
+      "cursor": 5,
+      "time": "2026-10-13T23:43:51.000Z",
+      "type": "slice.progress",
+      "label": "Governor decision recorded",
+      "sliceId": "viewer-proof",
+      "checkId": "fixture-check",
+      "references": [
+        {
+          "kind": "recovery",
+          "id": "fixture-strategy"
+        },
+        {
+          "kind": "recovery",
+          "id": "fixture-check"
+        }
+      ]
+    }
+  ],
+  "lastCursor": 5,
+  "state": "available",
+  "closed": false,
+  "notice": "Open · waiting for durable certification and integration evidence."
+}
