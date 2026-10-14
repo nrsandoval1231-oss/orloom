@@ -1,0 +1,5 @@
+commit=a60dc29f81f560d3a795256dcf7ac82a73ee5a77
+full_suite_exit=1
+seconds=75.6
+worktree_clean=
+True

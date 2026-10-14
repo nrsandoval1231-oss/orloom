@@ -14,6 +14,8 @@ All 16 original open PRs (#2–17) are resolved; PR #2 was closed as superseded 
 
 A Slice 0 baseline recheck on 2026-10-14 re-confirmed `main` at `86a972300708f9bc05f557c5c09efd1c0f7e2ba6`, tree `10de087b4999e1d3264c644a752d651df04a3927`, with zero open PRs. A fresh locked install, typecheck, build and structure validation passed; the suite reported **189/202** on Windows, where all 13 failures are the documented Linux/POSIX candidate-admission platform guard rather than a defect. The retained 119-file manifest was re-verified byte-for-byte against that tree. These remain source/fixture results. See [the baseline record](docs/validation/2026-10-14-slice0-baseline.md).
 
+Slice 1 was split. **Slice 1a** is implemented: durable controller-owned runtime intent is persisted before container creation, retaining the exact container ID, reusing the preserved successor journal with one fix (the persisted ownership-labels digest no longer depends on host locale). It adds 22 tests; the full suite is now 224 tests / 210 pass / 13 unchanged Linux-POSIX platform failures / 1 declared Windows symlink skip. It is **source/fixture evidence only** and is not wired into startup. **Slice 1b** — durable authenticated owner cancellation that fences stale work before requesting interruption — is not implemented. See [the Slice 1a record](docs/validation/2026-10-14-slice1a-runtime-intent.md).
+
 See [the foundation acceptance checklist and next steps](docs/FOUNDATION_STATUS.md). The source foundation and its remaining operational gates are tracked separately; autonomous product completion remains open.
 
 ## Historical repair consolidation checkpoint: 2026-10-14
