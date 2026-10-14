@@ -1,0 +1,18 @@
+{
+  "checkId": "node-validate-syntax",
+  "sliceId": "c3-slot-collision",
+  "version": "orloom.trusted-check-request.v1",
+  "attemptId": "d910b151-a808-46df-9685-c3294b92468c",
+  "expiresAt": "2026-10-13T08:25:22.224Z",
+  "missionId": "d41d99a3-854e-4500-a5c4-d1772d826d30",
+  "leaseEpoch": 1,
+  "planDigest": "cf7e3daa97bb5d9640974eb12c3953af9c974685b423c63adb123e588e2a7778",
+  "repository": "nrsandoval1231-oss/orloom",
+  "requestedAt": "2026-10-13T08:24:22.224Z",
+  "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+  "policyDigest": "66dd473c4f631a2bcb08e2f953708b8515ec1e566f527b8e54da7207110b127e",
+  "policyVersion": "orloom.check-policy.v1",
+  "inputBundleDigest": "91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf",
+  "verifierImageDigest": "e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+  "expectedLocalHeadSha": "765943eae18c09aa882e52c7f5255dd776c5fd43"
+}

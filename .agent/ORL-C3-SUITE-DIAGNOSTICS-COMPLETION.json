@@ -1,0 +1,79 @@
+{
+  "packet": "ORL-C3-SUITE-DIAGNOSTICS",
+  "status": "BUILDER_HANDOFF_REPAIRED_LOCAL_GATES_PASS_HOST_PROOF_NOT_RUN",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseCommit": "93c3e4758846a64b688b7d48b091702e05dfc928",
+  "workingCandidateIdentitySha256": "b136ccc67c3c682f9dba1d159d665fb8d83938109cc36d91f1c66f971bc6abf3",
+  "changedFiles": [
+    "docs/verification.md",
+    "infra/verifier-isolation/Dockerfile",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/suite-diagnostics.js",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-runner.test.ts"
+  ],
+  "validation": [
+    {
+      "command": "npm run build; node --test dist/tests/verification-runner.test.js",
+      "result": "12 focused tests passed; hostile toString/valueOf outcome safely discarded",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "command": "npm run typecheck"
+    },
+    {
+      "exit": 0,
+      "command": "npm run build"
+    },
+    {
+      "command": "npm test",
+      "result": "73 passed, 0 failed",
+      "exit": 0
+    },
+    {
+      "command": "npm run validate",
+      "result": "Foundation structure validation passed",
+      "exit": 0
+    },
+    {
+      "exit": 0,
+      "command": "node --check infra/verifier-isolation/run-repo-suite.js"
+    },
+    {
+      "exit": 0,
+      "command": "node --check infra/verifier-isolation/suite-diagnostics.js"
+    },
+    {
+      "exit": 0,
+      "command": "git diff --check"
+    }
+  ],
+  "rawFinalGateLog": "work/c3-suite-diagnostics-repair2-final-gates.log",
+  "rawFinalGateLogSha256": "c6434145c072d90109c8a4c3ee22d5b2e03da1efd1967a9c148ad1335c8df90b",
+  "timing": {
+    "utcStart": "UNKNOWN",
+    "utcFinish": "2026-10-13T10:23:37Z",
+    "focusedAndFinalValidationElapsed": "UNKNOWN",
+    "finalGateToolElapsedSeconds": 18.0,
+    "planning": "UNKNOWN",
+    "build": "UNKNOWN",
+    "repairCount": 3
+  },
+  "runtimeProof": {
+    "hostExecution": "NOT_RUN_BY_BUILDER",
+    "retainedPriorAttempt": "UNKNOWN",
+    "certificate": "NONE_CLAIMED",
+    "attemptRedispatch": "NOT_PERFORMED"
+  },
+  "usage": "UNKNOWN",
+  "limitations": [
+    "Diagnostic frames are bounded advisory telemetry and cannot determine PASS or FAIL.",
+    "Candidate output, arbitrary host output, and raw stderr are discarded from ambiguous launcher results.",
+    "No image build, host, provider, deployment, commit, or push action was performed.",
+    "Existing dirty docs/evidence/.gitattributes and root-owned evidence manifest were preserved and are excluded from changedFiles."
+  ],
+  "preservedReviewFinding": "Review of prior exact candidate 93c3e47 found String(frame.outcome) could throw on an untrusted JSON object; direct string type and enum validation added, no coercion."
+}

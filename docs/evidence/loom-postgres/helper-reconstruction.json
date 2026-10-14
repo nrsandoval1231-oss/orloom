@@ -1,0 +1,46 @@
+{
+  "packet": "LOOM-PG-HELPER-REPAIR-01",
+  "status": "PREPARED_STATIC_ONLY",
+  "source": {
+    "expectedSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+    "sourceWasExecuted": false
+  },
+  "review": {
+    "input": "work/loom-pg-helper-review.json",
+    "findingIds": ["LOOM-PG-MOBILE-INSPECTOR", "LOOM-PG-CLOSURE-ASSERTION"],
+    "repair": "Mobile scenario clicks the visible summary, asserts #inspect.open and visible event text before screenshot. Desktop notice and authenticated retained projection require exact open/available/closed=false state and the durable event label."
+  },
+  "preservedRejectedScenario": {
+    "path": "work/lpg-proof/failed-preparation/scenario-review-974a009d.mjs",
+    "sha256": "974a009d45bc3c3c0d56fc27c451c44c7f91dd4a45750702f17e86ca4d254d48"
+  },
+  "candidate": {
+    "path": "work/lpg-proof/scenario.mjs",
+    "sha256": "d143e630d57a8053db7fceda642b51f7c29d2eef2670c3eddc7018b71bba4d55"
+  },
+  "runner": {
+    "path": "work/lpg-proof/run.mjs",
+    "copiedFrom": "work/dpg-proof/run.mjs",
+    "sha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "byteIdenticalToAcceptedRunner": true
+  },
+  "retainedProjection": "loom-browser/loom-projection.json; contains the explicit allowlisted projection fields only and no authorization or session-token fields",
+  "validation": {
+    "nodeCheckScenario": "PASS (node --check work/lpg-proof/scenario.mjs)",
+    "nodeCheckRunner": "PASS (node --check work/lpg-proof/run.mjs)",
+    "runnerCopyHashComparison": "PASS; byte-identical to work/dpg-proof/run.mjs",
+    "preservedScenarioHashComparison": "PASS; original reviewed scenario preserved byte-identically",
+    "gitDiffCheck": "PASS",
+    "databaseExecution": false,
+    "browserExecution": false,
+    "sourceServerExecution": false
+  },
+  "accounting": {
+    "startUtc": "UNKNOWN",
+    "finishUtc": "2026-10-13T23:41:08.1001383Z",
+    "model": "UNKNOWN",
+    "elapsedMs": "UNKNOWN",
+    "tokens": "UNKNOWN"
+  },
+  "limits": ["Preparation only; no PostgreSQL, browser, host, or provider action.", "Controlled fixture only; no builder execution or completion claim."]
+}

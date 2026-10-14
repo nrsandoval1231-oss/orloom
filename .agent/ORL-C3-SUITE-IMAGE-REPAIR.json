@@ -1,0 +1,42 @@
+{
+  "nodeId": "ORL-C3-SUITE-IMAGE-REPAIR",
+  "status": "HANDOFF_READY",
+  "baseCommit": "aa84188b992a1c5acb758b42e7812cda88283e62",
+  "changedFiles": [
+    "infra/verifier-isolation/Dockerfile",
+    "tests/verification-runner.test.ts"
+  ],
+  "fileSha256": {
+    "infra/verifier-isolation/Dockerfile": "cfac53bac49b9af1b2345b8f8c76c2a0b660db1c795311fc0ee7c2818fd549d8",
+    "tests/verification-runner.test.ts": "eb3c5d3fb041fa507e9fd51e33247b40f41bf9ed052ce119e812fd0ec62d750d"
+  },
+  "diffGitBlob": "0e21b4a191ebda288b5f811d2e1e8cc97b3443fe",
+  "repair": {
+    "finding": "npm rejects a command that supplies the same /dev/null file as both --userconfig and --globalconfig (double-loading config).",
+    "change": "The image creates two distinct empty trusted config files under /opt/orloom-verifier/npm-config, supplies each explicitly to the digest-pinned bundled npm CLI, and removes both after the scripts-disabled locked install.",
+    "preserved": ["exact package and lock digests", "--include=dev", "--ignore-scripts", "sanitized env", "no-audit", "no-fund", "runtime policy caps and timeout"]
+  },
+  "regression": {
+    "static": "Asserts distinct created image config paths and rejects /dev/null reuse.",
+    "behavioral": "Runs npm config get with two fresh empty paths and a sanitized environment. It discovers the image-bundled /opt/orloom-verifier/npm/bin/npm-cli.js first when present, so the verifier image executes the probe without requiring npm on PATH; environments with no known CLI explicitly skip only this local behavior probe."
+  },
+  "validation": [
+    { "command": "npm ci --ignore-scripts", "exitCode": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm test", "exitCode": 0, "evidence": "71 passed, 0 failed, 0 skipped" },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run validate", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "externalActions": { "docker": "NOT RUN", "host": "NOT RUN", "commit": "NOT RUN", "push": "NOT RUN", "merge": "NOT RUN" },
+  "unresolved": [
+    "No Docker build or runsc/host proof was authorized; image construction remains for controller review and separately authorized runtime validation.",
+    "This source validation does not establish a final image digest or certification."
+  ],
+  "timing": { "startedAtUtc": "UNKNOWN", "finishedAtUtc": "2026-10-13T09:42:00.1594359Z", "durations": "UNKNOWN" },
+  "repairCount": 1,
+  "lane": "Terra bounded specialist repair",
+  "model": "gpt-6.1-sol",
+  "configurationIdentity": "UNKNOWN",
+  "tokens": "UNKNOWN"
+}

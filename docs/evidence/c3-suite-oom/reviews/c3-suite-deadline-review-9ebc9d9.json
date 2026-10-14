@@ -1,0 +1,34 @@
+{
+  "packet": "ORL-C3-SUITE-DEADLINE-REPLAN",
+  "reviewType": "independent bounded source re-review",
+  "verdict": "PASS",
+  "scope": "exact source candidate only; no image, host, runsc, PostgreSQL, provider, certificate, or product acceptance",
+  "reviewedAtUtc": "2026-10-13T11:17:23Z",
+  "candidate": {
+    "repository": "work/orloom-suite",
+    "branch": "feat/trusted-verification-suite",
+    "baseSha": "727de8607202307f6c45186ca11546d1fcdc338b",
+    "rejectedPriorSha": "022e7b7207c48b84a03e69467428614ce8584954",
+    "headSha": "9ebc9d91c880be907adb4b38c3e912300bf14816",
+    "manifestPath": ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "manifestSha256": "a37ea16aadd4e06ca3de424e5bc607f0ce6894100c4da7211b76c0c856637ca8",
+    "manifestEntriesVerified": 117,
+    "manifestMismatches": 0,
+    "worktreeCleanAtReview": true
+  },
+  "findings": [],
+  "resolvedPriorFinding": {
+    "location": "infra/verifier-isolation/stage-runner.js:8-10,38-49 and infra/verifier-isolation/run-repo-suite.js:8-9,60-61,65-100",
+    "previousIssue": "An awaited final callback could finish after the 180-second inner suite budget and still produce a certifying PASS marker during the longer Docker attach window.",
+    "resolution": "The stage runner applies the remaining monotonic budget after each awaited stage, converting over-budget completion to UNKNOWN and stopping later stages. The suite uses performance.now(), checks admission before stage execution, and applies the deadline guard both before and after final marker serialization. Integer diagnostic elapsed values retain the versioned advisory frame schema.",
+    "reviewerProbe": "The original scaled actual-code reproduction used a 1 ms budget and a 30 ms awaited callback. The repaired implementation returned outcome=unknown, exitCode=null, deadlineExceeded=true, elapsedMs=31, remainingMs=-30. This is a control-flow proof, not a 180-second runtime measurement.",
+    "regressionCoverage": "tests/verification-runner.test.ts:209-227 advances a deterministic remaining budget during an awaited callback, asserts UNKNOWN and deadlineExceeded, confirms the next stage does not run, and checks final marker-boundary conversion."
+  },
+  "evidence": [
+    "The repair diff from rejected source changes only run-repo-suite.js, stage-runner.js, verification-runner.test.ts, source manifest, and retained repair/review/gate evidence. Trusted policy values and digest, syntax policy, shell launcher limits, coordinator, contract, store, resource caps, and frozen PR #2 are unchanged.",
+    "All 117 source-manifest entries were recomputed against the clean checkout with zero mismatches; the manifest file hash matches the candidate identity above.",
+    "The definitive controller log docs/evidence/c3-suite-deadline/suite-controller-gates-2026-10-13T11-14-18-569Z.log records exit 0 for typecheck, clean build, 73 tests with zero failures or skips, foundation validation, affected JavaScript syntax checks, bash syntax, and diff check.",
+    "The prior FIX review and both earlier UNKNOWN cloud observations remain retained. No source review turns diagnostic advisory frames into certificate authority."
+  ],
+  "acceptanceBoundary": "PASS qualifies only the frozen local source for a separately controlled pinned-image rebuild and fresh real runsc/PostgreSQL positive and negative acceptance sequence. The original PostgreSQL suite attempt and direct diagnostic remain UNKNOWN with zero certificates; cloud suite duration, capacity, and operational completion are still unproven."
+}

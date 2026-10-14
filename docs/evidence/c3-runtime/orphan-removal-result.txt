@@ -1,0 +1,5 @@
+{
+  "status": 0,
+  "stdout": "{\n  \"Id\": \"61fda97bd516ffc66ab86a11e0bd69011404170ca2c0ef8b549913558c52efd5\",\n  \"Name\": \"/orloom-c3-proof-20261013-node-copy\",\n  \"Image\": \"sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304\",\n  \"State\": {\n    \"Status\": \"created\",\n    \"Running\": false\n  },\n  \"Config\": {\n    \"Image\": \"ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304\",\n    \"Labels\": {\n      \"org.opencontainers.image.version\": \"24.04\",\n      \"orloom.packet\": \"ORL-C3-PROOF\"\n    }\n  },\n  \"HostConfig\": {\n    \"NetworkMode\": \"none\",\n    \"ReadonlyRootfs\": true\n  }\n}\norphan_removal=PASS exact stopped container removed\n",
+  "stderr": ""
+}

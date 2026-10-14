@@ -1,0 +1,18 @@
+{
+  "approvedRef": "refs/heads/feat/certified-delivery",
+  "baseSha": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "sourceManifestFileCount": 139,
+  "fixtureHelperSha256": "575f85ae89f10a5efa7424a99657f224205dfee5dfac516e4bf014350f2b0231",
+  "observerHelperSha256": "fb05e3420c5eccf3c0a0b54caa4d75923f5d0ca292567f096b34ab66ca4fd6ce",
+  "runtimeEntrySha256": "3d952946ab28de30bdf1ec0ee2c6fbb561ad9967f1e30f402b6eab342a5be6ec",
+  "runtimeHelperSha256": "934dc78de42f860060ed8906fe0fdbb1dca632ff437489b377a7b4d019a43add",
+  "runtimePayloadSha256": "736635eb958a5d59a424698900c753d486e5a570b8adae451b8c7e7baec4899f",
+  "runtimeFileCount": 198,
+  "compiledJsCount": 63,
+  "migrationCount": 7,
+  "dependencyPackageCount": 13,
+  "runtimeSnapshotSha256": "90285cea821756ff1a543e26d20f00b9d4a2cf1e38112539cad47ec38ca6eb91",
+  "runtimeSnapshotShellSha256": "e425c507aa2cdf7ef0bffa9e8e9d5e28924810cd042181363a2faa6922e59122",
+  "sourceManifestSha256": "9215357a14e2d83079c8db9aa779969d5f86e53ac556224974979f5750e1923d"
+}

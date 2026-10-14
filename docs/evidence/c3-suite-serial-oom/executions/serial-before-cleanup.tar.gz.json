@@ -1,0 +1,10 @@
+{
+  "file": "serial-before-cleanup.tar.gz",
+  "bytes": 51928,
+  "sha256": "12d49d5b694e6c09a602a29db335c1c2cbb6a954f32b4fabbc6627e3d4713eff",
+  "command": "tar -czf - -C /var/lib/orloom/c3-suite-serial-20261013 evidence artifacts fixtures/fixtures.json resources.tsv capacity-evidence.json capacity-observation.json verifier-image.id image-binding.json stage-bindings.json runtime-started.json staging/identity.txt",
+  "startedUtc": "2026-10-13T12:21:49.904Z",
+  "finishedUtc": "2026-10-13T12:21:51.461Z",
+  "exit": 0,
+  "stderr": ""
+}

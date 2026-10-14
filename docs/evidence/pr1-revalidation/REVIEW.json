@@ -1,0 +1,37 @@
+{
+  "subject": "PR1 independent merge-readiness reconciliation",
+  "reviewed_at_utc": "2026-10-13T05:00:21Z",
+  "candidate_head": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "base": "41643d8b210c98dd5b8b870e79f5a9902c83882b",
+  "checkout": "work/orloom-main-review (detached, clean, source read-only)",
+  "verdict": "MERGE_READY_PENDING_EXACT_HEAD_GATES",
+  "blocking_source_findings": [],
+  "evidence": [
+    "The detached checkout resolves to exactly 2d45b64; the locally fetched origin/main was 41643d8 and is an ancestor of this head",
+    "All 24 committed ORL-005A source files match the accepted c418a11 manifest; independent ORL-005A review is PASS after four repaired findings",
+    "The disposable real-PostgreSQL proof and controller repeat are retained under infra/mission-postgres-proof: eight concurrent sessions, six distinct claims/no seventh, race exclusion, rollback, reconnect, dependency wait, case-folded scope, and expired-lease quarantine",
+    "Governor authorizes approved graph claims only with configured capacity/policy/limits; SQL global lock and transactional slot/budget reservation serialize claims, and callbacks require mission/slice/epoch/lease/capability fencing",
+    "Expired or ambiguous work transitions to UNKNOWN without refunding budget or releasing slot/scope; normal dependency wait does not quarantine a ready parent; candidate callback stops at awaiting_verification and integrate throws",
+    "Cloud owner writes use authenticated session and exact Origin/Host checks; worker routes use separate bearer/capability authority; production capacity defaults to zero",
+    "Hostinger deployment instructions are manual and explicitly state ORL-005A is not rolled out; no GitHub Actions workflow is present in the repository"
+  ],
+  "merge_criteria": [
+    "Controller reruns npm ci, typecheck, tests/build, validate, and affected checks on exact head 2d45b64 with exit 0 and records outputs; prior working-tree results alone are insufficient",
+    "Refresh GitHub immediately before merge: PR1 head remains 2d45b64, base main is the expected reviewed ancestor, required checks/reviews and branch protection permit the merge, and the resulting merge target is understood; do not merge a changed head",
+    "Keep PR2 head 8bbcfffbf631e5ad2972e34b41284198afc566e2 frozen; do not modify, rebase, continue, or merge PR2 as part of PR1 reconciliation",
+    "Confirm this Git merge does not trigger an unreviewed Hostinger rollout or other external deployment; rollout and production migration remain separately gated",
+    "Preserve infra/worker-isolation exact bytes: its -text evidence files intentionally produce git diff --check CRLF trailing-whitespace warnings, so record a scoped exception rather than normalizing the accepted manifest",
+    "After merge, verify remote main SHA and PR state separately; retain all proof artifacts and distinguish merged code from deployed runtime and full Finish Contract acceptance"
+  ],
+  "qualifications": [
+    "This is merge-readiness for A's bounded mission-control code, not certification of the canonical full harness, live workers, DeepSeek, independent verification/integration, PR creation, or Loom",
+    "No production schema migration, Hostinger rollout, browser acceptance, or six-live-lane capacity was performed in this review",
+    "The current GitHub remote head, branch rules, and controller exact-head gates were not independently observed by this reviewer at write time"
+  ],
+  "next_architecture_direction": {
+    "name": "independent typed Jev gateway from A",
+    "direction": "Build a small typed, versioned mission-event append gateway over A's existing mission_events table and transaction/lease fence. Accept bounded progress and evidence references only after actor, mission/slice, epoch, capability, idempotency key, sequence and payload schema validation; append event and Governor decision atomically, then project via the existing cursor API. Keep raw model output and source in immutable R2 artifacts, not event JSON.",
+    "recovery_learning": "Use those durable events as the sole input to deterministic stuck signals and bounded strategy decisions. UNKNOWN effects retain A quarantine. Store lesson candidate/promotion/withdrawal events with provenance and comparable metrics; expose only validated relevant policy snapshots to later authorized leases. A Sol plan or replan remains a proposal until a separately reviewed owner-approved graph revision transition exists.",
+    "dependency_boundary": "This can be designed against A's MissionStore and worker-lease contract without reading, changing, merging, or depending on frozen PR2. A later worker adapter may call the gateway, but it gains no new authority from an event write."
+  }
+}

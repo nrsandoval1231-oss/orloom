@@ -1,0 +1,2 @@
+acceptance snapshot export PASS attempts=1 certificates=0
+acceptance_snapshot=PASS source=read-only-postgresql allowlist=verified

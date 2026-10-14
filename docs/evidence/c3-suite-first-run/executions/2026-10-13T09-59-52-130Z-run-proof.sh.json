@@ -1,0 +1,17 @@
+{
+  "scriptName": "run-proof.sh",
+  "args": [
+    "226e4d9ac26f2b83b05b82f678dc07966a1b6bdb",
+    "06a74acfb456b5835cb19dcf71c73fa11f278d0f",
+    "15a0d1330ed53cad8d0560568f25bf4569f93b1e530d1b8b709e154a979ce8a2",
+    "d5e9dde2b34c589e40009d27288a2fedcd0fb5983d470243243bc8dc8045a66f",
+    "00c9c940c9faac86659e562ce6a1d7361bf57b36c4011e862a0930e9972fce07"
+  ],
+  "scriptSha256": "396113fe2ed241f5b2064ba62c6220084fdae8e9e48badffdb04f472827ee8f9",
+  "start": "2026-10-13T09:59:52.131Z",
+  "finish": "2026-10-13T10:01:05.963Z",
+  "elapsedMs": 73832,
+  "exit": 1,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-cloud-executions\\2026-10-13T09-59-52-130Z-run-proof.sh"
+}

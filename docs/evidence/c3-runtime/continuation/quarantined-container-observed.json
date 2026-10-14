@@ -1,0 +1,31 @@
+{
+  "id": "140edd29f054bc9897d8f66a8b6b3bc90054954b8ff19996a31dd3fc6198dce4",
+  "name": "/orloom-verifier-6f0f96cf-f4ab-4fc9-86c4-62a6bdb1f13d",
+  "image": "sha256:e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+  "imageId": "sha256:e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+  "user": "65532:65532",
+  "status": "created",
+  "running": false,
+  "runtime": "runsc",
+  "networkMode": "none",
+  "memoryBytes": 268435456,
+  "memorySwapBytes": 268435456,
+  "nanoCpus": 500000000,
+  "pidsLimit": 64,
+  "readOnlyRootfs": true,
+  "capDrop": [
+    "ALL"
+  ],
+  "securityOpt": [
+    "no-new-privileges:true"
+  ],
+  "tmpfs": {
+    "/tmp": "rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700",
+    "/work": "rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700"
+  },
+  "mounts": [],
+  "labels": {
+    "packet": "ORL-C3",
+    "run": "orloom-verifier-6f0f96cf-f4ab-4fc9-86c4-62a6bdb1f13d"
+  }
+}

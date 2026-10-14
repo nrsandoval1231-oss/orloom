@@ -1,0 +1,75 @@
+{
+  "diagnosticOnly": true,
+  "certificate": null,
+  "elapsedMs": 60763,
+  "sandboxId": "orloom-verifier-2be5f7f3-12fd-4aac-ad9d-c4702aeda4d1",
+  "exitCode": null,
+  "timedOut": true,
+  "truncated": true,
+  "advisoryProgress": [
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "dependency-lock-admission",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "dependency-lock-admission",
+      "phase": "end",
+      "elapsedMs": 196,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "typecheck",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "typecheck",
+      "phase": "end",
+      "elapsedMs": 25474,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "clean-build",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "clean-build",
+      "phase": "end",
+      "elapsedMs": 22117,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "test-discovery",
+      "phase": "start",
+      "elapsedMs": 0
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "test-discovery",
+      "phase": "end",
+      "elapsedMs": 2,
+      "outcome": "pass"
+    },
+    {
+      "version": "orloom.suite-diagnostics.v1",
+      "stage": "node-tests",
+      "phase": "start",
+      "elapsedMs": 0
+    }
+  ],
+  "rawOutput": {
+    "stdoutSha256": "5cc257c9507493cd21cbea3c317400c2dac0755021a149ead0061be4514ae541",
+    "stdoutBytes": 1404,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrBytes": 0
+  }
+}

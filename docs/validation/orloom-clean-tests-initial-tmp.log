@@ -1,0 +1,215 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> orloom-foundation@0.1.0 test
+> npm run build && node --test dist/tests/*.test.js
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+✔ canonical JSON makes key-order permutations hash-identical, including nested JSONB values (1.437831ms)
+✔ configuration validates roles and does not reveal configured values in errors (3.907604ms)
+✔ webhook signature is constant-time compared after strict digest length check (0.733273ms)
+✔ artifact adapter uses content SHA-256 addressing and copies bytes (0.368293ms)
+✔ R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary (8.717513ms)
+✔ GitHub App token request uses app client and explicit repository and permission scope (1.4835ms)
+✔ Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration (1.170319ms)
+✔ cloud mode fails closed without explicit database URL, host, token, and HTTPS origin (0.350748ms)
+✔ PostgreSQL job store refuses readiness when the database is unreachable (55.052126ms)
+✔ controller capabilities remain closed by default, including with stray Jev configuration (3.75237ms)
+✔ explicit integration and delivery composition binds one repository and full-suite policy without startup calls (410.73579ms)
+✔ review reader accepts only private bounded files beneath its fixed root (70.927377ms)
+✔ enabled configuration rejects partial or unsafe settings without echoing credential values (0.923708ms)
+✔ GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities (5.254638ms)
+✔ branch absence is distinct from inaccessible or wrong repository readback (0.781295ms)
+✔ delivery rejects public repo/ref overrides and stays closed when R2 or GitHub App authority is absent (2.355851ms)
+✔ delivery migration adds a durable upload effect without changing existing intent columns (5416.801441ms)
+✔ approved trusted C4 integration attribution reaches controlled delivery effects (11836.941453ms)
+✔ serialized shared PGlite fixtures reset mutations after a failed test body (5549.801311ms)
+✔ positive delivery persists one exact Check GET readback and an open unmerged draft PR (753.270717ms)
+✔ delivery rejects duplicate, mismatched, and unknown C4 metadata before any external effect (421.479544ms)
+✔ Check-only interruption is reconciled by exact GET then proceeds to one PR without retrying Check POST (671.501966ms)
+✔ interrupted PR create is reconciled after durable Check and PR claims without retry (639.758144ms)
+✔ concurrent delivery calls cannot both claim either create effect (400.557353ms)
+✔ upload interruption is reconciled after the exact remote ref appears and is never pushed twice (270.731096ms)
+▶ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks
+  ✔ {"uploadPost":"throw_absent"} (199.184305ms)
+  ✔ {"branchRead":"wrong_sha"} (457.1509ms)
+  ✔ {"branchRead":"wrong_tree"} (440.929408ms)
+  ✔ {"baseRead":"wrong"} (217.057122ms)
+  ✔ {"baseRead":"error"} (298.429708ms)
+✔ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks (1626.469192ms)
+✔ unresolved absent effect remains UNKNOWN and is never blindly retried (234.178812ms)
+✔ missing scoped upload credential capability closes delivery before creating a claim (63.702797ms)
+▶ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success
+  ✔ wrong App in Check readback (170.579846ms)
+  ✔ Check GET returns a different id (260.372827ms)
+  ✔ PR GET returns a different number (170.74873ms)
+  ✔ configured App policy mismatch (100.433053ms)
+  ✔ ambiguous Checks (165.43336ms)
+  ✔ closed draft (390.470087ms)
+  ✔ merged draft (306.033766ms)
+  ✔ non-draft PR (425.926428ms)
+✔ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success (2003.708965ms)
+✔ delivery route authenticates owner session and fails closed without controller authority (94.214163ms)
+✔ delivery route accepts only the exact command shape and rejects browser policy overrides (31.141877ms)
+✔ delivery route reports an unavailable retained delivery pipeline as a conflict without starting effects (5.304633ms)
+✔ delivery route maps unexpected store failures to a generic unavailable response (4.550866ms)
+✔ fixed uploader advances only the reserved ref in a controlled local bare remote (619.473071ms)
+✔ static askpass handles paths with spaces and only the exact GitHub prompts (37.148176ms)
+✔ control-plane Docker build stage includes and runs its asset-copy helper (305.632665ms)
+✔ HTTP control plane exposes status, authenticates job operations, and never executes jobs (62.923156ms)
+✔ unexpected provider/store errors return generic 500 without reflecting secrets (13.044567ms)
+✔ cloud sessions are opaque, secure, expiring, and writes require the configured origin and host (1117.429787ms)
+✔ completed exact integration replays reconcile across each pre-finalization race gate (18133.761968ms)
+✔ Jev recovery adapter exposes only approved alternative IDs and binds the answer to the snapshot (17.900194ms)
+✔ blocked and unknown snapshots are terminal without consulting Jev (1.000263ms)
+✔ Jev client makes one bounded fixed-origin choice request and validates its result (20.281655ms)
+✔ missing key, disallowed or moving model, invalid bounds, and oversized input fail before fetch (1.616279ms)
+✔ unsafe SDK URL, non-POST, and over-limit request bodies never reach the injected transport (0.680022ms)
+▶ invalid provider outputs become sanitized UNKNOWN and are never retried
+  ✔ invalid response 1 (2.463262ms)
+  ✔ invalid response 2 (16.926672ms)
+  ✔ invalid response 3 (1.597782ms)
+  ✔ invalid response 4 (1.305712ms)
+  ✔ invalid response 5 (1.163639ms)
+✔ invalid provider outputs become sanitized UNKNOWN and are never retried (26.369845ms)
+▶ provider errors and oversized response bodies are redacted and make one attempt
+  ✔ provider error text is not exposed (1.785444ms)
+  ✔ response byte limit enforced while reading (0.99741ms)
+  ✔ timeout is sanitized and not retried (45.230133ms)
+  ✔ wall-clock deadline bounds a fetch that ignores abort (61.085544ms)
+  ✔ wall-clock deadline bounds a stalled response stream and does not await cancellation (67.650822ms)
+✔ provider errors and oversized response bodies are redacted and make one attempt (182.22289ms)
+▶ SQL job persistence behaviors
+  ✔ lifecycle fences stale completion and preserves UNKNOWN after interrupted execution (185.566431ms)
+  ✔ migration constrains status and lease consistency (2.923554ms)
+✔ SQL job persistence behaviors (7220.604568ms)
+✔ promotion fails closed before lesson lookup when runtime acceptance is absent (1.392574ms)
+✔ activation requires the current exact-runtime full-suite certificate on every call (0.867785ms)
+✔ fixed bare Git ref accepts one scoped linear fast-forward and rejects scope escape and moved ref (15980.692304ms)
+✔ /loom uses a restrictive same-origin CSP and keeps mission reads owner-authenticated (92.40546ms)
+✔ Loom pages durable history after its SQL window, resumes from cursor, and distinguishes exact boundary from overflow (179.54208ms)
+✔ certificate links exist only while the matching current slice is awaiting verification (0.761424ms)
+✔ Loom renders its tested certificate rule and keeps explicit fallback and bounded polling controls (3.477396ms)
+✔ Loom projection preserves ownership and dependencies without inventing progress (16.038572ms)
+✔ durable verified, certified, and integrated evidence closes every planned slice (1.290009ms)
+✔ contradictions, unknown state, duplicate and out-of-order cursors fail closed (0.744499ms)
+✔ candidate, lease, certificate, tree and review bindings must remain exact (5.539546ms)
+✔ durable scheduling, recovery and learning events receive named safe inspector labels (0.446421ms)
+✔ empty, missing, hostile labels and mismatched mission records remain unavailable and text only (0.249995ms)
+✔ approved plan membership and exact proof causality are required for closure (0.487813ms)
+✔ pending certificate IDs bind to certified checks independent of check order (0.238608ms)
+✔ certificate digest contradictions and missing certification digests cannot close Loom (3.139238ms)
+✔ certificate digests bind to their IDs rather than array membership (0.87797ms)
+✔ HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed (262.717045ms)
+✔ memory governor allows six disjoint same-owner slices and keeps verification/dependency gates closed (46.22644ms)
+✔ scope ancestors and globs serialize; expired UNKNOWN retains budget and quarantines slot and scope (1.21757ms)
+✔ dependency wait does not block overlapping parent and mixed-case repositories still serialize (0.889818ms)
+✔ memory recovery fences terminal judgments and excludes cross-target lesson pairs (8.524923ms)
+✔ memory two-phase judgment quarantines when mission reservation changes after snapshot (0.841635ms)
+✔ memory lesson candidates require two committed same-cohort episodes (7.644921ms)
+✔ lesson episode count deduplicates epochs but pairs evidence only within one epoch (0.21972ms)
+✔ PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart (8400.96269ms)
+✔ PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity (5487.198829ms)
+✔ mission migration allows explicit dependency wait and is idempotent (1620.622058ms)
+✖ dist/tests/recovery-learning.test.js (5161.450456ms)
+✔ memory: direct store claims fail closed without a current allowlist (58.555421ms)
+✔ memory: HTTP lease digest is authoritative and works unchanged in progress (123.960526ms)
+✔ memory: restarted HTTP policy rejects a stale whole plan before reserving or binding a lease (36.968585ms)
+✔ memory: independent HTTP claim preserves unknown aggregate and quarantine (84.594188ms)
+✔ memory: independent HTTP claim preserves blocked aggregate and quarantine (40.254353ms)
+✖ dist/tests/runtime-claim-regressions.test.js (5764.839415ms)
+✔ memory scheduling ranks critical path and applies validated advice only at fresh claim (39.63362ms)
+✔ scheduler and optional learning activation retain separate dependency slots (30.954084ms)
+✔ advice is skipped for zero or one eligible choice and Jev context is capped at 32 (39.311266ms)
+✔ memory concurrent claims fence stale advice and preserve deterministic fallback after UNKNOWN (33.530717ms)
+✔ invalid advice and bounded Jev timeout keep fallback safe and usage UNKNOWN (24.714076ms)
+✔ finite Jev adapter rejects oversized context before transport and emits no arbitrary action (0.815335ms)
+✔ finite Jev adapter preserves validated model and measured usage with the selected candidate (0.282084ms)
+✔ failed durable pre-dispatch record prevents advice dispatch (9.43407ms)
+✔ PGlite snapshots expose only exact promoted lesson provenance and stale withdrawal falls back (8686.532808ms)
+✔ startup-shaped full-suite policy stays distinct from lease digest through integration and exact replay (8584.061839ms)
+✔ Node env-file startup loads local token and starts the real control-plane entrypoint (1109.597162ms)
+✔ PostgreSQL certification binds exact candidate, stores immutable certificate and event once (4295.76671ms)
+✔ coordinator keeps capability private, runs fixture runner, and hides a certificate when local head moves (1759.946927ms)
+✖ factory stays disabled without explicit configuration and builds a valid runner (16.206668ms)
+✔ rejects artifact roots equal to or below source root and relative roots (0.932722ms)
+✖ rejects temporary paths, overlap in either direction, and malformed maps (1.090599ms)
+✔ parsers accept the exact typed request, receipt, capability metadata, and certificate (10.809317ms)
+✔ rejects unknown top-level and nested fields and malformed values (1.979575ms)
+✔ receipt outcome, exit code, time range, and nested artifact bounds must agree (1.101957ms)
+✔ late UNKNOWN timeout evidence is retained while late PASS and FAIL are rejected (0.755375ms)
+✔ canonical receipt digest ignores object key insertion order and metadata serializes no capability secret (5.66186ms)
+✔ durable artifacts are content-addressed and reject tampering and symlinks (179.72434ms)
+✔ extractor only accepts reachable commit regular files and rejects symlink entries (718.742883ms)
+✔ check policy is finite and worker text cannot select commands (1.244451ms)
+✔ repository suite is a separate trusted policy bound to the reviewed lock and fixed profile (40.280132ms)
+✔ repository suite runs every discovered test file serially and binds the new policy digest (9.271966ms)
+✔ production serial test runner executes trusted files in order and stops fail-closed (8.097621ms)
+✔ verifier image installs with two isolated npm config files (11.53658ms)
+✔ local npm accepts distinct sanitized config paths (582.856027ms)
+✔ repository suite admission accepts the exact dependency pair and rejects stale locks and overrides (449.879635ms)
+✔ repository suite requires discovered tests and treats failures, timeouts and truncation distinctly (607.333045ms)
+✔ launcher process-result fixtures reject infrastructure ambiguity and accept only matching check markers (13.042763ms)
+✔ UNKNOWN retains only bounded complete diagnostics from the trusted stage and file emitters (168.324085ms)
+✔ stage diagnostics never classify a partial, forged, malformed, or excessive result (4.938152ms)
+✔ trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd (9.398747ms)
+ℹ tests 143
+ℹ suites 0
+ℹ pass 139
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18891.641249
+
+✖ failing tests:
+
+test at dist/tests/recovery-learning.test.js:1:1
+✖ dist/tests/recovery-learning.test.js (5161.450456ms)
+  'test failed'
+
+test at dist/tests/runtime-claim-regressions.test.js:1:1
+✖ dist/tests/runtime-claim-regressions.test.js (5764.839415ms)
+  'test failed'
+
+test at dist/tests/verification-config.test.js:11:1
+✖ factory stays disabled without explicit configuration and builds a valid runner (16.206668ms)
+  Error: artifact root must be an absolute persistent path outside temporary directories and the source worktree
+      at createTrustedVerificationRunner (file:///[temporary-checkout]/dist/apps/verifier/src/index.js:19:15)
+      at TestContext.<anonymous> (file:///[temporary-checkout]/dist/tests/verification-config.test.js:13:26)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at dist/tests/verification-config.test.js:22:1
+✖ rejects temporary paths, overlap in either direction, and malformed maps (1.090599ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /object stores/. Input:
+  
+  'Error: artifact root must be an absolute persistent path outside temporary directories and the source worktree'
+  
+      at async TestContext.<anonymous> (file:///[temporary-checkout]/dist/tests/verification-config.test.js:25:5)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: artifact root must be an absolute persistent path outside temporary directories and the source worktree
+        at createTrustedVerificationRunner (file:///[temporary-checkout]/dist/apps/verifier/src/index.js:19:15)
+        at TestContext.<anonymous> (file:///[temporary-checkout]/dist/tests/verification-config.test.js:25:26)
+        at async Test.run (node:internal/test_runner/test:1389:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:960:7),
+    expected: /object stores/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

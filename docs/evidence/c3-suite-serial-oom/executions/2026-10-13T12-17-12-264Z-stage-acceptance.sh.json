@@ -1,0 +1,11 @@
+{
+  "scriptName": "stage-acceptance.sh",
+  "args": [],
+  "scriptSha256": "6f232970ba0d40b4f70388de64dc6ae6f47e64d3db6ff323124055842f0abbe5",
+  "start": "2026-10-13T12:17:12.265Z",
+  "finish": "2026-10-13T12:17:17.390Z",
+  "elapsedMs": 5125,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-serial-executions\\2026-10-13T12-17-12-264Z-stage-acceptance.sh"
+}

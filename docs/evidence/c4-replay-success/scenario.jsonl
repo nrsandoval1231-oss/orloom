@@ -1,0 +1,17 @@
+{"at":"2026-10-13T23:03:57.499Z","name":"fresh_migrations_and_held_connections","migrations":6,"backendPidsDistinct":true,"observedConnections":3}
+{"at":"2026-10-13T23:03:57.506Z","name":"fixture_path_budget","logicalCase":"ordinary-positive","physicalCase":"1","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:00.424Z","name":"ordinary_exact_integration","slice":"verified","child":"ready","integratedEvents":1}
+{"at":"2026-10-13T23:04:00.432Z","name":"fixture_ready_child_retired_without_verification","child":"awaiting_verification","trustedVerification":"not attempted"}
+{"at":"2026-10-13T23:04:00.436Z","name":"fixture_path_budget","logicalCase":"post-cas-reconnect-duplicates","physicalCase":"2","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:04.356Z","name":"new_pool_store_concurrent_exact_replay","callers":2,"successfulCas":1,"integratedEvents":1,"child":"ready"}
+{"at":"2026-10-13T23:04:04.365Z","name":"fixture_ready_child_retired_without_verification","child":"awaiting_verification","trustedVerification":"not attempted"}
+{"at":"2026-10-13T23:04:04.367Z","name":"fixture_path_budget","logicalCase":"moved-ref-unknown","physicalCase":"3","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:07.332Z","name":"unexpected_third_ref_marks_unknown_without_retry","intent":"unknown","slice":"awaiting_verification","child":"waiting_dependency","retry":"rejected"}
+{"at":"2026-10-13T23:04:07.334Z","name":"fixture_path_budget","logicalCase":"final-verifier-image-mutation","physicalCase":"4","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:10.652Z","name":"final-verifier-image-mutation","postIntentMutation":"verifierImageDigest","finalization":"rejected","integratedEvents":0,"parent":"awaiting_verification","child":"waiting_dependency"}
+{"at":"2026-10-13T23:04:10.654Z","name":"fixture_path_budget","logicalCase":"final-input-bundle-mutation","physicalCase":"5","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:14.015Z","name":"final-input-bundle-mutation","postIntentMutation":"inputBundleDigest","finalization":"rejected","integratedEvents":0,"parent":"awaiting_verification","child":"waiting_dependency"}
+{"at":"2026-10-13T23:04:14.017Z","name":"fixture_path_budget","logicalCase":"final-policy-version-mutation","physicalCase":"6","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:17.385Z","name":"final-policy-version-mutation","postIntentMutation":"policyVersion","finalization":"rejected","integratedEvents":0,"parent":"awaiting_verification","child":"waiting_dependency"}
+{"at":"2026-10-13T23:04:17.386Z","name":"fixture_path_budget","logicalCase":"final-dependency-mutation","physicalCase":"7","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T23:04:20.816Z","name":"final-dependency-mutation","postIntentMutation":"parent dependency becomes nonverified child","finalization":"rejected","integratedEvents":0,"parent":"awaiting_verification","child":"waiting_dependency"}

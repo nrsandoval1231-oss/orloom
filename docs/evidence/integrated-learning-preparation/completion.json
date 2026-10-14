@@ -1,0 +1,48 @@
+{
+  "packet": "C1b integrated runtime helper preparation",
+  "scope": "rootwork/c1b-integrated-proof only",
+  "source": {
+    "checkout": "work/orloom-integrated",
+    "head": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "clean": true
+  },
+  "runtimePayload": {
+    "candidate": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "cleanBuild": true,
+    "fileCount": 163,
+    "manifestSha256": "a1a14660fc2af3db6605f0bb7c52003607e73915e8d4184f18bcfacbb90579d5"
+  },
+  "fixture": {
+    "sourceAndBaseSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+    "commits": {
+      "episodeAFail": "8f3d929db36949c496a14361cc26fc0f4eb58681",
+      "episodeAPass": "67a12c1262c23eafc785b30b99e31ba7b55b36aa",
+      "episodeBFail": "1283a32c192ab448b00ff160d48a76c4c870bd1e",
+      "episodeBPass": "fb21a4623352ae61eae3951d14997801204d3fcc",
+      "laterFail": "2eacfb2f628a1d0592edc764cf115ff8652a3503"
+    },
+    "bundleSha256": "c7733fd7d49035516e8d1ef0868c8412236f3f3fb2ba41237c77db7abe71ecb2",
+    "fixtureJsonSha256": "cea801c41ddc8aa8071593daf1993bbba43511774090db0531d2b12accf01c2f"
+  },
+  "helperSha256": {
+    "c3-approved-ref.mjs": "c04fa0e80fa366673be39d9ba9a6df68c77254d8443621e41690694241971f0a",
+    "check-local-guards.mjs": "e486ea2f481cab13b2a218f21ec052b8ccb5721f3e3d413651336d894a4a7ef0",
+    "install-fixture.mjs": "738e0d2d3373561f23d25bf0ce54e6e5b31b51c050a505743779e91a293a9bfd",
+    "prepare-fixture.mjs": "19ba46234e8148cf53ccc1b1f25fea2296b421bfe8c5a02eea392280337804b4",
+    "prepare-runtime-payload.mjs": "5d6a0584ad03a0e193a5fbc37a27c302d53bf2f352b2a6be2622cfeb3627ba67",
+    "proof-guards.mjs": "ce683d8d09ea8d7ebc28b8bda4d20b83f97cb0fc2f6c0e848161940f3bb0f620",
+    "resource-cleanup.mjs": "196d223fb8c53d196e8550d9f8d518d44f0f650a91f301c81c4c4ecf8148d9eb",
+    "runtime-proof.mjs": "d42a5c5c74de4387a6bea936adee7746a7c1d15c78b8e66b10f0a005ff57bc0d",
+    "README.md": "bd34c1fe949f4ef3c634e35cc3e768160f1264481c8e12a1ee58af06fd1e1868"
+  },
+  "validation": [
+    { "command": "node rootwork/c1b-integrated-proof/prepare-runtime-payload.mjs (clean-build-verified paths)", "exitCode": 0, "result": "CLEAN_RUNTIME_PAYLOAD_PREPARED; 163 files; manifest a1a14660fc2af3db6605f0bb7c52003607e73915e8d4184f18bcfacbb90579d5" },
+    { "command": "node rootwork/c1b-integrated-proof/prepare-fixture.mjs (fixed commit dates)", "exitCode": 0, "result": "PREPARED_LOCAL_FIXTURE; 5 pinned commits; bundle c7733fd7d49035516e8d1ef0868c8412236f3f3fb2ba41237c77db7abe71ecb2" },
+    { "command": "node rootwork/c1b-integrated-proof/install-fixture.mjs (deterministic local fixture)", "exitCode": 0, "result": "FIXTURE_INSTALLED; 5 commits" },
+    { "command": "node --check for every rootwork/c1b-integrated-proof/*.mjs", "exitCode": 0, "result": "all helper scripts parsed" },
+    { "command": "node rootwork/c1b-integrated-proof/check-local-guards.mjs", "exitCode": 0, "result": "LOCAL_GUARDS_PASS: tamper, bounded timeout/cleanup, measured counter, absent certificate fail-closed, and guarded local CAS/requery checks" }
+  ],
+  "preservedAttempt": "The first payload-build attempt produced the same payload manifest but exited 1 because Git worktree cleanup hit a Windows long-path error. The builder was changed to pass core.longpaths=true to both worktree add and remove; the clean-build-verified retry exited 0 and removed its temporary worktree.",
+  "runtimeAcceptance": "NOT_RUN. No PostgreSQL, retained C3 database, runsc, host, provider, certificate lookup, or live Jev action was performed. Final review, controller-supplied exact C3 bindings, scheduled runtime execution, evidence review, cleanup, and postflight remain required.",
+  "oldHelperPreserved": "rootwork/c1b-runtime-proof was not edited."
+}

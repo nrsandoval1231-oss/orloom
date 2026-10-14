@@ -1,0 +1,34 @@
+{
+  "packet": "C4-DELIVERY-COMPOSITION-02",
+  "status": "SOURCE_COMPOSITION_READY_FOR_ROOT_REVIEW",
+  "branch": "feat/certified-delivery",
+  "headSha": "bdd8dcdfb445418f3bf5c7326874da1f2937f39c",
+  "incomingReviewedC4Source": "5c71c6bbbecae72d960c6371defb6ec7d2beb4b9",
+  "utcStart": "UNKNOWN",
+  "utcFinish": "2026-10-13T23:13:20Z",
+  "modelAndConfig": "UNKNOWN",
+  "fileSha256": {
+    "packages/governor/src/governor.ts": "ca27c3ab836e6bff37075484900b3faac78abad70e02f79e42e79ef41acb29ee",
+    "packages/integration/src/delivery.ts": "77977dd7446f0c31de7f1bc158671f646160e7d773b8bd95c5801680c9597d55",
+    "tests/delivery-effects.test.ts": "3badd75e5238c1d7745749d2dc5bbe2a4e8365d550e7d33a80e8cea90204f980",
+    "tests/delivery-c4-flow.test.ts": "d7c54312514dccec6e183e7921ed02d1ba80d0ed4e9e13db9532d95afcc18b3f",
+    ".agent/C4-DELIVERY-COMPOSITION-02.md": "615eebd793c40cdf13dd216eedd25bc26bb8c071e60d4cedc20a5c6ebd3c38cc"
+  },
+  "changes": [
+    "Resolved only the owned Governor merge conflict, preserving the delivery controller method and all C4 replay reconciliation/fencing methods.",
+    "Delivery now permits only unique exact integration and review markers bound to the validated durable intent and command; content-addressed artifact refs retain digest readback and unknown/mismatched/duplicate refs fail closed.",
+    "Added C4 metadata negative cases and an end-to-end source composition test using supported Governor/SQL/trusted coordinator/local Git paths before delivery effects."
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0, "result": "PASS" },
+    { "command": "npm run typecheck", "exitCode": 0, "result": "PASS" },
+    { "command": "node --test --test-concurrency=1 dist/tests/delivery-c4-flow.test.js dist/tests/delivery-effects.test.js dist/tests/delivery-boundary.test.js dist/tests/delivery-adapter.test.js dist/tests/delivery-http.test.js dist/tests/integration-replay-race.test.js", "exitCode": 0, "result": "PASS; 24 tests, 0 failures" },
+    { "command": "git diff --check", "exitCode": 0, "result": "PASS" },
+    { "command": "conflict-marker scan on owned source/test files", "exitCode": 0, "result": "PASS" }
+  ],
+  "notProven": [
+    "No complete repository suite or refreshed exact-candidate manifest was run; root owns these after serial integration.",
+    "The flow uses controlled verifier/artifact/GitHub adapters, PGlite and a real temporary bare Git repository; it is not real PostgreSQL multi-connection, actual trusted-runner execution, external GitHub/R2, startup activation, deployment, or operational delivery evidence.",
+    "The control-plane startup path still leaves delivery closed when controller authority is absent, as documented by the independent review."
+  ]
+}

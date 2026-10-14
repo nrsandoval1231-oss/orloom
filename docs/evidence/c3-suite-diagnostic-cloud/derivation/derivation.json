@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "candidate": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+  "startedUtc": "2026-10-13T10:35:50.660Z",
+  "finishedUtc": "2026-10-13T10:35:52.765Z",
+  "compilerCommand": [
+    "node",
+    "node_modules/typescript/bin/tsc",
+    "--outDir",
+    "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\diagnostic-runtime-derive-check"
+  ],
+  "files": [
+    {
+      "file": "dist/packages/judgment/src/canonical.js",
+      "sha256": "174d21a0ac3fa18800c1ddd8b53fcc065bd1b2262390263113ad2110980e650b"
+    },
+    {
+      "file": "dist/packages/verification/src/runsc-launcher.js",
+      "sha256": "4ebb244c40c083a7cad2fd755b018910abf0368895f49c1dff08d14a2facf729"
+    },
+    {
+      "file": "dist/packages/verification/src/artifact-store.js",
+      "sha256": "5000afa0ec6038be3a25f21fdc474854671ab6b818b112c65502bd9f923c772b"
+    },
+    {
+      "file": "dist/packages/contracts/src/verification.js",
+      "sha256": "6a119e9ce3adc9b8ed169ee23c0a322e6bbe727f4415961bedaf0a6878357b32"
+    },
+    {
+      "file": "dist/packages/verification/src/policy.js",
+      "sha256": "912eedcca32877a056e5c5ef0d337a2bf48d905913f2fb652f10e6c1ab7aadd4"
+    },
+    {
+      "file": "dist/packages/verification/src/runner.js",
+      "sha256": "cba7ab4dc7461d458873d05af8f0af027a1d910f7a636e07e642d05858cb355c"
+    },
+    {
+      "file": "dist/packages/verification/src/repository.js",
+      "sha256": "dc48d997c88efd1655144cb72dafe92504060007842bdb1ff071715f503b496d"
+    }
+  ],
+  "excludedWrapper": "package.json contains only type:module; not compiled code"
+}

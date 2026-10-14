@@ -1,0 +1,11 @@
+{
+  "scriptName": "setup-disposable-postgres.sh",
+  "args": [],
+  "scriptSha256": "dfd253ffe26ea27b14bb11d2d4924884c4e40df09973ec2c6d8196926fad0d46",
+  "start": "2026-10-13T13:01:18.196Z",
+  "finish": "2026-10-13T13:01:18.969Z",
+  "elapsedMs": 773,
+  "exit": 64,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-memory-executions\\2026-10-13T13-01-18-195Z-setup-disposable-postgres.sh"
+}

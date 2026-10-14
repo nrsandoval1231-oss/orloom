@@ -1,0 +1,36 @@
+{
+  "verdict": "PASS",
+  "scope": "independent exact-source review of diagnostic packet; host, image, runsc, and PostgreSQL proof excluded",
+  "candidate": {
+    "repository": "work/orloom-suite",
+    "branch": "feat/trusted-verification-suite",
+    "baseSha": "691d36d9a625ba17e6366d6ec7ca15130a5ecf18",
+    "priorFixSha": "93c3e4758846a64b688b7d48b091702e05dfc928",
+    "headSha": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+    "sourceManifest": ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "sourceManifestSha256": "581fe76db816406d2dda86d921128eb9bdbdc5785768d0a4eff4b14a91b4c674",
+    "manifestEntriesVerified": 117,
+    "manifestMismatches": 0,
+    "worktreeCleanAtReview": true
+  },
+  "deterministicEvidence": {
+    "controllerLog": "work/suite-controller-gates-2026-10-13T10-24-05-976Z.log",
+    "results": "typecheck, build, 73 tests with 0 failures or skips, foundation validation, four syntax checks, diff check exited 0",
+    "reviewerDiffCheck": "git diff --check 691d36d9a625ba17e6366d6ec7ca15130a5ecf18 HEAD exited 0",
+    "hostileFrameProbe": "Compiled parser accepted the valid start-frame prefix, discarded an end frame whose JSON outcome has null toString and valueOf, and returned exitCode:null, truncated:true, timedOut:true, empty stderr. No throw."
+  },
+  "priorFindingResolution": {
+    "file": "packages/verification/src/runsc-launcher.ts",
+    "line": 61,
+    "status": "resolved",
+    "evidence": "The end-frame outcome now requires typeof frame.outcome === string before finite-enum membership; no String coercion remains. tests/verification-runner.test.ts exercises hostile toString/valueOf in both parser and classifier."
+  },
+  "reviewedBoundaries": [
+    "Emitter emits only fixed stage/phase/elapsed/outcome schema and drops invalid or >60000 ms measurements; at most 16 frames and 4096 bytes are written.",
+    "Host parser retains only complete, bounded, ordered, schema-valid frames on ambiguous output and discards arbitrary text; malformed roots and hostile outcome objects do not throw.",
+    "Diagnostic frames are advisory: missing or partial final marker, launcher timeout/signal/truncation, and forged stage END cannot establish PASS or FAIL. Determinate classification still requires the exact final marker and clean launcher result.",
+    "Suite policy digest includes diagnostic protocol identity. Syntax policy meaning, 60-second budgets, 1 CPU/1 GiB and no-network caps, Governor deadline, certificate authority, and original UNKNOWN attempt are unchanged by the source diff.",
+    "Dockerfile includes the new fixed emitter file; controller-owned prior failure evidence and prior FIX record are retained separately."
+  ],
+  "remainingBoundary": "This is source acceptance only. A pinned image build and new runsc/PostgreSQL attempt have not been established by this review. The original attempt remains UNKNOWN with zero certificates; diagnostic frames cannot reclassify it."
+}

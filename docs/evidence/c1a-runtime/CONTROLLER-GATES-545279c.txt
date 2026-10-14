@@ -1,0 +1,94 @@
+Candidate 545279c7b53fef8453c8e50ae0bc7f0d790959af
+COMMAND npm ci
+
+added 99 packages, and audited 100 packages in 4s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+EXIT 0
+COMMAND npm run typecheck
+
+> orloom-foundation@0.1.0 typecheck
+> tsc --noEmit
+
+EXIT 0
+COMMAND npm test
+
+> orloom-foundation@0.1.0 test
+> npm run build && node --test dist/tests/*.test.js
+
+
+> orloom-foundation@0.1.0 build
+> tsc
+
+✔ canonical JSON makes key-order permutations hash-identical, including nested JSONB values (0.9566ms)
+✔ configuration validates roles and does not reveal configured values in errors (2.1054ms)
+✔ webhook signature is constant-time compared after strict digest length check (0.4127ms)
+✔ artifact adapter uses content SHA-256 addressing and copies bytes (0.1807ms)
+✔ R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary (5.1367ms)
+✔ GitHub App token request uses app client and explicit repository and permission scope (0.4641ms)
+✔ Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration (0.5862ms)
+✔ cloud mode fails closed without explicit database URL, host, token, and HTTPS origin (0.19ms)
+✔ PostgreSQL job store refuses readiness when the database is unreachable (33.7306ms)
+✔ HTTP control plane exposes status, authenticates job operations, and never executes jobs (45.0708ms)
+✔ unexpected provider/store errors return generic 500 without reflecting secrets (10.1958ms)
+✔ cloud sessions are opaque, secure, expiring, and writes require the configured origin and host (1127.9579ms)
+✔ Jev recovery adapter exposes only approved alternative IDs and binds the answer to the snapshot (19.3542ms)
+✔ blocked and unknown snapshots are terminal without consulting Jev (0.3928ms)
+✔ Jev client makes one bounded fixed-origin choice request and validates its result (20.3731ms)
+✔ missing key, disallowed or moving model, invalid bounds, and oversized input fail before fetch (0.5649ms)
+✔ unsafe SDK URL, non-POST, and over-limit request bodies never reach the injected transport (0.2291ms)
+▶ invalid provider outputs become sanitized UNKNOWN and are never retried
+  ✔ invalid response 1 (0.7184ms)
+  ✔ invalid response 2 (0.5755ms)
+  ✔ invalid response 3 (0.5562ms)
+  ✔ invalid response 4 (0.7597ms)
+  ✔ invalid response 5 (0.4378ms)
+✔ invalid provider outputs become sanitized UNKNOWN and are never retried (4.2037ms)
+▶ provider errors and oversized response bodies are redacted and make one attempt
+  ✔ provider error text is not exposed (0.6443ms)
+  ✔ response byte limit enforced while reading (0.4116ms)
+  ✔ timeout is sanitized and not retried (43.1919ms)
+  ✔ wall-clock deadline bounds a fetch that ignores abort (76.0504ms)
+  ✔ wall-clock deadline bounds a stalled response stream and does not await cancellation (62.3403ms)
+✔ provider errors and oversized response bodies are redacted and make one attempt (183.5756ms)
+✔ SQL job lifecycle fences stale completion and preserves UNKNOWN after interrupted execution (1308.4641ms)
+✔ migration constrains status and lease consistency (814.1226ms)
+✔ HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed (50.7096ms)
+✔ memory governor allows six disjoint same-owner slices and keeps verification/dependency gates closed (8.8542ms)
+✔ scope ancestors and globs serialize; expired UNKNOWN retains budget and quarantines slot and scope (0.4379ms)
+✔ dependency wait does not block overlapping parent and mixed-case repositories still serialize (0.3404ms)
+✔ memory recovery fences terminal judgments and excludes cross-target lesson pairs (2.9155ms)
+✔ memory two-phase judgment quarantines when mission reservation changes after snapshot (0.4918ms)
+✔ memory lesson candidates require two committed same-cohort episodes (2.1357ms)
+✔ lesson episode count deduplicates epochs but pairs evidence only within one epoch (0.102ms)
+✔ PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart (1382.8778ms)
+✔ PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity (882.6574ms)
+✔ mission migration allows explicit dependency wait and is idempotent (804.7482ms)
+✔ authenticated HTTP and PGlite retain executable recovery evidence and an unpromoted candidate (1629.6657ms)
+✔ episodes with different target checks cannot form one comparable lesson candidate (943.7602ms)
+✔ candidate extraction excludes UNKNOWN pass evidence in either episode order (1715.4807ms)
+✔ mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence (1843.1413ms)
+✔ an in-flight adapter result is fenced after lease expiry and the unresolved slice remains quarantined (838.1409ms)
+✔ an in-flight decision is quarantined if authoritative mission budget changes after snapshot (801.1852ms)
+✔ an impossible model continue on a failed check commits no decision and quarantines the slice (794.0552ms)
+✔ blocked and unknown progress cannot be continued by an injected judgment (808.0787ms)
+✔ Node env-file startup loads local token and starts the real control-plane entrypoint (560.1302ms)
+ℹ tests 51
+ℹ suites 0
+ℹ pass 51
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9717.955
+EXIT 0
+COMMAND npm run validate
+
+> orloom-foundation@0.1.0 validate
+> node scripts/validate.mjs
+
+Foundation structure validation passed.
+EXIT 0

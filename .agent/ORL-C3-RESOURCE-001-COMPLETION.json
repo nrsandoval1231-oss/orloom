@@ -1,0 +1,51 @@
+{
+  "packet": "ORL-C3-RESOURCE-001",
+  "status": "PASS_LOCAL_IMPLEMENTATION_PENDING_CONTROLLER_FREEZE_AND_REVIEW",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "candidateSha": "PENDING_CONTROLLER_FREEZE",
+  "files": [
+    "packages/verification/src/policy.ts",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "tests/verification-runner.test.ts",
+    "infra/verifier-isolation/README.md",
+    "docs/verification.md",
+    ".agent/ORL-C3-RESOURCE-001.md",
+    ".agent/ORL-C3-RESOURCE-001-COMPLETION.json"
+  ],
+  "suitePolicy": {
+    "version": "orloom.node-repo-suite.v4",
+    "manifestVersion": "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g",
+    "memoryBytes": 2147483648,
+    "memorySwapBytes": 2147483648,
+    "digest": "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8"
+  },
+  "syntaxPolicy": {
+    "memoryBytes": 268435456,
+    "memorySwapBytes": 268435456,
+    "digest": "e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe"
+  },
+  "previousSuiteDigest": "51403fa00e34ad51fba34ef8739b7ff09a34ef9a21946ddf40b2f217e9fcad8b",
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/verification-runner.test.js", "exitCode": 0, "tests": 14, "passed": 14, "failed": 0, "skipped": 0 },
+    { "command": "bash -n infra/verifier-isolation/launch-verifier.sh", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "utc": {
+    "startedAt": "UNKNOWN_NOT_CAPTURED",
+    "finishedAt": "2026-10-13T14:20:16Z",
+    "typecheckWallSeconds": 2.36,
+    "finalFocusedBuildAndTestWallSeconds": 5.33
+  },
+  "attemptHistory": [
+    "One intermediate static assertion failed because it expected a literal size=512m substring instead of the launcher's conditional echo 512m branch; assertion was corrected and the final focused run passed."
+  ],
+  "limitations": [
+    "The launcher inspects actual created HostConfig against the exact selected policy and refuses to start on mismatch. The 2 GiB value is a trial allocation and does not prove sufficient headroom or full-suite success.",
+    "Source manifest and candidate SHA are pending controller freeze; manifest must be regenerated from staged Git LF.",
+    "No runtime/host/provider/full-suite attempt or acceptance certification was performed by this builder. Capacity admission, exact helper review, mandatory repository gates, and any single conditional runtime attempt remain controller-owned."
+  ]
+}

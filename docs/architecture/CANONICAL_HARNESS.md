@@ -11,6 +11,8 @@ Orloom is a commercial cloud-native autonomous software engineering platform. St
 - Separate deterministic Governor from model judgment. Only Governor authorizes side effects, budgets, credentials, merge/push, run transitions and approvals. Never place control-plane credentials in build sandboxes.
 - Athena: mission orchestrator, dependency-aware critical-path scheduler and cross-slice coordinator.
 - Sol: lead architect, interface contracts, dependency graph and architectural replanning.
+- Jev: shared bounded adaptive decision engine, implemented once under `packages/judgment/` with the verified official TypeSafe SDK/runtime. It selects only among finite authorized alternatives using mission state, dependency/critical-path context, capacity, evidence, promoted lessons and approved budgets. Athena remains the scheduler; Jev is neither another builder nor an unrestricted orchestrator.
+- Every Jev recommendation must pass a fresh deterministic Governor check before execution. Jev cannot alter permissions, budgets, scopes, required verification, merges, lesson promotion or the owner objective, and cannot issue arbitrary commands. Record decision identity, policy version, evidence, authorized action and measured outcome. Noncritical decisions may use explicit deterministic fallback; uncertain effects or authorization/evidence failures fail closed.
 - Elastic pool of DeepSeek builders: configure six concurrent lanes initially, scale by independent work, quotas, throughput and budget. Every lane uses an isolated checkout/workspace and bounded permissions. Production model identifiers and API availability must be verified before activation.
 - Independent adversarial reviewer (Astra role, configurable provider) with separate context and verification evidence.
 - Stuck Resolver: repeated-error, near-identical patch, stagnation, blocked dependency and integration-conflict detection; diagnose, change strategy, replan or escalate under bounded policy.
@@ -18,6 +20,16 @@ Orloom is a commercial cloud-native autonomous software engineering platform. St
 - Orloom CI: affected checks during work; final independent clean-workspace build, tests, quality/security checks and evidence anchored to exact commit SHA. Any head change invalidates certification.
 - Living circular Loom: visualizes real mission, agent, dependency, drift, progress, verification and learning events; never invents completion or activity.
 - Preserve Intent → Plan → Implement → Verify → Learn → Update as the canonical engineering loop.
+
+## Revised integration boundary (2026-10-13)
+
+PR #2 is frozen at `8bbcfffbf631e5ad2972e34b41284198afc566e2`. Do not modify, merge, rebase, close, or continue that broker implementation. Develop independent components from main after PR #1's verified integration. Preserve the existing broker exactly; do not create a competing DeepSeek broker. Versioned progress and decision contracts may be added to the control plane independently, without claiming the frozen broker consumes them.
+
+Recovery follows Detect → Diagnose → Jev Strategy Selection → Governor Authorization → Execute → Evaluate, with materially different approved strategies, bounded attempts/budgets, durable outcomes and Sol escalation when needed. Interrupted effects retain UNKNOWN quarantine.
+
+Engineering episodes and lessons distinguish candidates from independently challenged, policy-promoted versions. Repeated comparable evidence, contextual relevance, attribution, metrics and withdrawal conditions govern promotion. Jev may select relevant promoted lessons; it cannot promote them. Subsequent comparable work must follow an observably changed authorized strategy, and contradictory evidence must be able to withdraw it. Fixture demonstrations do not prove live speed, quality or cost improvements.
+
+Execution order after PR #1: shared judgment gateway and Governor integration; active recovery; continuous learning; Athena scheduling improvements; independent Orloom CI; integration and evidence-backed PR delivery; actual-event Living Loom; cross-component cloud recovery. Product-generated PRs require owner authorization to merge. Source implementation, deterministic behavior, live provider execution, cloud deployment and independently certified outcomes are separate acceptance states.
 
 ## Engineering execution lifecycle
 1. Capture mission, repo, immutable base SHA, objective, acceptance criteria, constraints, budgets and owner approvals.
@@ -44,6 +56,7 @@ apps/api — control plane and event API
 packages/contracts — typed mission, slice, event and evidence contracts
 packages/governor — deterministic policy and authorization
 packages/orchestrator — Athena scheduler and Sol planning
+packages/judgment — shared typed Jev decision gateway
 packages/agents — provider adapters and DeepSeek worker pool
 packages/stuck-resolver — bounded diagnosis and recovery
 packages/learning — lesson lifecycle and comparable-outcome evaluation

@@ -1,0 +1,76 @@
+{
+  "packet": "ORL-C3-MEASURED-DEADLINE-001",
+  "status": "PASS_LOCAL_IMPLEMENTATION_PENDING_CONTROLLER_FREEZE_AND_REVIEW",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseSha": "41fd3a225e805e8fe8a965fef7bb476a5e103900",
+  "candidateSha": "PENDING_CONTROLLER_FREEZE",
+  "files": [
+    "packages/verification/src/policy.ts",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "infra/verifier-isolation/suite-diagnostics.js",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-runner.test.ts",
+    "docs/verification.md",
+    "infra/verifier-isolation/README.md",
+    ".agent/ORL-C3-MEASURED-DEADLINE-001.md",
+    ".agent/ORL-C3-MEASURED-DEADLINE-001-COMPLETION.json"
+  ],
+  "suitePolicy": {
+    "version": "orloom.node-repo-suite.v5",
+    "manifestVersion": "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s",
+    "timeoutsMs": {
+      "suiteExecution": 360000,
+      "dockerAttach": 390000,
+      "hostLauncher": 405000,
+      "attemptLifetime": 420000,
+      "unchangedUnknownSettlement": 120000,
+      "attemptPlusSettlement": 540000,
+      "requestMaximum": 600000
+    },
+    "diagnostics": {
+      "protocol": "orloom.suite-diagnostics.v4",
+      "maxElapsedMs": 360000,
+      "maxFrames": 64,
+      "maxBytes": 16384,
+      "maxTestOrdinal": 64,
+      "maxTestFileNameBytes": 128,
+      "authority": "advisory-only"
+    },
+    "resources": {
+      "memoryBytes": 2147483648,
+      "pids": 128,
+      "cpus": 1,
+      "network": "none",
+      "readOnlyRoot": true,
+      "workTmpfsBytes": 536870912,
+      "tempTmpfsBytes": 16777216
+    },
+    "digest": "5b57ce4b9ee14cf42300ee0773d73125a2aaa0519e70c0b5a4cb956f90f304ed"
+  },
+  "syntaxPolicy": {
+    "timeoutMs": 60000,
+    "digest": "e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe"
+  },
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/verification-runner.test.js", "exitCode": 0, "tests": 14, "passed": 14, "failed": 0, "skipped": 0 },
+    { "command": "node --check infra/verifier-isolation/run-repo-suite.js", "exitCode": 0 },
+    { "command": "node --check infra/verifier-isolation/suite-diagnostics.js", "exitCode": 0 },
+    { "command": "bash -n infra/verifier-isolation/launch-verifier.sh", "exitCode": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "utc": {
+    "startedAt": "UNKNOWN_NOT_CAPTURED",
+    "finishedAt": "2026-10-13T14:46:05Z",
+    "finalFocusedValidationWallSeconds": 7.90
+  },
+  "limitations": [
+    "The 2 GiB attempt deadline change is a finite trial allocation, not evidence that later tests complete or that 2 GiB is sufficient.",
+    "The prior actual full-suite attempt remains UNKNOWN with zero certificates; no cloud, host, provider, or full-suite validation was performed in this packet.",
+    "Controller-owned future runtime helpers need matching >=420-second sample bounds and the 360-second controlled hang expectation before any fresh conditional proof.",
+    "Candidate SHA and source manifest remain pending controller freeze; no source-completion claim is made."
+  ]
+}

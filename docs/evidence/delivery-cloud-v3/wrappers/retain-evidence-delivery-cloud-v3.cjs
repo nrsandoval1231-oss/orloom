@@ -1,0 +1,22 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const cp = require('node:child_process');
+const { root, sha, fail, readHelperManifest, candidateDir } = require('./common-delivery-cloud-v3.cjs');
+
+const [expectedSha, label] = process.argv.slice(2);
+const { bound } = readHelperManifest(expectedSha);
+if (!/^[a-z0-9-]+$/.test(label || '')) fail('Evidence label is required');
+const executionDir = path.join(candidateDir(bound), 'executions');
+fs.mkdirSync(executionDir, { recursive: true, mode: 0o700 });
+const output = path.join(executionDir, `${label}.tar.gz`);
+const allowlist = ['evidence', 'artifacts', 'fixtures/fixtures.json', 'resources.tsv', 'capacity-evidence.json', 'capacity-observation.json', 'verifier-image.id', 'image-binding.json', 'stage-bindings-v3.json', 'runtime-started.json', 'staging/identity.txt'];
+const quoted = allowlist.map(name => `'${name}'`).join(' ');
+const command = `set -euo pipefail; root=/var/lib/orloom/c3-delivery-v3-20261013; [[ -d "$root" && ! -L "$root" ]]; cd "$root"; files=(); for f in ${quoted}; do [[ ! -L "$f" ]] || exit 65; [[ ! -e "$f" ]] || files+=("$f"); done; (( \${#files[@]} > 0 )) || exit 66; tar -czf - -- "\${files[@]}"`;
+const fd = fs.openSync(output, 'wx'), startedUtc = new Date().toISOString();
+const result = cp.spawnSync('ssh', ['-n', '-o', 'BatchMode=yes', 'codex-dark-peak-5042', command], { stdio: ['ignore', fd, 'pipe'], windowsHide: true });
+fs.closeSync(fd);
+const bytes = fs.readFileSync(output);
+const record = { candidateSha: bound.candidateSha, helperManifestSha256: expectedSha, file: path.basename(output), bytes: bytes.length, sha256: sha(bytes), command, startedUtc, finishedUtc: new Date().toISOString(), exit: result.status, stderr: result.stderr?.toString('utf8') };
+fs.writeFileSync(`${output}.json`, `${JSON.stringify(record, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+process.stdout.write(`${JSON.stringify(record)}\n`);
+if (result.status !== 0) process.exitCode = 1;

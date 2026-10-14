@@ -1,0 +1,51 @@
+{
+  "reviewType": "bounded pre-execution safety and correctness review",
+  "verdict": "PASS",
+  "scope": "top-level work/c3-suite-proof/*.sh and *.mjs only; no host action or runtime acceptance",
+  "candidate": "06a74acfb456b5835cb19dcf71c73fa11f278d0f",
+  "sourceManifestSha256": "15a0d1330ed53cad8d0560568f25bf4569f93b1e530d1b8b709e154a979ce8a2",
+  "helperManifest": "work/c3-suite-proof/helper-manifest.json",
+  "helperManifestSha256": "9e44993b1a307950359710eaa3762af58c835d5406f3be8bc1f13983e97c3eeb",
+  "hashCheck": {
+    "helperEntries": 11,
+    "mismatches": 0,
+    "bundleSha256": "3e283adc0ca2448ffa4d4e33c448cd5813bfacd62d6466aecbbeb8d22879989e",
+    "runtimeFilesManifestSha256": "9e855602ce8db0db7778fdb65918cf248f757268feb6c7f59b5c4090bcd1efdc",
+    "shellScriptsLfOnly": true
+  },
+  "findings": [],
+  "resolvedDuringReview": [
+    "The stage helper populated dist and node_modules while the earlier proof runner required them absent. The frozen proof runner now requires the staged paths, compares the file inventory, and rehashes copied files before execution.",
+    "The earlier proof runner compared manifest paths in hash order with filesystem paths in path order. The frozen helper sorts both path lists before comparison."
+  ],
+  "reviewEvidence": [
+    "setup-disposable-postgres.sh:7-19 checks root-owned proof scope, exact protected container identity, cached image ID, current free memory/disk, and absence of colliding named resources before mutation.",
+    "setup-disposable-postgres.sh:20-55 creates only packet-labeled disposable network, two volumes, seed container, and PostgreSQL container; it publishes no host port or bind mount, stores the DSN in a mode-0400 file, and does not print the credential.",
+    "stage-runtime.sh:11-43 binds the transferred bundle, payload, 116-file source manifest, clean candidate branch, and ignored runtime tree to the accepted source; its fresh object store and checkout stay inside the proof root.",
+    "stage-runtime.sh:44-51 copies the pinned Node binary from an exact labeled created container, verifies its SHA-256, and does not start that container. Cleanup removes only its inspected exact ID.",
+    "prepare-runtime-files.mjs and prepare-transfer.mjs require a clean exact checkout and produce a candidate-bound runtime payload and full-history bundle without changing source refs.",
+    "prepare-fixtures.mjs:21-60 writes one-file negative fixture commits only to a new disposable object store, each parented to the accepted candidate.",
+    "build-suite-image.sh:10-30 checks clean candidate/ref/manifest and cached base ID, refuses tag overwrite, and builds from the exact source root. Its only package fetch occurs in the reviewed Dockerfile install with lifecycle scripts disabled.",
+    "run-proof.sh:9-58 verifies root-only DSN, pinned Node, payload hash, source identity, image label, healthy packet database, and empty verifier slot before calling the real runtime driver.",
+    "runtime-proof.mjs:62-204 calls the real PostgreSQL stores, coordinator and configured trusted runner; it retains attempt/artifact/certificate evidence, tests PASS/FAIL/UNKNOWN, stale-ref hiding, reconnect persistence, and waits for host flock release after the actual timeout before a later check.",
+    "cleanup-disposable-postgres.sh:10-41 validates all recorded live Docker identities, labels, image and isolation properties before removing only those exact disposable IDs and the DSN. Source, fixture objects, image and evidence remain retained."
+  ],
+  "allowedHostEffects": [
+    "Create /var/lib/orloom/c3-suite-proof-20261013 and its root-owned incoming, staging, source, fixtures, artifacts and evidence files.",
+    "Create one packet-labeled internal Docker network, data and secret volumes, one never-started Node-copy container, a short seed container, and one disposable PostgreSQL container without host ports or bind mounts.",
+    "Build one locally tagged verifier image from the accepted source and pinned cached base; fetch only package-lock-bound dependencies during that image build.",
+    "Create exact runsc verifier containers through the existing trusted launcher and use the existing /var/lib/orloom/verifier slot record for recovery.",
+    "Mutate only the disposable proof PostgreSQL database and fixture repository refs; remove only recorded disposable Docker resources and the root-only DSN during cleanup."
+  ],
+  "protectedBoundaries": [
+    "The pre-existing codex-universal container ID 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67 is inspected for identity and state only.",
+    "No script targets another host, modifies the accepted source checkout, publishes a Docker port, bind mounts host source into the verifier, prints keys, invokes providers, or authorizes paid resources beyond the reviewed image package fetch."
+  ],
+  "remainingUnknowns": [
+    "No helper has run on the target host. Cached image behavior, PostgreSQL startup, network reachability, full suite completion within 60 seconds, runsc resource profile, cleanup, and persisted certificates require observed receipts.",
+    "The root-owned current capacity preflight and exact live protected-container state must be rechecked immediately before execution.",
+    "Peak verifier memory and CPU are not measured by these helpers; capacity is not proven by this review.",
+    "The host awk implementation and other utilities are not executed in this review; the path comparison fails closed if a utility does not support its syntax."
+  ],
+  "nextDirection": "Proceed only with the frozen helper hashes and staged host preflight; retain any failed or interrupted effect as UNKNOWN for exact reconciliation"
+}

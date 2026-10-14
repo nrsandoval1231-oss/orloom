@@ -1,0 +1,18 @@
+{
+  "verdict": "PASS",
+  "scope": "Pre-execution review of one additive bounded continuation after the first stage stopped before fixture creation; no earlier helper or product review is extended",
+  "candidateSha": "9ebc9d91c880be907adb4b38c3e912300bf14816",
+  "continuationFile": "work/c3-suite-acceptance/finish-stage-acceptance.sh",
+  "continuationSha256": "b72f08bdc17ef37e70845456b6422873f75493441b589ba59e9bd29273fde529",
+  "priorHelperManifestSha256": "256342ec04988e44b95349d2e9d47d1c77ec324dd36f308c3799340b5128c538",
+  "evidence": [
+    "The script requires the exact partial staging tree and refuses existing fixtures, stage identity, or runtime start marker before mutation.",
+    "It rechecks the reviewed candidate/base/source manifest, staged helper and payload hashes, complete runtime inventory, clean detached source HEAD, exact bare and origin refs, and self-contained Git object store.",
+    "It refuses an existing local approved branch and creates only that missing ref with git update-ref using an all-zero expected old object, then verifies the resulting ref equals the reviewed candidate.",
+    "It invokes the hash-bound fixture helper once with sanitized environment, refuses blind rerun after partial fixture creation, verifies fixture metadata and commit ancestry, then writes the previously absent stage identity.",
+    "The completion line accurately distinguishes no source worktree writes from local source ref creation. Bash syntax and isolated readonly declaration smoke both pass; no host or Docker operations were executed in this review."
+  ],
+  "allowedEffects": "Create one local approved source ref in the isolated staged checkout, three controlled fixture commits in its disposable object store, and the stage identity file. No product/image/attempt change or new provider resource is authorized by this review.",
+  "boundary": "Actual continuation execution and postflight identity remain to be observed. Prior full-suite attempt and diagnostic UNKNOWN outcomes are unchanged; this is not product acceptance.",
+  "findings": []
+}

@@ -1,0 +1,5 @@
+{
+  "status": 0,
+  "stdout": "pg_setup=READY id=1632f60f790e6733c3f16b5bc767c34ac91d3b187d478146ec7cb00ce6f01aa0 network=a3ee7b9c0da13618abee3f79f1feb44faa83799366b32b8afb9c13a2b8afe70f data_volume=orloom-c3-proof-20261013-data secret_volume=orloom-c3-proof-20261013-secrets image=sha256:b0f956... ports=none binds=none\n",
+  "stderr": ""
+}

@@ -1,0 +1,31 @@
+{
+  "review": "ORL-C2-001 independent repair source review",
+  "verdict": "PASS",
+  "candidateSha": "157fea325ad01cd73f541d5e2a696e3c5724aff8",
+  "repairBaseSha": "8f2d27ef3d12b9c0318faf1314493c3b2f03697b",
+  "reviewedAtUtc": "2026-10-13T14:31:00Z",
+  "scope": "Exact clean source candidate, C2 packet/completion, repair diff, prior FIX findings, and completed controller local gates. No host, provider, deployment, merge, or PR #2 action.",
+  "priorFindingsDisposition": [
+    {
+      "id": "C2-F1",
+      "result": "resolved",
+      "evidence": "Governor records dispatch_possible before calling the adapter and always marks a consulted decision dispatchMayHaveOccurred true. Memory and SQL slice.claimed events now retain the decision ID and conservative dispatch state; selected, invalid, unknown, and stale fallback paths use that state."
+    },
+    {
+      "id": "C2-F2",
+      "result": "resolved for source scope",
+      "evidence": "The bounded scheduling.decision event retains UUID decision identity, snapshot and two policy digests, resolution phase, validated candidate, sanitized model ID and measured token counts when present, otherwise explicit unknown usage. SqlMissionStore and MemoryMissionStore record it; Governor records no_lease after a null fresh claim. Failed pre-dispatch persistence prevents adapter dispatch. No cost, raw response, secret, or fabricated usage is stored."
+    },
+    {
+      "id": "C2-F3",
+      "result": "resolved for source scope",
+      "evidence": "Focused tests cover successful advice, invalid choice, never-settling transport timeout, pre-dispatch write failure, no-grant capacity expiry, budget reduction, UNKNOWN scope overlap, plan change, dependency regression, lesson withdrawal, and two concurrent Governor/PGlite claims with distinct slices and slots and exact reservation/event counts. Existing JevClient tests cover transport failure and one-attempt behavior."
+    }
+  ],
+  "otherEvidence": [
+    "Git HEAD equals candidateSha and the worktree is clean. Repair diff is confined to the C2 completion, mission/scheduling contracts, SQL and memory stores, Governor, Jev scheduling adapter, and scheduling tests; no migration, worker protocol, package dependency, production provider injection, or PR #2 file changed.",
+    "SQL fresh claim remains inside the existing governor lock and rechecks current ready/dependency, UNKNOWN and blocked scope conflicts, budget, plan and promoted lesson digest, and attested slot. Jev is awaited outside that transaction and may only supply an advisory finite identity; fallback selects from newly eligible choices.",
+    "The controller gate log work/scheduling-controller-gates-2026-10-13T14-28-58-445Z.log completed at 2026-10-13T14:29:23.990Z. Typecheck, clean build, full Node test run (90 tests, 90 pass, zero failures/skips), structure validation, relevant JS and shell syntax checks, and git diff --check exited 0."
+  ],
+  "limits": "PASS certifies this exact source and local deterministic gates only. Real PostgreSQL multi-connection behavior, actual Jev/provider use and billed usage, runtime/host integration, measured scheduling benefit, activation, and parent Finish Contract remain OPEN. Production defaults to deterministic scheduling; worker lease envelope and frozen PR #2 remain unchanged."
+}

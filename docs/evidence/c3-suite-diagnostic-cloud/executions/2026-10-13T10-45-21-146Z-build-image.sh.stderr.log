@@ -1,0 +1,63 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.22kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 230B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [source 1/1] FROM ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#5 resolve ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304 0.0s done
+#5 DONE 0.1s
+
+#6 [stage-1 3/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/bin/node /usr/local/bin/node
+#6 CACHED
+
+#7 [stage-1 2/7] WORKDIR /opt/orloom-verifier
+#7 CACHED
+
+#8 [stage-1 4/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/lib/node_modules/npm /opt/orloom-verifier/npm
+#8 CACHED
+
+#4 [internal] load build context
+#4 transferring context: 67.43kB 0.0s done
+#4 DONE 0.1s
+
+#9 [stage-1 5/7] COPY infra/verifier-isolation/run-check.js infra/verifier-isolation/run-repo-suite.js infra/verifier-isolation/suite-policy.js infra/verifier-isolation/stage-runner.js infra/verifier-isolation/suite-diagnostics.js /opt/orloom-verifier/
+#9 DONE 0.4s
+
+#10 [stage-1 6/7] COPY package.json package-lock.json /opt/orloom-verifier/admission/
+#10 DONE 0.1s
+
+#11 [stage-1 7/7] RUN echo 'd1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c  /usr/local/bin/node' | sha256sum -c -  && echo 'ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df  /opt/orloom-verifier/admission/package.json' | sha256sum -c -  && echo '1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4  /opt/orloom-verifier/admission/package-lock.json' | sha256sum -c -  && mkdir -p /opt/orloom-verifier/npm-config  && : > /opt/orloom-verifier/npm-config/user.npmrc  && : > /opt/orloom-verifier/npm-config/global.npmrc  && cd /opt/orloom-verifier/admission && env -i HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin /usr/local/bin/node /opt/orloom-verifier/npm/bin/npm-cli.js ci --include=dev --ignore-scripts --no-audit --no-fund --userconfig=/opt/orloom-verifier/npm-config/user.npmrc --globalconfig=/opt/orloom-verifier/npm-config/global.npmrc  && mv node_modules /opt/orloom-verifier/node_modules && chmod -R a-w /opt/orloom-verifier/node_modules  && rm -rf /opt/orloom-verifier/admission /opt/orloom-verifier/npm-config  && chmod 0555 /usr/local/bin/node /opt/orloom-verifier/run-check.js /opt/orloom-verifier/run-repo-suite.js /opt/orloom-verifier/npm/bin/npm-cli.js /opt/orloom-verifier/stage-runner.js /opt/orloom-verifier/suite-policy.js /opt/orloom-verifier/suite-diagnostics.js
+#11 1.353 /usr/local/bin/node: OK
+#11 1.357 /opt/orloom-verifier/admission/package.json: OK
+#11 1.362 /opt/orloom-verifier/admission/package-lock.json: OK
+#11 19.50 
+#11 19.50 added 104 packages in 18s
+#11 19.51 npm notice
+#11 19.51 npm notice New major version of npm available! 11.4.2 -> 12.2.0
+#11 19.51 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+#11 19.51 npm notice To update run: npm install -g npm@12.2.0
+#11 19.51 npm notice
+#11 DONE 20.5s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 71.3s done
+#12 exporting manifest sha256:fc60950ee8f53b9365bb1da79b6c3ab64c61c4425b92808d1bf214eca4cb955c 0.1s done
+#12 exporting config sha256:d72c92221b2df2d4649b2d3af9cc5825306c5e6c32ec78248747baffa5b63de0 0.0s done
+#12 exporting attestation manifest sha256:34b6f49b2222a11b1d1bf459a562acf576b5ddc2ea25c772a6397a3848709827 0.0s done
+#12 exporting manifest list sha256:3845c569b8d60ed81fdd676eea1066d3b7895d31388a6528214239b184dbc357 0.0s done
+#12 naming to docker.io/library/orloom-c3-suite-diagnostic:a7c25a6ed4de done
+#12 unpacking to docker.io/library/orloom-c3-suite-diagnostic:a7c25a6ed4de
+#12 unpacking to docker.io/library/orloom-c3-suite-diagnostic:a7c25a6ed4de 12.8s done
+#12 DONE 84.5s

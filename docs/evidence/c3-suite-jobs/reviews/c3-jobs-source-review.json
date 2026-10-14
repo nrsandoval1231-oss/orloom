@@ -1,0 +1,25 @@
+{
+  "review": "ORL-C3-JOBS-001 independent source review",
+  "verdict": "PASS",
+  "candidateSha": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "baseSha": "7fb97aac17dd440ec6f64f3d38fe43e527b9ce79",
+  "branch": "feat/trusted-verification-suite",
+  "manifestSha256": "cd6a3329d33c154619a194982bb5a312115e43020dc6e65964bf177336cac86b",
+  "reviewedAtUtc": "2026-10-13T13:43:00Z",
+  "scope": "Independent review of the frozen jobs test change, packet, completion record, and refreshed source manifest; no source edits or host actions.",
+  "findings": [],
+  "evidence": [
+    "HEAD is the stated candidate, branch is feat/trusted-verification-suite, and git status is clean.",
+    "The diff from base changes only tests/jobs.test.ts, the bounded packet and completion record, and the source manifest; no production policy, migration, resource profile, runner, or dependency file changed.",
+    "The test uses one PGlite instance and one migration in a parent test, awaits the lifecycle subtest then the invalid-status subtest, and closes the database in finally around setup and both subtests.",
+    "Every prior lifecycle, stale-completion, UNKNOWN, one-shot-completion, and invalid-status rejection assertion remains; there are no skips or reduced checks.",
+    "All 117 manifest paths are unique, sorted, and SHA-256 matched their exact HEAD Git blobs. The manifest file digest matches the stated cd6a3329 digest.",
+    "Controller final gates log work/suite-controller-gates-2026-10-13T13-39-42-238Z.log completed: typecheck, clean build, 76 tests passed with 0 failed and 0 skipped, structure validation, syntax checks, shell syntax check, and git diff --check all exited 0. Both named jobs subtests passed."
+  ],
+  "limits": [
+    "PASS is for the exact local source candidate and its completed deterministic gates only.",
+    "The focused unchanged-profile runsc diagnostic is still required before any new full-suite attempt. No trusted full-suite receipt, certificate, cloud repair, deployment, or parent Finish Contract acceptance is claimed.",
+    "The prior 4d1dd56 actual run remains UNKNOWN with zero certificates; the source change is an evidence-led memory hypothesis, not proof that the OOM is fixed."
+  ],
+  "nextDirection": "VALIDATE focused exact-candidate diagnostic under the unchanged runsc resource profile, then apply the controller's gate to a new full-suite attempt only if that diagnostic passes."
+}

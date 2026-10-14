@@ -1,0 +1,37 @@
+{
+  "reviewType": "independent_exact_candidate_source_review",
+  "candidateSha": "56eb790856b64a3fadf053a959049588d0ea6a26",
+  "baseSha": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+  "sourceRef": "refs/heads/feat/remote-delivery-upload",
+  "sourceManifestSha256": "db55fa853196c50617c13632df850e6ecbc6f6b3ff20bbe190f8902dc271bcf0",
+  "sourceManifestEntries": 149,
+  "verdict": "FIX",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "A concurrent ref creation can be moved by the first upload",
+      "locations": ["packages/integration/src/delivery.ts", "packages/integration/src/local.ts"],
+      "evidence": "Delivery reads the reserved branch as absent before claiming the upload effect. After claim, token mint and another pinned-base read, uploadRef issues an ordinary non-forced `<candidate SHA>:refs/heads/<branch>` push. Git permits that push to fast-forward a ref created by another actor at an ancestor during the gap. The existing ref can therefore move even though this delivery never observed it absent at the write boundary. The durable SQL claim only serializes cooperating controller calls; it does not protect the remote ref against an independent actor.",
+      "impact": "Violates the packet's create-only reserved-branch authority and can advance a pre-existing remote ref. Later SHA/tree readback cannot undo that write.",
+      "boundedRepair": "Make the Git push conditional on the reserved ref being absent at the remote write itself, using an expected-empty lease for that exact destination while retaining the explicit SHA-to-ref refspec and no blind force. Keep the durable pre-write claim and separate SHA/tree/base readback. Add a controlled local-bare-remote interleaving that creates the ref at an ancestor after the initial absence read and before push; assert that the ref is untouched, the outcome remains UNKNOWN, and no Check or PR effect is claimed."
+    }
+  ],
+  "reviewedBoundaries": [
+    "The controller policy supplies one repository, installation, pinned base, protected refs, fixed branch derivation, retained final certificates, and independent review before upload.",
+    "A new SQL upload effect is claimed before the first Git write; claimed-but-unobserved replay does not blindly push again. Check and PR claims require an observed upload SHA.",
+    "The App upload credential is minted for one repository with contents:write and passed to a fixed askpass child environment; Git command arguments and user-visible transport errors omit the token.",
+    "The transport rejects unsupported bare-repository local config, inherited Git settings are allowlisted, and the refspec has no leading plus or unconditional force.",
+    "The trusted suite policy digest advances to v6 with static askpass copy and unchanged resource/time caps. The frozen PR #2 boundary is unchanged."
+  ],
+  "deterministicEvidence": {
+    "controllerGateLog": "work/remote-upload-controller-gates-2026-10-14T01-53-39-055Z.log",
+    "gateCommands": 14,
+    "gateExits": "all 0",
+    "tests": 150,
+    "passed": 150,
+    "failed": 0,
+    "worktree": "clean",
+    "diffCheck": "PASS"
+  },
+  "limits": "This is a source FIX despite green deterministic gates. The initial 149/150 failure and repair remain historical evidence. No actual PostgreSQL, cloud, or credentialed GitHub proof is claimed; no external provider or host action was performed."
+}

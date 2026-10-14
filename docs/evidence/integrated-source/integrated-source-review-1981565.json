@@ -1,0 +1,24 @@
+{
+  "review": "Independent exact combined C1b/PR7/C2/C3 source review",
+  "verdict": "FIX",
+  "candidateSha": "198156548804673a8ade8a8878c1368c9d3cd357",
+  "reviewedAtUtc": "2026-10-13T18:24:22Z",
+  "scope": "Historical exact 1981565 candidate as inspected before a successor commit; source, durable state, manifest and completed local gates only. No host/provider/runtime/PR action or source edits.",
+  "positiveEvidence": [
+    "At inspection, 1981565 was a clean merge of stage-one c5d3937 and reviewed C3 deadline head 6716d252. Stage-two production diff was confined to C3 verifier files; no worker protocol, SQL migration or new activation wiring was introduced by stage two.",
+    "MissionGovernor retains optional scheduling adapter in argument four and learning activation in argument five. createControlPlane passes those in arguments six and seven. Production main passes neither; promotion rejects before lesson lookup without a controller-owned activation, and CertifiedLearningActivation rechecks an exact full-suite certificate on each call. A combined regression exercises scheduling advice and the distinct activation slot.",
+    "The existing transactional SQL claim still fences scope/UNKNOWN, dependency, budget, plan, promoted lessons and capacity after advisory scheduling. Durable scheduling.decision records preserve pre-dispatch, resolved and no-lease provenance. C1b challenge re-reads actual persisted repository and cohort observations, and impact inspection retains authorized later outcomes without claiming causal improvement.",
+    "The integrated C3 policy retains 2 GiB, one CPU, 128 PIDs, no network and serial every-file tests with finite 360/390/405/420-second suite/attach/host/attempt limits. Diagnostics use advisory-only v4 and reject old v3; syntax policy remains separate and unchanged.",
+    "All 123 manifest rows independently matched 1981565 Git blob bytes; manifest SHA-256 was 1c98d189540b78b5b3acebef86f34fd5cf6669dba3493d84f10a0db16d0b1c12. The controller log work/integrated-controller-gates-2026-10-13T15-02-11-642Z.log completed at 15:02:40.947Z: typecheck, clean build, 97/97 tests with zero failures/skips, validation, JS/shell syntax and diff checks all exited 0."
+  ],
+  "findings": [
+    {
+      "id": "INT-STATE-1",
+      "severity": "blocking_durable_state",
+      "locations": [".agent/CURRENT_STATE.md", ".agent/WORK_GRAPH.md"],
+      "evidence": "The frozen 1981565 documents still say the C3 stage is an uncommitted merge, manifest refresh/freeze/final gates and exact integrated review are pending, and no combined candidate exists. In fact 1981565 is a committed clean combined candidate with a matching 123-file manifest and completed 97-test gates. These two files are the repository's current-state and work-graph source of truth, so the false state cannot be accepted as the final integrated source record.",
+      "requiredFix": "Update only CURRENT_STATE.md and WORK_GRAPH.md to report the merged code, exact 1981565 local gates and pending successor independent review without claiming runtime or parent completion. Freeze a new clean successor SHA, run required exact-candidate checks and obtain an independent review bound to that successor. Keep historical packet/completion handoffs as historical evidence; do not rewrite them or change production source solely for bookkeeping."
+    }
+  ],
+  "limits": "FIX does not negate the 97 green local tests or prior bounded source reviews, but they do not authorize accepting 1981565. The C1b runtime helper review covers old 7a source only; combined real PostgreSQL/runsc learning, exact integrated C3 full-suite certificate, activation eligibility, live Jev, measured benefit, deployment and parent Finish Contract remain OPEN. Any later successor commit needs its own identity/gates/review and cannot inherit this verdict."
+}

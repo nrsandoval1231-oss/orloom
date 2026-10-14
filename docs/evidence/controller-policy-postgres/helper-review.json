@@ -1,0 +1,21 @@
+{
+  "format": "orloom-independent-controller-policy-postgres-helper-review-v1",
+  "verdict": "PASS_PREEXECUTION",
+  "candidateSha": "0725fa20698aa30b796ba096f663037116f49767",
+  "scenario": "work/cpg-proof/scenario.mjs",
+  "scenarioSha256": "2b5462372a2ccdbbdcb23f1ea58a0b702f509eb9dd361b470d8479efacb4d361",
+  "runner": "work/cpg-proof/run.mjs",
+  "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+  "scope": "Read-only pre-execution helper review; no PostgreSQL cluster, host, provider, browser, or external operation was started.",
+  "evidence": [
+    "Both scripts pass node --check. The runner is byte-identical to the previously reviewed owned PostgreSQL 18.6 loopback helper; it requires clean exact HEAD and a complete compiled-JavaScript hash manifest before creating its private runtime directory.",
+    "The scenario imports the compiled candidate SqlMissionStore, MissionGovernor, TrustedCheckCoordinator, loadConfig and getCheckPolicy, applies canonical source migrations, and uses two independent pg pools against the runner-owned database.",
+    "It derives separate operator lease and full-suite verifier digests, asserts their persisted request/receipt/certificate/slice/intent domains through a controlled final PASS receipt, one bare-Git CAS integration, child release and exact replay; changed current suite/image/version/lease and retained attempt lease reject without another CAS/event.",
+    "The Git repository, verifier receipt/artifacts and independent-review bytes are expressly controlled fixtures. Evidence records policy digests and outcome, not the runner's generated database password. The runner bounds the scenario to 240 seconds and checks marker, PID, data path, port and loopback before stopping its owned cluster."
+  ],
+  "executionConditions": [
+    "Root must create and independently verify the compiled manifest for clean 0725fa2, then run this exact scenario and runner hash only through the owned disposable 127.0.0.1:15437 cluster after port-free preflight.",
+    "Retain preflight, scenario result/failure, runner log, manifest and PostgreSQL shutdown evidence; classify interrupted or failed cleanup as UNKNOWN, not PASS."
+  ],
+  "limits": "This pre-execution verdict is not PostgreSQL runtime proof, an authentic full-suite verifier or independent human review, cloud acceptance, delivery, external publication, or parent completion."
+}

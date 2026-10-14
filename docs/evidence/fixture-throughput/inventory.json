@@ -1,0 +1,20 @@
+{
+  "candidate": "e078a51b340de4f6cf65efbfe1d8281df82157c4",
+  "files": [
+    {
+      "file": "source-review.json",
+      "sha256": "5b7d4965b7eadec92ea05ccd56b8a61a91455630d61920a88fbe11285c29654a",
+      "bytes": 2611
+    },
+    {
+      "file": "controller-gates.log",
+      "sha256": "5dc778cc873220ca546743c883efa6c8d73efb45e9310d0f5ce7c153e3b823d5",
+      "bytes": 17962
+    },
+    {
+      "file": "prior-unaccepted-gates.log",
+      "sha256": "0b9777088c27f370daab414cd9f449ddb3b5718dc84317309ee5805784384f84",
+      "bytes": 17979
+    }
+  ]
+}

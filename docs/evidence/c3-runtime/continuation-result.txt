@@ -1,0 +1,5 @@
+{
+  "status": 0,
+  "stdout": "continuation=PASS candidate=765943eae18c09aa882e52c7f5255dd776c5fd43 evidence=/var/lib/orloom/c3-proof-20261013/evidence/continuation-aee4be859466473d960ac02b30931f38 original_attempt=UNKNOWN\n",
+  "stderr": ""
+}

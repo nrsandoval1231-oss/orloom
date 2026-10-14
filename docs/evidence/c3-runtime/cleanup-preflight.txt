@@ -1,0 +1,5 @@
+{
+  "status": 0,
+  "stdout": "cleanup_preflight=PASS exact labeled resources; evidence and artifacts retained; protected container unchanged\n",
+  "stderr": ""
+}

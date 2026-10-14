@@ -1,0 +1,25 @@
+{
+  "record": "C4-REMOTE-UPLOAD-TRANSPORT-repair",
+  "recordedAtUtc": "2026-10-14T01:45:39.5832138Z",
+  "repository": "work/orloom-remote-upload",
+  "baseHead": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+  "scope": "trusted clean-build static askpass copy and offline native Git credential prompts",
+  "commands": [
+    "npm run build",
+    "node --test dist/tests/verification-runner.test.js dist/tests/delivery-upload-transport.test.js",
+    "node infra/verifier-isolation/copy-git-askpass.js <absolute-source-root>"
+  ],
+  "observed": {
+    "build": "PASS",
+    "focusedTests": "PASS: 18 tests",
+    "nativeCredentialFill": "PASS for GitHub username then token prompts; PASS reject for non-GitHub host",
+    "trustedStaticCopy": "PASS for exact helper bytes and LF Unix helper content",
+    "packageJsonSha256": "c7fdcfa70e2be9c2fa77f7c7812dff23729469797b5dfc8114b9d61ff20957df",
+    "diffCheck": "PASS"
+  },
+  "secrets": "No credential was written to an argument, URL, file, or evidence record; the focused test used a fake child-environment value and does not record it here.",
+  "unknown": [
+    "Windows host mode reporting cannot establish Linux execute-bit runtime behavior; the trusted copy code sets 0755 and Linux execution remains unproven.",
+    "No HTTPS network, GitHub, provider credential, deployment, full gate, or independent review occurred."
+  ]
+}

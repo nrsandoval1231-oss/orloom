@@ -1,0 +1,21 @@
+{
+  "format": "orloom-independent-controller-policy-postgres-runtime-review-v1",
+  "verdict": "PASS_CONTROLLED_POSTGRES_BEHAVIOR_ONLY",
+  "candidateSha": "0725fa20698aa30b796ba096f663037116f49767",
+  "scenarioSha256": "2b5462372a2ccdbbdcb23f1ea58a0b702f509eb9dd361b470d8479efacb4d361",
+  "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+  "compiledManifest": "work/cpg-proof/compiled-0725fa2.json",
+  "compiledModules": 66,
+  "evidenceRoot": "work/cpg-proof/runtime/1791935890264-34f3a521-2195-4ea3-9ff6-3656802dce78/evidence",
+  "observations": [
+    "The runner preflight and compiled manifest bind the same 0725fa2 source and inventory 66 compiled JavaScript modules. The reviewed scenario and runner files remain at their accepted hashes.",
+    "Manifest records EXECUTED, PASS_DATABASE_BEHAVIOR_ONLY, no failed phase, and STOPPED_OWNED_CLUSTER during 2026-10-13T23:58:10-17Z. Runner JSONL records scenario_passed at the same source SHA and owned cleanup.",
+    "PostgreSQL 18.6 log shows only 127.0.0.1:15437 listening, normal readiness, a fast shutdown request, and database system shut down.",
+    "Scenario evidence distinguishes lease digest 03f2f2a8... from verifier suite digest 66b39771...; independent SQL readback shows the lease digest on the attempt and slice lease fields and suite digest on the request, certificate and slice verifier fields.",
+    "The reviewed scenario uses two independent pg pools, all seven canonical migrations, production SQL/Governor/coordinator APIs, a controlled final PASS receipt and review, one bare-Git CAS integration, child release and exact retained-evidence replay. Its negative cases reject changed current suite policy, image, version, lease policy and mutated persisted attempt lease while retaining one CAS and one integration event."
+  ],
+  "limits": [
+    "This is controlled local real-PostgreSQL behavior, not authentic full-suite verifier execution or independent human review. Git, receipt/artifacts and review bytes are fixtures.",
+    "No provider, cloud host, deployment, GitHub/R2 delivery, publication or parent Finish Contract completion is established."
+  ]
+}

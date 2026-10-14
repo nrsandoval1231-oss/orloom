@@ -1,0 +1,13 @@
+{
+  "name": "cleanup-acceptance.sh",
+  "args": [],
+  "scriptSha256": "aa26f58dc9326708479a942f2ac619e168ae7a052e46dda0cfb326a8e22b8e39",
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "startedUtc": "2026-10-14T00:22:27.066Z",
+  "finishedUtc": "2026-10-14T00:22:29.070Z",
+  "elapsedMs": 2004,
+  "exit": 0,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\candidate-f6023acade03-v3\\executions\\2026-10-14T00-22-27-066Z-cleanup-acceptance.sh"
+}

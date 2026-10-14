@@ -1,0 +1,44 @@
+{
+  "stderr": {
+    "key": "sha256/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "stdout": {
+    "key": "sha256/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "outcome": "unknown",
+  "request": {
+    "checkId": "node-validate-syntax",
+    "sliceId": "c3-slot-collision",
+    "version": "orloom.trusted-check-request.v1",
+    "attemptId": "d910b151-a808-46df-9685-c3294b92468c",
+    "expiresAt": "2026-10-13T08:25:22.224Z",
+    "missionId": "d41d99a3-854e-4500-a5c4-d1772d826d30",
+    "leaseEpoch": 1,
+    "planDigest": "cf7e3daa97bb5d9640974eb12c3953af9c974685b423c63adb123e588e2a7778",
+    "repository": "nrsandoval1231-oss/orloom",
+    "requestedAt": "2026-10-13T08:24:22.224Z",
+    "candidateSha": "765943eae18c09aa882e52c7f5255dd776c5fd43",
+    "policyDigest": "66dd473c4f631a2bcb08e2f953708b8515ec1e566f527b8e54da7207110b127e",
+    "policyVersion": "orloom.check-policy.v1",
+    "inputBundleDigest": "91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf",
+    "verifierImageDigest": "e680c83d424c4629d3590c380118cabec325442c4715ee7deaa8538841259d1f",
+    "expectedLocalHeadSha": "765943eae18c09aa882e52c7f5255dd776c5fd43"
+  },
+  "runtime": "runsc",
+  "version": "orloom.trusted-check-receipt.v1",
+  "exitCode": null,
+  "sandboxId": "orloom-verifier-7c4eac35-1704-43ec-934e-97d4d89e1255",
+  "startedAt": "2026-10-13T08:24:22.243Z",
+  "finishedAt": "2026-10-13T08:24:22.354Z",
+  "verifierId": "c3-runsc-verifier",
+  "inputManifest": {
+    "key": "sha256/91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf",
+    "bytes": 29771,
+    "sha256": "91a989258a9b67a340c1bb7c7c0b976ab0479d385fce9786c863e89ce92f12bf"
+  },
+  "receiptDigest": "372152d20fd46cf4a475905c13504caed79cb4d240ddb522346cd1434434b12d"
+}

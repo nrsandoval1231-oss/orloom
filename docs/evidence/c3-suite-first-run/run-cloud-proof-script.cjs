@@ -1,0 +1,25 @@
+const fs = require('node:fs');
+const cp = require('node:child_process');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const [scriptName, ...args] = process.argv.slice(2);
+if (!/^[a-z-]+\.sh$/.test(scriptName || '') || args.some(a => !/^[A-Za-z0-9_./-]+$/.test(a))) throw new Error('Unexpected proof script or argument');
+const scriptPath = path.join(__dirname, 'c3-suite-proof', scriptName);
+const script = fs.readFileSync(scriptPath, 'utf8').replace(/\r\n/g, '\n');
+const dir = path.join(__dirname, 'suite-cloud-executions');
+fs.mkdirSync(dir, { recursive: true });
+const id = `${new Date().toISOString().replace(/[:.]/g, '-')}-${scriptName}`;
+fs.writeFileSync(path.join(dir, id), script, { flag: 'wx' });
+const stdout = fs.openSync(path.join(dir, `${id}.stdout.log`), 'wx');
+const stderr = fs.openSync(path.join(dir, `${id}.stderr.log`), 'wx');
+const start = new Date();
+const child = cp.spawn('ssh', ['-T', '-o', 'BatchMode=yes', 'codex-dark-peak-5042', 'bash', '-s', '--', ...args], { stdio: ['pipe', stdout, stderr], windowsHide: true });
+child.stdin.end(script);
+child.on('error', () => { process.exitCode = 1; });
+child.on('close', (exit, signal) => {
+  fs.closeSync(stdout); fs.closeSync(stderr);
+  const record = { scriptName, args, scriptSha256: crypto.createHash('sha256').update(script).digest('hex'), start: start.toISOString(), finish: new Date().toISOString(), elapsedMs: Date.now() - start.getTime(), exit, signal, logPrefix: path.join(dir, id) };
+  fs.writeFileSync(path.join(dir, `${id}.json`), JSON.stringify(record, null, 2) + '\n', { flag: 'wx' });
+  console.log(JSON.stringify(record));
+  process.exitCode = exit === 0 ? 0 : 1;
+});

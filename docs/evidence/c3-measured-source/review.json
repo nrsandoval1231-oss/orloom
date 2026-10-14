@@ -1,0 +1,16 @@
+{
+  "review": "ORL-C3-MEASURED-DEADLINE-001 independent exact-candidate source review",
+  "verdict": "PASS",
+  "candidateSha": "6716d2520eff2d1e06fb7925f98d634275fd43ab",
+  "baseSha": "41fd3a225e805e8fe8a965fef7bb476a5e103900",
+  "reviewedAtUtc": "2026-10-13T14:50:58Z",
+  "scope": "Retained deadline dependency source and local deterministic gates only. No host, provider, Docker, deployment, PR or completion action.",
+  "evidence": [
+    "The worktree is clean at the stated candidate and the bounded diff changes only suite deadline policy, runner, launcher, diagnostics, host parser, affected tests, source manifest, packet/completion and explanatory docs. No resource profile, stage order, stage runner, child-selected policy, syntax policy, certification or Governor authority changes are present.",
+    "The suite-only timer chain is 360000 ms image execution, 390000 ms Docker attach plus unchanged 2-second kill grace, 405000 ms host launcher and 420000 ms trusted attempt. Existing 120000 ms late-UNKNOWN settlement gives 540000 ms, below the unchanged 600000 ms request maximum. Syntax policy stays at 60000 ms and its prior digest e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe.",
+    "Versioned suite binding advances to orloom.node-repo-suite.v5, manifest deadline-360s and digest 5b57ce4b9ee14cf42300ee0773d73125a2aaa0519e70c0b5a4cb956f90f304ed. Diagnostic emitter and parser both require protocol v4 and elapsed 0..360000 ms; tests reject v3 and 360001 ms frames. Diagnostics remain advisory and cannot turn timeout, truncated, absent-marker or malformed results into PASS/FAIL.",
+    "Executable stage tests run a stalled child under a short deadline and assert UNKNOWN, show a callback finishing after the shared deadline cannot PASS or start a subsequent stage, and exercise the marker-boundary timeout guard. The full serial test discovery and stage order remain unchanged.",
+    "All 117 SHA-256 rows in .agent/ORL-C3-SUITE-MANIFEST.sha256 independently match exact HEAD Git blob bytes. Controller log work/suite-controller-gates-2026-10-13T14-47-14-104Z.log completed at 14:47:29.548Z: typecheck, clean build, 76/76 tests with zero failures/skips, validation, relevant JS/shell syntax and diff check all exited 0."
+  ],
+  "limits": "This PASS does not certify that 2 GiB or 360 seconds suffice for the full actual suite. Prior attempt 617c378 remains UNKNOWN with zero certificates. The next host proof must bind one separately reviewed integrated C1b/C2/C3 candidate and aligned >=420-second observation/360-second hang-negative helpers, with protected-resource preflight, exact identity and cleanup. No actual run, certificate, activation or parent Finish Contract completion is claimed."
+}

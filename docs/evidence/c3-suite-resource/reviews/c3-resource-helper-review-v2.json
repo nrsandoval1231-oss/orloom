@@ -1,0 +1,21 @@
+{
+  "verdict": "PASS",
+  "scope": "independent pre-execution helper review only; does not certify runtime or C3 acceptance",
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceManifestSha256": "09f99677a6dfbf7f060a65180671cadf243182c62b1bf372e547d544c1fbceeb",
+  "helperManifestSha256": "db12a335f4a16a5a5eaae5809eaff4914f6228a5a54d101c170de8cd308d01b5",
+  "priorRejectedManifestSha256": "16f75be18d6074e43f3412ea307a4c3fdfdddf241ebb3ebc1cdc06af0b5185da",
+  "transport": "work/c3-suite-resource/candidate-617c378/transfer",
+  "findings": [],
+  "evidence": [
+    "All 13 helper files matched frozen SHA-256 entries; seven shell scripts passed bash -n and five .mjs files passed node --check. The transfer bundle and 152-file runtime-payload manifest hashes match both helper manifest and candidate identity; stage binding matches the repaired runtime helper SHA.",
+    "Only runtime-acceptance.mjs and its stage-bindings.json hash changed from the rejected v1 helper packet. The actual container label remains the source-image candidate at runtime-acceptance.mjs:55, consistent with build-suite-image.sh:14-15. Each persisted request is independently checked against its scenario's expected candidate at runtime-acceptance.mjs:154 and fixture commits are ancestry-bound before dispatch.",
+    "run-acceptance.sh:29-41 checks exact protected tuple, image/DB identity, empty canonical verifier state and flock, no competing ORL-C3 container, then measures post-PG available memory >=2952790016 bytes and disk >=4294967296 bytes before writing the one-shot runtime marker. runtime-acceptance.mjs:89-99 remeasures available memory before each attempt.",
+    "Positive PASS/certificate is required before the controlled negative fixtures. Runtime snapshot export reads PostgreSQL and writes a hash-bound allowlisted snapshot; cleanup refuses destructive action after a started run until that snapshot exists. Exact packet IDs constrain resource cleanup.",
+    "Fresh derivation reports 24 compiled runtime modules and 127 dependency files matching the transfer payload. The helper flow has no provider invocation or credential export to logs."
+  ],
+  "remainingProof": [
+    "Actual post-PG admission, Docker HostConfig normalization, cgroup measurements, full suite outcome and prescribed negative fixtures require one real reviewed run.",
+    "Any OOM, timeout, absent cert, incomplete negative, or ambiguous cleanup remains UNKNOWN/FAIL for acceptance; prior 8902092 attempt remains UNKNOWN with zero certificates."
+  ]
+}

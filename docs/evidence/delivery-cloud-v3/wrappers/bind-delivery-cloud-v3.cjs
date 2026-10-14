@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const root=path.join(__dirname,'c3-delivery-cloud-v3'),raw=fs.readFileSync(path.join(__dirname,'delivery-source-review-f6023ac.json')),review=JSON.parse(raw);
+const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+if(review.candidateSha!=='f6023acade03091a494644409e9bc65d28d59ad4'||review.verdict!=='PASS_SOURCE'||review.findings.length)throw Error('Expected exact independently accepted source review');
+fs.writeFileSync(path.join(root,'source-review-v3.json'),raw,{flag:'wx'});
+const identity={candidateSha:review.candidateSha,baseSha:review.baseSha,sourceRef:review.sourceRef,sourceManifestSha256:review.sourceManifestSha256,sourceReviewSha256:sha(raw)};
+const admission=Buffer.from(JSON.stringify({format:'orloom-c3-delivery-cloud-source-review-admission-v1',normalizedVerdict:'PASS',rawVerdict:review.verdict,...identity},null,2)+'\n');
+fs.writeFileSync(path.join(root,'source-review-admission-v3.json'),admission,{flag:'wx'});
+fs.writeFileSync(path.join(root,'source-binding-v3.json'),JSON.stringify({format:'orloom-c3-delivery-cloud-source-binding-v1',sourceRepo:path.join(__dirname,'orloom-delivery'),...identity,sourceReviewFile:path.join(root,'source-review-v3.json'),sourceReviewAdmissionSha256:sha(admission)},null,2)+'\n',{flag:'wx'});
+console.log(JSON.stringify(identity));

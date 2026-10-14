@@ -1,0 +1,27 @@
+{
+  "format": "orloom-independent-controller-composition-source-review-v1",
+  "verdict": "PASS_SOURCE",
+  "candidateSha": "0725fa20698aa30b796ba096f663037116f49767",
+  "baseSha": "3962ee0bd3c98eca010108a81a2bef4b9ed2559d",
+  "integrationBaseSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "sourceRef": "refs/heads/feat/controller-composition",
+  "sourceManifestSha256": "49b099fa85fa117479be759d8f4c7a346e8dad6360e8319fb7f1221bb9d18e7f",
+  "sourceManifestFileCount": 142,
+  "worktree": "clean at candidate SHA",
+  "gateEvidence": {
+    "file": "work/composition-controller-gates-2026-10-13T23-55-44-891Z.log",
+    "result": "12 commands exit 0; 139 tests passed, 0 failed; typecheck, build, foundation validation, verifier syntax and diff check passed"
+  },
+  "findings": [],
+  "reviewedBehavior": [
+    "loadConfig retains the ordered operator allowed-check-list digest for claim/lease. Main's active coordinator retains the separate full-suite verifier digest; the new immutable copied binding exposes both without changing either domain.",
+    "First integration requires coordinator allowed checks and lease digest to match current Governor config. It binds final PASS attempt lease digest to that lease, and request, receipt, certificate, verifier identity, image, version, candidate, plan and repository to the full-suite policy before passing the suite digest to SQL intent/finalization.",
+    "SQL finalization locks persisted integration, slice, certificate and attempt rows. It rechecks each final attempt's lease_policy_digest against the leased slice digest, while certificate/request/intent policy_digest remains the suite digest. UNKNOWN and prior evidence fences remain closed.",
+    "Completed replay rereads integrated certificates and final PASS attempts via the current coordinator, verifies persisted artifact bytes, matches certificate IDs and digests against the durable intent, then retains local ref/tree, review bytes, plan, request and locked SQL finalization fences.",
+    "The startup-shaped PGlite/bare-Git regression derives distinct digests from loadConfig and getCheckPolicy, proves claim, certificate, first integration, child release and exact replay, and exercises changed current policy/version/image/lease list, missing receipt/certificate, moved ref, UNKNOWN intent and post-intent lease-digest mutation. Existing integration and delivery fixture updates preserve coverage while separating digest domains."
+  ],
+  "limits": [
+    "This is exact-candidate source acceptance only. PGlite and controlled Git fixtures are not a real PostgreSQL multi-connection, authentic verifier, cloud host, provider or external publication proof.",
+    "The historical 3962ee0 FIX and failing prep remain retained; this review does not rewrite that record or certify parent commercial completion."
+  ]
+}

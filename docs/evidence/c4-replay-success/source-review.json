@@ -1,0 +1,19 @@
+{
+  "review": "C4-REPLAY-RACE-01",
+  "verdict": "PASS_SOURCE",
+  "candidateSha": "2a0260614585ff14d07f24e7b1d72be57b2061a2",
+  "baseSha": "03795427a22fb21eb3890e5ae8e7f7c2c5071ae9",
+  "scope": "Independent frozen-source review only; no operational acceptance",
+  "findings": [],
+  "evidence": [
+    "Completed replay rereads the exact durable integrated intent and verified slice, checks current repository/ref/tree and retained review bytes, then enters the SQL finalization fence.",
+    "SQL already-integrated path now checks request, observed SHA, plan/policy/review binding, dependencies, retained final PASS certificates and receipts under the Governor lock before returning without writes.",
+    "Awaiting-only getCertificate was not widened. Pending, conflicting and UNKNOWN intents cannot use the completed-replay path; moved ref and changed review/tree/plan/policy/certificate reject.",
+    "Five deterministic PGlite barriers cover pending-intent, awaiting-slice, first certificate, final certificate and SQL finalization interleavings. Focused negative mutations and single-CAS/event/child assertions are present.",
+    "Controller exact-candidate gate log c4-race-controller-gates-2026-10-13T23-02-27-296Z.log records 12 commands with exit 0, including git diff --check."
+  ],
+  "remainingProof": [
+    "PGlite uses one serialized SQL executor, so its barriers do not prove two-pool PostgreSQL locking. The root-owned real PostgreSQL and bare-Git successor run remains required.",
+    "Controlled receipt and review fixtures are not authentic external verification or a live-provider claim."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "verdict": "PASS",
+  "scope": "pre-execution read-only safety and executable-correctness review of eight selected diagnostic helpers only",
+  "exactIdentity": {
+    "sourceSha": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+    "sourceManifestSha256": "581fe76db816406d2dda86d921128eb9bdbdc5785768d0a4eff4b14a91b4c674",
+    "helperManifest": "work/c3-suite-diagnostic/helper-manifest.json",
+    "helperManifestSha256": "51a2b7d076a9ceab9306bfd05839dbf171096ced572521d5701bff9b99d0869b",
+    "selectedHelpersVerified": 8,
+    "helperHashMismatches": 0,
+    "candidateBundleSha256": "adb00f7f76b0e255013f323c3c733aceb5a09fa51b20044a6b79f4e491364341",
+    "runtimePayloadManifestSha256": "deada7f5accb35261e93db178fc91bea69db6ca4a6bdd33d1f4a8f7573d64d9f",
+    "runtimePayloadFilesVerified": 8,
+    "runtimePayloadHashMismatches": 0
+  },
+  "priorIssuesResolved": [
+    "stage-diagnostic.sh now requires the actual prepared runtime identity format orloom-c3-diagnostic-runtime-v1, matching the frozen transfer file.",
+    "Stage now rejects symlinks, nonregular entries, extra files, and missing files in runtime-files, then rechecks the staged payload after copy.",
+    "run-diagnostic.mjs now calls the reviewed retainSuiteDiagnostics parser and projects only fixed advisory fields into evidence; arbitrary JSON fields, partial frames, and raw candidate/host text are not retained.",
+    "The prelaunch canonical state guard requires absent or empty state; after an ambiguous launch, absent state following the lock wait is recorded as cleared rather than UNKNOWN."
+  ],
+  "reviewedBoundaries": [
+    "Only /var/lib/orloom/c3-suite-diagnostic-20261013 and its sibling incoming directory are targeted for staging; the selected helpers contain no deletion or cleanup of the protected container or old proof state.",
+    "The source bundle, base/candidate/ref relation, source manifest, payload manifest, source checkout, copied runtime files, and pinned old Node hash are checked before direct execution. A separate fresh TypeScript emit from clean a7c25a6 byte-matched all seven executable payload modules; work/diagnostic-runtime-derive-check/derivation.json retains the comparison.",
+    "Image build uses an explicit exact-source Docker context, cached digest-pinned base, --pull=false, and the source Dockerfile's lock-bound npm ci with ignore-scripts and isolated empty npm configs. The context .dockerignore excludes .git, .agent, credentials, keys, env and local state.",
+    "The one direct diagnostic call uses exact frozen product LocalRunscLauncher and launch-verifier.sh, fixed node-repo-suite-v1, 60000 ms, one concurrent check, 1 CPU, 1 GiB, runsc, no runtime network, nonroot, no host source mount, and the existing host-wide lock/state quarantine.",
+    "Pre/post checks require the exact protected container ID running under runc with restart count zero and minimum available host memory/disk. No safe in-flight peak observer is installed, and the report explicitly marks peak UNKNOWN.",
+    "No PostgreSQL client, mission attempt, receipt submission, certificate creation, provider call, or original UNKNOWN redispatch appears in the selected path. A diagnostic PASS/FAIL is evidence only."
+  ],
+  "excludedDrafts": [
+    "work/c3-suite-diagnostic/launch-diagnostic.sh",
+    "work/c3-suite-diagnostic/cleanup-exact-cid.sh"
+  ],
+  "allowedHostEffectsIfControllerExecutes": [
+    "Create a fresh diagnostic root and sibling upload content under /var/lib/orloom/c3-suite-diagnostic-20261013*.",
+    "Build one new local diagnostic image from the reviewed source and run one transient ORL-C3 verifier through the frozen product launcher, using its existing slot/state handling.",
+    "Write bounded diagnostic evidence and temporary isolated Docker configs under /run; leave nonempty canonical verifier state for exact-CID operator reconciliation."
+  ],
+  "limits": "This verdict is bound to the listed helper manifest hash and source/payload digests. It does not prove an image build, host capacity during execution, a real runsc result, cleanup, PostgreSQL certification, or any change to the original UNKNOWN attempt. Any helper or payload mutation invalidates this verdict."
+}

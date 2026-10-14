@@ -1,0 +1,44 @@
+{
+  "review": "ORL-005C1 C1a independent read-only review",
+  "candidateSha": "ec3dd0ffa0168cdfef5973835db4cc646bc274de",
+  "baseSha": "6110c692f47202978b2d22d22f6522aa4aa59277",
+  "manifestSha256": "f64612564382cfb010e222d04561536f9a6c68abcb27e1c4e037a83e788c2c3a",
+  "verdict": "FIX",
+  "scope": "C1a checkpoint only; C1b promotion/application/withdrawal and product finish remain open",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Unknown or blocked progress can receive a committed continue action",
+      "evidence": ["packages/judgment/src/jev-adapter.ts:24-29", "packages/contracts/src/sql-mission-store.ts:115-120", "packages/contracts/src/memory-mission-store.ts:60"],
+      "reason": "The adapter offers continue for every nonfailed status, including unknown and blocked. Both stores reject failed-to-continue but accept unknown-to-continue and blocked-to-continue. SQL then commits the action while the slice stays running. The next progress record cannot use this continue because its predecessor was not started, leaving a live lease and reserved capacity until expiry. This violates UNKNOWN quarantine and fail-closed recovery.",
+      "repair": "Treat unknown and blocked as terminal/quarantined at the Governor commit boundary; remove continue from the adapter for these statuses and test both stores and HTTP with injected choices."
+    },
+    {
+      "severity": "P2",
+      "title": "SQL can form a comparable lesson candidate from a pass for a different target check",
+      "evidence": ["packages/contracts/src/sql-mission-store.ts:124-139", "packages/contracts/src/memory-mission-store.ts:78-83"],
+      "reason": "The SQL episode join binds the failed event target to the requested target but does not bind the passed event target to it. An approved strategy covering multiple targets can therefore supply a pass for another target and produce a candidate claiming recovery of the failed target. The memory store requires matching targets, so the two stores disagree. Promotion is closed, which limits current impact to false candidate provenance.",
+      "repair": "Require passed and failed targetCheckId equality in the SQL join and cover a multi-target strategy in both-store parity tests."
+    },
+    {
+      "severity": "P2",
+      "title": "Judgment snapshot omits budget and evidence references required by packet",
+      "evidence": [".agent/ORL-005C1.md:32", "packages/judgment/src/types.ts:3-27", "packages/contracts/src/sql-mission-store.ts:74-76", "packages/contracts/src/memory-mission-store.ts:56"],
+      "reason": "The immutable snapshot contains policy and attempted strategy IDs, but no remaining budget, usage counters, or evidence refs from the progress event. An injected Jev adapter therefore cannot evaluate these declared constraints from the frozen input, despite the packet requiring budget and evidence refs. No live provider is wired, so this is a contract completeness finding rather than a live-spend claim.",
+      "repair": "Include bounded, lease-fenced budget/usage and digest-only evidence references in the versioned snapshot and validate their exact hash and stale-fence behavior."
+    }
+  ],
+  "verifiedBoundaries": [
+    "Promotion is hard-closed in Governor, SQL store, memory store, and HTTP route.",
+    "SQL replay authenticates the active lease before returning a committed receipt.",
+    "SQL judgment occurs outside the preparation transaction and phase 2 checks the lease/policy/revision fence.",
+    "Official SDK adapter fixes HTTPS origin, disables retries, bounds bytes and deadline, and rejects mismatched model and malformed answers. No production live adapter is instantiated by default."
+  ],
+  "validationEvidence": {
+    "controller": "Root reported clean exact-head npm ci, typecheck, build, 41 tests, validate, and diff check; rootwork/c1a-controller-gates.txt. Independent reviewer did not rerun shared npm/build.",
+    "realPostgres": "PENDING at review time",
+    "provider": "No live Jev call or spend evidenced"
+  },
+  "sourceEdits": "none",
+  "nextDirection": "Issue one bounded Luna repair packet for the three findings, freeze a new exact candidate, rerun affected and mandatory gates, obtain real PostgreSQL proof, then independent review."
+}

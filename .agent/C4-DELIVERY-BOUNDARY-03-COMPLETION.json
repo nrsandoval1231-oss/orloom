@@ -1,0 +1,25 @@
+{
+  "packet": "C4-DELIVERY-BOUNDARY-03",
+  "status": "FOCUSED_TEST_REPAIR_READY_FOR_ROOT_REVIEW",
+  "branch": "feat/certified-delivery",
+  "baseSha": "21a90dfa7b1123c12b8f7d2e7739049472accd8f",
+  "sourceChanged": false,
+  "utcStart": "UNKNOWN",
+  "utcFinish": "2026-10-13T23:18:45Z",
+  "modelAndConfig": "UNKNOWN",
+  "retryCount": 1,
+  "changedFileSha256": {
+    "tests/config-adapters.test.ts": "21f200b2aca40424840603c3701f22b567a0a9ab415691ec604d1b2b0b4caab3"
+  },
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0, "result": "PASS" },
+    { "command": "npm run build", "exitCode": 0, "result": "PASS" },
+    { "command": "node --test dist/tests/config-adapters.test.js dist/tests/delivery-adapter.test.js", "exitCode": 0, "result": "PASS; 9 tests, 0 failures" },
+    { "command": "git diff --check", "exitCode": 0, "result": "PASS" }
+  ],
+  "retainedAttempt": "First focused run passed typecheck/build but failed the updated test-double token identity assertion because its token selector incorrectly inspected installation binding before the binding callback. The selector now advances on mint count; the rerun passes. No production defect was found or modified.",
+  "limits": [
+    "The boundary is tested through injected adapters only; no live Octokit network operation or GitHub App token was used.",
+    "Full exact-candidate gates, manifest refresh, and independent rereview remain with root."
+  ]
+}

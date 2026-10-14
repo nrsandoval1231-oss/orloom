@@ -1,0 +1,78 @@
+{
+  "packet": "C5-LOOM-001",
+  "baseSha": "0c8c85de102121795d41158163dde79729b996ab",
+  "branch": "feat/live-loom",
+  "result": "SOURCE_HANDOFF_READY_REPAIR_2",
+  "changedFiles": [
+    "apps/control-plane/src/server.ts",
+    "apps/control-plane/src/loom-page.ts",
+    "apps/control-plane/src/loom-projection.ts",
+    "tests/loom-http.test.ts",
+    "tests/loom-projection.test.ts",
+    ".agent/C5-LOOM-001-COMPLETION.json"
+  ],
+  "implementation": [
+    "Adapted the preserved V4 circular woven-fiber geometry, five restrained sector tones and central mission nucleus to the current mission slice list and durable slice states. The rendered geometry is deterministic and never measures progress.",
+    "Added drag rotation, wheel and button zoom, arrow-key camera inspection, reset, keyboard focus, an explicit SVG-only WebGL fallback and a mobile-flow collapsible inspector; mobile notices, status and camera controls stay outside the scrollable inspector.",
+    "The owner-cookie authenticated, read-only Loom route now reads the approved plan and paginates mission-local event history in 1,000-row cursor pages. It enforces an 8-second read deadline and 10,000-event overall evidence cap; exactly 1,000 rows does not itself mean overflow.",
+    "The shared typed projector requires complete unique approved-plan slice membership and matching objective, ownership, checks and dependencies. Closure binds each current candidate and lease epoch to all exact certified check IDs, pending intent certificate IDs and SHA-256 digests, then a strictly later integration with matching candidate, tree and review digest; contradictory checks and durable UNKNOWN keep it open.",
+    "The browser catches up using after-cursor pages, permits global cursor gaps while checking strict monotonicity, bounds requests and event history, uses a 5-second success poll and bounded exponential failure backoff, and shows stale history without implying live completion.",
+    "Named inspector rows cover scheduling decisions, recovery, and lesson candidate/promoted/withdrawn evidence; untrusted labels remain textContent and certificate links are validated same-origin URLs.",
+    "Final bounded correction: closure also requires approved-plan scopes and budgets to exactly match the current slice snapshot, and maps every pending certificate ID to a certified check without assuming check-array order. Camera magnification now increases for plus/zoom-in and decreases for minus/zoom-out, with wheel direction aligned."
+  ],
+  "validation": [
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test dist/tests/loom-projection.test.js dist/tests/loom-http.test.js",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "prototypeSha256": {
+    "before": {
+      "prototypes/v1/index.html": "566A87EB6BFFD4ECDD3F7AD359ABA31DB582D1B07FC3083D002DB8FCD2DC5E22",
+      "prototypes/v2/index.html": "564D0A412F83162BF987E8D1E3306CDBA16983CFF6E01746819952AC93C1A1A0",
+      "prototypes/v3/index.html": "D3B28965BAD3C93271209FF123A029EF6F0EAA2F386F1D4F6049E08288B4E574",
+      "prototypes/v4/index.html": "AF5BA66C9CDEFC5EC33CF0C5241B33792C7985BF039824B73A9D18FCD6A0442E"
+    },
+    "after": {
+      "prototypes/v1/index.html": "566A87EB6BFFD4ECDD3F7AD359ABA31DB582D1B07FC3083D002DB8FCD2DC5E22",
+      "prototypes/v2/index.html": "564D0A412F83162BF987E8D1E3306CDBA16983CFF6E01746819952AC93C1A1A0",
+      "prototypes/v3/index.html": "D3B28965BAD3C93271209FF123A029EF6F0EAA2F386F1D4F6049E08288B4E574",
+      "prototypes/v4/index.html": "AF5BA66C9CDEFC5EC33CF0C5241B33792C7985BF039824B73A9D18FCD6A0442E"
+    },
+    "unchanged": true
+  },
+  "work": {
+    "taskStartedAtUtc": "UNKNOWN; this final repair turn start was not sampled",
+    "sourceHandoffAtUtc": "2026-10-13 22:36:01 UTC",
+    "planningDuration": "UNKNOWN",
+    "implementationDuration": "UNKNOWN",
+    "focusedValidationDuration": "UNKNOWN; final Node test duration 170.3356 ms",
+    "independentAuditDuration": "PENDING",
+    "repairCount": 2,
+    "lane": "single primary builder",
+    "modelIdentity": "UNKNOWN from runtime metadata",
+    "tokenUsage": "UNKNOWN; no measured usage source available",
+    "elapsedToAcceptance": "PENDING independent review"
+  },
+  "notCompletedHere": [
+    "Root exact-candidate review and final repository gates",
+    "Actual browser visual, keyboard, camera zoom and WebGL fallback proof on final frozen candidate",
+    "PostgreSQL-backed event transition and reconnect proof"
+  ],
+  "commitCreated": false,
+  "pushOrDeployment": false
+}

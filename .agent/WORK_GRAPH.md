@@ -1,20 +1,21 @@
-# Orloom Work Graph
+# Orloom work graph
 
-Canonical parent: docs/architecture/CANONICAL_HARNESS.md and the owner's complete harness directive. A bounded checkpoint never completes this parent. Only focused branches/PRs; no further direct-main commits or unverified merges.
+Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md). Product completion remains OPEN. Current candidate is based on PR #17 `410882d4afff33e028be50b816ad69eb387eae6d`; independent bounded source acceptance is PASS with 167/167 tests, zero failures/skips, plus typecheck/build/structure validation. Publication identity is the containing Git commit and associated PR; merge is not claimed.
 
-| Node | Dependencies | State | Evidence / acceptance boundary |
-| --- | --- | --- | --- |
-| ORL-001 foundation | none | ACCEPTED LOCALLY | Foundation review and deterministic gates; no live worker |
-| ORL-002 cloud connections | ORL-001 | PARTIAL | DO SSH/Codex subscription request and private R2 bucket proven; DeepSeek, runtime R2 credentials and Orloom GitHub App not connected |
-| ORL-004 queue deployment | ORL-001 | DEPLOYED QUEUE ONLY | Main 41643d8, Hostinger HTTPS/auth/PostgreSQL persistence/restore proof; owner browser acceptance unresolved |
-| ORL-ISO-001 worker isolation | ORL-002 | ACCEPTED SMOKE ONLY | infra/worker-isolation reviewed exact bytes; two gVisor probes; sustained build/six-lane capacity UNKNOWN |
-| ORL-005A mission control | ORL-001 | ACCEPTED BOUNDED | Repair 1 closes four findings; frozen c418a11 manifest, 21 tests and independent PASS |
-| ORL-PG-001 real database proof | repaired ORL-005A | PASS / CLEANED | Eight real connections, races, persistence, rollback and quarantine; controller repeat PASS; disposable resources removed |
-| ORL-005B broker + DeepSeek | accepted A, ISO | READY FOR IMPLEMENTATION | Actual lease/checkout/tool-loop/candidate/evidence path; real model probe and secure credentials required for live acceptance |
-| ORL-005C active stuck + learning | A, B | DEPENDENT | Bounded strategy change and replanning; validated/versioned lessons influence active work; comparable-outcome measurements |
-| ORL-005D integration + CI + PR | B, C | DEPENDENT | Serialized exact-head integration, clean independent checks/reviewer, immutable R2 evidence, scoped App publication; owner retains merge authority |
-| ORL-005E real Living Loom | actual A-D events | DEPENDENT | Browser-to-verified-PR cloud proof and actual event weave; V1-V4 history preserved |
+| Node | State / next gate |
+|---|---|
+| Mission control | PR #1 merged at historical main `6110c692`; bounded source/actual PostgreSQL acceptance. Lease digest, policy-restart and aggregate-state repairs passed combined source regressions. |
+| Consolidation | Seven audited correctness repairs passed independent source review and combined tests; see validation ledger. No merge/PR disposition is implied. |
+| DeepSeek broker | PR #2 separate composition work; not counted as included or operational. Prior frozen-head instruction is historical. |
+| Jev/recovery, learning, scheduling | Source composed; negative-evidence freshness and cohort repairs passed combined source acceptance. Live Jev, genuine activation, holdout/baseline evaluation and comparable benefit OPEN. |
+| Orloom CI | Historical actual full-suite `f6023ac` FAIL/271438 ms/zero certificates. Fixture repair is composed; authentic exact-candidate runsc full suite OPEN. |
+| Local integration | Historical `2a02606` source and actual two-pool PostgreSQL replay accepted within retained scope. New candidate is not thereby certified. |
+| Controller and delivery | Historical `0725fa2` policy composition and `f6023ac` delivery PostgreSQL proofs bounded. Combined live PostgreSQL and deployment gates OPEN. |
+| Reserved remote upload | `954622e` historical source/ref-replay proof; secure App/R2 configuration and real credentialed publication OPEN. |
+| Living Loom | Controlled source/browser evidence exists; certificate-digest closure repair passed combined source acceptance. Canonical five-sector/source-inspection interactions and live-builder display remain incomplete. |
+| Packaging / fixture throughput | Docker helper-source repair passed source regression; clean image build still OPEN. Historical `e078a51` 151-test/14-gate source checkpoint is not the new result or Linux isolation proof. |
+| Evidence preservation | PR #14's 95 original evidence blobs and two historical state files, plus PR #15's two repair records and two historical state/manifest blobs, are preserved. All 15 PR #3–17 trees have no absent original paths after the 97 evidence additions. Historical records do not certify the containing commit. |
+| Cloud end-to-end | Secure credentials, live workers, authentic verification, operational recovery, deployed campaign and measured learning gains OPEN. |
 
-Reference sources were inspected read-only at Aura dc0466ee24de1c97205a21f66bbb2aec57d41e11 and Forge 462ce48294b3ee2f336a49a9cf475e24b541f29a. They supply reviewed concepts, not a pre-proven six-builder runtime. No source checkout was modified.
+Direction: preserve source and evidence; validate/review one coherent candidate; perform authorized PR cleanup only after inclusion and acceptance are established. The owner's latest direction supersedes the earlier blanket no-merge restriction. Do not close PR #2 as redundant without accepted source/evidence composition. No GitHub Actions CI, competing broker/scheduler, automatic UNKNOWN replay or newly implied paid-host/provider authority.
 
-Current direction: CONTINUE B from independently accepted A and isolation-smoke checkpoints. Secure secrets-manager connection question is pending. No new spending authorized; no live provider results, throughput gains, learning gains or full-product completion established.

@@ -1,0 +1,75 @@
+{
+  "candidate": "0725fa20698aa30b796ba096f663037116f49767",
+  "files": [
+    {
+      "file": "manifest.json",
+      "sha256": "0520bf5281b44222feca5eca78f5f5e123c5fe5ab748335281a6fb1d05a89761",
+      "bytes": 350
+    },
+    {
+      "file": "preflight.json",
+      "sha256": "dc3b47f234e285e9e3991b85a811b63c535749f7da75845251e68ce5a6f85089",
+      "bytes": 7453
+    },
+    {
+      "file": "runner.jsonl",
+      "sha256": "92a728696fcb039c3a4416d4e23cac87b8c8ec40823fce39c64d5e6fad938a5b",
+      "bytes": 208
+    },
+    {
+      "file": "postgres.log",
+      "sha256": "c3ec06867a79aff2fddb47c234b322d2a3e63bdbfa99b4a53f0b5c25e0ee881e",
+      "bytes": 1213
+    },
+    {
+      "file": "startup-policy-scenario.jsonl",
+      "sha256": "60ca525aa8accc5213d6a192041efd0e004704dfd198bcb45c801463d6964b5a",
+      "bytes": 1231
+    },
+    {
+      "file": "startup-policy-proof.json",
+      "sha256": "d35a9b2f8f72164c9631e8dfff5988208813ed2abea19d9e2c51cd35fa29dd9d",
+      "bytes": 3037
+    },
+    {
+      "file": "source-review.json",
+      "sha256": "aa923d3288fc7718d4501e575304494c7e6b8489f185eb497a3f426f40169d03",
+      "bytes": 2829
+    },
+    {
+      "file": "runtime-review.json",
+      "sha256": "cfd566fe8948f1ec3108a87a034fa3dc9a262693ad790665a05b0efbd7ea66df",
+      "bytes": 2165
+    },
+    {
+      "file": "helper-review.json",
+      "sha256": "152bdc1341e89c1a032f17f6bade9e0fa422c3b8c940fd1dbc0872dc88e1e485",
+      "bytes": 2419
+    },
+    {
+      "file": "controller-gates.log",
+      "sha256": "e961d7ed225f6443eb863ec0e417194dec3dbe3a9270cb8292b40878a4cd8653",
+      "bytes": 16563
+    },
+    {
+      "file": "compiled-manifest.json",
+      "sha256": "6373793072ba49288d726539351fec398244b7a74a7a05f8f6c7c9b7163a820a",
+      "bytes": 7589
+    },
+    {
+      "file": "helpers/run.mjs",
+      "sha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+      "bytes": 8652
+    },
+    {
+      "file": "helpers/scenario.mjs",
+      "sha256": "2b5462372a2ccdbbdcb23f1ea58a0b702f509eb9dd361b470d8479efacb4d361",
+      "bytes": 21225
+    },
+    {
+      "file": "helper-preparation.json",
+      "sha256": "58219a1fc212ce5f37e4dd40ac196be8098d251018be5800ef84dfc9f6ccee1f",
+      "bytes": 1897
+    }
+  ]
+}

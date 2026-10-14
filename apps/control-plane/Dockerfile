@@ -5,6 +5,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY apps ./apps
 COPY packages ./packages
+COPY scripts ./scripts
 RUN npm run build
 FROM node:24-alpine
 ENV NODE_ENV=production

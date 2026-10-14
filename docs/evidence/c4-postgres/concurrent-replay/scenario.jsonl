@@ -1,0 +1,5 @@
+{"at":"2026-10-13T22:45:26.225Z","name":"fresh_migrations_and_held_connections","migrations":6,"backendPidsDistinct":true,"observedConnections":3}
+{"at":"2026-10-13T22:45:26.232Z","name":"fixture_path_budget","logicalCase":"ordinary-positive","physicalCase":"1","maxObjectPathChars":229,"limitChars":230}
+{"at":"2026-10-13T22:45:28.931Z","name":"ordinary_exact_integration","slice":"verified","child":"ready","integratedEvents":1}
+{"at":"2026-10-13T22:45:28.940Z","name":"fixture_ready_child_retired_without_verification","child":"awaiting_verification","trustedVerification":"not attempted"}
+{"at":"2026-10-13T22:45:28.943Z","name":"fixture_path_budget","logicalCase":"post-cas-reconnect-duplicates","physicalCase":"2","maxObjectPathChars":229,"limitChars":230}

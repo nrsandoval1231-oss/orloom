@@ -1,0 +1,54 @@
+{
+  "candidate": "df72574e35799cd379a24a734d5e3ae00e86e2f5",
+  "store": "MemoryMissionStore",
+  "controlledMission": true,
+  "providerCalls": 0,
+  "workerExecutions": 0,
+  "certificates": 0,
+  "startedUtc": "2026-10-13T22:38:35.974Z",
+  "unauthenticated": "owner session required",
+  "webgl": true,
+  "keyboardFocus": "CANVAS",
+  "mobileOverflow": false,
+  "offline": "DISCONNECTED · HISTORICAL",
+  "reconnected": true,
+  "status": "FAIL",
+  "error": "Expected values to be strictly equal:\n\nfalse !== true\n",
+  "finishedUtc": "2026-10-13T22:38:37.142Z",
+  "pageErrors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/2689f53f-b7cb-44b6-8f55-38b452a0567c/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/2689f53f-b7cb-44b6-8f55-38b452a0567c/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/2689f53f-b7cb-44b6-8f55-38b452a0567c/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/2689f53f-b7cb-44b6-8f55-38b452a0567c/loom"
+    }
+  ],
+  "modules": {
+    "apps/control-plane/src/server.js": "341b3e7d24bcade06ce619c2814f231e6e4db75aa1720a56cc490c9c7d488d42",
+    "apps/control-plane/src/loom-page.js": "6d7fbb589bdef858e106427f8dadf2f418c60a6e265544486b12af3c15de96ff",
+    "apps/control-plane/src/loom-projection.js": "45fe9b166a51a329a4777b8e8fafb8c6a7bcd66d866f16470a69596ed57ac59f"
+  },
+  "limitations": [
+    "Memory-store controlled mission; not PostgreSQL durability proof",
+    "No live builder, provider, certification or deployment evidence"
+  ]
+}

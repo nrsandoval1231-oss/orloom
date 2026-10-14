@@ -1,4 +1,6 @@
 /** Logical scope owner. Execution capacity is represented only by attested slots. */
+import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
+import type { CheckCertificateV1, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "./verification.js";
 export type Lane = string;
 export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown";
 export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown";
@@ -9,7 +11,56 @@ export interface MissionPlan { missionId: string; slices: SliceInput[]; recommen
 export interface Mission extends MissionInput { id: string; status: MissionStatus; reservedCents: number; createdAt: string; }
 export interface MissionSlice extends SliceInput { missionId: string; status: SliceStatus; leaseEpoch: number; leaseToken: string | null; leaseExpiresAt: string | null; candidateSha: string | null; evidenceRefs: string[]; }
 export interface MissionEvent { cursor: number; missionId: string; type: string; data: Record<string, unknown>; createdAt: string; }
-export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; }
+export interface IntegrationRequestV1 { version:"orloom.integration-request.v1"; missionId:string; sliceId:string; expectedIntegrationSha:string; candidateSha:string; leaseEpoch:number; requiredCheckIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; }
+export interface IntegrationIntentV1 extends IntegrationRequestV1 { treeSha:string; certificateIds:string[]; certificateDigests:string[]; state:"pending"|"integrated"|"unknown"; observedIntegrationSha:string|null; }
+export interface DeliveryRequestV1 { version:"orloom.delivery-request.v1"; missionId:string; sliceId:string; leaseEpoch:number; integratedSha:string; treeSha:string; repository:string; appId:number; installationId:number; branch:string; baseRef:string; baseSha:string; checkIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; idempotencyKey:string; }
+export interface DeliveryIntentV1 extends DeliveryRequestV1 { state:"pending"|"check_created"|"pr_created"|"unknown"; checkRunId:string|null; pullRequestNumber:number|null; observedRemoteSha:string|null; }
+export type DeliveryEffectV1 = "upload" | "check" | "pull_request";
+export interface DeliveryEffectClaimV1 { claimed:boolean; state:"claimed"|"observed"; externalId:string|null; }
+export type ProgressStatus = "started" | "passed" | "failed" | "blocked" | "unknown";
+export interface ProgressV1 {
+  version: "orloom.progress.v1"; eventId: string; missionId: string; sliceId: string; leaseEpoch: number;
+  ordinal: number; planDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string; phase: "trusted_check" | "provider" | "candidate"; status: ProgressStatus;
+  reasonCode: "check_failed" | "check_passed" | "provider_unavailable" | "budget_exhausted" | "scope_conflict" | "other";
+  strategyId: string; targetCheckId: string; checkId: string; counters: { providerCalls: number; inputTokens: number; outputTokens: number; wallMs: number };
+  evidenceRefs: string[];
+}
+export interface RecoveryProgressV2 extends Omit<ProgressV1, "version"> {
+  version: "orloom.progress.v2";
+  trustedAttemptId: string;
+  candidateSha: string;
+}
+export type RecoveryProgress = ProgressV1 | RecoveryProgressV2;
+export interface GovernorActionV1 {
+  version: "orloom.governor-action.v1"; eventId: string; revision: number;
+  action: "continue" | "change_strategy" | "request_replan" | "escalate";
+  strategyId: string | null; checkId: string | null; expectedSignal: string; policyVersion: string; policyDigest: string;
+  lessonIds: string[];
+  lessonBindings: Array<{id:string;lessonVersion:number;challengeDigest:string;policyDigest:string;strategyId:string}>;
+}
+export interface ProgressReceipt { duplicate: boolean; action: GovernorActionV1; snapshot: DecisionSnapshotV1; judgment: JudgmentV1; }
+export interface TrustedStrategyPolicy { checkId: string; version: string; expectedSignal: string; scopeClasses: string[]; targetCheckIds: string[]; }
+export interface LessonCandidate { id: string; lessonVersion: number; repository: string; cohort: string; fromCheckId: string; strategyId: string; rule: string; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; policyVersion: string; policyDigest: string; status: "candidate" | "promoted" | "withdrawn"; challengeDigest: string; evidenceEventIds: string[]; }
+export interface LessonValidationChallenge { version: "orloom.lesson-challenge.v1"; lessonId: string; repository: string; cohort: string; fromCheckId: string; strategyId: string; policyVersion: string; policyDigest: string; evidenceEventIds: string[]; metric: "trusted_check_pass_rate"; direction: "increase"; baseline: { failed: number; observed: number }; outcome: { passed: number; observed: number }; }
+export interface RecoveryPolicyLease { planDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string; }
+export interface VerificationAttemptBinding { request: TrustedCheckRequestV1; capabilityHash: string; capabilityExpiresAt: string; leasePolicyDigest:string; headObservedAt: string; headObservationDigest: string; purpose?:"final"|"recovery"; recoveryOrdinal?:number; targetCheckId?:string; strategyId?:string; }
+export interface RecoveryAttemptBinding extends Omit<VerificationAttemptBinding,"purpose"|"recoveryOrdinal"|"targetCheckId"|"strategyId"> { purpose:"recovery"; recoveryOrdinal:number; targetCheckId:string; strategyId:string; recoveryPolicyDigest:string; }
+export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; planDigest: string; }
+export interface SchedulingLessonHint { id: string; version: number; challengeDigest: string; checkId: string; strategyId: string; policyDigest: string; }
+export interface SchedulingChoice { missionId: string; sliceId: string; repository: string; planDigest: string; dependencies: string[]; scopes: string[]; budgetCents: number; missionBudgetCents: number; reservedBudgetCents: number; downstreamDepth: number; scopeRisk: number; lessons: SchedulingLessonHint[]; }
+export interface SchedulingSnapshot { capturedAt: string; freeCapacity: number; choices: SchedulingChoice[]; snapshotDigest: string; }
+export interface SchedulingTokenUsage { inputTokens: number; outputTokens: number; }
+export interface SchedulingDecisionRecord {
+  decisionId: string; phase: "dispatch_possible" | "advice_resolved" | "no_lease";
+  status: "pending" | "selected" | "invalid" | "unknown" | "no_lease";
+  snapshotDigest: string; trustedCheckPolicyDigest: string; recoveryPolicyDigest: string;
+  dispatchMayHaveOccurred: true; preferredCandidateId: string | null; validatedCandidateId: string | null;
+  modelId: string | null; tokenUsage: SchedulingTokenUsage | null; tokenUsageStatus: "measured" | "unknown";
+}
+export interface ClaimAdvice extends Omit<SchedulingDecisionRecord, "phase" | "status" | "dispatchMayHaveOccurred" | "trustedCheckPolicyDigest" | "recoveryPolicyDigest"> {
+  status: "selected" | "unknown" | "invalid"; dispatchMayHaveOccurred: true;
+  trustedCheckPolicyDigest: string; recoveryPolicyDigest: string;
+}
 export interface MissionStore {
   configureCapacity(count: number, evidenceDigest: string | null, expiresAt: string | null): Promise<void>;
   submit(input: MissionInput): Promise<Mission>;
@@ -17,11 +68,43 @@ export interface MissionStore {
   approvePlan(missionId: string): Promise<Mission>;
   getMission(missionId: string): Promise<{ mission: Mission; plan: MissionPlan | null; slices: MissionSlice[] } | null>;
   events(missionId: string, after: number): Promise<MissionEvent[]>;
-  claim(leaseSeconds: number, policyDigest: string, now?: Date): Promise<LeaseGrant | null>;
+  claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks: readonly string[], now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice): Promise<LeaseGrant | null>;
+  schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, allowedPlanChecks: readonly string[], now?: Date): Promise<SchedulingSnapshot>;
+  recordSchedulingDecision?(missionId: string, decision: SchedulingDecisionRecord): Promise<void>;
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;
   complete(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, candidateSha: string, evidenceRefs: string[]): Promise<MissionSlice>;
   integrate(missionId:string,sliceId:string,candidateSha:string,policyDigest:string,evidenceRefs:string[],integrationEvidenceRef:string,verifierId:string):Promise<MissionSlice>;
+  createIntegrationIntent?(request:IntegrationRequestV1,treeSha:string,certificateIds:string[],certificateDigests:string[],binding:{planDigest:string;policyDigest:string}):Promise<IntegrationIntentV1>;
+  getIntegrationIntent?(request:IntegrationRequestV1):Promise<IntegrationIntentV1|null>;
+  finishIntegrationIntent?(request:IntegrationRequestV1,observedSha:string,treeSha:string,binding:{planDigest:string;policyDigest:string}):Promise<MissionSlice>;
+  markIntegrationUnknown?(request:IntegrationRequestV1,observedSha:string|null,reason:string):Promise<void>;
+  getIntegratedIntent?(missionId:string,sliceId:string,leaseEpoch:number):Promise<IntegrationIntentV1|null>;
+  createDeliveryIntent?(request:DeliveryRequestV1):Promise<DeliveryIntentV1>;
+  getDeliveryIntent?(request:DeliveryRequestV1):Promise<DeliveryIntentV1|null>;
+  updateDeliveryIntent?(request:DeliveryRequestV1,update:Partial<Pick<DeliveryIntentV1,"state"|"checkRunId"|"pullRequestNumber"|"observedRemoteSha">>):Promise<DeliveryIntentV1>;
+  claimDeliveryEffect?(request:DeliveryRequestV1,effect:DeliveryEffectV1):Promise<DeliveryEffectClaimV1>;
+  observeDeliveryEffect?(request:DeliveryRequestV1,effect:DeliveryEffectV1,externalId:string):Promise<void>;
   reportOutcome(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string,outcome:"BLOCKED"|"UNKNOWN",reasonCode:string,evidenceRefs:string[]):Promise<MissionSlice>;
+  recordProgress(progress: RecoveryProgress, leaseToken: string, capabilityToken: string, strategies: Record<string, TrustedStrategyPolicy>, judge?: (snapshot: DecisionSnapshotV1) => Promise<JudgmentV1>): Promise<ProgressReceipt>;
+  lessons(missionId: string): Promise<LessonCandidate[]>;
+  lessonImpact?(lessonId:string):Promise<unknown>;
+  getLesson?(lessonId:string):Promise<LessonCandidate|null>;
+  getLesson?(lessonId:string):Promise<LessonCandidate|null>;
+  promoteLesson(lessonId: string, challengeDigest: string, reviewer: string): Promise<LessonCandidate>;
+  recoveryPolicyLease(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string): Promise<RecoveryPolicyLease>;
+  createVerificationAttempt?(binding: VerificationAttemptBinding): Promise<void>;
+  createRecoveryAttempt?(binding: RecoveryAttemptBinding, leaseToken:string, capabilityToken:string): Promise<void>;
+  getTrustedAttempt?(attemptId:string):Promise<{purpose:"final"|"recovery";request:TrustedCheckRequestV1;outcome:"pass"|"fail"|"unknown"|null;receipt:TrustedCheckReceiptV1|null;targetCheckId:string|null;strategyId:string|null;recoveryOrdinal:number|null;headObservedAt:string|null;headObservationDigest:string|null;leasePolicyDigest:string|null}|null>;
+  lessonChallengeEvidence?(lessonId:string):Promise<{lesson:LessonCandidate;rejectionReason?:string;attempts:Array<{attemptId:string;eventId:string;observation:{eventId:string;repository:string;missionId:string;sliceId:string;leaseEpoch:number;ordinal:number;status:string;decisionStatus:string;targetCheckId:string;strategyId:string;trustedCheckPolicyDigest:string;recoveryPolicyDigest:string;cohort:string};outcome:"pass"|"fail"|"unknown"|null;candidateSha:string;checkId:string;requestDigest:string;receiptDigest:string|null;request:TrustedCheckRequestV1;receipt:TrustedCheckReceiptV1|null}>}|null>;
+  recordLessonChallenge?(result:{lessonId:string;lessonVersion:number;candidateDigest:string;challengeDigest:string;evidenceDigest:string;verifierId:string;algorithmVersion:string;decision:"accepted"|"rejected";reason:string}):Promise<string>;
+  submitRecoveryVerification?(receipt:TrustedCheckReceiptV1,capabilityHash:string,observedHeadSha:string,observedAt:string,observationDigest:string):Promise<{attemptId:string;outcome:"pass"|"fail"|"unknown";receiptDigest:string}>;
+  submitVerification?(receipt: TrustedCheckReceiptV1, capabilityHash: string, observedHeadSha: string, observedAt: string, observationDigest: string, certificateId: string): Promise<CheckCertificateV1 | null>;
+  getCertificate?(missionId: string, sliceId: string, checkId: string): Promise<CheckCertificateV1 | null>;
+  getIntegratedCertificate?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string):Promise<CheckCertificateV1|null>;
+  getCertificateRequest?(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1|null>;
+  expireVerificationAttempts?(now?:Date,limit?:number):Promise<number>;
+  awaitingVerification?(checkIds:string[],limit?:number):Promise<Array<{missionId:string;sliceId:string}>>;
+  recordVerificationUnavailable?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string,reason:"candidate_unavailable"|"local_head_unavailable"):Promise<void>;
   expire(now?: Date, limit?: number): Promise<number>;
 }
 

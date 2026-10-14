@@ -1,0 +1,113 @@
+{
+  "status": "PASS",
+  "candidate": "890209224cd042f5367085ffdf5591b3aa92d739",
+  "startedUtc": "2026-10-13T13:43:49.238Z",
+  "finishedUtc": "2026-10-13T13:43:51.438Z",
+  "compilerCommand": [
+    "node",
+    "node_modules/typescript/bin/tsc",
+    "--outDir",
+    "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\jobs-runtime-derive-check"
+  ],
+  "files": [
+    {
+      "file": "dist/packages/judgment/src/canonical.js",
+      "sha256": "174d21a0ac3fa18800c1ddd8b53fcc065bd1b2262390263113ad2110980e650b"
+    },
+    {
+      "file": "dist/packages/judgment/src/jev-adapter.js",
+      "sha256": "17555fcda15a573a632a7c9ae94f9dcdb963f20ddbe26bdc0923d9d543f16a7a"
+    },
+    {
+      "file": "dist/packages/contracts/src/sql-mission-store.js",
+      "sha256": "3a55daf1d70c1bc8e0ef9be49859d9e7eb5417e281cbccefa5a20b89da1f78b4"
+    },
+    {
+      "file": "dist/packages/contracts/src/mission.js",
+      "sha256": "418343ef997fbc234afcafd095d98d3517578c7a70d3e5f46c46965449b5cc8d"
+    },
+    {
+      "file": "dist/packages/contracts/src/memory-store.js",
+      "sha256": "4c586c253c6eafc27d5860285001d89be1930eb7fdeeb42cf01359dc07dc72fc"
+    },
+    {
+      "file": "dist/packages/contracts/src/memory-mission-store.js",
+      "sha256": "4c84775ffcb57ab29d46a62bb49c3d58d0ea3d7a0244e30551d04e4160c9eced"
+    },
+    {
+      "file": "dist/packages/verification/src/artifact-store.js",
+      "sha256": "5000afa0ec6038be3a25f21fdc474854671ab6b818b112c65502bd9f923c772b"
+    },
+    {
+      "file": "dist/packages/verification/src/policy.js",
+      "sha256": "597113ae1ed05a85d444e58affb6e96c33201723b2a778a20ebcc7de089cf147"
+    },
+    {
+      "file": "dist/packages/learning/src/lesson-policy.js",
+      "sha256": "5bef2a1e7251d982a288b5f319fd735470d30a14d001acbfa033c8d96c38e281"
+    },
+    {
+      "file": "dist/packages/contracts/src/verification.js",
+      "sha256": "6a119e9ce3adc9b8ed169ee23c0a322e6bbe727f4415961bedaf0a6878357b32"
+    },
+    {
+      "file": "dist/packages/contracts/src/sql-store.js",
+      "sha256": "7704ba0d19540e5d56afe64fdc9434fbc565883e6182ca3f3122a9af3d7c0f98"
+    },
+    {
+      "file": "dist/packages/contracts/src/job.js",
+      "sha256": "85af7cbbb641d02164da7c3583a6bc541b2a0a2097f463a98ad1570ad424fdbf"
+    },
+    {
+      "file": "dist/packages/judgment/src/types.js",
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    {
+      "file": "dist/packages/governor/src/governor.js",
+      "sha256": "acc78575f86284fbe7b22156e5db0a84ab2d56a4529cf8896b26d8b379ba41cf"
+    },
+    {
+      "file": "dist/packages/contracts/src/postgres-store.js",
+      "sha256": "ba82dc3360351b959ed54ad9ef25e78663cbc117bc0b20d540c68adcc7e57d40"
+    },
+    {
+      "file": "dist/apps/verifier/src/index.js",
+      "sha256": "bb74564e1fe3ac7b9a18b2466d3ed27d70d295963e88898c0c4f89144a6d4019"
+    },
+    {
+      "file": "dist/packages/contracts/src/worker-protocol.js",
+      "sha256": "bebf28ab8ba152083edc1850126920e52486d0fda73a8a42c7e8a19963abdcd8"
+    },
+    {
+      "file": "dist/packages/verification/src/runner.js",
+      "sha256": "cba7ab4dc7461d458873d05af8f0af027a1d910f7a636e07e642d05858cb355c"
+    },
+    {
+      "file": "dist/packages/judgment/src/jev-client.js",
+      "sha256": "d11c9601bf17db4e9dc7fc8ee47866480ed81c9b49a53f1f9a6d8d659aa72ee1"
+    },
+    {
+      "file": "dist/packages/verification/src/repository.js",
+      "sha256": "dc48d997c88efd1655144cb72dafe92504060007842bdb1ff071715f503b496d"
+    },
+    {
+      "file": "dist/packages/governor/src/lease-reconciler.js",
+      "sha256": "dca861b477e754d88063fea47eba1636c9a0de8ce1bfcaa451b41c8ad53fe809"
+    },
+    {
+      "file": "dist/packages/verification/src/index.js",
+      "sha256": "ea056b7fd79618aa0b3599b6e5c092351861ecd29008a3b53b5b975e9fe1871a"
+    },
+    {
+      "file": "dist/packages/stuck-resolver/src/recovery.js",
+      "sha256": "ea3efd21485b9f0c31463cc704f24139b77d282895df33b173d02626b0f5211a"
+    },
+    {
+      "file": "dist/packages/verification/src/runsc-launcher.js",
+      "sha256": "f4372a92b624eff6acefb23eebf8476083303bd53b2d1101edf881d394bdd6da"
+    }
+  ],
+  "dependencyCopyMatches": 127,
+  "dependencyProvenance": "Byte matches controlled installed dependency tree; this check is not a fresh registry integrity verification.",
+  "excludedWrapper": "package.json contains only type:module; not compiled code"
+}

@@ -1,0 +1,11 @@
+{
+  "observedAtUtc": "2026-10-13T08:48:48Z",
+  "disposableContainers": 0,
+  "disposableNetworks": 0,
+  "disposableVolumes": 0,
+  "stagingAbsent": true,
+  "slotAbsent": true,
+  "interruptedInputAbsent": true,
+  "staleDockerConfigAbsent": true,
+  "protectedContainer": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67 2026-10-12T23:51:46.164222792Z 0 runc running"
+}

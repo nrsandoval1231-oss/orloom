@@ -1,0 +1,83 @@
+{
+  "format": "orloom-c3-suite-acceptance-snapshot-v1",
+  "querySucceeded": true,
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "sourceManifestSha256": "09f99677a6dfbf7f060a65180671cadf243182c62b1bf372e547d544c1fbceeb",
+  "exportedAt": "2026-10-13T14:34:12.788Z",
+  "attempts": [
+    {
+      "attemptId": "770b1ae5-84cf-4c33-962b-dbfc701f056a",
+      "missionId": "510bcd43-cef4-4003-86bf-a9ee39efbb82",
+      "sliceId": "suite-passing",
+      "leaseEpoch": 1,
+      "checkId": "node-repo-suite-v1",
+      "outcome": "unknown",
+      "request": {
+        "version": "orloom.trusted-check-request.v1",
+        "attemptId": "770b1ae5-84cf-4c33-962b-dbfc701f056a",
+        "missionId": "510bcd43-cef4-4003-86bf-a9ee39efbb82",
+        "sliceId": "suite-passing",
+        "leaseEpoch": 1,
+        "repository": "nrsandoval1231-oss/orloom",
+        "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+        "expectedLocalHeadSha": "617c378148df741de05c9e030950841bfd3cb70e",
+        "planDigest": "ec07bcb3176293412e481db3c54f95968e92596d6ec023b24cb6944d44596dd0",
+        "checkId": "node-repo-suite-v1",
+        "policyVersion": "orloom.node-repo-suite.v4",
+        "policyDigest": "64487701049d836d1dd10c89e92cfe46a3a0ad01e9b0521c4d13a7da0d50ed10",
+        "verifierImageDigest": "a0b779d075c95fba63d4fb365935be8d498c56025e8547d4243e80b2484ba319",
+        "inputBundleDigest": "5b78882ac8ff092eef434b5f49819138968d638398a7db0fac1ccec2b1b91bc1",
+        "requestedAt": "2026-10-13T14:31:06.385Z",
+        "expiresAt": "2026-10-13T14:35:06.385Z"
+      },
+      "receipt": {
+        "version": "orloom.trusted-check-receipt.v1",
+        "request": {
+          "version": "orloom.trusted-check-request.v1",
+          "attemptId": "770b1ae5-84cf-4c33-962b-dbfc701f056a",
+          "missionId": "510bcd43-cef4-4003-86bf-a9ee39efbb82",
+          "sliceId": "suite-passing",
+          "leaseEpoch": 1,
+          "repository": "nrsandoval1231-oss/orloom",
+          "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+          "expectedLocalHeadSha": "617c378148df741de05c9e030950841bfd3cb70e",
+          "planDigest": "ec07bcb3176293412e481db3c54f95968e92596d6ec023b24cb6944d44596dd0",
+          "checkId": "node-repo-suite-v1",
+          "policyVersion": "orloom.node-repo-suite.v4",
+          "policyDigest": "64487701049d836d1dd10c89e92cfe46a3a0ad01e9b0521c4d13a7da0d50ed10",
+          "verifierImageDigest": "a0b779d075c95fba63d4fb365935be8d498c56025e8547d4243e80b2484ba319",
+          "inputBundleDigest": "5b78882ac8ff092eef434b5f49819138968d638398a7db0fac1ccec2b1b91bc1",
+          "requestedAt": "2026-10-13T14:31:06.385Z",
+          "expiresAt": "2026-10-13T14:35:06.385Z"
+        },
+        "verifierId": "c3-suite-acceptance",
+        "runtime": "runsc",
+        "sandboxId": "orloom-verifier-18a706f2-7fb2-4a43-bd65-7233238876e2",
+        "outcome": "unknown",
+        "exitCode": null,
+        "startedAt": "2026-10-13T14:31:06.438Z",
+        "finishedAt": "2026-10-13T14:34:11.057Z",
+        "stdout": {
+          "key": "sha256/d478009a6a92ad260f52d52626dacdffa3b852ed751e3d4f7d9d210a416a7597",
+          "sha256": "d478009a6a92ad260f52d52626dacdffa3b852ed751e3d4f7d9d210a416a7597",
+          "bytes": 6268
+        },
+        "stderr": {
+          "key": "sha256/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        "inputManifest": {
+          "key": "sha256/5b78882ac8ff092eef434b5f49819138968d638398a7db0fac1ccec2b1b91bc1",
+          "sha256": "5b78882ac8ff092eef434b5f49819138968d638398a7db0fac1ccec2b1b91bc1",
+          "bytes": 106353
+        },
+        "receiptDigest": "e7ca8f356d4d8af975b8c560b18244eec0fde89430b764bdfd071c044ff753d1"
+      },
+      "createdAt": "2026-10-13 14:31:06.388485+00",
+      "terminalAt": "2026-10-13 14:34:11.155607+00",
+      "certificatePresent": false
+    }
+  ],
+  "certificates": []
+}

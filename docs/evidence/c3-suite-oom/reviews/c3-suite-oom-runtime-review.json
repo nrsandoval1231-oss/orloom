@@ -1,0 +1,22 @@
+{
+  "verdict": "FIX",
+  "runtimeAcceptance": "UNKNOWN",
+  "candidateSha": "9ebc9d91c880be907adb4b38c3e912300bf14816",
+  "attemptId": "27c353f6-64b2-48fc-94ca-3e3f67316fc0",
+  "retainedArchiveSha256": "af1f1d14cd441175f600db38acd81061663774790767fb3c117885bd5c51c013",
+  "observed": [
+    "The bounded read-only PostgreSQL snapshot checksum matches its retained JSON. It has exactly one attempt for the passing scenario, persisted outcome unknown, receipt outcome unknown with null exit code, certificatePresent false, and zero certificate rows.",
+    "The runsc resource profile names exact container 4584b934091103cffff0101d6a00b0cdd8383066b8f9b009f5231fea28b0080d and verifies the fixed 1 CPU, 1 GiB memory/swap, 128 PID, read-only, no-network, no-mount policy. It records no measured peak memory or CPU.",
+    "The retained Docker events for that exact container and candidate show oom at 2026-10-13T12:03:14.774Z and die with exit code 137 at 12:03:15.177Z. The receipt ends at 12:03:15.769Z, about 64.2 seconds after it started, before the reviewed 180-second suite budget.",
+    "Advisory stdout frames show dependency admission 201 ms pass, typecheck 24197 ms pass, clean build 22137 ms pass, test discovery 5 ms pass, then node-tests start without a terminal frame. The runner stopped at passing-real-coordinator-run with an assertion because the positive outcome was not pass.",
+    "The run helper exited 1. Its first read-only snapshot export succeeded; the later export retry exited 0 and matched the existing snapshot against fresh PostgreSQL rows (one unknown attempt, zero certificates). The reviewed cleanup exited 0 and the retained post-cleanup ledger records exact database, network, and volume removals plus database URL removal.",
+    "The protected container postflight tuple matches the accepted ID, StartedAt, restart count zero, runc runtime, and running status. The controller separately reports the verifier slot absent/free and no remaining packet containers, networks, volumes, or DSN."
+  ],
+  "inferenceLimits": [
+    "The Docker oom event supports a sandbox memory exhaustion classification for this exact container. The retained record has no peak-memory measurement, so it does not identify which process or allocation caused the OOM.",
+    "Node's current fixed suite command uses --test with discovered files and no explicit test concurrency limit. File-level parallelism is a plausible contributor, not proven as the sole cause.",
+    "No positive PASS certificate, reconnect proof, stale-ref denial, or negative fixture acceptance occurred. The old attempt remains UNKNOWN and must not be rerun or reclassified."
+  ],
+  "direction": "CORRECT: consider a new exact source candidate with a fixed policy-owned Node test file concurrency of one, keeping the same test discovery, full suite, 1 CPU/1 GiB/128 PID sandbox, 180/210/225/240-second finite budgets, and all fail-closed and certificate rules. Rebuild and rebind the image and transfer, rerun deterministic gates and independent source review, then conduct a new one-shot host proof with actual PostgreSQL/runsc evidence. If it still fails, classify from that new evidence rather than widening memory or declaring acceptance.",
+  "scope": "Independent read-only failure/evidence audit; no code, host, provider, or resource mutations"
+}

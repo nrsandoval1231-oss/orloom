@@ -1,0 +1,38 @@
+{
+  "nodeId": "C4-DELIVERY-HTTP-01",
+  "status": "ROUTE_IMPLEMENTATION_HANDOFF_PENDING_ROOT_INTEGRATION_AND_FINAL_GATES",
+  "repository": "work/orloom-delivery",
+  "branch": "feat/certified-delivery",
+  "baseSha": "ea869d23301b712696122be25cdffc53ded598f8",
+  "candidate": "dirty working tree based on baseSha; root-owned README edit also present and preserved; no commit created",
+  "changedFiles": [
+    ".agent/C4-DELIVERY-HTTP-01.md",
+    ".agent/C4-DELIVERY-HTTP-01-COMPLETION.json",
+    "apps/control-plane/src/server.ts",
+    "docs/delivery.md",
+    "packages/integration/src/delivery.ts",
+    "tests/delivery-effects.test.ts",
+    "tests/delivery-http.test.ts"
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "node --test dist/tests/delivery-http.test.js dist/tests/delivery-effects.test.js", "exitCode": 0, "passed": 18, "failed": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "notRun": [
+    "full repository suite and validate; root final gates after serial integration",
+    "credentialed GitHub App, R2, or remote delivery proof",
+    "live provider HTTP, push, commit, merge, or deployment",
+    "independent review of the final composed candidate"
+  ],
+  "routeBehavior": "POST /api/delivery requires the existing owner session and exactly DeliveryCommandV1 fields. It injects controller-owned policy and authority as an optional server argument; absent authority returns 503. Policy, repository, App/installation, reserved branch, base, and check IDs are not request-controlled. Domain conflicts return generic 409 and unexpected failures return generic 503.",
+  "readbackFix": "Separate Check GET must return the exact listed or created Check ID. Separate PR GET must return the exact listed or created PR number. Controlled regressions reject mismatches; draft PR must remain open, draft, and unmerged.",
+  "proofBoundary": "18 focused controlled tests passed. No credentialed GitHub/R2 or uploaded remote commit proof was performed. The route does not establish production readiness and application startup remains closed unless an owner injects a delivery controller.",
+  "startedAtUtc": null,
+  "startedAtStatus": "UNKNOWN; start time was not recorded",
+  "finishedAtUtc": "2026-10-13T22:56:09Z",
+  "elapsedSeconds": null,
+  "model": "GPT-6 family; exact configured model UNKNOWN",
+  "tokenUsage": "UNKNOWN"
+}

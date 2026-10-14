@@ -1,0 +1,30 @@
+{
+  "reviewType": "independent_exact_candidate_source_review",
+  "candidateSha": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+  "baseSha": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+  "sourceRef": "refs/heads/feat/remote-delivery-upload",
+  "sourceManifestSha256": "f4ad3127295e7847aaa2e555011b0a9a88c153172a1090592a1f8674c69e331e",
+  "sourceManifestEntries": 149,
+  "verdict": "PASS_SOURCE",
+  "priorReview": "work/remote-upload-source-review-56eb790.json",
+  "priorFindingDisposition": "CLOSED: uploadRef now applies --force-with-lease=refs/heads/<derived reserved branch>: to the exact destination, requiring the ref to be absent at Git's remote update. The SHA-to-ref refspec has no leading plus and no unrestricted force. If another actor creates the branch at an ancestor after the earlier REST absence read, the push rejects rather than fast-forwarding it; the existing delivery catch records UNKNOWN and does not claim a Check or PR. The controlled local bare remote test verifies rejection and preservation of an existing ancestor ref.",
+  "successorDelta": [
+    ".agent/C4-REMOTE-UPLOAD-ATOMIC-REPAIR.json",
+    ".agent/ORL-C3-SUITE-MANIFEST.sha256",
+    "docs/delivery.md",
+    "packages/integration/src/local.ts",
+    "tests/delivery-upload-transport.test.ts"
+  ],
+  "findings": [],
+  "deterministicEvidence": {
+    "controllerGateLog": "work/remote-upload-controller-gates-2026-10-14T02-04-23-622Z.log",
+    "gateCommands": 14,
+    "gateExits": "all 0",
+    "tests": 150,
+    "passed": 150,
+    "failed": 0,
+    "worktree": "clean",
+    "diffCheck": "PASS"
+  },
+  "limits": "Source acceptance only. The committed transport regression presents an existing ancestor ref to the lease-bound push; a service-level interleaving after REST absence read and its durable UNKNOWN/no-Check/no-PR outcome still require the prepared actual-PostgreSQL proof. No credentialed GitHub, cloud, or live publication claim is made."
+}

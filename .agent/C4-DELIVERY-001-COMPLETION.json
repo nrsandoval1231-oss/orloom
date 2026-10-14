@@ -1,0 +1,55 @@
+{
+  "nodeId": "C4-DELIVERY-001",
+  "status": "CORE_REPAIR_HANDOFF_PENDING_SERIAL_ROUTE_INTEGRATION_AND_ROOT_GATES",
+  "repository": "work/orloom-delivery",
+  "branch": "feat/certified-delivery",
+  "baseSha": "f51d3642e588307d1457ab3e53dbff85e3cc48d9",
+  "baseReview": "docs/evidence/delivery-source/delivery-core-preliminary-review.json",
+  "candidate": "dirty working tree based on f51d3642e588307d1457ab3e53dbff85e3cc48d9; no commit created",
+  "changedFiles": [
+    "db/migrations/007_delivery.sql",
+    "packages/adapters/src/providers.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/integration/src/delivery.ts",
+    "tests/delivery-adapter.test.ts",
+    "tests/delivery-boundary.test.ts",
+    "tests/delivery-effects.test.ts",
+    "docs/evidence/delivery-source/delivery-core-preliminary-review.json"
+  ],
+  "validation": [
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test dist/tests/delivery-adapter.test.js dist/tests/delivery-boundary.test.js dist/tests/delivery-effects.test.js",
+      "exitCode": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "notRun": [
+    "full repository test suite and validate; root final gates after route integration",
+    "real PostgreSQL multi-connection recovery proof",
+    "independent review of this repaired candidate",
+    "credentialed GitHub App/R2 remote proof"
+  ],
+  "routeHandoff": "apps/control-plane/src/server.ts remains untouched. Root should serialize the C5-owned authenticated owner-session route after accepting this core repair. Route must accept only DeliveryCommandV1, inject immutable controller-owned DeliveryPolicy and DeliveryAuthority, and stay closed when SQL/local integrator/review/R2/GitHub App prerequisites are absent. Do not accept repository, app/installation, branch, base, permissions, check IDs, or policy fields from request.",
+  "deliveryBoundary": "Consumes only an already-uploaded reserved remote branch after exact SHA/tree readback; this core does not upload or push Git data. Durable unique Check and pull_request claims are committed before create effects. Once claimed, interrupted outcomes reconcile through read-only exact lookup; Check-only recovery can record the Check and proceed to PR. Missing/ambiguous effects remain UNKNOWN without blind retry. Check create and list are followed by separate exact Check GET validating the immutable configured App ID. PR create/replay requires exact open, unmerged draft readback.",
+  "liveEffects": "none; GitHub behavior was tested only through controlled request/service fakes; no credentials, external HTTP, R2, push, commit, merge, or deploy.",
+  "startedAtUtc": null,
+  "startedAtStatus": "UNKNOWN; repair dispatch timestamp was not captured by this worker",
+  "finishedAtUtc": "2026-10-13T22:40:53Z",
+  "elapsedSeconds": null,
+  "model": "GPT-6 family; exact configured model UNKNOWN",
+  "tokenUsage": "UNKNOWN"
+}

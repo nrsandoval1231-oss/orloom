@@ -1,0 +1,53 @@
+{
+  "manifestSha256": "90ac3fe4da41cd8cdfda802b47f420da7ce43c24b7deec778fbe5c2ed145e175",
+  "records": [
+    {
+      "bin": "ssh",
+      "args": [
+        "-T",
+        "-o",
+        "BatchMode=yes",
+        "codex-dark-peak-5042",
+        "bash",
+        "-s"
+      ],
+      "start": "2026-10-13T14:00:58.038Z",
+      "finish": "2026-10-13T14:01:00.176Z",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "bin": "scp",
+      "args": [
+        "-q",
+        "-r",
+        "-o",
+        "BatchMode=yes",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-jobs-probe\\candidate-8902092\\transfer\\runtime-files",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-jobs-probe\\candidate-8902092\\transfer\\candidate.bundle",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-jobs-probe\\candidate-8902092\\transfer\\candidate-identity.json",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\build-suite-image.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\cgroup-observer.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\cleanup-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\export-acceptance-snapshot.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\preflight-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\prepare-acceptance-fixtures.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\run-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\runtime-acceptance-entry.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\runtime-acceptance.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\runtime-snapshot-export.mjs",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\setup-disposable-postgres.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\stage-acceptance.sh",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\stage-bindings.json",
+        "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-suite-jobs\\helpers\\helper-manifest.json",
+        "codex-dark-peak-5042:/var/lib/orloom/c3-suite-jobs-20261013.incoming/"
+      ],
+      "start": "2026-10-13T14:01:00.177Z",
+      "finish": "2026-10-13T14:01:37.342Z",
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "status": "UNKNOWN",
+  "stage": "interrupted-real-launcher-cid-recovery",
+  "errorType": "AssertionError",
+  "interruptedInputPath": "/run/orloom-verifier-input/orloom-verifier-6f0f96cf-f4ab-4fc9-86c4-62a6bdb1f13d"
+}

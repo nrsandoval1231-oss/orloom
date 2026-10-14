@@ -1,0 +1,65 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 2.22kB done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 230B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [source 1/1] FROM ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304
+#5 resolve ghcr.io/openai/codex-universal@sha256:905e512f36460e1be4cfedb30928a8a28299edb0fcd5de7998ceaa72d27fe304 0.1s done
+#5 DONE 0.1s
+
+#4 [internal] load build context
+#4 transferring context: 71.69kB done
+#4 DONE 0.1s
+
+#6 [stage-1 2/7] WORKDIR /opt/orloom-verifier
+#6 CACHED
+
+#7 [stage-1 3/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/bin/node /usr/local/bin/node
+#7 CACHED
+
+#8 [stage-1 4/7] COPY --from=source /root/.nvm/versions/node/v24.15.0/lib/node_modules/npm /opt/orloom-verifier/npm
+#8 CACHED
+
+#9 [stage-1 5/7] COPY infra/verifier-isolation/run-check.js infra/verifier-isolation/run-repo-suite.js infra/verifier-isolation/suite-policy.js infra/verifier-isolation/stage-runner.js infra/verifier-isolation/suite-diagnostics.js /opt/orloom-verifier/
+#9 DONE 0.5s
+
+#10 [stage-1 6/7] COPY package.json package-lock.json /opt/orloom-verifier/admission/
+#10 DONE 0.1s
+
+#11 [stage-1 7/7] RUN echo 'd1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c  /usr/local/bin/node' | sha256sum -c -  && echo 'ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df  /opt/orloom-verifier/admission/package.json' | sha256sum -c -  && echo '1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4  /opt/orloom-verifier/admission/package-lock.json' | sha256sum -c -  && mkdir -p /opt/orloom-verifier/npm-config  && : > /opt/orloom-verifier/npm-config/user.npmrc  && : > /opt/orloom-verifier/npm-config/global.npmrc  && cd /opt/orloom-verifier/admission && env -i HOME=/tmp PATH=/usr/local/bin:/usr/bin:/bin /usr/local/bin/node /opt/orloom-verifier/npm/bin/npm-cli.js ci --include=dev --ignore-scripts --no-audit --no-fund --userconfig=/opt/orloom-verifier/npm-config/user.npmrc --globalconfig=/opt/orloom-verifier/npm-config/global.npmrc  && mv node_modules /opt/orloom-verifier/node_modules && chmod -R a-w /opt/orloom-verifier/node_modules  && rm -rf /opt/orloom-verifier/admission /opt/orloom-verifier/npm-config  && chmod 0555 /usr/local/bin/node /opt/orloom-verifier/run-check.js /opt/orloom-verifier/run-repo-suite.js /opt/orloom-verifier/npm/bin/npm-cli.js /opt/orloom-verifier/stage-runner.js /opt/orloom-verifier/suite-policy.js /opt/orloom-verifier/suite-diagnostics.js
+#11 0.897 /usr/local/bin/node: OK
+#11 0.901 /opt/orloom-verifier/admission/package.json: OK
+#11 0.905 /opt/orloom-verifier/admission/package-lock.json: OK
+#11 16.90 
+#11 16.90 added 104 packages in 16s
+#11 16.91 npm notice
+#11 16.91 npm notice New major version of npm available! 11.4.2 -> 12.2.0
+#11 16.91 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+#11 16.91 npm notice To update run: npm install -g npm@12.2.0
+#11 16.91 npm notice
+#11 DONE 18.2s
+
+#12 exporting to image
+#12 exporting layers
+#12 exporting layers 74.7s done
+#12 exporting manifest sha256:51525d464ef8b208f60d29c0579d4cc190900484dd35f19e44a30e632aa69e59 0.0s done
+#12 exporting config sha256:82485f362f3489a49ecdcc45ff3852239d55dbb97a5ce112cb7a42138d609b8e 0.0s done
+#12 exporting attestation manifest sha256:fe24006017b40059de68d35743a214d8e87439584fe2b186c151bc793d6ba98d 0.0s done
+#12 exporting manifest list sha256:d93113a87cf61ff7910dae971bb279c81d357e11f545199175550d51974c349c 0.0s done
+#12 naming to docker.io/library/orloom-c3-suite-acceptance:4d1dd56b4d16
+#12 naming to docker.io/library/orloom-c3-suite-acceptance:4d1dd56b4d16 done
+#12 unpacking to docker.io/library/orloom-c3-suite-acceptance:4d1dd56b4d16
+#12 unpacking to docker.io/library/orloom-c3-suite-acceptance:4d1dd56b4d16 11.1s done
+#12 DONE 86.1s

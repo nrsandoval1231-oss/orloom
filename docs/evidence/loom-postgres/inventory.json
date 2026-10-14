@@ -1,0 +1,90 @@
+{
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "files": [
+    {
+      "file": "manifest.json",
+      "bytes": 350,
+      "sha256": "0d865b57b5ea5742d6f0376e935c4ad82bebfcbaf97a339e38d0bac79df1808b"
+    },
+    {
+      "file": "preflight.json",
+      "bytes": 7107,
+      "sha256": "3da1d6c27c758a907279138a510cc559386cd9fc2cc6a8b0b7245d079f001705"
+    },
+    {
+      "file": "runner.jsonl",
+      "bytes": 208,
+      "sha256": "0d4f5b252718c1d58aa864a4e52f9bc79d633c3a7434f592384100a15c1f5af2"
+    },
+    {
+      "file": "postgres.log",
+      "bytes": 1210,
+      "sha256": "6505fd2dfe1ecb26088b6eeded1eb78540e6ff3333b209af3379c7e3bb911165"
+    },
+    {
+      "file": "loom-browser/scenario-result.json",
+      "bytes": 381,
+      "sha256": "920b62c8f65702cc8340f57d27e0525874739f082d30487058c5f8544bb2b299"
+    },
+    {
+      "file": "loom-browser/loom-projection.json",
+      "bytes": 2307,
+      "sha256": "2904cfa2e8a86740a085cef67e5188405f83998471739458c969384e7fa63ee3"
+    },
+    {
+      "file": "loom-browser/loom-desktop.png",
+      "bytes": 199665,
+      "sha256": "765f5b76e5219ae47f207d22a64f03e49b5995315c944eaee4a4c8890f494656"
+    },
+    {
+      "file": "loom-browser/loom-reloaded.png",
+      "bytes": 198495,
+      "sha256": "92f277f584d341b3e3acd598ef90acc68b64deb41cbee0cd88118a9a6df8d398"
+    },
+    {
+      "file": "loom-browser/loom-mobile.png",
+      "bytes": 86545,
+      "sha256": "3a0a3f09431191504bbb70213c01d7e4f5c44db1c72bf35b08e7e218310ed4f9"
+    },
+    {
+      "file": "runtime-review.json",
+      "bytes": 2080,
+      "sha256": "12380306b2358c715f757c7eceb2f473f002f25605cd7f80e35bd6329fd4b774"
+    },
+    {
+      "file": "helper-review.json",
+      "bytes": 1783,
+      "sha256": "2a883ae2fffd83b896fc5506b21bd3d7ad2f9c98aa39adf8fd35c47b127032ab"
+    },
+    {
+      "file": "prior-helper-FIX.json",
+      "bytes": 3512,
+      "sha256": "398bb814e2e5356b8cc302a2905caa34c143e87e10599b6670b4ae26c83ca96f"
+    },
+    {
+      "file": "compiled-manifest.json",
+      "bytes": 7233,
+      "sha256": "8ca67c81868e7ab6fd2783b8328a84c74c2f5a722cbd710fdff4ff70d44de330"
+    },
+    {
+      "file": "helpers/scenario.mjs",
+      "bytes": 11745,
+      "sha256": "d143e630d57a8053db7fceda642b51f7c29d2eef2670c3eddc7018b71bba4d55"
+    },
+    {
+      "file": "helpers/run.mjs",
+      "bytes": 8652,
+      "sha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a"
+    },
+    {
+      "file": "helper-reconstruction.json",
+      "bytes": 2130,
+      "sha256": "1b25a552f0ca1f57d5d8923ea4d7b73f281835ed6a42d7f2f0b9144292ddd2f5"
+    },
+    {
+      "file": "helpers/prior-scenario.mjs",
+      "bytes": 10213,
+      "sha256": "974a009d45bc3c3c0d56fc27c451c44c7f91dd4a45750702f17e86ca4d254d48"
+    }
+  ]
+}

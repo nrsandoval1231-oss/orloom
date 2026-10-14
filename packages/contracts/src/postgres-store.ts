@@ -40,6 +40,24 @@ export class PostgresJobStore extends SqlJobStore {
       const missionMigration = await readFile(resolve(process.cwd(), "db/migrations/002_missions.sql"), "utf8");
       await client.query(missionMigration);
       await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["002_missions"]);
+      const recoveryMigration = await readFile(resolve(process.cwd(), "db/migrations/003_recovery.sql"), "utf8");
+      await client.query(recoveryMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["003_recovery"]);
+      const verificationMigration = await readFile(resolve(process.cwd(), "db/migrations/004_verification.sql"), "utf8");
+      await client.query(verificationMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["004_verification"]);
+      const learningMigration = await readFile(resolve(process.cwd(), "db/migrations/005_learning.sql"), "utf8");
+      await client.query(learningMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["005_learning"]);
+      const integrationMigration = await readFile(resolve(process.cwd(), "db/migrations/006_integration.sql"), "utf8");
+      await client.query(integrationMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["006_integration"]);
+      const deliveryMigration = await readFile(resolve(process.cwd(), "db/migrations/007_delivery.sql"), "utf8");
+      await client.query(deliveryMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["007_delivery"]);
+      const deliveryUploadMigration = await readFile(resolve(process.cwd(), "db/migrations/008_delivery_upload.sql"), "utf8");
+      await client.query(deliveryUploadMigration);
+      await client.query("INSERT INTO orloom_schema_migrations(version) VALUES ($1) ON CONFLICT DO NOTHING", ["008_delivery_upload"]);
       await client.query("SELECT 1");
       await client.query("COMMIT");
     } catch (error) { await client.query("ROLLBACK"); throw error; }

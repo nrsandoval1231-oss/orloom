@@ -1,0 +1,33 @@
+{
+  "packet": "C4-LOCAL-001-REPAIR1",
+  "reviewedCandidate": "f669e5a553fafabebb4d4ced54f9c36eb0e7dd0b",
+  "base": "cdad7a27762f73f1af3492e4dfb849ca04d9aed4",
+  "branch": "feat/local-integration",
+  "result": "REPAIRS_IMPLEMENTED_FOCUSED_GATES_PASS_REREVIEW_PENDING",
+  "timing": {
+    "startedAtUtc": "UNKNOWN",
+    "finishedAtUtc": "2026-10-13 19:24:11 UTC",
+    "modelAndConfiguration": "UNKNOWN",
+    "tokenUsage": "UNKNOWN"
+  },
+  "changedFiles": [
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/integration/src/local.ts",
+    "tests/local-integration.test.ts"
+  ],
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "node --test dist/tests/local-integration.test.js", "exitCode": 0, "result": "1 passed, 0 failed" },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "repairs": {
+    "C4-F1": "SQL finalization now requires canonical equality of parsed stored attempt request and digest-validated receipt request, verifies the request digest, requires the certificate-held receipt to match, and rechecks exact attempt/certificate mission, slice, epoch, repository, candidate/head, plan, check, policy-version and policy bindings under the Governor lock. Regression tests mutate verifierImageDigest, inputBundleDigest and policyVersion after intent creation and alter the certificate receipt; failures leave slice awaiting_verification, emit no integrated event and release no dependent slice.",
+    "C4-F2": "One complete object-store safety check now runs at open, before inspect/tree traversal, and again immediately before update-ref CAS. It rechecks canonical root path, repository-local objects/info/refs/heads, alternates, fixed ref file, bare/shallow status, promisor/partial-clone and unsafe local configuration, and hooks. Tests mutate alternates, partial-clone/promisor configuration, shallow marker, objects/ref directory symlinks after open, and alternates between inspect and CAS; no failed check moves the integration ref."
+  },
+  "limitations": [
+    "These are local source tests with PGlite and temporary real bare Git, not real PostgreSQL multi-connection/reconnect or operational integration proof.",
+    "No full suite was run in this repair packet; controller owns final exact-candidate gates and independent rereview.",
+    "C3 runtime acceptance, trusted retained independent artifact in live operation, production authority wiring, GitHub publication, deployment, and activation remain open; no external action was performed."
+  ]
+}

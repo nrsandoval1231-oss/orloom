@@ -1,0 +1,39 @@
+{
+  "packet": "C4-LOCAL-001",
+  "baseSha": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "branch": "feat/local-integration",
+  "result": "IMPLEMENTED_SOURCE_GATES_PASS_REVIEW_PENDING",
+  "changedFiles": [
+    "apps/control-plane/src/server.ts",
+    "db/migrations/006_integration.sql",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/postgres-store.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "packages/governor/src/governor.ts",
+    "packages/integration/src/local.ts",
+    "tests/local-integration.test.ts",
+    "tests/mission-http.test.ts"
+  ],
+  "validation": [
+    { "command": "npm run build; node --test dist/tests/local-integration.test.js dist/tests/mission-http.test.js", "exitCode": 0, "result": "2 passed, 0 failed" },
+    { "command": "npm test", "exitCode": 0, "result": "98 passed, 0 failed" },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run validate", "exitCode": 0, "result": "Foundation structure validation passed" },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "coverage": [
+    "PGlite SQL mission/certificate state with actual temporary bare Git repository and fixed local integration ref",
+    "Owner route authentication and fail-closed default without injected integration authority",
+    "Positive exact-candidate integration and dependent release; idempotent exact replay",
+    "Missing and mismatched review/certificate, self-review, wrong repository/tree/scope, rejected verdict",
+    "Post-CAS interruption and pending-intent recovery; SQL finalization rechecks mutated PASS attempt and dependency state",
+    "Wrong scope, overlapping scopes, multiple intervening commits, symlink tree entry, moved ref, active hook",
+    "Direct-child-only fast-forward, fixed repository binding, sanitized bounded Git plumbing and local-only CAS"
+  ],
+  "limits": [
+    "No real PostgreSQL multi-connection/startup/reconnect or production runtime was exercised; SQL coverage uses one PGlite instance and serialized transaction adapter.",
+    "Trusted runner receipts and retained review bytes in tests are fixtures, not C3 cloud certificates or an independent live review artifact.",
+    "Production wiring remains closed without controller-injected integration authority; no host, provider, GitHub publication, merge, deployment, activation, or conflict resolution was performed.",
+    "Source tests do not establish operational acceptance; exact-candidate independent review and integrated C3 full-suite runtime acceptance remain open."
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "packet": "ORL-005C1 C1a checkpoint",
+  "status": "PASS_LOCAL_CANDIDATE_NOT_COMPLETE",
+  "repository": "C:/Users/nrsan/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-3/work/orloom-main-review",
+  "branch": "feat/judgment-recovery",
+  "baseSha": "6110c692f47202978b2d22d22f6522aa4aa59277",
+  "headSha": "6110c692f47202978b2d22d22f6522aa4aa59277 (uncommitted frozen tree)",
+  "manifest": ".agent/ORL-005C1-MANIFEST.sha256",
+  "startedUtc": "2026-10-13T05:11:46Z",
+  "finishedUtc": "2026-10-13T05:55:22Z",
+  "timings": {
+    "validation": "UNKNOWN",
+    "planning": "UNKNOWN",
+    "elapsedToAccepted": "NOT APPLICABLE: independent acceptance pending",
+    "build": "UNKNOWN",
+    "audit": "UNKNOWN"
+  },
+  "repairCount": "UNKNOWN (no formal repair packet issued for C1a)",
+  "usage": {
+    "tokens": "UNKNOWN",
+    "testFixtureSpend": "0 USD",
+    "providerCalls": 0,
+    "liveSpend": "0 USD observed; no live Jev call made"
+  },
+  "validation": [
+    {
+      "command": "npm ci",
+      "result": "99 packages installed; 0 vulnerabilities reported",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "TypeScript passed",
+      "exitCode": 0
+    },
+    {
+      "command": "npm test",
+      "result": "41 tests passed, 0 failed",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run validate",
+      "result": "Foundation structure validation passed",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "result": "Passed; existing controller-state CRLF normalization warning only",
+      "exitCode": 0
+    }
+  ],
+  "focusedCoverage": [
+    "canonical JSON nested key-order/hash equivalence regression",
+    "jev client bounded fixed-origin choice, validation, no retry, timeout and redaction tests",
+    "authenticated HTTP and PGlite controlled failure to approved alternate strategy to candidate persistence",
+    "PGlite key-order-permuted duplicate replay and changed-content conflict",
+    "lease expiry in-flight fence leaves UNKNOWN quarantined",
+    "invalid model-selected continue cannot bypass failed-check recovery guard",
+    "owner lesson promotion rejection remains fail-closed"
+  ],
+  "explicitOpen": [
+    "C1b promotion/application/withdrawal remains open pending C3 independent verifier; no candidate is promoted or consumed",
+    "Real PostgreSQL multi-connection proof is pending; PGlite is development evidence only",
+    "Live Jev identity/capability/provider behavior and spend remain UNKNOWN; no provider call made",
+    "Broader resolver signals and full continuous self-improvement are not implemented or claimed"
+  ],
+  "independentReview": "Pending; builder does not certify own result"
+}

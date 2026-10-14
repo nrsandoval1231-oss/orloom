@@ -1,0 +1,7 @@
+# C3 artifact configuration guard
+
+Controller found a separate localized configuration defect while integrating repair 1: apps/verifier/src/index.ts accepts artifactRoot equal to process.cwd(), because the containment condition explicitly excludes an empty relative path. Canonical packet requires a persistent artifact root outside the source checkout. This is a distinct READY node with disjoint ownership from the released launcher/shutdown repair and the ongoing external proof preparation.
+
+One Luna owns apps/verifier/src/index.ts, tests/verification-config.test.ts, and .agent/ORL-C3-PATH-GUARD-COMPLETION.json only. Base source is 515ab82 plus released, uncommitted repair 1; do not change the repair or Git index. Reject equal/descendant source-root paths, relative input paths, temporary roots, mapped Git object-store overlap and malformed operator maps before any directory mutation. Keep explicit trusted factory configuration disabled when absent; do not instantiate a replacement runner or change the fixed policy. Test configuration behavior using temporary directories without executing Docker, accessing credentials or creating durable artifacts. No provider, host, Git, canonical, frozen PR2, contract or schema changes.
+
+Run focused build/typecheck/config tests and return exact evidence and files. Root runs final combined gates after this node and repair 1 are frozen. One bounded repair allowed for this small guard. Do not claim runtime certification or product completion.

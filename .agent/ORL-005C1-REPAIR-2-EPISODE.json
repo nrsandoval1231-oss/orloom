@@ -1,0 +1,23 @@
+{
+  "episode": "C1a-second-independent-review",
+  "candidate": "bb925e904d32dbc871f72de028e60d504c0a4773",
+  "state": "47 local tests passed; prior findings closed; independent acceptance and real PostgreSQL proof pending",
+  "decision": "CORRECT candidate provenance before executing cloud proof",
+  "action": "Independent source review against exact repair-1 commit",
+  "outcome": "FIX: unresolved pass observations counted as success and scope cohorts differed between stores",
+  "deterministicEvaluation": "Passing tests lacked the unknown-event and cross-cohort matrix; repair 2 adds those cases without opening promotion",
+  "attribution": "Stored observation status is not a committed decision receipt; duplicate matching logic drifted",
+  "candidateLesson": {
+    "rule": "Require committed receipts and one shared cohort rule for both current and historical recovery episodes",
+    "status": "candidate, not promoted",
+    "metric": "ineligible episodes included in lesson candidates",
+    "direction": "decrease to zero for tested matrix",
+    "evidence": "docs/evidence/c1a-review/REVIEW-bb925e9.json",
+    "reversibility": "Withdraw or revise on counterexample"
+  },
+  "formalRepairCount": 2,
+  "nextDirection": "CORRECT via ORL-005C1-REPAIR-2.md; source PASS before real PostgreSQL proof",
+  "tokens": "UNKNOWN",
+  "elapsedToAccepted": "UNKNOWN; candidate not accepted",
+  "precommitEvidenceCorrection": "Staged-byte verification detected line-ending normalization of archived evidence. .gitattributes now preserves original evidence/archive bytes; active text and refreshed manifest use LF. This is bookkeeping integrity, not runtime acceptance."
+}

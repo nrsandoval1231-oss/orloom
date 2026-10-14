@@ -1,0 +1,35 @@
+{
+  "reviewType": "successor pre-execution review",
+  "supersedesFindingsIn": "c4-pg-runner-safety-review.json",
+  "verdict": "PREEXECUTION_SAFETY_PASS",
+  "scope": "runner and frozen scenario source only; execution and database behavior unproven",
+  "sourceCandidateSha": "078ed12c8b2cbaf102e8f788e37980b017fc061a",
+  "sourceCheckout": "work/orloom-c4-proof-source; clean HEAD verified",
+  "runnerSha256": "b450fab994691429d8b6c5ea407c1221a00155e5e94997f7fc0a287af67ec14b",
+  "scenarioSha256": "78d77c5db5bc093c0b72aa403f65ba3b76b46e6340d2272816504907ae7141a9",
+  "priorScenarioSha256": "fd8b168cc40322d725fbfc99ae770d43a87facbfa8fca60f0fb898bb52828d8",
+  "resolvedFindings": [
+    {
+      "priorLocation": "scenario.mjs:25,76",
+      "result": "scenario.mjs:25-27 now reads Pool from the CommonJS default export and checks that it is a constructor."
+    },
+    {
+      "priorLocation": "scenario.mjs:249-255",
+      "result": "scenario.mjs:254-256 now races the original pool-bound Governor with a fresh reconnectPool-bound Governor; one-CAS and one-event assertions remain."
+    }
+  ],
+  "retainedSafetyObservations": [
+    "Runner requires explicit authorization, clean exact HEAD, compiled JavaScript inventory/hash match, and a free 127.0.0.1:15437 port before creating a unique cluster.",
+    "Generated password and connection file follow private runtime ACL application; no credential is printed. Owned-cluster stop requires marker, data directory, PID, port, and loopback identity checks; ambiguous cleanup remains UNKNOWN.",
+    "Each scenario has a distinct fixture repository identity; positive released child is claimed and completed before later scenarios. Mutation hooks assert a single injection and no false integration or dependency release.",
+    "Receipt and review material remain clearly labeled controlled fixtures; the resulting run cannot prove authentic verifier or independent model review behavior."
+  ],
+  "checks": [
+    "node --check run.mjs: PASS",
+    "node --check scenario.mjs: PASS",
+    "git HEAD and clean status: PASS",
+    "Runner/scenario SHA-256: matched frozen identities"
+  ],
+  "residualLimit": "Installed PostgreSQL binary metadata was observed as 18.6 in the earlier review. Runner records but does not assert the server version before initdb; confirm the recorded version on the actual run and do not generalize this pass to a changed binary.",
+  "execution": "NOT_RUN"
+}

@@ -1,0 +1,36 @@
+{
+  "format": "orloom-independent-delivery-source-review-v1",
+  "verdict": "FIX",
+  "candidate": "bdd8dcdfb445418f3bf5c7326874da1f2937f39c",
+  "base": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+  "repository": "work/orloom-delivery",
+  "sourceStatus": "clean at reviewed HEAD",
+  "scope": "C4 delivery core plus owner route; no GitHub, R2, PostgreSQL, or provider effect executed by this review",
+  "findings": [
+    {
+      "id": "DELIVERY-F1",
+      "severity": "P1 blocking real delivery path",
+      "location": ["packages/contracts/src/sql-mission-store.ts:80", "packages/integration/src/delivery.ts:47-53", "tests/delivery-effects.test.ts:47-49"],
+      "issue": "Production C4 finalization appends `integration:<integrated SHA>` and `review:<review digest>` to the verified slice's evidenceRefs. Delivery requires every evidenceRef to match `sha256:<digest>` or `sha256/<digest>` and throws on either C4 marker before creating its delivery intent or reading the remote. The effect tests directly UPDATE the slice to verified and INSERT an integrated intent, bypassing C4 finalization, so their successful delivery case cannot exercise the real handoff.",
+      "repair": "In the delivery evidence loop, recognize only the exact C4 integration and review markers bound to this command and retained integrated intent; reject malformed or mismatching markers. Continue digest readback for every sha256 artifact reference and reject any other reference. Add a production-path regression that finalizes via the real C4 integration operation, retains those markers, then reaches delivery intent/effect claiming with controlled provider fakes. Keep the existing failure for a wrong marker or unreadable R2 artifact."
+    },
+    {
+      "id": "DELIVERY-F2",
+      "severity": "P2 operational composition gap",
+      "location": ["apps/control-plane/src/server.ts:38,85-87", "apps/control-plane/src/main.ts:43", "docs/delivery.md:5"],
+      "issue": "The authenticated delivery route requires an injected deliveryController, but the application startup never supplies that argument. Thus the shipped control plane always returns 503 for this command, even if valid PostgreSQL, GitHub App, R2, and local integration services are configured elsewhere. The documentation correctly calls the route closed by default, so this is an open activation path rather than a claim of unauthorized live delivery.",
+      "repair": "Before claiming an operational end-to-end command, add a controller-owned startup composition path that constructs immutable repository/App/installation/base policy and existing SQL/local Git/review/R2/GitHub services only when all are present and valid; otherwise preserve 503. Keep credentials out of requests, logs, candidate code, and DOM. This can be a separately scoped activation packet if provider prerequisites remain unavailable."
+    }
+  ],
+  "acceptedSourceBoundaries": [
+    "The owner route checks the existing session and exact command keys and injects policy/authority rather than accepting repository, App, installation, branch or base from the request.",
+    "SQL commits a unique per-effect claim before either Check or PR POST. After a claim, a missing exact external object remains UNKNOWN without retry; a found object requires separate GET readback, exact ID, configured App for Checks, exact open unmerged draft PR, and remote branch/base SHA checks.",
+    "The Check-only interrupted phase can reconcile to check_created and proceed to the PR claim without requiring a PR that was never attempted. The focused tests exercise controlled concurrent calls and ambiguous response paths, but real PostgreSQL multi-connection recovery and credentialed GitHub/R2 proof remain open."
+  ],
+  "limits": [
+    "The C4 duplicate integration replay race is under separate repair and is not graded here.",
+    "A pre-existing exact remote branch is required; this source does not upload the local commit. Real remote SHA/tree, Check, and draft PR delivery have not been proven.",
+    "No final suite log or credentialed provider evidence was supplied for this exact delivery candidate in this review. Focused handoff reports are not acceptance. PR2 and product merge state were untouched."
+  ],
+  "direction": "Correct the evidenceRefs type-boundary mismatch first and add a regression that uses production C4 finalization. Freeze and rerun exact source gates, then independently review. Treat startup controller composition and credentialed disposable-repository delivery as separate open operational gates before any end-to-end delivery PASS; do not broaden this repair into C4 race or broker changes."
+}

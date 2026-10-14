@@ -2,3 +2,16 @@
 
 # Preserve the exact bytes bound by the worker isolation evidence manifest.
 infra/worker-isolation/** -text
+
+# Retain exact recorded evidence and archived candidate bytes.
+docs/evidence/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+.agent/archive/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# This executed helper's retained hash includes its final blank line.
+docs/evidence/c3-runtime/helpers/continue-proof.sh whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve the exact executed startup-policy helper bytes, including its final blank line.
+docs/evidence/controller-policy-postgres/helpers/scenario.mjs whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve whitespace in the exact retained rejected-test transcript.
+docs/evidence/remote-upload/prior-http-failure.log whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

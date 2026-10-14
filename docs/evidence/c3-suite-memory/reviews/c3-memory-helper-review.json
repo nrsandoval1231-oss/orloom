@@ -1,0 +1,28 @@
+{
+  "verdict": "PASS",
+  "scope": "Pre-execution helper and transfer review only; no host execution, product acceptance, or certificate claim",
+  "helperManifestSha256": "4ef5c1094ceaad5cf4ccf54774a065d1a77b2fc7f2c74ccba05a7738a197634f",
+  "candidateSha": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a",
+  "sourceManifestSha256": "51519361c6552ad52f12ee815761744031282100dc43e7c0fbf6ce3812aaa39b",
+  "transfer": {
+    "bundleSha256": "90daae28c37438f43ba9c01192b13763426dfd4d021993171ed2bdbbb13270b0",
+    "runtimePayloadManifestSha256": "287bd75c4c3b463ff0a9703f07242bf47d53bdc9da1abc102c1d35c5a1b4f15a",
+    "runtimePayloadFiles": 152,
+    "runtimePayloadMismatches": 0,
+    "bundleRef": "4d1dd56b4d16990a6b3222a40bd53ed5ddef3e5a refs/heads/feat/trusted-verification-suite"
+  },
+  "checks": [
+    "All 13 selected helper file hashes and byte lengths match the frozen manifest; stage-bindings has the 11 expected keys and binds observer, entry, runtime, snapshot exporter, fixture helper, candidate and payload.",
+    "All seven selected shell helpers pass bash -n and safe declaration-only set -u smoke; all selected MJS helpers pass node --check; three local exact-CID observer tests pass.",
+    "The staged transfer has 152 listed files with no hash mismatch, plus the two identity/manifest files. The fresh TypeScript derivation report binds 24 compiled modules and 127 copied dependency bytes to this candidate.",
+    "Preflight and run assert the exact protected container identity; Docker uses a fresh sanitized config and explicit socket. Setup creates only packet-labeled disposable network, volumes and PostgreSQL containers; cleanup verifies ledger identities and retains source, image, artifacts and evidence.",
+    "The acceptance runner checks clean candidate/ref, manifest, helpers, image labels, healthy isolated database, empty verifier state and free lock before creating a durable one-shot runtime-started marker. It never dispatches prior UNKNOWN attempts again.",
+    "The real runtime invokes the source trusted coordinator and runsc launcher. Exact CID observation requires matching ORL-C3 packet/run and source-image candidate labels, fixed runsc resource/network/mount settings, and exact cgroup path. Advisory cgroup rows are capped at 960 rows, 1 MiB and 240 seconds and cannot certify a result.",
+    "Snapshot export uses a read-only PostgreSQL transaction with finite row/query limits and strict request/receipt/certificate views; cleanup after runtime start requires the retained snapshot and checksum. Export failures stop cleanup rather than fabricating empty arrays."
+  ],
+  "boundaries": [
+    "Docker event JSONL is filtered by the exact observed CID and bounded since/until times; the 1 MiB cap applies to the cgroup observation JSONL, not Docker event output.",
+    "The historical OOM attempts and zero-certificate outcomes remain UNKNOWN. This verdict only authorizes assessing these exact helpers for one new candidate-bound proof run."
+  ],
+  "findings": []
+}

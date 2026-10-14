@@ -1,0 +1,28 @@
+{
+  "packet": "ORL-C3-JOBS-001",
+  "status": "PASS_LOCAL_IMPLEMENTATION_PENDING_CONTROLLER_FREEZE_AND_REVIEW",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseSha": "7fb97aac17dd440ec6f64f3d38fe43e527b9ce79",
+  "candidateSha": "PENDING_CONTROLLER_FREEZE",
+  "files": [
+    "tests/jobs.test.ts",
+    ".agent/ORL-C3-JOBS-001.md",
+    ".agent/ORL-C3-JOBS-001-COMPLETION.json"
+  ],
+  "validation": [
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/jobs.test.js", "exitCode": 0, "tests": 3, "passed": 3, "failed": 0, "skipped": 0 }
+  ],
+  "utc": {
+    "startedAt": "UNKNOWN_NOT_CAPTURED",
+    "finishedAt": "2026-10-13T13:37:23Z",
+    "focusedValidationWallSeconds": 5.99
+  },
+  "limitations": [
+    "No exact candidate SHA or new source manifest is claimed; controller freezes those after review.",
+    "No full-suite, trusted runtime, cloud, provider, database certificate, deployment, or completion claim is made.",
+    "The earlier actual full-suite OOM attempt remains UNKNOWN with zero certificates; this source change is a hypothesis requiring the separately specified isolated diagnostic."
+  ]
+}

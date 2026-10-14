@@ -1,0 +1,22 @@
+{
+  "verdict": "FIX",
+  "scope": "frozen pre-execution helper review; do not execute this manifest",
+  "candidateSha": "617c378148df741de05c9e030950841bfd3cb70e",
+  "helperManifestSha256": "16f75be18d6074e43f3412ea307a4c3fdfdddf241ebb3ebc1cdc06af0b5185da",
+  "transport": "work/c3-suite-resource/candidate-617c378/transfer",
+  "blockingFindings": [
+    {
+      "file": "work/c3-suite-resource/helpers/runtime-acceptance.mjs",
+      "lines": "44-56,89-123,236-240",
+      "finding": "inspectCid compares the container's orloom.candidate label with expectedCandidate. For negative fixtures expectedCandidate is the fixture commit. build-suite-image.sh:14-15 labels the single immutable verifier image with the source candidate 617c378, and launch-verifier.sh adds only packet/run labels, so fixture containers inherit the source-candidate label. The observer swallows this assertion while polling and eventually has no observed container; prescribed negative cases cannot complete even if their actual check runs correctly.",
+      "repair": "Bind the image/container candidate label to sourceCandidate, independently bind persisted request.candidateSha and fixture ancestry to each expected fixture commit. Keep resource and isolation assertions for every container. Freeze a new exact helper manifest, recheck hashes and focused negative-fixture binding behavior before host dispatch."
+    }
+  ],
+  "otherwiseReviewed": [
+    "Fresh root c3-suite-resource-20261013 and exact protected-container tuple; no broad host/container cleanup.",
+    "PostgreSQL healthy/exact packet ID, free canonical flock/state, no ORL-C3 container, and post-PG MemAvailable >=2952790016 bytes plus >=4 GiB disk before any dispatch. A separate fresh memory check runs before each attempt.",
+    "Runtime marker prevents redispatch; snapshot exporter queries real PostgreSQL and cleanup requires its bound hash after any started run. Negative fixtures start only after positive PASS and use separate exact commits.",
+    "Bindings include source manifest, image, helper and compiled runtime payload hashes; fresh derivation reports 24 compiled modules and 127 installed dependency files. No provider credential/call was found in the helper path."
+  ],
+  "limits": "Static helper review does not certify capacity at dispatch, Docker normalization, cgroup telemetry availability, actual suite result, or cleanup. Original 8902092 attempt remains UNKNOWN/zero certificates."
+}

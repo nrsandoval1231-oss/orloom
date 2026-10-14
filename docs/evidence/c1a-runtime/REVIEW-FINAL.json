@@ -1,0 +1,56 @@
+{
+  "review": "C1a final independent evidence reconciliation",
+  "verdict": "PASS",
+  "candidateSha": "545279c7b53fef8453c8e50ae0bc7f0d790959af",
+  "branch": "feat/judgment-recovery",
+  "scope": "Bounded C1a recovery and durable unpromoted lesson-candidate checkpoint only",
+  "sourceReview": "work/orloom-main-review/docs/evidence/c1a-runtime/REVIEW-SOURCE-545279c.json",
+  "evidence": {
+    "sourceManifest": {
+      "path": "work/orloom-main-review/.agent/ORL-005C1-MANIFEST.sha256",
+      "sha256": "85612beddd1d5b81bd2987fc6980c149f87092d42b316e54ea6af93c8e5fbace",
+      "entries": 36,
+      "independentByteCheck": "36/36 match current checkout; HEAD matches candidate"
+    },
+    "controllerGates": "work/orloom-main-review/docs/evidence/c1a-runtime/CONTROLLER-GATES-545279c.txt: npm ci, typecheck, build/test 51/51, validate exit 0; diff check exit 0 independently observed",
+    "runtimeResult": {
+      "path": "work/orloom-main-review/docs/evidence/c1a-runtime/runtime-result-attempt3.txt",
+      "sha256": "ff7b5a9a26aebc9fb08437d32bcdaf410bedb0c2954aa6f21f8f666c923fc6d5",
+      "marker": "C1A_REAL_POSTGRES_HTTP_PROOF=PASS",
+      "receiptByteCheck": "18/18 hashes match decoded bytes; 8 passing and 10 failing fixture outcomes; all recorded exits agree with the fixed check",
+      "backendPids": [4457, 4458, 4459],
+      "providerCallsReported": 0
+    },
+    "executedRunner": {
+      "path": "work/orloom-main-review/docs/evidence/c1a-runtime/runtime-proof.mjs",
+      "sha256": "facf0a089edcd361b27e674f1ad0f8cd9e9ebc4fe43dea1d7aef0c3b9895dbc9"
+    },
+    "payloadIdentity": {
+      "path": "work/orloom-main-review/docs/evidence/c1a-runtime/payload-identity-04.json",
+      "manifestPath": "work/orloom-main-review/docs/evidence/c1a-runtime/payload-manifest-04.sha256",
+      "manifestSha256": "77322aa943bc1df89931f96f917bfb020eb98385e3b590b543d50e22f3cc4ec3",
+      "fileCount": 150,
+      "lockfileSha256": "1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4"
+    },
+    "producerEvidenceManifest": {
+      "path": "work/orloom-main-review/docs/evidence/c1a-runtime/EVIDENCE-MANIFEST.sha256",
+      "sha256": "978a092b46641a36515f5eb7b94d5de3682285b6af8a27bdcae5a26fbec155c8",
+      "independentByteCheck": "14/14 retained entries match"
+    },
+    "cleanup": "work/orloom-main-review/docs/evidence/c1a-runtime/REMOTE-CLEANUP-POSTCHECK.txt"
+  },
+  "findings": [],
+  "reconciliation": [
+    "The producer FINAL-HANDOFF.md is preserved raw. EVIDENCE.md correctly identifies the actual checkout, source manifest name and 18 receipt count; 42 is the expected fixture answer.",
+    "Attempt 1 bootstrap DNS failure and attempt 2 challenge-digest failure remain retained. The accepted attempt used fresh databases and no source edit.",
+    "The proof runner executes the fixed check before and after the approved fixture repair, uses actual SQL stores through authenticated HTTP, observes independent concurrent PostgreSQL backends, fences a budget mutation during held judgment, and replays persisted events after reconnect.",
+    "A pattern scan found no copied credential or private key values. The retained diagnostic contains one disposable internal container IP; runtime code reads the test password from a file and does not print it."
+  ],
+  "limits": [
+    "The 150-file compiled payload itself was cleaned up; retained identity, manifest and script guards establish transfer verification, but the reviewer did not independently rerun the remote workload.",
+    "This proof validates controlled fixture outcomes and source behavior, not independent production verification or measured improvement.",
+    "C1b independent challenge, promotion, later-task application, withdrawal, broader stuck signals, and measured improvement remain OPEN. C3 independent exact-commit verification and the platform Finish Contract remain OPEN.",
+    "PR #2's frozen commit object exists locally; this review did not query its current remote PR state or mutate its branch. No cloud deployment or live provider execution is accepted."
+  ],
+  "nextDirection": "Accept only the C1a checkpoint; proceed to C3 trusted verification before C1b learning completion. Preserve the frozen source identity and raw failed attempts."
+}

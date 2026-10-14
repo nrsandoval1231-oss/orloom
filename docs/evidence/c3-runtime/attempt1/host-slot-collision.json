@@ -1,0 +1,11 @@
+{
+  "lockPath": "/run/orloom-verifier-lock/slot.lock",
+  "competingProcessId": 129715,
+  "secondFlockExitCode": 75,
+  "realCoordinatorRunnerAttempt": true,
+  "receiptOutcome": "unknown",
+  "sandboxContainersBefore": [],
+  "sandboxContainersAfter": [],
+  "durableStateUnchanged": true,
+  "automaticRedispatch": false
+}

@@ -1,0 +1,56 @@
+{
+  "format": "orloom-independent-source-browser-review-v1",
+  "verdict": "FIX",
+  "candidate": "19abb354ad01433689a57e71e716ea1afca069c9",
+  "base": "03795427a22fb21eb3890e5ae8e7f7c2c5071ae9",
+  "repository": "work/orloom-loom",
+  "sourceStatus": "clean at reviewed HEAD",
+  "controllerGates": {
+    "log": "work/loom-controller-gates-2026-10-13T19-45-10-422Z.log",
+    "tests": 105,
+    "passed": 105,
+    "failed": 0,
+    "skipped": 0,
+    "typecheckBuildValidateSyntaxDiff": "PASS"
+  },
+  "browserEvidence": {
+    "result": "work/loom-browser-checks/2026-10-13T19-57-10-934Z/result.json",
+    "status": "PASS_RENDERING_ONLY",
+    "captures": ["desktop.png", "mobile.png", "webgl-fallback.png", "disconnected.png"],
+    "comparison": "work/loom-v4-reference.png",
+    "backend": "controlled MemoryMissionStore; no PostgreSQL, provider, worker, or certificate"
+  },
+  "acceptedBoundaries": [
+    "The Loom adds owner-authenticated read-only mission projection; /loom exposes no session token, the API requires the owner cookie, and certificate links are constructed from validated same-origin IDs. Untrusted mission/event labels are inserted with textContent, and the page uses a nonce CSP without third-party resources.",
+    "The projector does not advance progress from animation, elapsed time, or event count. Missing, malformed, regressing, contradictory, disconnected, and UNKNOWN inputs generally keep closure open and label uncertainty.",
+    "Prototype v1-v4 files are byte-identical to the completion record; v4 SHA-256 is af5ba66c9cdefc5ec33cf0c5241b33792c7985bf039824b73a9d18fcd6a0442e. No synthetic 62/100 progress or simulation journal was copied into the live path."
+  ],
+  "findings": [
+    {
+      "id": "C5-F1",
+      "severity": "blocking visual acceptance",
+      "location": "apps/control-plane/src/loom-page.ts; desktop/mobile/webgl-fallback screenshots",
+      "issue": "The SVG fallback is visibly overlaid on the WebGL canvas because .weave svg { display:block } overrides the SVG hidden attribute. Desktop therefore does not demonstrate the actual WebGL weave. Mobile fixes a tall opaque inspector over most of the ring and clips/overlaps the live notice and event area. Compared with the preserved v4 reference, the current flat torus omits distinct woven sectors, the central mission nucleus, and camera/inspection affordances required by the C5 packet's visual adaptation. The controlled browser result proves rendering and input plumbing only, not visual acceptance.",
+      "requiredRepair": "Adapt the actual v4 geometry, layered palette, mission-centered nucleus and responsive inspect/camera behavior while binding all labels and sector status to the real projector. Exclude simulation controls, synthetic numbers, fake source snapshots, and hardcoded completion. Make SVG truly hidden when WebGL is active, show it only on fallback, and give mobile weave, notice, status, and a usable scrollable inspector nonoverlapping space. Repeat desktop, mobile, keyboard, WebGL-on and forced-fallback visual captures and assess them against v4."
+    },
+    {
+      "id": "C5-F2",
+      "severity": "blocking functional acceptance",
+      "location": "apps/control-plane/src/server.ts:118; apps/control-plane/src/loom-page.ts refresh()",
+      "issue": "Every poll reads events from cursor zero; SQL returns at most 1,000 rows and the route marks >=1,000 as overflow. The browser never uses the cursor to fetch subsequent pages, so a mission reaching the SQL page boundary becomes permanently UNKNOWN rather than catching up through bounded pages. This misses the packet's cursor-based poll and reconnect contract.",
+      "requiredRepair": "Use bounded cursor pages (existing events?after=N or a Loom page endpoint), verify strictly increasing mission-local cursors while allowing global gaps, refresh the mission snapshot with catch-up, retain an explicit bounded history/projection budget, and fail closed only on a genuine cap, gap, regression or inaccessible page. Add >1,000-event and reconnect tests, including exact-boundary pagination without false overflow."
+    },
+    {
+      "id": "C5-F3",
+      "severity": "blocking closure semantics",
+      "location": "apps/control-plane/src/loom-projection.ts:33-70; apps/control-plane/src/server.ts:118",
+      "issue": "Closure compares only the returned slice list, not the approved plan's slice identities, even though governor.get returns the plan. It also checks increasing numeric cursors but does not require each current certificate event to precede its matching pending intent and that intent to precede integration. A partial slice snapshot or causally reordered yet numerically increasing events can therefore make an otherwise verified snapshot appear closed without every planned slice's ordered proof.",
+      "requiredRepair": "Pass the approved plan into the pure projector, require exact plan/slice ID membership and approved status for closure, and retain event cursors for each matched certificate, pending intent, and integration. Close only when certificate < matching pending < integrated for the current candidate/epoch/check set, with no later invalidation. Add partial-plan and semantic-order regression cases; preserve UNKNOWN rather than inventing closure."
+    }
+  ],
+  "limits": [
+    "The browser check used a controlled memory-store mission and had no PostgreSQL-backed event transition, authentic C4 integration, live provider, worker, or certificate. It cannot close the packet's real-PG browser acceptance.",
+    "The previous 8f271de C3 cloud attempt remains FAIL with zero certificates. Source and rendering evidence here do not authorize C1b activation, publication, deployment, or parent completion."
+  ],
+  "direction": "One bounded C5 repair on page layout/renderer, cursor catch-up, and plan/causal closure tests; then freeze a successor, run exact source gates, visual browser comparison, real PostgreSQL event/reconnect proof, and independent rereview."
+}

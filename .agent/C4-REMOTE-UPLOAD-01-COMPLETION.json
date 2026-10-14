@@ -1,0 +1,28 @@
+{
+  "nodeId": "C4-REMOTE-UPLOAD-01",
+  "status": "FOCUSED_HTTP_FIX_HANDOFF_PENDING_ROOT_GATES_AND_REVIEW",
+  "repository": "work/orloom-remote-upload",
+  "branch": "feat/remote-delivery-upload",
+  "baseSha": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+  "candidate": "dirty working tree; no commit created",
+  "changedFiles": [
+    "tests/delivery-http.test.ts",
+    ".agent/C4-REMOTE-UPLOAD-01-COMPLETION.json"
+  ],
+  "repair": "Added required uploadRef and withContentsWriteToken authority stubs to the unexpected-store-failure HTTP fixture. Without them, delivery correctly failed closed with 409 during authority preflight before reaching the fixture's throwing getMission; with the required capabilities present, the store exception reaches the server mapping and remains a generic 503. Assertion preserved.",
+  "validation": [
+    { "command": "npm run build", "exitCode": 0, "result": "PASS; TypeScript compile plus trusted askpass asset copy" },
+    { "command": "node --test dist/tests/delivery-http.test.js", "exitCode": 0, "result": "PASS; 4 tests, 0 failures" },
+    { "command": "git diff --check", "exitCode": 0, "result": "PASS" }
+  ],
+  "retainedCombinedGateEvidence": "Root's preliminary composed run reported 150 tests, 149 passed and 1 failed: this unexpected-store HTTP fixture expected 503 but got the intended preflight 409. Focused repair now passes. Combined gates must be rerun by root on the final composed candidate.",
+  "limits": [
+    "No full repository gate or independent review was run in this bounded repair.",
+    "Actual PostgreSQL and external GitHub/App upload proof remain OPEN; no external call, credential, host operation, commit, or push was used."
+  ],
+  "startedAtUtc": "UNKNOWN",
+  "finishedAtUtc": "2026-10-14T01:53:23Z",
+  "elapsedSeconds": null,
+  "modelAndConfig": "UNKNOWN",
+  "tokenUsage": "UNKNOWN"
+}

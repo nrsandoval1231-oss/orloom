@@ -1,0 +1,22 @@
+{
+  "packet": "C4-REMOTE-UPLOAD-ATOMIC-REPAIR",
+  "base": "56eb790856b64a3fadf053a959049588d0ea6a26",
+  "objective": "Prevent an upload from advancing a reserved branch created by an independent actor after an absence read.",
+  "change": "The fixed Git push uses --force-with-lease=refs/heads/<derived-branch>: with the existing explicit SHA-to-ref refspec.",
+  "invariants": [
+    "The lease is expected-empty for the exact derived destination ref.",
+    "The refspec has no leading plus and there is no unrestricted force.",
+    "An existing branch is preserved even if the candidate could fast-forward it.",
+    "Transport errors remain generic and credential handling is unchanged."
+  ],
+  "focusedValidation": [
+    "npm run build",
+    "node --test dist/tests/delivery-upload-transport.test.js",
+    "git diff --check"
+  ],
+  "result": "PASS: controlled local bare remote preserves an ancestor branch and rejects the lease-bound upload; local integration ref remains unchanged.",
+  "unknown": [
+    "The PostgreSQL service-level interleaving and UNKNOWN/no-Check/no-PR behavior are owned by the separate preparation lane.",
+    "No HTTPS, GitHub, provider credential, cloud, deployment, or Linux-runtime proof was run."
+  ]
+}

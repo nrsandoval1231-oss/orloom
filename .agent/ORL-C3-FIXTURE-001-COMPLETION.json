@@ -1,0 +1,58 @@
+{
+  "packet": "ORL-C3-FIXTURE-001",
+  "status": "READY_FOR_CONTROLLER_INTEGRATION",
+  "branch": "fix/nonroot-suite-fixture",
+  "baseHead": "8f271de796e643a3a0b9b47b80fc1de3e3646d9d",
+  "candidate": "uncommitted working tree on exact base",
+  "changedFiles": {
+    "tests/verification-runner.test.ts": "c1371e1306fb01d50d89875974c2fe25acb75accd6033b6dfbf0807ae4f14773",
+    ".agent/ORL-C3-FIXTURE-001.md": "15676cffb9db3ec71bd9d67e6858f7f2fc23fc341f1c92fab6b4733a61a53b33"
+  },
+  "validation": [
+    {
+      "command": "npm ci --ignore-scripts",
+      "exitCode": 0,
+      "wallSeconds": 4.4
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "wallSeconds": 2.84
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "wallSeconds": 2.71
+    },
+    {
+      "command": "node --test --test-concurrency=1 --test-name-pattern=\"repository suite admission accepts\" dist/tests/verification-runner.test.js",
+      "failed": 0,
+      "exitCode": 0,
+      "passed": 1,
+      "wallSeconds": 0.71
+    },
+    {
+      "command": "node --test --test-concurrency=1 dist/tests/verification-runner.test.js",
+      "failed": 0,
+      "exitCode": 0,
+      "passed": 14,
+      "wallSeconds": 3.09
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "wallSeconds": 0.26
+    }
+  ],
+  "preservedFailedAttempt": {
+    "command": "npm run build and npm run typecheck, before local shadow binding removal",
+    "exitCode": 1,
+    "reason": "TS2448/TS2454 on readFile shadow",
+    "repair": "removed redundant local import; subsequent build/typecheck passed"
+  },
+  "sourceRuntimeClaim": "NONE; separate 8f cloud attempt remains FAIL with zero certificates",
+  "hostOrProviderCalls": 0,
+  "sourceManifestUpdated": false,
+  "finishedAtUtc": "2026-10-13T18:55:22Z",
+  "elapsedFromStart": "UNKNOWN (start timestamp not captured)"
+}

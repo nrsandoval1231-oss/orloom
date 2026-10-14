@@ -1,0 +1,9 @@
+{
+  "command": "test ! -e /var/lib/orloom/verifier/state && flock -n /run/orloom-verifier-lock/slot.lock /usr/bin/true && test ! -e /var/lib/orloom/c3-suite-jobs-20261013/staging/database-url && test -z \"$(docker ps -aq --filter label=orloom.packet=ORL-C3-SUITE-JOBS)\" && test -z \"$(docker ps -aq --filter label=orloom.packet=ORL-C3)\" && test -z \"$(docker network ls -q --filter label=orloom.packet=ORL-C3-SUITE-JOBS)\" && test -z \"$(docker volume ls -q --filter label=orloom.packet=ORL-C3-SUITE-JOBS)\" && docker inspect --format \"{{.Id}}|{{.State.Status}}|{{.State.StartedAt}}|{{.RestartCount}}|{{.HostConfig.Runtime}}\" 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+  "startedUtc": "2026-10-13T14:07:00.829Z",
+  "finishedUtc": "2026-10-13T14:07:01.837Z",
+  "exit": 0,
+  "stdout": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67|running|2026-10-12T23:51:46.164222792Z|0|runc\n",
+  "stderr": "",
+  "status": "PASS"
+}

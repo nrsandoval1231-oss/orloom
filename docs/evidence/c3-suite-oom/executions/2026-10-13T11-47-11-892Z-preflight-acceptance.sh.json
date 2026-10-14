@@ -1,0 +1,11 @@
+{
+  "scriptName": "preflight-acceptance.sh",
+  "args": [],
+  "scriptSha256": "215cc109f82cf15ee52ea4007e468186b88b4f12031bd1e344882a518bc86ac1",
+  "start": "2026-10-13T11:47:11.893Z",
+  "finish": "2026-10-13T11:47:13.036Z",
+  "elapsedMs": 1143,
+  "exit": 1,
+  "signal": null,
+  "logPrefix": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\suite-acceptance-executions\\2026-10-13T11-47-11-892Z-preflight-acceptance.sh"
+}

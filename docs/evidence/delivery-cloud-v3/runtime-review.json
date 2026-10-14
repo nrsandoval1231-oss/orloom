@@ -1,0 +1,31 @@
+{
+  "format": "orloom-independent-delivery-cloud-runtime-review-v3",
+  "verdict": "FIX",
+  "runtimeOutcome": "FAIL_REAL_FULL_SUITE",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "sourceManifestSha256": "9215357a14e2d83079c8db9aa779969d5f86e53ac556224974979f5750e1923d",
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "reviewPackageSha256": "ffe794cf23c1b04be1722657002f3223c4e694b95717da80a50f704cd1d9f05f",
+  "evidenceRoot": "work/c3-delivery-cloud-v3/candidate-f6023acade03-v3/executions/retained-before-cleanup",
+  "beforeCleanupArchiveSha256": "4e231c8597a0c083648068e3dfdf628636b714bd585efaebec26b93be75ebbee",
+  "afterCleanupArchiveSha256": "a7853130a76758c117bce49835009eebcf4f4e5be8566f1065bb40af87af248e",
+  "findings": [
+    {
+      "priority": "P1 acceptance failure",
+      "title": "Real runsc full-suite failed in a Linux symlink-cleanup fixture",
+      "evidence": "The actual run-acceptance wrapper exited 1 after 288295 ms. Its retained trusted receipt has outcome=fail, exitCode=1, started 2026-10-14T00:16:56.674Z, finished 00:21:28.112Z (271438 ms), and no certificate. The verified stdout artifact (SHA-256 e1e62bac...) shows dependency-lock admission, typecheck, clean build, 26-test-file discovery and 13 completed passing Node test groups (58 tests) before local-integration.test.js failed: ENOTDIR rmdir '/tmp/orloom-local-integration-4RfU45/bare.git/objects'. The source fixture removes a symlink using rmdir, which is invalid on Linux; the target test did not reach its intended completion. Stage node-tests ended 1.",
+      "boundedDirection": "Repair only the cross-platform symlink teardown in the source test fixture, preserve its fail-closed Git security assertion, then freeze a new source SHA, run mandatory exact gates and independent source review before a fresh cloud package and one new disposable attempt. Do not relabel this FAIL receipt or reuse its started runtime marker as a retry authorization."
+    }
+  ],
+  "runtimeInterpretation": [
+    "The wrapper's nested proof-failure.json says UNKNOWN at passing-real-coordinator-run because runtime-acceptance.mjs line 161 asserted expected PASS and received the persisted FAIL. That is an outer proof assertion, not an ambiguous verifier effect: SQL snapshot and receipt conclusively show a terminal FAIL attempt and zero certificates.",
+    "No timeout or OOM is evidenced: receipt and suite exited 1 with the explicit ENOTDIR frame before the unchanged 360/390/405/420-second bounds. Runsc configuration records 2 GiB memory, no network, read-only root, nonroot user and no-new-privileges; cgroup stream has 881 observations but measured peak memory is unavailable, so no peak-memory claim is made.",
+    "The image binding, staging identity, run marker and receipt request all identify f6023ac, the 139-file source manifest, node-repo-suite-v1 v5 and image sha256:215e6268...; protected-host and capacity preflight admitted 3.40 GiB available memory against the 2.95 GiB required floor."
+  ],
+  "retentionAndCleanup": [
+    "The source-bound read-only PostgreSQL snapshot reports querySucceeded=true, exactly one FAIL attempt and zero certificates; its SHA-256 checksum 644bdbd8... matches the retained snapshot bytes.",
+    "The before-cleanup archive hash matches its retention record. Cleanup exited 0 after checking the snapshot and removing only ledger-owned disposable PostgreSQL resources and root-only database-url; the after-cleanup archive is retained at its recorded hash.",
+    "Postflight exited 0 and records the protected codex-universal container still running at the expected ID/start/restart/runtime tuple, no packet-labeled disposable resources, no database-url, and retained evidence/artifacts."
+  ],
+  "limits": "This run supplies genuine negative cloud verifier evidence, not a full-suite PASS, certificate, delivery publication, production activation, or parent commercial acceptance. No host/provider action was performed by this read-only review."
+}

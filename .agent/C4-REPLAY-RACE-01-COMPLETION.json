@@ -1,0 +1,67 @@
+{
+  "packet": "C4-REPLAY-RACE-01",
+  "status": "SOURCE_FIX_READY_FOR_INDEPENDENT_REVIEW",
+  "branch": "fix/integration-replay-race",
+  "baseSha": "03795427a22fb21eb3890e5ae8e7f7c2c5071ae9",
+  "headSha": "03795427a22fb21eb3890e5ae8e7f7c2c5071ae9",
+  "utc": {
+    "start": "UNKNOWN",
+    "finish": "2026-10-13T22:58:51Z"
+  },
+  "model": "UNKNOWN",
+  "configIdentity": "UNKNOWN",
+  "changedFiles": [
+    {
+      "path": "packages/contracts/src/mission.ts",
+      "sha256": "4c8517eba2993436485ed83914609a2353d83943cb4a30a2389c1de4239ebda7"
+    },
+    {
+      "path": "packages/contracts/src/sql-mission-store.ts",
+      "sha256": "5f7e7fce57a050102f760afc1d5c177498fa47c263df6b2db3818c0b8a509ceb"
+    },
+    {
+      "path": "packages/governor/src/governor.ts",
+      "sha256": "190672f0ee86f657a21241d942bdf642fbf1a94974a5c786e4197c7b19aee559"
+    },
+    {
+      "path": "tests/integration-replay-race.test.ts",
+      "sha256": "42487d7e0bc7633abe23944fbf4429547b6be02c13be89322c32d4b317d655c3"
+    },
+    {
+      "path": ".agent/C4-REPLAY-RACE-01.md",
+      "sha256": "e384eee4de7cf19f733915cc5c6c20bd467490cba57c30b0c6b0569e9d126301"
+    }
+  ],
+  "validation": [
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "node --test dist/tests/integration-replay-race.test.js",
+      "exitCode": 0,
+      "result": "PASS; 1 test; five deterministic replay race gates; negative conflicting review, tampered receipt, changed plan/policy/tree, moved ref, and UNKNOWN intent"
+    },
+    {
+      "command": "node --test dist/tests/local-integration.test.js",
+      "exitCode": 0,
+      "result": "PASS; 1 test"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "result": "PASS"
+    }
+  ],
+  "notProven": [
+    "No real PostgreSQL or independent-pool rerun was performed in this packet.",
+    "No runtime, CI, deployment, provider, or operational acceptance claim is made.",
+    "Root-owned docs/evidence/c4-postgres was present as untracked shared-worktree content and was not edited."
+  ]
+}

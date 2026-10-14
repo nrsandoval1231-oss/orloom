@@ -1,0 +1,104 @@
+{
+  "packet": "ORL-C3-SUITE-DEADLINE-REPLAN",
+  "direction": "CORRECT",
+  "status": "implemented-local-only; controller freeze and runtime proof pending",
+  "repository": "work/orloom-suite",
+  "branch": "feat/trusted-verification-suite",
+  "baseHead": "727de8607202307f6c45186ca11546d1fcdc338b",
+  "baseTree": "5dde64c95271a999c5e7b4173948305310477261",
+  "sourceBaseline": "a7c25a6ed4ded08f7b8fbfbd85238becf9553775",
+  "workingTreePatchSha256": "da50455c3fdac8a4db53004d33aa55a5a9dce4e9cfd223e2b5b315e711f93bb3",
+  "workingTreePatchBytes": 46891,
+  "changedFiles": [
+    "apps/control-plane/src/main.ts",
+    "apps/verifier/src/index.ts",
+    "docs/verification.md",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/suite-diagnostics.js",
+    "packages/governor/src/governor.ts",
+    "packages/verification/src/index.ts",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/verification-certification.test.ts",
+    "tests/verification-runner.test.ts"
+  ],
+  "fileSha256": {
+    "apps/control-plane/src/main.ts": "da2c222fb04903fda66b402a009474dcbee26774e1e34c44f034199dffaf2a2c",
+    "apps/verifier/src/index.ts": "286335debbfb6bf41db2ae4a53b1450e125309586c97673978cca2b442ef795d",
+    "docs/verification.md": "165fb2090aa6d1349d539779ff1d59d5ab4b60d7b53beecfbcf6c4bfb703bf04",
+    "infra/verifier-isolation/README.md": "64c446d59f2380bc58efce1a5dd41f0d4e98b01f53e8fb1267391c442094e5fe",
+    "infra/verifier-isolation/launch-verifier.sh": "397a638899bc42f12dbba7fb0f63703a89c80dd05bd45f4cce9e3487bdc3e14d",
+    "infra/verifier-isolation/run-repo-suite.js": "84faae84c5a5f4e181bd6461a7fe9c11b138902501b674fa95e6f89996c59feb",
+    "infra/verifier-isolation/suite-diagnostics.js": "01933a9de87d4e5ba9968339793bae5fb4bca8a12910335327486d8210c40ba3",
+    "packages/governor/src/governor.ts": "bf197f963aed0226aed8a2471b6f72d87c105a40a5e81c90f1d8dd777cc373b8",
+    "packages/verification/src/index.ts": "7b543f1079de4b198f60993614a729a63ce0a7efb6f46429e9277a11aef8f9d2",
+    "packages/verification/src/policy.ts": "8762fea885cd8ee21093959d344a13b13d7a49e7ecb8db41b23c5605dc52c9e5",
+    "packages/verification/src/runsc-launcher.ts": "c18e2e89afed8cfa9747dec318a4b4be3f23112d67686cb3dafb1e1a2bce5e83",
+    "tests/verification-certification.test.ts": "463850cf217e2ceac1d7fa2299d5c2c6146eff4568fe55b06372890b35d295ff",
+    "tests/verification-runner.test.ts": "90537597fbba533b657c76b64f93e92c5ab347347c3766323b1375467415e1a6"
+  },
+  "validation": {
+    "focusedBuildAndTests": {
+      "command": "npm run build; node --test dist/tests/verification-runner.test.js dist/tests/verification-certification.test.js",
+      "exit": 0,
+      "tests": 14,
+      "passed": 14
+    },
+    "finalGates": [
+      {
+        "command": "npm run typecheck",
+        "exit": 0
+      },
+      {
+        "command": "npm run build",
+        "exit": 0
+      },
+      {
+        "command": "npm test",
+        "exit": 0,
+        "tests": 73,
+        "passed": 73
+      },
+      {
+        "command": "npm run validate",
+        "exit": 0
+      },
+      {
+        "command": "node --check infra/verifier-isolation/run-repo-suite.js && node --check infra/verifier-isolation/suite-diagnostics.js",
+        "exit": 0
+      },
+      {
+        "command": "bash -n infra/verifier-isolation/launch-verifier.sh",
+        "exit": 0
+      },
+      {
+        "command": "git diff --check",
+        "exit": 0
+      }
+    ],
+    "rawLog": "work/c3-suite-deadline-replan-final-gates.log",
+    "rawLogSha256": "549246c16f28e14575f5b581c097b996f032ebc8f08294195af34ddfff47da5b"
+  },
+  "runtime": {
+    "hostActions": false,
+    "imageBuild": false,
+    "certificate": false,
+    "fullSuiteRuntime": "UNKNOWN; not run by this builder"
+  },
+  "timing": {
+    "startedUtc": "UNKNOWN (not captured at task start)",
+    "finishedUtc": "2026-10-13T10:58:38.828Z",
+    "focusedCommandElapsedSeconds": 5.1,
+    "finalGateToolElapsedSeconds": 12.1,
+    "planningSeconds": "UNKNOWN",
+    "tokenUsage": "UNKNOWN",
+    "configIdentity": "UNKNOWN"
+  },
+  "notes": [
+    "Only trusted operator selected policy supplies the new suite attemptLifetimeMs=240000; syntax remains 60000.",
+    "The syntax policy digest assertion remains e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe.",
+    "No commit, push, host/provider action, image build, or runtime certificate was performed."
+  ]
+}

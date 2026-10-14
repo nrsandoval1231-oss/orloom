@@ -1,0 +1,11 @@
+# C1a independent-review repair 1
+
+Direction: CORRECT. Candidate `ec3dd0ffa0168cdfef5973835db4cc646bc274de` received independent `FIX`. Preserve its review and failed candidate identity. This is the first formal C1a repair packet; the earlier SDK deadline repair is separately retained.
+
+Core Luna owns fixes to existing C1a judgment types/adapter, Governor, memory/SQL stores, its adapter tests and explanatory docs/manifest/completion. Second Luna owns only `tests/recovery-learning.test.ts` and the outside-repository real-PG proof harness. Shared builds and integration remain serialized. Controller owns this packet, canonical state, and review artifacts. PR2, deployment, provider calls, secrets, and product acceptance remain excluded.
+
+1. `blocked` and `unknown` reports cannot authorize `continue` or further execution. Constrain model candidate actions and independently enforce terminal/quarantine transitions in both stores. Preserve budget, capacity, scopes, and UNKNOWN effects. Prove injected choices cannot bypass this via HTTP and memory/SQL parity.
+2. Comparable SQL lesson candidates must bind both failure and later success to the same target check, policy, and comparable episode. A multi-target strategy must not launder a pass for another target into claimed recovery. Test both-store parity; promotion stays closed.
+3. Extend the immutable versioned judgment snapshot with approved slice/mission budget context, bounded reported usage counters, and digest-only evidence references. Derive authoritative budget context from the fenced stored lease/mission, distinguish reported usage from independently metered cost, and bind the new fields into the canonical snapshot hash and commit fence. No new spending or live provider activation is authorized.
+
+Run focused behavioral regressions, then freeze source/docs and refresh the source manifest before full gates. The controller reruns final gates and re-dispatches real multi-connection PostgreSQL proof. Independent reviewer must inspect the new exact candidate. C1a acceptance, C1b learning, and the product remain open until their respective gates pass. At most one further materially different repair after this; escalate a real unresolved authority/concurrency problem rather than weakening requirements.

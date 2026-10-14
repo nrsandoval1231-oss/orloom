@@ -1,0 +1,130 @@
+
+=== npm run typecheck ===
+
+> orloom-foundation@0.1.0 typecheck
+> tsc --noEmit
+
+EXIT 0
+
+=== npm run build ===
+
+> orloom-foundation@0.1.0 build
+> tsc
+
+EXIT 0
+
+=== npm test ===
+
+> orloom-foundation@0.1.0 test
+> npm run build && node --test dist/tests/*.test.js
+
+
+> orloom-foundation@0.1.0 build
+> tsc
+
+✔ canonical JSON makes key-order permutations hash-identical, including nested JSONB values (0.8482ms)
+✔ configuration validates roles and does not reveal configured values in errors (2.2183ms)
+✔ webhook signature is constant-time compared after strict digest length check (0.4524ms)
+✔ artifact adapter uses content SHA-256 addressing and copies bytes (0.189ms)
+✔ R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary (11.0741ms)
+✔ GitHub App token request uses app client and explicit repository and permission scope (0.4836ms)
+✔ Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration (0.5861ms)
+✔ cloud mode fails closed without explicit database URL, host, token, and HTTPS origin (0.1658ms)
+✔ PostgreSQL job store refuses readiness when the database is unreachable (42.6491ms)
+✔ HTTP control plane exposes status, authenticates job operations, and never executes jobs (38.0323ms)
+✔ unexpected provider/store errors return generic 500 without reflecting secrets (12.8704ms)
+✔ cloud sessions are opaque, secure, expiring, and writes require the configured origin and host (1174.204ms)
+✔ Jev recovery adapter exposes only approved alternative IDs and binds the answer to the snapshot (25.2136ms)
+✔ blocked and unknown snapshots are terminal without consulting Jev (0.4571ms)
+✔ Jev client makes one bounded fixed-origin choice request and validates its result (22.182ms)
+✔ missing key, disallowed or moving model, invalid bounds, and oversized input fail before fetch (0.5759ms)
+✔ unsafe SDK URL, non-POST, and over-limit request bodies never reach the injected transport (0.2744ms)
+▶ invalid provider outputs become sanitized UNKNOWN and are never retried
+  ✔ invalid response 1 (0.7427ms)
+  ✔ invalid response 2 (1.1024ms)
+  ✔ invalid response 3 (0.4877ms)
+  ✔ invalid response 4 (0.5391ms)
+  ✔ invalid response 5 (0.4118ms)
+✔ invalid provider outputs become sanitized UNKNOWN and are never retried (3.923ms)
+▶ provider errors and oversized response bodies are redacted and make one attempt
+  ✔ provider error text is not exposed (0.5815ms)
+  ✔ response byte limit enforced while reading (0.4358ms)
+  ✔ timeout is sanitized and not retried (60.3096ms)
+  ✔ wall-clock deadline bounds a fetch that ignores abort (78.5362ms)
+  ✔ wall-clock deadline bounds a stalled response stream and does not await cancellation (81.578ms)
+✔ provider errors and oversized response bodies are redacted and make one attempt (222.3095ms)
+✔ SQL job lifecycle fences stale completion and preserves UNKNOWN after interrupted execution (1652.5892ms)
+✔ migration constrains status and lease consistency (933.3503ms)
+✔ HTTP mission path authenticates roles, fences callbacks, and keeps verification gate closed (85.4677ms)
+✔ memory governor allows six disjoint same-owner slices and keeps verification/dependency gates closed (8.9487ms)
+✔ scope ancestors and globs serialize; expired UNKNOWN retains budget and quarantines slot and scope (0.7223ms)
+✔ dependency wait does not block overlapping parent and mixed-case repositories still serialize (0.4341ms)
+✔ memory recovery fences terminal judgments and excludes cross-target lesson pairs (3.3194ms)
+✔ memory two-phase judgment quarantines when mission reservation changes after snapshot (0.4661ms)
+✔ memory lesson candidates require two committed same-cohort episodes (2.3993ms)
+✔ lesson episode count deduplicates epochs but pairs evidence only within one epoch (0.1227ms)
+✔ PostgreSQL mission SQL persists dependency wait and reconciles expired leases after restart (1781.2445ms)
+✔ PostgreSQL claim permits an overlapping dependency parent but serializes mixed-case repository identity (974.5533ms)
+✔ mission migration allows explicit dependency wait and is idempotent (823.6607ms)
+✔ authenticated HTTP and PGlite retain executable recovery evidence and an unpromoted candidate (1981.3792ms)
+✔ episodes with different target checks cannot form one comparable lesson candidate (1033.3255ms)
+✔ candidate extraction excludes UNKNOWN pass evidence in either episode order (1728.5744ms)
+✔ mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence (1818.0574ms)
+✔ an in-flight adapter result is fenced after lease expiry and the unresolved slice remains quarantined (848.63ms)
+✔ an in-flight decision is quarantined if authoritative mission budget changes after snapshot (798.356ms)
+✔ an impossible model continue on a failed check commits no decision and quarantines the slice (779.9475ms)
+✔ blocked and unknown progress cannot be continued by an injected judgment (795.0741ms)
+✔ Node env-file startup loads local token and starts the real control-plane entrypoint (291.0731ms)
+✔ PostgreSQL certification binds exact candidate, stores immutable certificate and event once (1804.9571ms)
+✔ coordinator keeps capability private, runs fixture runner, and hides a certificate when local head moves (969.9632ms)
+✔ factory stays disabled without explicit configuration and builds a valid runner (1.2883ms)
+✔ rejects artifact roots equal to or below source root and relative roots (0.6531ms)
+✔ rejects temporary paths, overlap in either direction, and malformed maps (0.6897ms)
+✔ parsers accept the exact typed request, receipt, capability metadata, and certificate (2.5745ms)
+✔ rejects unknown top-level and nested fields and malformed values (5.9552ms)
+✔ receipt outcome, exit code, time range, and nested artifact bounds must agree (0.8614ms)
+✔ late UNKNOWN timeout evidence is retained while late PASS and FAIL are rejected (0.4345ms)
+✔ canonical receipt digest ignores object key insertion order and metadata serializes no capability secret (0.6304ms)
+✔ durable artifacts are content-addressed and reject tampering and symlinks (28.5552ms)
+✔ extractor only accepts reachable commit regular files and rejects symlink entries (2826.4173ms)
+✔ check policy is finite and worker text cannot select commands (0.7291ms)
+✔ repository suite is a separate trusted policy bound to the reviewed lock and fixed profile (2.2147ms)
+✔ verifier image installs with two isolated npm config files (0.4366ms)
+✔ local npm accepts distinct sanitized config paths (166.4261ms)
+✔ repository suite admission accepts the exact dependency pair and rejects stale locks and overrides (224.6177ms)
+✔ repository suite requires discovered tests and treats failures, timeouts and truncation distinctly (238.9492ms)
+✔ launcher process-result fixtures reject infrastructure ambiguity and accept only matching check markers (1.098ms)
+✔ UNKNOWN retains only bounded complete diagnostics from the trusted stage emitter (56.5362ms)
+✔ stage diagnostics never classify a partial, forged, malformed, or excessive result (0.6384ms)
+✔ trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd (0.7532ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 73
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10032.4413
+EXIT 0
+
+=== npm run validate ===
+
+> orloom-foundation@0.1.0 validate
+> node scripts/validate.mjs
+
+Foundation structure validation passed.
+EXIT 0
+
+=== node --check affected JavaScript ===
+EXIT 0
+
+=== bash -n affected shell ===
+EXIT 0
+
+=== git diff --check ===
+EXIT 0
+
+Algorithm : SHA256
+Hash      : B2F132F05DDFAF3F7A0D3E300313A4515B74E6DDDDA609143958874F0E67E002
+Path      : C:\Users\nrsan\Documents\Codex\2026-10-12\referenced-chatgpt-conversation-this-is-an-3\work\c3-suite-deadline-replan-final-gates.log
+

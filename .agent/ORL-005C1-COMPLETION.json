@@ -1,0 +1,87 @@
+{
+  "packet": "ORL-005C1 repair 2",
+  "status": "PASS_LOCAL_REPAIR_CANDIDATE_NOT_COMPLETE",
+  "repository": "C:/Users/nrsan/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-3/work/orloom-main-review",
+  "branch": "feat/judgment-recovery",
+  "baseSha": "bb925e904d32dbc871f72de028e60d504c0a4773",
+  "headSha": "bb925e904d32dbc871f72de028e60d504c0a4773 (uncommitted frozen tree)",
+  "priorCandidateReview": "FIX, docs/evidence/c1a-review/REVIEW-bb925e9.json",
+  "manifest": ".agent/ORL-005C1-MANIFEST.sha256",
+  "previousManifest": ".agent/archive/ORL-005C1-MANIFEST-pre-repair2.sha256",
+  "previousCompletion": ".agent/archive/ORL-005C1-COMPLETION-pre-repair2.json",
+  "finishedUtc": "2026-10-13T06:37:54Z",
+  "timings": {
+    "audit": "UNKNOWN",
+    "planning": "UNKNOWN",
+    "build": "UNKNOWN",
+    "validation": "UNKNOWN",
+    "elapsedToAccepted": "NOT APPLICABLE: independent acceptance pending"
+  },
+  "repairCount": 2,
+  "usage": {
+    "liveSpend": "0 USD observed; no live Jev call made",
+    "tokens": "UNKNOWN",
+    "providerCalls": 0,
+    "testFixtureSpend": "0 USD observed"
+  },
+  "validation": [
+    {
+      "exitCode": 0,
+      "result": "TypeScript compilation passed",
+      "command": "npm run build"
+    },
+    {
+      "exitCode": 0,
+      "result": "9 mission tests passed",
+      "command": "node --test dist/tests/missions.test.js"
+    },
+    {
+      "exitCode": 0,
+      "result": "8 authenticated recovery-learning tests passed",
+      "command": "node --test dist/tests/recovery-learning.test.js"
+    },
+    {
+      "exitCode": 0,
+      "result": "Foundation structure validation passed",
+      "command": "npm run validate"
+    },
+    {
+      "exitCode": 0,
+      "result": "Passed; controller CURRENT_STATE line-ending warning only",
+      "command": "git diff --check"
+    }
+  ],
+  "repairCoverage": [
+    "Memory and SQL candidate extraction require committed decisions for both failure and pass observations; unresolved observations remain durable but are excluded.",
+    "Shared deterministic cohort derivation trims/lowercases full scope paths, sorts them, then takes the first path root; mixed cohorts are excluded and unsorted same-cohort paths agree across stores.",
+    "Candidate episode counting deduplicates by mission and slice; each paired failure/pass must share one lease epoch, repository, target, strategy change, and policy digests.",
+    "SQL candidate search remains bounded at 5000 joined rows and only qualifying committed evidence enters candidate provenance.",
+    "Promotion remains unavailable; cohort is a limited context label, not ownership equivalence or independent verification."
+  ],
+  "focusedTests": [
+    "memory lesson candidates require two committed same-cohort episodes",
+    "authenticated HTTP and PGlite retain executable recovery evidence and an unpromoted candidate",
+    "episodes with different target checks cannot form one comparable lesson candidate",
+    "candidate extraction excludes UNKNOWN pass evidence in either episode order",
+    "mixed scope cohorts do not combine while unsorted same-cohort scopes form positive evidence"
+  ],
+  "explicitOpen": [
+    "Independent source review is pending for the refreshed candidate.",
+    "Real PostgreSQL multi-connection proof is pending; PGlite is development evidence only.",
+    "C1b promotion/application/withdrawal remains open pending an independent verifier; candidates remain unpromoted and unused.",
+    "Live Jev identity/capability/provider behavior and spend remain UNKNOWN; no provider call was made.",
+    "Broader resolver signals and full continuous self-improvement remain unimplemented and unclaimed."
+  ],
+  "independentReview": "Pending on refreshed exact candidate; builder does not certify own result",
+  "controllerHandoff": "Root to commit/refreeze and run mandatory final gates before real-PostgreSQL proof and independent review",
+  "overallImplementationStartUtc": "2026-10-13T05:11:46Z",
+  "repairStartedUtc": "UNKNOWN (dispatch time not recorded)",
+  "lane": "Luna primary builder",
+  "modelIdentity": "UNKNOWN (worker model name not exposed)",
+  "configurationIdentity": "UNKNOWN (runtime configuration identity not exposed)",
+  "controllerFreeze": {
+    "manifestSha256": "85612beddd1d5b81bd2987fc6980c149f87092d42b316e54ea6af93c8e5fbace",
+    "entries": 36,
+    "note": "Working and staged bytes reconciled; evidence and archive bytes preserved. Final repository gates and independent review pending."
+  }
+}
