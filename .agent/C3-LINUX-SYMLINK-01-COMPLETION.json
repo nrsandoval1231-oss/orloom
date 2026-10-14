@@ -1,0 +1,27 @@
+{
+  "packet": "C3-LINUX-SYMLINK-01",
+  "status": "READY_FOR_CONTROLLER_INTEGRATION",
+  "branch": "fix/linux-symlink-fixture",
+  "baseHead": "bdd8065d1e6911cffb8fc44ecbc5bff72a661ce1",
+  "candidate": "uncommitted working tree on exact base",
+  "changedFiles": {
+    "tests/local-integration.test.ts": "0b98db4e038595480bba4fd3166663387825544f",
+    ".agent/C3-LINUX-SYMLINK-01.md": "34245ca0cc2a27436e361e5943022c365a6066ad"
+  },
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "node --test --test-concurrency=1 dist/tests/local-integration.test.js", "exitCode": 0, "passed": 1, "failed": 0, "skipped": 0 },
+    { "command": "git diff --check", "exitCode": 0 }
+  ],
+  "runtimeBoundary": {
+    "windowsFocusedTest": "PASS",
+    "linuxRuntime": "NOT_RUN; no authorized Linux host or Docker execution",
+    "cloudProof": "ROOT_OWNS",
+    "hostOrProviderCalls": 0,
+    "commitPushMerge": "NONE"
+  },
+  "finishedAtUtc": "2026-10-14T01:27:37Z",
+  "startedAtUtc": "UNKNOWN; start timestamp was not captured",
+  "elapsed": "UNKNOWN"
+}

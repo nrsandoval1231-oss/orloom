@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rename, rm, rmdir, symlink, unlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rename, rm, rmdir, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile as callbackExecFile } from "node:child_process";
@@ -17,6 +17,7 @@ import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { receiptDigestV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 
 const exec=promisify(callbackExecFile);
+const removeDirectorySymlink=(path:string)=>process.platform==="win32"?rmdir(path):unlink(path);
 const hash=(x:string)=>createHash("sha256").update(x).digest("hex");
 async function git(cwd:string,args:string[]){return(await exec("git",["-C",cwd,...args],{encoding:"utf8",windowsHide:true})).stdout.trim();}
 
@@ -38,8 +39,8 @@ test("fixed bare Git ref accepts one scoped linear fast-forward and rejects scop
     await git(bare,["config","--local","extensions.partialclone","fixture"]);await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open partial clone configuration fails closed");await git(bare,["config","--local","--unset","extensions.partialclone"]);
     await git(bare,["config","--local","remote.fixture.promisor","true"]);await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open promisor configuration fails closed");await git(bare,["config","--local","--unset","remote.fixture.promisor"]);
     const shallow=join(bare,"shallow");await writeFile(shallow,`${candidate}\n`);await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open shallow marker fails closed");await unlink(shallow);
-    const objects=join(bare,"objects"),savedObjects=join(bare,"objects-saved"),outsideObjects=join(root,"outside-objects");await mkdir(outsideObjects);await rename(objects,savedObjects);await symlink(outsideObjects,objects,process.platform==="win32"?"junction":"dir");try{await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open object-store symlink fails closed");}finally{await rmdir(objects);await rename(savedObjects,objects);}
-    const heads=join(bare,"refs","heads"),savedHeads=join(bare,"refs","heads-saved");await rename(heads,savedHeads);await symlink(savedHeads,heads,process.platform==="win32"?"junction":"dir");try{await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open ref-directory symlink fails closed");}finally{await rmdir(heads);await rename(savedHeads,heads);}
+    const objects=join(bare,"objects"),savedObjects=join(bare,"objects-saved"),outsideObjects=join(root,"outside-objects");await mkdir(outsideObjects);await rename(objects,savedObjects);await symlink(outsideObjects,objects,process.platform==="win32"?"junction":"dir");try{await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open object-store symlink fails closed");}finally{await removeDirectorySymlink(objects);await rename(savedObjects,objects);assert.equal((await stat(outsideObjects)).isDirectory(),true,"object-store symlink target survives cleanup");}
+    const heads=join(bare,"refs","heads"),savedHeads=join(bare,"refs","heads-saved");await rename(heads,savedHeads);await symlink(savedHeads,heads,process.platform==="win32"?"junction":"dir");try{await assert.rejects(integrator.inspect(request),MissionConflictError,"post-open ref-directory symlink fails closed");}finally{await removeDirectorySymlink(heads);await rename(savedHeads,heads);}
     const originalInspect=integrator.inspect.bind(integrator);integrator.inspect=async r=>{const result=await originalInspect(r);await writeFile(alternates,join(root,"outside-objects"));return result;};await assert.rejects(integrator.compareAndSwap(request),MissionConflictError,"complete-store recheck runs immediately before CAS");integrator.inspect=originalInspect;await unlink(alternates);assert.equal(await integrator.readRef(),base,"failed pre-CAS recheck leaves integration ref unchanged");
     const mission=await store.submit({repository:"owner/repo",baseSha:base,objective:"certified local integration",acceptance:["integrate exact candidate"],budgetCents:100});const slices:SliceInput[]=[{id:"parent",objective:"integrate candidate",dependencies:[],owner:"builder",scopes:["src.txt"],checks:["node-repo-suite-v1"],budgetCents:50},{id:"child",objective:"wait for parent",dependencies:["parent"],owner:"builder2",scopes:["docs.txt"],checks:["node-repo-suite-v1"],budgetCents:50}];await store.recommendPlan(mission.id,slices,"owner-session");await store.approvePlan(mission.id);const grant=await store.claim(300,policy);assert(grant);await store.complete(mission.id,"parent",grant.epoch,grant.leaseToken,grant.capabilityToken,candidate,[]);
     const artifact={key:`sha256/${hash("artifact")}` as `sha256/${string}`,sha256:hash("artifact"),bytes:8},manifest={key:`sha256/${hash("manifest")}` as `sha256/${string}`,sha256:hash("manifest"),bytes:8};let receipt:TrustedCheckReceiptV1|undefined;
