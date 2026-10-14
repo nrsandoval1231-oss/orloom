@@ -3,6 +3,7 @@ import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js
 import { ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CheckCertificateV1, parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
+import { scopeCohort } from "../../learning/src/lesson-policy.js";
 import type { LearningActivation } from "../../learning/src/activation.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
 import { rankSchedulingChoices, schedulingSnapshotDigest } from "../../contracts/src/scheduling.js";
@@ -91,10 +92,11 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     if(!this.store.lessonChallengeEvidence||!this.store.recordLessonChallenge)throw new MissionConflictError("Independent lesson challenge storage is unavailable");
     const candidate=await this.store.getLesson?.(lessonId);if(!candidate)throw new MissionConflictError("Lesson candidate is unavailable");
     const provenance={repository:candidate.repository,cohort:candidate.cohort,fromCheckId:candidate.fromCheckId,strategyId:candidate.strategyId,policyVersion:candidate.policyVersion,policyDigest:candidate.policyDigest,evidenceEventIds:candidate.evidenceEventIds,metric:candidate.metric,direction:candidate.direction,baseline:candidate.baseline,outcome:candidate.outcome};
-    const persistRejected=async(evidence:unknown)=>{const rejected=rejectTrustedLessonReadback({verifierId:"controller:orloom.lesson-challenger.v1",provenance,evidence,reason:"persisted trusted receipt or artifact readback failed"});const attestationDigest=await this.store.recordLessonChallenge!({lessonId,lessonVersion:candidate.lessonVersion,candidateDigest:candidate.challengeDigest,challengeDigest:rejected.challengeDigest,evidenceDigest:rejected.evidenceDigest,verifierId:rejected.verifierId,algorithmVersion:rejected.algorithmVersion,decision:rejected.decision,reason:rejected.reason});return{...rejected,attestationDigest};};
+    const persistRejected=async(evidence:unknown,reason="persisted trusted receipt or artifact readback failed")=>{const rejected=rejectTrustedLessonReadback({verifierId:"controller:orloom.lesson-challenger.v1",provenance,evidence,reason});const attestationDigest=await this.store.recordLessonChallenge!({lessonId,lessonVersion:candidate.lessonVersion,candidateDigest:candidate.challengeDigest,challengeDigest:rejected.challengeDigest,evidenceDigest:rejected.evidenceDigest,verifierId:rejected.verifierId,algorithmVersion:rejected.algorithmVersion,decision:rejected.decision,reason:rejected.reason});return{...rejected,attestationDigest};};
     let source:Awaited<ReturnType<NonNullable<MissionStore["lessonChallengeEvidence"]>>>;
     try{source=await this.store.lessonChallengeEvidence(lessonId)??null;}catch{return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,evidenceEventIds:candidate.evidenceEventIds});}
     if(!source)return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,evidenceEventIds:candidate.evidenceEventIds,attempts:[]});
+    if(source.rejectionReason)return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,evidenceEventIds:candidate.evidenceEventIds},source.rejectionReason);
     const attempts:ChallengedAttempt[]=[];
     try{for(const item of source.attempts){if(!item.receipt||!item.receiptDigest||!item.outcome)return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,eventId:item.eventId,attemptId:item.attemptId,receiptDigest:item.receiptDigest});const verified=await this.runner.verifyArtifacts(item.receipt);attempts.push({attemptId:item.attemptId,eventId:item.eventId,observation:item.observation,outcome:item.outcome,candidateSha:item.candidateSha,checkId:item.checkId,requestDigest:item.requestDigest,receiptDigest:item.receiptDigest,artifacts:[item.receipt.stdout,item.receipt.stderr,item.receipt.inputManifest].map(x=>({sha256:x.sha256,bytes:x.bytes})),request:item.receipt.request,receipt:item.receipt,stdout:verified.stdout,stderr:verified.stderr,manifest:verified.manifest});}}catch{return persistRejected({lessonId,lessonVersion:candidate.lessonVersion,attempts:source.attempts.map(item=>({eventId:item.eventId,attemptId:item.attemptId,requestDigest:item.requestDigest,receiptDigest:item.receiptDigest}))});}
     const lesson=source.lesson;
@@ -238,9 +240,11 @@ export class MissionGovernor {
   }
   async claim() {
     if (!this.config.capacitySlots || !this.config.trustedCheckPolicyDigest || !this.config.executionConfigured) return null;
+    const strategies=this.config.trustedStrategies??{};
+    const allowedPlanChecks=Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]);
     const recoveryPolicyDigest=this.config.recoveryPolicyDigest??"";let advice:ClaimAdvice|undefined,decision:{missionId:string;record:SchedulingDecisionRecord}|undefined;
     if(this.store.schedulingSnapshot){
-      const snapshot=await this.store.schedulingSnapshot(this.config.trustedCheckPolicyDigest,recoveryPolicyDigest);
+      const snapshot=await this.store.schedulingSnapshot(this.config.trustedCheckPolicyDigest,recoveryPolicyDigest,allowedPlanChecks);
       if(this.schedulingAdapter&&snapshot.freeCapacity>0&&snapshot.choices.length>=2){
         const bounded={...snapshot,choices:rankSchedulingChoices(snapshot.choices).slice(0,32)};
         const snapshotDigest=schedulingSnapshotDigest({freeCapacity:bounded.freeCapacity,choices:bounded.choices}),decisionId=randomUUID(),anchor=bounded.choices[0]!;
@@ -260,7 +264,7 @@ export class MissionGovernor {
         }
       }
     }
-    const grant=await this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,undefined,recoveryPolicyDigest,advice);
+    const grant=await this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,allowedPlanChecks,undefined,recoveryPolicyDigest,advice);
     if(!grant&&decision)await this.store.recordSchedulingDecision?.(decision.missionId,decision.record);
     return grant;
   }
@@ -325,7 +329,7 @@ export class MissionGovernor {
     const strategy = this.config.trustedStrategies?.[progress.strategyId];
     const mission = await this.store.getMission(progress.missionId);
     const slice = mission?.slices.find((candidate) => candidate.id === progress.sliceId);
-    const cohort = slice?.scopes.slice().sort()[0]?.split("/")[0]?.toLowerCase();
+    const cohort = scopeCohort(slice?.scopes);
     if (!strategy || !this.config.recoveryPolicyDigest
       || progress.recoveryPolicyDigest !== this.config.recoveryPolicyDigest
       || strategy.checkId !== progress.checkId
@@ -344,7 +348,7 @@ export class MissionGovernor {
     if(!lesson||lesson.status==="withdrawn"||!strategy||strategy.version!==lesson.policyVersion||!strategy.targetCheckIds.includes(lesson.fromCheckId)||!this.config.recoveryPolicyDigest||lesson.policyDigest!==this.config.recoveryPolicyDigest)throw new MissionConflictError("Lesson is outside the current Governor policy");
     return this.store.promoteLesson(id,challengeDigest,"controller:lesson-governor");
   }
-  async recoveryPolicy(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string){const binding=await this.store.recoveryPolicyLease(missionId,sliceId,epoch,leaseToken,capabilityToken);const mission=await this.store.getMission(missionId),slice=mission?.slices.find(x=>x.id===sliceId);if(!slice)throw new MissionConflictError("Slice unavailable");const cohort=slice.scopes.slice().sort()[0]?.split("/")[0]?.toLowerCase();const strategies=Object.fromEntries(slice.checks.filter(id=>{const p=this.config.trustedStrategies?.[id];return p&&p.targetCheckIds.length&&p.scopeClasses.some(x=>x==="*"||x===cohort);}).map(id=>[id,this.config.trustedStrategies![id]!]));return{version:"orloom.recovery-policy.v1",missionId,sliceId,leaseEpoch:epoch,...binding,strategies};}
+  async recoveryPolicy(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string){const binding=await this.store.recoveryPolicyLease(missionId,sliceId,epoch,leaseToken,capabilityToken);const mission=await this.store.getMission(missionId),slice=mission?.slices.find(x=>x.id===sliceId);if(!slice)throw new MissionConflictError("Slice unavailable");const cohort=scopeCohort(slice.scopes);const strategies=Object.fromEntries(slice.checks.filter(id=>{const p=this.config.trustedStrategies?.[id];return p&&p.targetCheckIds.length&&p.scopeClasses.some(x=>x==="*"||x===cohort);}).map(id=>[id,this.config.trustedStrategies![id]!]));return{version:"orloom.recovery-policy.v1",missionId,sliceId,leaseEpoch:epoch,...binding,strategies};}
   get(id: string) { return this.store.getMission(id); }
   events(id: string, cursor: number) { return this.store.events(id, cursor); }
   expire() { return this.store.expire(); }

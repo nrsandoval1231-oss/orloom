@@ -68,8 +68,8 @@ export interface MissionStore {
   approvePlan(missionId: string): Promise<Mission>;
   getMission(missionId: string): Promise<{ mission: Mission; plan: MissionPlan | null; slices: MissionSlice[] } | null>;
   events(missionId: string, after: number): Promise<MissionEvent[]>;
-  claim(leaseSeconds: number, policyDigest: string, now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice): Promise<LeaseGrant | null>;
-  schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, now?: Date): Promise<SchedulingSnapshot>;
+  claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks: readonly string[], now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice): Promise<LeaseGrant | null>;
+  schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, allowedPlanChecks: readonly string[], now?: Date): Promise<SchedulingSnapshot>;
   recordSchedulingDecision?(missionId: string, decision: SchedulingDecisionRecord): Promise<void>;
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;
   complete(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, candidateSha: string, evidenceRefs: string[]): Promise<MissionSlice>;
@@ -95,7 +95,7 @@ export interface MissionStore {
   createVerificationAttempt?(binding: VerificationAttemptBinding): Promise<void>;
   createRecoveryAttempt?(binding: RecoveryAttemptBinding, leaseToken:string, capabilityToken:string): Promise<void>;
   getTrustedAttempt?(attemptId:string):Promise<{purpose:"final"|"recovery";request:TrustedCheckRequestV1;outcome:"pass"|"fail"|"unknown"|null;receipt:TrustedCheckReceiptV1|null;targetCheckId:string|null;strategyId:string|null;recoveryOrdinal:number|null;headObservedAt:string|null;headObservationDigest:string|null;leasePolicyDigest:string|null}|null>;
-  lessonChallengeEvidence?(lessonId:string):Promise<{lesson:LessonCandidate;attempts:Array<{attemptId:string;eventId:string;observation:{eventId:string;repository:string;missionId:string;sliceId:string;leaseEpoch:number;ordinal:number;status:string;decisionStatus:string;targetCheckId:string;strategyId:string;trustedCheckPolicyDigest:string;recoveryPolicyDigest:string;cohort:string};outcome:"pass"|"fail"|"unknown"|null;candidateSha:string;checkId:string;requestDigest:string;receiptDigest:string|null;request:TrustedCheckRequestV1;receipt:TrustedCheckReceiptV1|null}>}|null>;
+  lessonChallengeEvidence?(lessonId:string):Promise<{lesson:LessonCandidate;rejectionReason?:string;attempts:Array<{attemptId:string;eventId:string;observation:{eventId:string;repository:string;missionId:string;sliceId:string;leaseEpoch:number;ordinal:number;status:string;decisionStatus:string;targetCheckId:string;strategyId:string;trustedCheckPolicyDigest:string;recoveryPolicyDigest:string;cohort:string};outcome:"pass"|"fail"|"unknown"|null;candidateSha:string;checkId:string;requestDigest:string;receiptDigest:string|null;request:TrustedCheckRequestV1;receipt:TrustedCheckReceiptV1|null}>}|null>;
   recordLessonChallenge?(result:{lessonId:string;lessonVersion:number;candidateDigest:string;challengeDigest:string;evidenceDigest:string;verifierId:string;algorithmVersion:string;decision:"accepted"|"rejected";reason:string}):Promise<string>;
   submitRecoveryVerification?(receipt:TrustedCheckReceiptV1,capabilityHash:string,observedHeadSha:string,observedAt:string,observationDigest:string):Promise<{attemptId:string;outcome:"pass"|"fail"|"unknown";receiptDigest:string}>;
   submitVerification?(receipt: TrustedCheckReceiptV1, capabilityHash: string, observedHeadSha: string, observedAt: string, observationDigest: string, certificateId: string): Promise<CheckCertificateV1 | null>;

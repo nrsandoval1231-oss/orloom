@@ -1,0 +1,11 @@
+{
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "helperManifestSha256": "8daeb332d1fb92f4b23f2279e275460c493a835d879e50739810452c6b76a9c8",
+  "command": "test ! -e /var/lib/orloom/verifier/state && flock -n /run/orloom-verifier-lock/slot.lock /usr/bin/true && test ! -e /var/lib/orloom/c3-delivery-v3-20261013/staging/database-url && test -d /var/lib/orloom/c3-delivery-v3-20261013/evidence && test -d /var/lib/orloom/c3-delivery-v3-20261013/artifacts && test -z \"$(docker ps -aq --filter label=orloom.packet=ORL-C3-DELIVERY-CLOUD-V3)\" && test -z \"$(docker ps -aq --filter label=orloom.packet=ORL-C3)\" && test -z \"$(docker network ls -q --filter label=orloom.packet=ORL-C3-DELIVERY-CLOUD-V3)\" && test -z \"$(docker volume ls -q --filter label=orloom.packet=ORL-C3-DELIVERY-CLOUD-V3)\" && docker inspect --format \"{{.Id}}|{{.State.Status}}|{{.State.StartedAt}}|{{.RestartCount}}|{{.HostConfig.Runtime}}\" 5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+  "startedUtc": "2026-10-14T00:22:41.203Z",
+  "finishedUtc": "2026-10-14T00:22:43.165Z",
+  "exit": 0,
+  "stdout": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67|running|2026-10-12T23:51:46.164222792Z|0|runc\n",
+  "stderr": "",
+  "status": "PASS"
+}

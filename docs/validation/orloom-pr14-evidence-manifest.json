@@ -1,0 +1,613 @@
+{
+  "repository": "nrsandoval1231-oss/orloom",
+  "source_pr": 14,
+  "source_url": "https://github.com/nrsandoval1231-oss/orloom/pull/14",
+  "source_head": "5908bd42fc55e14353a550cc6804354a986881ed",
+  "source_tree_sha": "6f878e042274c7604a215834593d00e15380967e",
+  "source_tree_truncated": false,
+  "target_base_pr": 17,
+  "target_base_head": "410882d4afff33e028be50b816ad69eb387eae6d",
+  "checked_at": "2026-10-14T04:18:00Z",
+  "operation": "Preserve 95 missing historical evidence blobs unchanged. No current state overwrite. Original evidence remains bound to original source SHAs.",
+  "tree_elements": [
+    {
+      "path": "docs/evidence/delivery-cloud-v3/EVIDENCE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "847d80bb7769038eb035d8e90a47675e9127aa1b"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "458cec172b4806521cfe1a2bf3d5879c2a3bd41c"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-36-011Z-preflight-acceptance.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "975a61bc378d0dbdb94d20c0dfe7b1b982ce0af3"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-15-45-966Z-setup-disposable-postgres.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9fd66550b600fe7391470709cbb556d87cc5feb7"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4dd51160862111a0c09f4ccba2a1b0e917358103"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "42badbfae2add0f4629c50867f68a690191d2596"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-16-204Z-stage-acceptance.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f65086d50bd327c5fa0971702a30488e75ba383"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e576e1001aa604c3c6f3205f52ef9a3c2ae30193"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-30-720Z-build-suite-image.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "7e690a53bb5be4f913568526a2414aff2404b6ed"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a8fea440567f7f7027a87c30096e1154cf432079"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-16-41-236Z-run-acceptance.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a4a72ceb51c4b6d5ad1207a6d16ccdcc57adcfd7"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.stderr.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/2026-10-14T00-22-27-066Z-cleanup-acceptance.sh.stdout.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "411260ea6e4cc1e1c28c62f4f5dac728beb08c63"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/postflight.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6b174e39651c67360d90643d2c6ad0d152a21b7"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/runtime-after-cleanup.tar.gz",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "11f8c2afacc1f524656e852a97375dce612ab1da"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/runtime-after-cleanup.tar.gz.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6491edad53c79b8233d68a34a3684ce9db2c0478"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/runtime-before-cleanup.tar.gz",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5c17b7db1fa9ea703f11c4978d936fd1c7431671"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/runtime-before-cleanup.tar.gz.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "145ea1d613a20575ed89a94b82cafd4e33b2624a"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/executions/upload-record.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f98873232dca0630d0d9f9b35ca4eb60c47360c"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/build-suite-image.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "a899c325ccf345d172dbb00f727a0092a6679774"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/cgroup-observer.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c0c3a3aa7fa5f4e9b133c971257a60c8a4bd79b1"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/cleanup-acceptance.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6d5888d5357b9bcde9beccc4f442c82c8777d654"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/export-acceptance-snapshot.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d7e1d4911e20b090c90eba93b7c7fe79d1fc815a"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/extract-stage-predicate-cases.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4762d2dc858954e6d849560824f506d180518c28"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/helper-manifest-v3.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9a69a434123ca7ccec0559a3af08d29185010245"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/preflight-acceptance.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e9287b19a4118fd44e43a488b4add9722141d7b3"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/prepare-acceptance-fixtures.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1b785bac53d362cdaeac08afe174ec72bf611946"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/prepare-delivery-runtime.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ccdcea6a1739e4da66ac100a1600dc2f3ea24562"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/prepare-delivery-transfer.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "e2b54807c5b288353805369644e805ea4669a7a2"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/run-acceptance.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ceaf893aa59dc2619a2923273fc687e8a51a8962"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/run-stage-predicate-cases-stdin.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "632529b4ef14a23bff50599de1194226d6f76322"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/runtime-acceptance-entry.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c2f315a5503ad8ff1980695e56ed3117e2c8609a"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/runtime-acceptance.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "17b56fd33ebd7ab94270ccfb5277778c14321261"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/runtime-snapshot-export.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d49103a359846fe849008078f2f6303cd105654f"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/setup-disposable-postgres.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "8db2626ac222b2e97d3fcde625f28baae484d615"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/stage-acceptance.sh",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "94991b565d46c20d0a05e1ef0c2d7d9ab81aba21"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/helpers/stage-bindings-v3.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b6199a3812bc9bdc2d8034412316b16c28a31441"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/inventory.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "47c0cc7b268ede03aa8cca1245f0e5b5c4ec8518"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/predicate-cases.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "87845024c861375701c65d00fde5d580128b6ef3"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/predicate-execution.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "2554c6fa23d9c9f8c192d29acb6aefa72fc62273"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/preexecution-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d282a5f4a4b38f2415471b0709f69af89eb5dacc"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/review-package.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9f453fc13cd81925ac346e7254108ca3c981b629"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/runtime-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fcd8525e628e8569072469b645a7289a1f86bc94"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/source-binding.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1709c6d7e2df3a7232620aee0bac8a130bd7d1bd"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/bind-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "55779d9942a0d79eb030be6a268cf21aef24d454"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/common-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c9f65b64dd6a252ec3b75636eda21d3a004b3c33"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/finalize-package-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d7f0d64adc228530cbc6bb8edfe3a2dadded3ca4"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/package-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b39134372fd0359a3c99c192a5cad0fbc2a11aa5"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/postflight-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cff6a3279994f8f2c56b5a815b609e63bea1ab34"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/preserve-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4852579278eda25babc5eb8448ed7e010bff47d2"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/retain-evidence-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "5dfdc1f3eeb034471a2ce9bd2672df8141533812"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/run-suite-script-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c42963691e3b22a12c82750b90ff4d4154a51169"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/upload-candidate-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6ec2aaa2e9654fea58cbfb31bc83071c44396a85"
+    },
+    {
+      "path": "docs/evidence/delivery-cloud-v3/wrappers/verify-derivation-delivery-cloud-v3.cjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c7cd9f9752058fb152716eb56d0f53ea0501a966"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/EVIDENCE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "56dd3dc7801d5c00054da9a8a8a95f2a6bb42a4e"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/compiled-manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "712e299786483c2cfc5b1be798f48ed1b98698ed"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/controller-gates.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ffc179e4202a55bc7e31aa8a42d9b6cc4af2f36b"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/delivery-scenario-summary.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b1f7effdd14669283c6aead666dde4847ce4eb96"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/delivery-scenario.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ed21035dc6f36fc294b7c0bf9409fd2991bbfc3c"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/helper-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "cea1e967c87cea0dada78193e653ad7c639d1648"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/helpers/run.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b49d7d610bb83b158b460f47f8be56952b2f81b6"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/helpers/scenario-prior.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "17a19cdca00671bdcfb95691289bd2c3b9c4c89b"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/helpers/scenario.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "1f1259ee69a0f8740f8e0001ec82e9d814d934b0"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/inventory.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "3b199e8cbe5f4f56c6217f67d3365384b2d24475"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f6a0f6a2fadf9646be3098c854459aee5547631d"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/postgres.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4173e79f626c7d04f46cadcdfd2890a5721ddefe"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/preflight.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "25e546abee5063056bdb865886ab7a28cf636695"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/runner.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "269a3e7dce02b735d31bde35a119f33dfc48c5ea"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/runtime-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "32a7a22c9042f606c352b61a4dcb7611d93b64fb"
+    },
+    {
+      "path": "docs/evidence/delivery-postgres/source-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d17acc402512e3411f5d1d7e8f0c513cffd5d74c"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/EVIDENCE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fbabc431c014ef8c948a37fdbbf0fd1a6b954249"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/compiled-manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "712e299786483c2cfc5b1be798f48ed1b98698ed"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/helper-reconstruction.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "85344e7afc300aeb7905b17c422d8ff2a674e5b0"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/helper-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d8e306116c3c859bdc1c259dc95ce0682851b5ce"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/helpers/prior-scenario.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fa014df69ee9ae97c655f8c9de57f62d4c28273d"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/helpers/run.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "b49d7d610bb83b158b460f47f8be56952b2f81b6"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/helpers/scenario.mjs",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "fba0286dc2dd1668244c882e0bfe83dab7df5628"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/inventory.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d573551c37685fb77b5bb1640d65bfd209e37858"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/loom-browser/loom-desktop.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "4c367de2fc9b5fb185e4c4b85346dfd1d7d291b6"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/loom-browser/loom-mobile.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c85b163be55ebd2979d07a603e4e296a3039309e"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/loom-browser/loom-projection.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "72c6c0ceba0c8c7a7706791bad95473160df07f6"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/loom-browser/loom-reloaded.png",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "30ae323fc0252565da186a913618c1a0d800a061"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/loom-browser/scenario-result.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "9542f7c4edbc55c5d10b17e2a8bcd1df4bf71daa"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/manifest.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "c27215a7842179d5f27fc4083f33f566523cdda3"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/postgres.log",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f1d3bca2960eaa43bb980bf59e767290871cbb06"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/preflight.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "25e546abee5063056bdb865886ab7a28cf636695"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/prior-helper-FIX.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "d1c4088618ca92a0f1a609a055d2d8f9c9c1c27e"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/runner.jsonl",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "23444d6ef0b176ce1f90305f7700d6c4ff44fc4c"
+    },
+    {
+      "path": "docs/evidence/loom-postgres/runtime-review.json",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "28cae23cbb346d8e2d2beac848ccfc0aab947f9b"
+    }
+  ],
+  "divergent_path_collisions": [
+    {
+      "path": ".agent/CURRENT_STATE.md",
+      "source_blob_sha": "21476f2dcb38ec4d94a9e3ce1641da583f71735e",
+      "candidate_blob_sha": "0309e509eeb9a230cc6d6e8d7ffdf6aae57bf702"
+    },
+    {
+      "path": ".agent/WORK_GRAPH.md",
+      "source_blob_sha": "ec75a004158faad2fd62798b512b96f7de4c7d3b",
+      "candidate_blob_sha": "b4db5bf2039850d5d43f32600736027485244159"
+    }
+  ],
+  "remote_changes_performed": false,
+  "source_tree_verified_from": "https://api.github.com/repos/nrsandoval1231-oss/orloom/git/commits/5908bd42fc55e14353a550cc6804354a986881ed",
+  "historical_state_tree_elements": [
+    {
+      "path": ".agent/history/pr14-5908bd42/CURRENT_STATE.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "21476f2dcb38ec4d94a9e3ce1641da583f71735e"
+    },
+    {
+      "path": ".agent/history/pr14-5908bd42/WORK_GRAPH.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "ec75a004158faad2fd62798b512b96f7de4c7d3b"
+    }
+  ],
+  "provenance_note": "Read-only inventory prepared before publication. remote_changes_performed describes inventory preparation, not subsequent publication of the containing commit. candidate_blob_sha refers to pinned PR17 before current documentation reconciliation. source_tree_sha corrected from the original inventory commit-SHA typo using the linked Git commit object; tree_elements unchanged."
+}

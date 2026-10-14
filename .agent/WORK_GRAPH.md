@@ -1,18 +1,21 @@
-# Orloom Work Graph
+# Orloom work graph
 
-Canonical: docs/architecture/CANONICAL_HARNESS.md. Previous graph retained in history/remote-upload-20261014. Main6110c692 accepted; product completion OPEN.
+Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md). Product completion remains OPEN. Current candidate is based on PR #17 `410882d4afff33e028be50b816ad69eb387eae6d`; independent bounded source acceptance is PASS with 167/167 tests, zero failures/skips, plus typecheck/build/structure validation. Publication identity is the containing Git commit and associated PR; merge is not claimed.
 
 | Node | State / next gate |
 |---|---|
-| Mission control | PR1 merged, source and actual PostgreSQL accepted |
-| DeepSeek broker | PR2 FROZEN and excluded |
-| Jev/recovery, learning, scheduling | Source composed; live Jev, genuine activation and comparable benefit OPEN |
-| Orloom CI | Actual full-suite f602 FAIL271438ms/zero certificates; d4 fixture repair composed; focused Linux and full successor proof OPEN |
-| Local integration | 2a02606 source and actual two-pool PostgreSQL replay accepted bounded |
-| Controller and delivery | 0725 policy composition and f602 delivery actual PostgreSQL accepted bounded |
-| Reserved remote upload | 954622e passed150 tests/source review and actual two-pool PostgreSQL/ref-replay proof, independently accepted bounded; PR16. Credentialed publication OPEN |
-| Living Loom | Source and controlled actual PostgreSQL browser proof accepted bounded; live builder display OPEN |
-| Delivery fixture throughput | e078a51 source accepted: 151 tests/14 gates, independent review; draft PR17. Actual Linux timing OPEN |
-| Cloud end-to-end | Secure credentials, authentic verification and integrated deployed campaign OPEN |
+| Mission control | PR #1 merged at historical main `6110c692`; bounded source/actual PostgreSQL acceptance. Lease digest, policy-restart and aggregate-state repairs passed combined source regressions. |
+| Consolidation | Seven audited correctness repairs passed independent source review and combined tests; see validation ledger. No merge/PR disposition is implied. |
+| DeepSeek broker | PR #2 separate composition work; not counted as included or operational. Prior frozen-head instruction is historical. |
+| Jev/recovery, learning, scheduling | Source composed; negative-evidence freshness and cohort repairs passed combined source acceptance. Live Jev, genuine activation, holdout/baseline evaluation and comparable benefit OPEN. |
+| Orloom CI | Historical actual full-suite `f6023ac` FAIL/271438 ms/zero certificates. Fixture repair is composed; authentic exact-candidate runsc full suite OPEN. |
+| Local integration | Historical `2a02606` source and actual two-pool PostgreSQL replay accepted within retained scope. New candidate is not thereby certified. |
+| Controller and delivery | Historical `0725fa2` policy composition and `f6023ac` delivery PostgreSQL proofs bounded. Combined live PostgreSQL and deployment gates OPEN. |
+| Reserved remote upload | `954622e` historical source/ref-replay proof; secure App/R2 configuration and real credentialed publication OPEN. |
+| Living Loom | Controlled source/browser evidence exists; certificate-digest closure repair passed combined source acceptance. Canonical five-sector/source-inspection interactions and live-builder display remain incomplete. |
+| Packaging / fixture throughput | Docker helper-source repair passed source regression; clean image build still OPEN. Historical `e078a51` 151-test/14-gate source checkpoint is not the new result or Linux isolation proof. |
+| Evidence preservation | PR #14's 95 original evidence blobs and two historical state files, plus PR #15's two repair records and two historical state/manifest blobs, are preserved. All 15 PR #3–17 trees have no absent original paths after the 97 evidence additions. Historical records do not certify the containing commit. |
+| Cloud end-to-end | Secure credentials, live workers, authentic verification, operational recovery, deployed campaign and measured learning gains OPEN. |
 
-Direction VALIDATE focused Linux fixture recovery, then exact full cloud suite; prepare scoped App/R2 publication only with secure connections. No competing broker/scheduler, automatic product merge, paid host or direct-to-main source push. Provider calls0.
+Direction: preserve source and evidence; validate/review one coherent candidate; perform authorized PR cleanup only after inclusion and acceptance are established. The owner's latest direction supersedes the earlier blanket no-merge restriction. Do not close PR #2 as redundant without accepted source/evidence composition. No GitHub Actions CI, competing broker/scheduler, automatic UNKNOWN replay or newly implied paid-host/provider authority.
+

@@ -21,7 +21,7 @@ test("PostgreSQL certification binds exact candidate, stores immutable certifica
     const store=new SqlMissionStore(sql);await store.configureCapacity(1,"b".repeat(64),new Date(Date.now()+60_000).toISOString());
     const mission=await store.submit({repository:"owner/repo",baseSha,objective:"certification fixture",acceptance:["persist exact evidence"],budgetCents:100});
     await store.recommendPlan(mission.id,[slice],"owner-session");await store.approvePlan(mission.id);
-    const grant=await store.claim(300,policyDigest);assert(grant);await store.complete(mission.id,slice.id,grant.epoch,grant.leaseToken,grant.capabilityToken,candidateSha,[]);
+    const grant=await store.claim(300,policyDigest, ["check:unit"]);assert(grant);await store.complete(mission.id,slice.id,grant.epoch,grant.leaseToken,grant.capabilityToken,candidateSha,[]);
     const record=await store.getMission(mission.id);assert(record?.plan);
     const now=new Date(),expires=new Date(now.getTime()+60_000);
     const request:TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId:"11111111-1111-4111-8111-111111111111",missionId:mission.id,sliceId:slice.id,leaseEpoch:grant.epoch,repository:"owner/repo",candidateSha,expectedLocalHeadSha:candidateSha,planDigest:hash(canonicalJson(record.plan.slices)),checkId:"check:unit",policyVersion:"v1",policyDigest,verifierImageDigest:"f".repeat(64),inputBundleDigest:"e".repeat(64),requestedAt:now.toISOString(),expiresAt:expires.toISOString()};
@@ -46,7 +46,7 @@ test("PostgreSQL certification binds exact candidate, stores immutable certifica
     const events=await store.events(mission.id,0);assert.equal(events.filter(e=>e.type==="check.certified").length,1);
 
     const unknownMission=await store.submit({repository:"owner/other",baseSha,objective:"expiry fixture",acceptance:["expired attempt is unknown"],budgetCents:100});await store.recommendPlan(unknownMission.id,[slice],"owner-session");await store.approvePlan(unknownMission.id);
-    const unknownGrant=await store.claim(300,policyDigest);assert(unknownGrant);await store.complete(unknownMission.id,slice.id,unknownGrant.epoch,unknownGrant.leaseToken,unknownGrant.capabilityToken,candidateSha,[]);
+    const unknownGrant=await store.claim(300,policyDigest, ["check:unit"]);assert(unknownGrant);await store.complete(unknownMission.id,slice.id,unknownGrant.epoch,unknownGrant.leaseToken,unknownGrant.capabilityToken,candidateSha,[]);
     const unknownRecord=await store.getMission(unknownMission.id);assert(unknownRecord?.plan);const unknownNow=new Date(),unknownExpiry=new Date(unknownNow.getTime()+60_000);
     const unknownRequest={...request,attemptId:"77777777-7777-4777-8777-777777777777",missionId:unknownMission.id,repository:"owner/other",requestedAt:unknownNow.toISOString(),expiresAt:unknownExpiry.toISOString(),planDigest:hash(canonicalJson(unknownRecord.plan.slices))};
     const unknownCapHash=hash("unknown-fixture-capability");await store.createVerificationAttempt!({request:unknownRequest,capabilityHash:unknownCapHash,capabilityExpiresAt:new Date(unknownExpiry.getTime()+120_000).toISOString(),leasePolicyDigest:policyDigest,headObservedAt:unknownNow.toISOString(),headObservationDigest:"9".repeat(64)});
@@ -65,7 +65,7 @@ test("coordinator keeps capability private, runs fixture runner, and hides a cer
     let gate=Promise.resolve();const sql:TransactionalSql={query:async(text,params)=>await db.query(text,params as never) as never,transaction:async work=>{let release!:()=>void;const prior=gate;gate=new Promise<void>(resolve=>release=resolve);await prior;try{await db.exec("BEGIN");const result=await work({query:async(text,params)=>await db.query(text,params as never) as never});await db.exec("COMMIT");return result;}catch(error){await db.exec("ROLLBACK");throw error;}finally{release();}}};
     const store=new SqlMissionStore(sql);await store.configureCapacity(1,"b".repeat(64),new Date(Date.now()+60_000).toISOString());
     const mission=await store.submit({repository:"owner/repo",baseSha,objective:"fixture only",acceptance:["join runner and certificate"],budgetCents:100});await store.recommendPlan(mission.id,[slice],"owner-session");await store.approvePlan(mission.id);
-    const grant=await store.claim(300,"c".repeat(64));assert(grant);await store.complete(mission.id,slice.id,grant.epoch,grant.leaseToken,grant.capabilityToken,candidateSha,[]);
+    const grant=await store.claim(300,"c".repeat(64), ["check:unit"]);assert(grant);await store.complete(mission.id,slice.id,grant.epoch,grant.leaseToken,grant.capabilityToken,candidateSha,[]);
     const fixtureRunner={
       prepareBundle:async()=>({digest:"e".repeat(64),manifest:Buffer.from("fixture"),files:new Map<string,Buffer>()}),
       observeHead:async()=>({sha:currentHead,observedAt:new Date().toISOString(),digest:"9".repeat(64)}),

@@ -1,0 +1,26 @@
+{
+  "format": "orloom.independent-source-review.v1",
+  "verdict": "PASS_SOURCE",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "baseSha": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+  "sourceRef": "refs/heads/feat/certified-delivery",
+  "sourceManifestSha256": "9215357a14e2d83079c8db9aa779969d5f86e53ac556224974979f5750e1923d",
+  "sourceManifestEntries": 139,
+  "sourceStatus": "clean",
+  "supersedesReview": "work/delivery-source-review-21a90df.json",
+  "findings": [],
+  "resolution": "The sole prior exact-candidate gate failure was repaired in tests/config-adapters.test.ts. The updated boundary test checks the second app-level scoped-token mint, installation and repository scope, permissions, token passed to the installation client, the token-bound Check POST, and early rejection of invalid repository scope. No production source changed after 21a90dfa7b1123c12b8f7d2e7739049472accd8f.",
+  "combinedSourceAssessment": "The C4 completed-replay fences, exact durable C4 attribution markers, artifact and final-certificate readback, owner-authenticated command-only route, durable Check and PR effect claims, configured-App Check GET identity, exact open-draft PR GET identity, and UNKNOWN-on-ambiguous-write behavior remain present. The controlled C4-to-delivery test invokes the real Governor integration path with PGlite and bare Git, then controlled delivery effects.",
+  "deterministicEvidence": {
+    "log": "work/delivery-controller-gates-2026-10-13T23-19-37-306Z.log",
+    "commands": "12/12 exited 0, including typecheck, build, 134-test suite, syntax checks and git diff --check",
+    "tests": "134 pass, 0 fail",
+    "priorFailingTest": "GitHub App token request uses app client and explicit repository and permission scope: PASS"
+  },
+  "limits": [
+    "PASS_SOURCE covers this exact clean source and controlled adapters only; it is not real PostgreSQL delivery runtime proof.",
+    "No live GitHub App, R2, remote Git, CI execution or publication was exercised or accepted.",
+    "Delivery startup activation is intentionally closed and remains the separate documented C4-COMPOSE-01 implementation node.",
+    "Parent commercial Finish Contract and external acceptance remain open."
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "format": "orloom-independent-loom-postgres-browser-helper-review-v1",
+  "verdict": "FIX",
+  "scenarioSha256": "974a009d45bc3c3c0d56fc27c451c44c7f91dd4a45750702f17e86ca4d254d48",
+  "sourceSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "runner": "work/dpg-proof/run.mjs (previously accepted; unchanged in this review)",
+  "scope": "Prepared scenario source and local runner compatibility only; no PostgreSQL, browser, host or provider action",
+  "findings": [
+    {
+      "id": "LOOM-PG-MOBILE-INSPECTOR",
+      "severity": "P1 execution blocker",
+      "location": "work/loom-pg-proof/scenario.mjs mobile #events waitFor",
+      "evidence": "The mobile scenario waits for visible text inside #events. In the frozen Loom page, #events is nested inside <details id=inspect> without an open attribute. Its contents are hidden until the summary is activated, and Playwright waitFor defaults to visible. The desktop #events-desktop check can pass, but the mobile check will time out regardless of a successfully persisted event.",
+      "repair": "Open #inspect through its visible summary or set its open state through a user-equivalent interaction before waiting for the mobile event, then capture the mobile inspector in the screenshot. Assert the details is open and the event row is visible."
+    },
+    {
+      "id": "LOOM-PG-CLOSURE-ASSERTION",
+      "severity": "P2 proof-strength issue",
+      "location": "work/loom-pg-proof/scenario.mjs #notice assertion",
+      "evidence": "The script checks only that #notice is not equal to the positive closure sentence. That can pass for UNKNOWN or another unavailable notice. The fixture intends an open, connected, uncertified mission.",
+      "repair": "Assert the exact open notice and/or authenticated Loom projection closed=false with state=available, and retain its response in controlled evidence. Do not infer completion from the screenshot or from inequality alone."
+    }
+  ],
+  "reviewedBoundaries": [
+    "The scenario checks the exact clean source SHA, uses the accepted runner's five C4_PG variables, connects to the runner's owned PostgreSQL database, invokes the canonical migrator and production SQL mission/governor APIs, and binds the HTTP server to ephemeral loopback.",
+    "The progress fixture is typed v1 started, with approved strategy/check, exact lease and plan/policy digests, zero usage and no provider call; its durable event label matches Loom projection's Governor decision recorded mapping.",
+    "The owner session cookie and unauthenticated 401 check fit the current server route. Desktop selectors #live, #objective, #events-desktop and #refresh-desktop exist in frozen source.",
+    "The installed Playwright chromium.executablePath() resolves to the known bundled Chromium path, and the file exists. No browser was launched during review.",
+    "The runner has a 240-second scenario deadline, owns only its disposable loopback PostgreSQL cluster, and checks its marker/PID before stop. Scenario finally closes browser, HTTP server and pools."
+  ],
+  "limits": [
+    "This is not runtime evidence. No PostgreSQL, browser, host or provider operation was performed.",
+    "No builder execution, certification, integration, delivery or live publication is established by the proposed proof."
+  ],
+  "direction": "One bounded scenario-only repair for mobile inspector visibility and exact open-state assertion, then rehash, syntax-check, independent delta review and a single owned local run through the accepted runner."
+}

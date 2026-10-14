@@ -87,7 +87,7 @@ async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, lab
   ];
   await store.recommendPlan(mission.id, slices, "owner-session");
   await store.approvePlan(mission.id);
-  const grant = await store.claim(300, leasePolicyDigest);
+  const grant = await store.claim(300, leasePolicyDigest, ["node-repo-suite-v1"]);
   assert(grant);
   assert.equal(grant.mission.id, mission.id);
   assert.equal(grant.slice.id, "parent");

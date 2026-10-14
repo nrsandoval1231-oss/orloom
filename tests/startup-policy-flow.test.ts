@@ -89,7 +89,7 @@ test("startup-shaped full-suite policy stays distinct from lease digest through 
     ];
     await store.recommendPlan(mission.id, slices, "owner-session");
     await store.approvePlan(mission.id);
-    const grant = await store.claim(300, config.trustedCheckPolicyDigest);
+    const grant = await store.claim(300, config.trustedCheckPolicyDigest, ["node-repo-suite-v1"]);
     assert(grant);
     await store.complete(mission.id, "parent", grant.epoch, grant.leaseToken, grant.capabilityToken, candidate, []);
 

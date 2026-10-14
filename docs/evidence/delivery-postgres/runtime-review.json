@@ -1,0 +1,27 @@
+{
+  "review": "C4-DELIVERY-PG-RUNTIME",
+  "verdict": "PASS_SOURCE_AND_DATABASE_BEHAVIOR_ONLY",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "sourceReview": "work/delivery-source-review-f6023ac.json",
+  "runtimeEvidence": "work/dpg-proof/runtime/1791933667225-ce3b7725-8696-40ad-b86e-64471675c21f/evidence",
+  "findings": [],
+  "identity": {
+    "sourceHead": "f6023acade03091a494644409e9bc65d28d59ad4",
+    "sourceWorktree": "clean",
+    "compiledManifest": "work/dpg-proof/compiled-f6023ac.json",
+    "compiledJsFiles": 63,
+    "hashMismatchesAgainstManifestAndPreflight": 0,
+    "missingOrExtraCompiledJs": 0,
+    "runHelperSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+    "scenarioHelperSha256": "7a54a297ffbc589ca86f2219fc840a1486f88e3e10a8f04c21e8535410da2874"
+  },
+  "databaseBehavior": [
+    "PostgreSQL 18.6 applied seven migrations and the scenario observed distinct backend PIDs across independent pools.",
+    "Actual Governor verification and integration fed production SqlMissionStore and deliverIntegratedCommit using controlled verifier, review, artifact, and GitHub fixtures plus disposable bare Git.",
+    "Concurrent Check claim produced one Check POST and a pr_created intent; one caller fulfilled and one rejected. Concurrent PR claim produced one PR POST and a pr_created intent; one caller fulfilled and one rejected. This does not prove both callers return success.",
+    "Fresh-pool recovery after lost Check and PR responses reached pr_created without repeating either external write.",
+    "An absent ambiguous Check remained UNKNOWN with zero replay Check/PR writes; mismatched Check GET ID and PR GET number each left intent UNKNOWN.",
+    "Runtime manifest records PASS_DATABASE_BEHAVIOR_ONLY and STOPPED_OWNED_CLUSTER; runner logs scenario_passed and finished; PostgreSQL log confirms clean shutdown."
+  ],
+  "boundary": "This is bounded local PostgreSQL and bare-Git behavior with controlled external fixtures. It does not prove a live GitHub App, R2, remote upload, authentic CI/review, provider execution, deployment, or parent Finish Contract completion. The C4-COMPOSE-01 bounded runtime dependency is satisfied, while credentialed and publication gates remain open."
+}

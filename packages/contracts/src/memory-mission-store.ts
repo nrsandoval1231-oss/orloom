@@ -28,11 +28,12 @@ export class MemoryMissionStore implements MissionStore {
   async getMission(id: string) { const m = this.missions.get(id); if (!m) return null; return { mission: m, plan: this.plans.get(id) ?? null, slices: [...this.slices.values()].filter(s => s.missionId === id) }; }
   async events(id: string, after: number) { return this.eventsLog.filter(e => e.missionId === id && e.cursor > after); }
   async recordSchedulingDecision(missionId:string,decision:SchedulingDecisionRecord){validateSchedulingDecision(decision);this.mustMission(missionId);this.event(missionId,"scheduling.decision",{...decision});}
-  private eligibleSchedulingChoices(policyDigest: string, recoveryPolicyDigest: string, now: Date): { choices: SchedulingChoice[]; freeCapacity: number } {
+  private eligibleSchedulingChoices(policyDigest: string, recoveryPolicyDigest: string, now: Date, allowedPlanChecks?: readonly string[]): { choices: SchedulingChoice[]; freeCapacity: number } {
     const free=[...this.slots.entries()].filter(([slot,x])=>x.enabled&&Date.parse(x.expires)>now.getTime()&&![...this.occupied.values()].includes(slot)).length;
     const choices:SchedulingChoice[]=[];
     for(const s of this.slices.values()){
       if(s.status!=="ready")continue;const plan=this.plans.get(s.missionId),mission=this.missions.get(s.missionId);if(!plan?.approvedAt||!mission||plan.slices.some(d=>s.dependencies.includes(d.id)&&this.slices.get(`${s.missionId}:${d.id}`)?.status!=="verified"))continue;
+      if(!allowedPlanChecks?.length||plan.slices.some(slice=>!slice.checks.length||slice.checks.some(check=>!allowedPlanChecks.includes(check))))continue;
       if(mission.reservedCents+s.budgetCents>mission.budgetCents)continue;
       const running=[...this.slices.values()].filter(x=>["running","awaiting_verification","unknown","blocked"].includes(x.status)&&this.missions.get(x.missionId)?.repository===mission.repository);
       if(running.some(x=>x.scopes.some(a=>s.scopes.some(b=>scopesOverlap(a,b)))))continue;
@@ -41,10 +42,10 @@ export class MemoryMissionStore implements MissionStore {
     }
     return{choices:rankSchedulingChoices(choices).slice(0,32),freeCapacity:free};
   }
-  async schedulingSnapshot(_policyDigest:string,recoveryPolicyDigest:string,now=new Date()):Promise<SchedulingSnapshot>{const value=this.eligibleSchedulingChoices(_policyDigest,recoveryPolicyDigest,now),base={freeCapacity:value.freeCapacity,choices:value.choices};return{capturedAt:now.toISOString(),...base,snapshotDigest:schedulingSnapshotDigest(base)};}
-  async claim(leaseSeconds: number, policyDigest: string, now = new Date(), recoveryPolicyDigest="", advice?:ClaimAdvice): Promise<LeaseGrant | null> {
+  async schedulingSnapshot(_policyDigest:string,recoveryPolicyDigest:string,allowedPlanChecks:readonly string[],now=new Date()):Promise<SchedulingSnapshot>{const value=this.eligibleSchedulingChoices(_policyDigest,recoveryPolicyDigest,now,allowedPlanChecks),base={freeCapacity:value.freeCapacity,choices:value.choices};return{capturedAt:now.toISOString(),...base,snapshotDigest:schedulingSnapshotDigest(base)};}
+  async claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks:readonly string[], now = new Date(), recoveryPolicyDigest="", advice?:ClaimAdvice): Promise<LeaseGrant | null> {
     await this.expire(now);
-    const fresh=this.eligibleSchedulingChoices(policyDigest,recoveryPolicyDigest,now),unchanged=Boolean(advice?.snapshotDigest&&advice.snapshotDigest===schedulingSnapshotDigest({freeCapacity:fresh.freeCapacity,choices:fresh.choices}));
+    const fresh=this.eligibleSchedulingChoices(policyDigest,recoveryPolicyDigest,now,allowedPlanChecks),unchanged=Boolean(advice?.snapshotDigest&&advice.snapshotDigest===schedulingSnapshotDigest({freeCapacity:fresh.freeCapacity,choices:fresh.choices}));
     const preferred=unchanged&&advice?.status==="selected"?advice.preferredCandidateId:null;
     const candidates=rankSchedulingChoices(fresh.choices).map(choice=>this.slices.get(`${choice.missionId}:${choice.sliceId}`)!).filter(Boolean);
     if(preferred){const index=candidates.findIndex(x=>`${x.missionId}:${x.id}`===preferred);if(index>0)candidates.unshift(...candidates.splice(index,1));}
@@ -54,7 +55,7 @@ export class MemoryMissionStore implements MissionStore {
       if (running.some(x => x.scopes.some(a => s.scopes.some(b => scopesOverlap(a,b))))) continue;
       const slot = [...this.slots.entries()].find(([n,x])=>x.enabled&&new Date(x.expires)>now&&![...this.occupied.values()].includes(n)); if(!slot||!policyDigest) continue;
       const m = this.missions.get(s.missionId)!; if (m.reservedCents + s.budgetCents > m.budgetCents) continue;
-      const leaseToken = newSecret(), capabilityToken = newSecret(),planDigest=hash(canonicalJson(p.slices)); s.status = "running"; s.leaseEpoch++; s.leaseToken = `${hash(leaseToken)}:${hash(capabilityToken)}`; s.leaseExpiresAt = new Date(now.getTime() + leaseSeconds*1000).toISOString(); this.occupied.set(`${s.missionId}:${s.id}`,slot[0]);this.leaseBindings.set(`${s.missionId}:${s.id}:${s.leaseEpoch}`,{planDigest,policyDigest:policyDigest+":"+recoveryPolicyDigest}); m.reservedCents += s.budgetCents; m.status = "running";
+      const leaseToken = newSecret(), capabilityToken = newSecret(),planDigest=hash(canonicalJson(p.slices)); s.status = "running"; s.leaseEpoch++; s.leaseToken = `${hash(leaseToken)}:${hash(capabilityToken)}`; s.leaseExpiresAt = new Date(now.getTime() + leaseSeconds*1000).toISOString(); this.occupied.set(`${s.missionId}:${s.id}`,slot[0]);this.leaseBindings.set(`${s.missionId}:${s.id}:${s.leaseEpoch}`,{planDigest,policyDigest:policyDigest+":"+recoveryPolicyDigest}); m.reservedCents += s.budgetCents; m.status = this.missionStatus(m.id);
       this.event(m.id, "slice.claimed", { sliceId: s.id, owner: s.owner, epoch: s.leaseEpoch, scopes: s.scopes, schedulingDecisionId:advice?.decisionId??null, schedulingAdvice: advice?{status:unchanged?advice.status:"stale_fallback",adviceStatus:advice.status,dispatchMayHaveOccurred:advice.dispatchMayHaveOccurred,preferredCandidateId:advice.preferredCandidateId,validatedCandidateId:advice.validatedCandidateId,snapshotDigest:advice.snapshotDigest,modelId:advice.modelId,tokenUsage:advice.tokenUsage,tokenUsageStatus:advice.tokenUsageStatus}:null }); return { mission: m, slice: { ...s, leaseToken: null }, epoch: s.leaseEpoch, leaseToken, capabilityToken, leaseExpiresAt: s.leaseExpiresAt, capacitySlot:slot[0], trustedCheckPolicyDigest:policyDigest, planDigest };
     } return null;
   }

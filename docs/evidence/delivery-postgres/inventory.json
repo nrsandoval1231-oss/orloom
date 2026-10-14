@@ -1,0 +1,75 @@
+{
+  "candidate": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "files": [
+    {
+      "file": "manifest.json",
+      "sha256": "0beba37723c405a62dbc1df671175fdb167455fa00ba08bc6bae1d39bf7a652f",
+      "bytes": 350
+    },
+    {
+      "file": "preflight.json",
+      "sha256": "3da1d6c27c758a907279138a510cc559386cd9fc2cc6a8b0b7245d079f001705",
+      "bytes": 7107
+    },
+    {
+      "file": "runner.jsonl",
+      "sha256": "2ed03ca07317a502ac3dcb3244ba59397c4b3b2f35146f345ac5e203367e5591",
+      "bytes": 208
+    },
+    {
+      "file": "delivery-scenario.jsonl",
+      "sha256": "b123c19edd7ce132ac91a488ff276ba7a0c82732ae3cb64c6256ed7e4026a8fe",
+      "bytes": 2401
+    },
+    {
+      "file": "delivery-scenario-summary.json",
+      "sha256": "bfe3161a914ec741afc301bd5785451e96a95546d997cf09031f19bfca6fb7b9",
+      "bytes": 4178
+    },
+    {
+      "file": "postgres.log",
+      "sha256": "ff66610504471d8b6387b4f092d502662fc7b0c3821a048db2a70fbbe56429fa",
+      "bytes": 1209
+    },
+    {
+      "file": "source-review.json",
+      "sha256": "7f92604e10615bb53505e5ca8c0da8bb97a2361d049ec40cdecacc81b5619f35",
+      "bytes": 2227
+    },
+    {
+      "file": "runtime-review.json",
+      "sha256": "508bf475e8a74bdca3d22dd4fd958341e8cd3fa62e0d921dd7436ce0254d7f98",
+      "bytes": 2257
+    },
+    {
+      "file": "helper-review.json",
+      "sha256": "8c7bed5190c0fb3683ebc07167dde5108c5471a8aec6f5983c505d303062179f",
+      "bytes": 2441
+    },
+    {
+      "file": "controller-gates.log",
+      "sha256": "473e779b5ce8c36638f34666faa59ae1d6b36d3e5b63027dfc3dc69ffcb8a5c5",
+      "bytes": 15926
+    },
+    {
+      "file": "compiled-manifest.json",
+      "sha256": "8ca67c81868e7ab6fd2783b8328a84c74c2f5a722cbd710fdff4ff70d44de330",
+      "bytes": 7233
+    },
+    {
+      "file": "helpers/run.mjs",
+      "sha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+      "bytes": 8652
+    },
+    {
+      "file": "helpers/scenario.mjs",
+      "sha256": "7a54a297ffbc589ca86f2219fc840a1486f88e3e10a8f04c21e8535410da2874",
+      "bytes": 28483
+    },
+    {
+      "file": "helpers/scenario-prior.mjs",
+      "sha256": "542b3bdbec42bcc51afc50b0aab74cf03e5bc94c67517ab87880405a1daeef86",
+      "bytes": 28297
+    }
+  ]
+}

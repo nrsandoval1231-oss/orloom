@@ -430,6 +430,91 @@ test("trusted recovery evidence is challenged, promoted, selected later, then wi
   } finally { await ctx.close(); }
 });
 
+test("withdrawn lesson requires two entirely fresh episodes before challenge and repromotion", async () => {
+  const ctx = await setup();
+  try {
+    const repository = "fixture/fresh-after-contradiction";
+    const missionId = await createMission(ctx, repository, ["a", "b", "y", "z"]);
+    for (const prefix of ["a", "b"]) { const grant = await claim(ctx); await runEpisode(ctx, grant.lease, grant.policy, prefix); }
+    const original = (await ctx.store.lessons(missionId))[0]!;
+    const challenge = await ctx.coordinator.challengeLesson(original.id);
+    assert.equal(challenge.decision, "accepted");
+    assert.equal((await ctx.request("POST", `/api/lessons/${original.id}/promote`, { challengeDigest: challenge.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+    const withdrawer = await claim(ctx), unrelated = await claim(ctx);
+    // Start the unrelated episode before the contradiction. Reporting its pass later must not make its old baseline fresh.
+    assert.equal((await report(ctx, unrelated.lease, await trustedProgress(ctx, unrelated.lease, unrelated.policy, `old-baseline-${randomUUID()}`, 1, "strategy:baseline", "fail"))).status, 200);
+    assert.equal((await report(ctx, withdrawer.lease, await trustedProgress(ctx, withdrawer.lease, withdrawer.policy, `negative-baseline-${randomUUID()}`, 1, "strategy:baseline", "fail"))).status, 200);
+    await trustedProgress(ctx, withdrawer.lease, withdrawer.policy, `negative-${randomUUID()}`, 2, "strategy:recovery", "fail");
+    assert.equal((await ctx.store.getLesson(original.id))?.status, "withdrawn");
+    assert.equal((await report(ctx, unrelated.lease, await trustedProgress(ctx, unrelated.lease, unrelated.policy, `unrelated-pass-${randomUUID()}`, 2, "strategy:recovery", "pass"))).status, 200);
+    assert.equal((await ctx.store.lessons(missionId)).filter(l => l.status === "candidate").length, 0, "an unrelated pass cannot resurrect contradicted historical evidence");
+    await ctx.reconnect();
+    await createMission(ctx, repository, ["fresh-a", "fresh-b"]);
+    const freshIds: string[] = [];
+    for (const prefix of ["fresh-a", "fresh-b"]) {
+      const grant = await claim(ctx), episode = await runEpisode(ctx, grant.lease, grant.policy, prefix);
+      freshIds.push(episode.baselineEventId, episode.recoveryEventId);
+      if (prefix === "fresh-a") assert.equal((await ctx.store.lessons(missionId)).filter(l => l.status === "candidate").length, 0, "one fresh episode cannot combine with pre-contradiction evidence");
+    }
+    const successor = (await ctx.store.lessons(missionId)).find(l => l.status === "candidate")!;
+    assert(successor);
+    assert.equal(successor.lessonVersion, 2);
+    assert.deepEqual([...successor.evidenceEventIds].sort(), freshIds.sort());
+    assert(successor.evidenceEventIds.every(id => !original.evidenceEventIds.includes(id)));
+    const freshChallenge = await ctx.request("POST", `/api/lessons/${successor.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(freshChallenge.status, 200);
+    assert.equal(freshChallenge.value.decision, "accepted");
+    assert.equal((await ctx.request("POST", `/api/lessons/${successor.id}/promote`, { challengeDigest: freshChallenge.value.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+    assert.equal((await ctx.store.getLesson(original.id))?.status, "withdrawn");
+    assert.equal((await ctx.request("GET", `/api/lessons/${successor.id}/impact`, undefined, { cookie: ctx.cookie })).value.measuredImprovement, null);
+  } finally { await ctx.close(); }
+});
+
+test("trusted negative evidence invalidates a candidate challenge and fences previously accepted promotion", async () => {
+  const ctx = await setup();
+  try {
+    const missionId = await createMission(ctx, "fixture/negative-before-promotion", ["a", "b", "negative"]);
+    for (const prefix of ["a", "b"]) { const grant = await claim(ctx); await runEpisode(ctx, grant.lease, grant.policy, prefix); }
+    const candidate = (await ctx.store.lessons(missionId))[0]!;
+    const accepted = await ctx.coordinator.challengeLesson(candidate.id);
+    assert.equal(accepted.decision, "accepted");
+    const grant = await claim(ctx);
+    assert.equal((await report(ctx, grant.lease, await trustedProgress(ctx, grant.lease, grant.policy, `baseline-${randomUUID()}`, 1, "strategy:baseline", "fail"))).status, 200);
+    // No lesson is promoted or bound, and this terminal receipt need not be reported as progress to count as negative evidence.
+    await trustedProgress(ctx, grant.lease, grant.policy, `negative-${randomUUID()}`, 2, "strategy:recovery", "fail");
+    const rejected = await ctx.request("POST", `/api/lessons/${candidate.id}/challenge`, {}, { cookie: ctx.cookie });
+    assert.equal(rejected.status, 200);
+    assert.equal(rejected.value.decision, "rejected", "challenge must evaluate later retained trusted negatives");
+    assert.match(rejected.value.reason, /contradiction|fresh|negative/i);
+    assert.notEqual((await ctx.request("POST", `/api/lessons/${candidate.id}/promote`, { challengeDigest: accepted.attestationDigest }, { cookie: ctx.cookie })).status, 200, "a previously accepted challenge cannot bypass a later negative");
+    assert.equal((await ctx.store.getLesson(candidate.id))?.status, "candidate");
+    await createMission(ctx, "fixture/negative-before-promotion", ["fresh-a", "fresh-b"]);
+    const freshIds: string[] = [];
+    for (const prefix of ["fresh-a", "fresh-b"]) {
+      const fresh = await claim(ctx), episode = await runEpisode(ctx, fresh.lease, fresh.policy, prefix);
+      freshIds.push(episode.baselineEventId, episode.recoveryEventId);
+    }
+    const successor = (await ctx.store.lessons(missionId)).find(l => l.lessonVersion === 2);
+    assert(successor, "a stale candidate cannot permanently block fresh evidence in its lineage");
+    assert.deepEqual([...successor.evidenceEventIds].sort(), freshIds.sort());
+    const freshChallenge = await ctx.coordinator.challengeLesson(successor.id);
+    assert.equal(freshChallenge.decision, "accepted");
+    assert.equal((await ctx.request("POST", `/api/lessons/${successor.id}/promote`, { challengeDigest: freshChallenge.attestationDigest }, { cookie: ctx.cookie })).status, 200);
+  } finally { await ctx.close(); }
+});
+
+test("Governor policy and progress share normalized mixed-case scope cohorts with the store", async () => {
+  const ctx = await setup({ scopeClasses: ["a"] });
+  try {
+    const missionId = await createMission(ctx, "fixture/normalized-scope", ["a", "b"], { a: ["Z/file.ts", "a/file.ts"], b: [" a/other.ts ", "Z/other.ts"] });
+    for (const prefix of ["a", "b"]) { const grant = await claim(ctx); await runEpisode(ctx, grant.lease, grant.policy, prefix); }
+    const candidate = (await ctx.store.lessons(missionId))[0]!;
+    assert(candidate);
+    assert.equal(candidate.cohort, "a");
+    assert.equal((await ctx.coordinator.challengeLesson(candidate.id)).decision, "accepted");
+  } finally { await ctx.close(); }
+});
+
 test("verified lesson changes a later comparable choice and retains pass and UNKNOWN outcomes across reconnect", async () => {
   const ctx = await setup({ competingAlternative: true });
   try {
@@ -838,7 +923,7 @@ test("an in-flight adapter result is fenced after lease expiry and the unresolve
     assert.equal(slice?.budgetCents, 10_000, "expiry keeps reserved budget attached to the quarantined slice");
     assert.equal((await ctx.store.getMission(missionId))?.mission.reservedCents, 10_000);
     assert.equal((await report(ctx, lease, { ...event, eventId: `stale-${randomUUID()}` })).status, 409);
-    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "unknown lease capacity stays quarantined");
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, Object.keys(ctx.cfg.trustedStrategies!), undefined, ctx.cfg.recoveryPolicyDigest!), null, "unknown lease capacity stays quarantined");
 
     ctx.transport.setTerminal(true);
     const terminalMission = await createMission(ctx, "fixture/terminal-proof", ["terminal"]);
@@ -854,7 +939,7 @@ test("an in-flight adapter result is fenced after lease expiry and the unresolve
     assert.equal(terminalState?.slices.find(item => item.id === "terminal")?.status, "unknown");
     assert.equal(terminalState?.mission.reservedCents, 10_000, "terminal uncertainty keeps its budget reserved");
     assert.equal((await report(ctx, terminal.lease, { ...terminalProgress, eventId: `terminal-stale-${randomUUID()}` })).status, 409);
-    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "terminal UNKNOWN remains quarantined");
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, Object.keys(ctx.cfg.trustedStrategies!), undefined, ctx.cfg.recoveryPolicyDigest!), null, "terminal UNKNOWN remains quarantined");
   } finally { await ctx.close(); }
 });
 
@@ -878,7 +963,7 @@ test("an in-flight decision is quarantined if authoritative mission budget chang
     assert.equal(current?.mission.budgetCents, 90_001);
     assert.equal(current?.mission.reservedCents, 10_000);
     assert.equal(current?.slices.find(item => item.id === "budget-fenced")?.status, "unknown");
-    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "budget-fenced UNKNOWN remains quarantined");
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, Object.keys(ctx.cfg.trustedStrategies!), undefined, ctx.cfg.recoveryPolicyDigest!), null, "budget-fenced UNKNOWN remains quarantined");
   } finally { await ctx.close(); }
 });
 
@@ -902,7 +987,7 @@ test("an impossible model continue on a failed check commits no decision and qua
     const current = await ctx.store.getMission(missionId);
     assert.equal(current?.slices.find(item => item.id === "invalid")?.status, "unknown");
     assert.equal(current?.mission.reservedCents, 10_000);
-    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null);
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, Object.keys(ctx.cfg.trustedStrategies!), undefined, ctx.cfg.recoveryPolicyDigest!), null);
   } finally { await ctx.close(); }
 });
 
@@ -928,6 +1013,6 @@ test("blocked and unknown progress cannot be continued by an injected judgment",
       assert.equal(current?.slices.find(item => item.id === status)?.status, "unknown");
       assert.equal(current?.mission.reservedCents, 10_000);
     }
-    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, undefined, ctx.cfg.recoveryPolicyDigest!), null, "both ambiguous outcomes stay quarantined");
+    assert.equal(await ctx.store.claim(300, ctx.cfg.trustedCheckPolicyDigest!, Object.keys(ctx.cfg.trustedStrategies!), undefined, ctx.cfg.recoveryPolicyDigest!), null, "both ambiguous outcomes stay quarantined");
   } finally { await ctx.close(); }
 });

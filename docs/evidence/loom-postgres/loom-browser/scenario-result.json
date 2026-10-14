@@ -1,0 +1,11 @@
+{
+  "outcome": "PASS_POSTGRES_BACKED_VIEWER_ONLY",
+  "sourceSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "missionId": "fb685f12-5d0f-49d3-9362-99575201f9b6",
+  "progressEventId": "loom-proof-70bf4b7d-86d9-4b12-9fbe-f43fe68733ed",
+  "projectionState": "available",
+  "projectionClosed": false,
+  "providerCalls": 0,
+  "buildersExecuted": false,
+  "completionClaimed": false
+}

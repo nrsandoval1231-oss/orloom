@@ -23,7 +23,7 @@ async function memoryPlan(slices:SliceInput[],capacity=6,budget=10_000){
 
 test("memory scheduling ranks critical path and applies validated advice only at fresh claim",async()=>{
   const {store,mission}=await memoryPlan([slice("a-root","src/a.ts"),slice("a-child","src/a-child.ts",["a-root"]),slice("a-leaf","src/a-leaf.ts",["a-child"]),slice("z-independent","docs/z.md")],2);
-  const snapshot=await store.schedulingSnapshot!(policy,recovery);
+  const snapshot=await store.schedulingSnapshot!(policy,recovery, ["check:unit"]);
   assert.equal(snapshot.choices[0]?.sliceId,"a-root","longest remaining dependency path leads the deterministic rank");
   let calls=0;const governor=new MissionGovernor(store,config,undefined,async choices=>{calls++;return result(`${mission.id}:z-independent`);});
   const grant=await governor.claim();assert(grant);assert.equal(grant.slice.id,"z-independent");assert.equal(calls,1);
@@ -43,14 +43,14 @@ test("scheduler and optional learning activation retain separate dependency slot
 });
 
 test("advice is skipped for zero or one eligible choice and Jev context is capped at 32",async()=>{
-  const zero=await memoryPlan([slice("parent","src/parent.ts"),slice("child","src/child.ts",["parent"])],1);assert(await zero.store.claim(300,policy));
-  const empty=await zero.store.schedulingSnapshot!(policy,recovery);assert.equal(empty.choices.length,0);
+  const zero=await memoryPlan([slice("parent","src/parent.ts"),slice("child","src/child.ts",["parent"])],1);assert(await zero.store.claim(300,policy, ["check:unit"]));
+  const empty=await zero.store.schedulingSnapshot!(policy,recovery, ["check:unit"]);assert.equal(empty.choices.length,0);
   let zeroCalls=0;const emptyGovernor=new MissionGovernor(zero.store,config,undefined,async()=>{zeroCalls++;return result("unused");});assert.equal(await emptyGovernor.claim(),null);assert.equal(zeroCalls,0);
   const one=await memoryPlan([slice("only","src/only.ts")],1);let calls=0;
   const governor=new MissionGovernor(one.store,config,undefined,async()=>{calls++;return result(`${one.mission.id}:only`);});
   assert.equal((await governor.claim())?.slice.id,"only");assert.equal(calls,0);
   const many=await memoryPlan(Array.from({length:36},(_,i)=>slice(`slice-${String(i).padStart(2,"0")}`,`src/${i}.ts`)),6,10_000);
-  const snapshot=await many.store.schedulingSnapshot!(policy,recovery);assert.equal(snapshot.choices.length,32);
+  const snapshot=await many.store.schedulingSnapshot!(policy,recovery, ["check:unit"]);assert.equal(snapshot.choices.length,32);
   assert.deepEqual(snapshot.choices.map(x=>x.sliceId),[...snapshot.choices.map(x=>x.sliceId)].sort());
 });
 
@@ -110,7 +110,7 @@ test("PGlite snapshots expose only exact promoted lesson provenance and stale wi
     const lessonId="11111111-1111-4111-8111-111111111111",challenge="e".repeat(64);
     await db.query("INSERT INTO operational_lessons(id,repository,cohort,from_check_id,strategy_id,rule,lesson_version,metric,direction,baseline_failed,baseline_observed,outcome_passed,outcome_observed,policy_version,policy_digest,status,evidence_event_ids,challenge_digest,proposed_by,independent_challenge_digest) VALUES($1,'owner/sql','src','check:unit','strategy:good','advisory rule',2,'trusted_check_pass_rate','increase',1,1,1,1,'v1',$2,'promoted','[]'::jsonb,$3,'controller',$3)",[lessonId,recovery,challenge]);
     await db.query("INSERT INTO operational_lessons(id,repository,cohort,from_check_id,strategy_id,rule,lesson_version,metric,direction,baseline_failed,baseline_observed,outcome_passed,outcome_observed,policy_version,policy_digest,status,evidence_event_ids,challenge_digest,proposed_by,independent_challenge_digest) VALUES($1,'other/repo','src','check:unit','strategy:bad','wrong repo',1,'trusted_check_pass_rate','increase',1,1,1,1,'v1',$2,'promoted','[]'::jsonb,$3,'controller',$3)",["22222222-2222-4222-8222-222222222222",recovery,"f".repeat(64)]);
-    const snapshot=await store.schedulingSnapshot(policy,recovery);assert.deepEqual(snapshot.choices[0]?.lessons,[{id:lessonId,version:2,challengeDigest:challenge,checkId:"check:unit",strategyId:"strategy:good",policyDigest:recovery}]);
+    const snapshot=await store.schedulingSnapshot(policy,recovery, ["check:unit"]);assert.deepEqual(snapshot.choices[0]?.lessons,[{id:lessonId,version:2,challengeDigest:challenge,checkId:"check:unit",strategyId:"strategy:good",policyDigest:recovery}]);
     const governor=new MissionGovernor(store,config,undefined,async()=>{await db.query("UPDATE operational_lessons SET status='withdrawn',withdrawn_at=now() WHERE id=$1",[lessonId]);return result(`${mission.id}:b`);});
     const grant=await governor.claim();assert(grant);assert.equal(grant.slice.id,"a");
     const event=(await store.events(mission.id,0)).find(x=>x.type==="slice.claimed")!;assert.equal((event.data.schedulingAdvice as any).status,"stale_fallback");

@@ -1,0 +1,14 @@
+[
+  {
+    "path": ".agent/C3-LINUX-SYMLINK-01-COMPLETION.json",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "d7398a53cde311fa854faadd0a9ef2c5761fcbe8"
+  },
+  {
+    "path": ".agent/C3-LINUX-SYMLINK-01.md",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "34245ca0cc2a27436e361e5943022c365a6066ad"
+  }
+]

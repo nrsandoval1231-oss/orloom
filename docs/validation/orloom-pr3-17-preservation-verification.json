@@ -1,0 +1,133 @@
+{
+  "checked_at": "2026-10-14T04:25:00Z",
+  "target_head": "410882d4afff33e028be50b816ad69eb387eae6d",
+  "additional_evidence_entries": 97,
+  "remaining_missing_paths": [],
+  "heads": [
+    {
+      "pr": 17,
+      "head": "410882d4afff33e028be50b816ad69eb387eae6d",
+      "tree_truncated": false,
+      "blobs": 1048,
+      "ancestry": "identical",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 16,
+      "head": "3a983fa9a51ffb0ac4760bcfc33128883673f024",
+      "tree_truncated": false,
+      "blobs": 1041,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 15,
+      "head": "d4c14280e90809f4fa53337ba6224718e282e585",
+      "tree_truncated": false,
+      "blobs": 1010,
+      "ancestry": "diverged",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 14,
+      "head": "5908bd42fc55e14353a550cc6804354a986881ed",
+      "tree_truncated": false,
+      "blobs": 1068,
+      "ancestry": "diverged",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 13,
+      "head": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+      "tree_truncated": false,
+      "blobs": 1000,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 12,
+      "head": "5c71c6bbbecae72d960c6371defb6ec7d2beb4b9",
+      "tree_truncated": false,
+      "blobs": 904,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 11,
+      "head": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+      "tree_truncated": false,
+      "blobs": 908,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 10,
+      "head": "03795427a22fb21eb3890e5ae8e7f7c2c5071ae9",
+      "tree_truncated": false,
+      "blobs": 862,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 9,
+      "head": "cdad7a27762f73f1af3492e4dfb849ca04d9aed4",
+      "tree_truncated": false,
+      "blobs": 848,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 8,
+      "head": "a4064ebe1073562991d220722944b58763a94bda",
+      "tree_truncated": false,
+      "blobs": 624,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 7,
+      "head": "aa63a12736e82e145c0e162145683823edcd39e4",
+      "tree_truncated": false,
+      "blobs": 619,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 6,
+      "head": "7a6165e3e9ce143e13aaab3b9e5b735c8eb35cdc",
+      "tree_truncated": false,
+      "blobs": 614,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 5,
+      "head": "6716d2520eff2d1e06fb7925f98d634275fd43ab",
+      "tree_truncated": false,
+      "blobs": 746,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 4,
+      "head": "226e4d9ac26f2b83b05b82f678dc07966a1b6bdb",
+      "tree_truncated": false,
+      "blobs": 271,
+      "ancestry": "ahead",
+      "remaining_missing_paths": []
+    },
+    {
+      "pr": 3,
+      "head": "215f4281e6b74ac3c949af8bfb217a143a0d4c93",
+      "tree_truncated": false,
+      "blobs": 186,
+      "ancestry": "diverged",
+      "remaining_missing_paths": []
+    }
+  ],
+  "nonancestor_unique_commit_disposition": {
+    "3": "24 non-state files identical in PR17. README and canonical state evolved. Preserve head reference.",
+    "14": "95 absent evidence paths supplied unchanged, two unique-commit state collisions archived separately.",
+    "15": "35 shared evidence paths covered by PR14; two missing repair records now supplied; source fix semantically incorporated in evolved local-integration.test.ts. Historical manifest/current state must not replace current versions."
+  }
+}

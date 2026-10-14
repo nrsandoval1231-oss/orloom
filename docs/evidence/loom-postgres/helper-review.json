@@ -1,0 +1,20 @@
+{
+  "format": "orloom-independent-loom-postgres-browser-helper-review-v1",
+  "verdict": "PASS_PREEXECUTION",
+  "scenarioSha256": "d143e630d57a8053db7fceda642b51f7c29d2eef2670c3eddc7018b71bba4d55",
+  "priorScenarioSha256": "974a009d45bc3c3c0d56fc27c451c44c7f91dd4a45750702f17e86ca4d254d48",
+  "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+  "sourceSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "scope": "Read-only delta review of work/lpg-proof/scenario.mjs against prior FIX; no PostgreSQL, browser, host, provider, or publication action.",
+  "evidence": [
+    "The scenario syntax check passes, and the delta is confined to the two prior findings and result evidence.",
+    "The exact open notice matches apps/control-plane/src/loom-projection.ts:76, and the authenticated projection assertion requires state=available and closed=false before retaining a bounded projection JSON.",
+    "The mobile scenario activates the visible #inspect summary, verifies details.open=true, and waits for a visible persisted progress event within #events before capturing the expanded mobile inspector.",
+    "The accepted runner is byte-identical; the scenario continues to pin clean f6023ac source and its owned disposable PostgreSQL runtime inputs."
+  ],
+  "conditions": [
+    "Copy or use this exact scenario hash with the accepted runner, then run only against the runner-owned disposable loopback PostgreSQL cluster and clean f6023ac compiled source.",
+    "Preserve actual runtime result, screenshots, projection JSON, and cleanup evidence; this pre-execution PASS is not a browser or PostgreSQL runtime result.",
+    "A viewer proof does not prove builder execution, certification, integration, delivery, cloud acceptance, or publication."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "format": "orloom-independent-loom-postgres-browser-runtime-review-v1",
+  "verdict": "PASS_CONTROLLED_VIEWER_RUNTIME_ONLY",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "scenarioSha256": "d143e630d57a8053db7fceda642b51f7c29d2eef2670c3eddc7018b71bba4d55",
+  "runnerSha256": "946aedde9c39d9d2d27261a09ae7ef469dc62173ba70982ebc63e0164b311d1a",
+  "evidenceRoot": "work/lpg-proof/runtime/1791935026530-7845f509-3f48-4148-a982-377ba667241c/evidence",
+  "observations": [
+    "Preflight binds clean f6023ac and records compiled module hashes; retained manifest reports EXECUTED, PASS_DATABASE_BEHAVIOR_ONLY, and STOPPED_OWNED_CLUSTER with no failed phase.",
+    "Scenario result reports PASS_POSTGRES_BACKED_VIEWER_ONLY, the same source SHA and mission identity, zero provider calls, no builder execution, and no completion claim.",
+    "Retained authenticated projection contains five ordered events ending at cursor 5, including the persisted slice.progress event labeled Governor decision recorded. It marks the viewer-proof slice running, the dependent slice waiting_dependency, state available, closed false, and the exact open certification/integration notice.",
+    "Desktop reloaded capture visibly shows the persisted event record, live connection, and open notice. Mobile capture visibly shows the expanded inspector with the persisted progress event and open notice.",
+    "PostgreSQL 18.6 log shows listening only on 127.0.0.1:15437, followed by fast shutdown and database system shut down; runner JSONL records scenario_passed and STOPPED_OWNED_CLUSTER."
+  ],
+  "limits": [
+    "This demonstrates one controlled PostgreSQL-backed owner viewer flow and reload/mobile rendering for a fixture mission.",
+    "It does not demonstrate an actual builder, trusted certificate, local integration, delivery, cloud host acceptance, external provider, publication, or commercial completion.",
+    "The separate f6023ac source remains a historical accepted input here; this result does not repair or accept the later 3962ee0 startup composition candidate."
+  ]
+}

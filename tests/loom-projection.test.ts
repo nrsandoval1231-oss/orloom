@@ -77,10 +77,35 @@ test("pending certificate IDs bind to certified checks independent of check orde
   const twoChecks={...slice("verified"),checks:["check:z","check:a"]};
   const twoCheckPlan={...plan(),slices:[{...plan().slices[0]!,checks:["check:z","check:a"]}]};
   const events=[
-    ev(2,"check.certified",{sliceId:"s-1",certificateId:"cert-z",checkId:"check:z",leaseEpoch:1,candidateSha:"b".repeat(40)}),
-    ev(4,"check.certified",{sliceId:"s-1",certificateId:"cert-a",checkId:"check:a",leaseEpoch:1,candidateSha:"b".repeat(40)}),
+    ev(2,"check.certified",{sliceId:"s-1",certificateId:"cert-z",certificateDigest:"c".repeat(64),checkId:"check:z",leaseEpoch:1,candidateSha:"b".repeat(40)}),
+    ev(4,"check.certified",{sliceId:"s-1",certificateId:"cert-a",certificateDigest:"a".repeat(64),checkId:"check:a",leaseEpoch:1,candidateSha:"b".repeat(40)}),
     ev(8,"slice.integration_pending",{sliceId:"s-1",leaseEpoch:1,candidateSha:"b".repeat(40),treeSha:"d".repeat(40),expectedIntegrationSha:"e".repeat(40),reviewArtifactDigest:"f".repeat(64),certificateIds:["cert-a","cert-z"],certificateDigests:["a".repeat(64),"c".repeat(64)]}),
     ev(13,"slice.integrated",{sliceId:"s-1",leaseEpoch:1,candidateSha:"b".repeat(40),treeSha:"d".repeat(40),reviewArtifactDigest:"f".repeat(64)})
   ];
   assert.equal(projectLoom(mission("verified"),twoCheckPlan,[twoChecks],events).closed,true);
+});
+
+test("certificate digest contradictions and missing certification digests cannot close Loom", () => {
+  for (const [index, data] of [
+    [1, { certificateDigests: ["0".repeat(64)] }],
+    [0, { certificateDigest: undefined }],
+    [0, { certificateDigest: "not-a-digest" }]
+  ] as const) {
+    const events = completeEvents().map((event, i) => i === index ? { ...event, data: { ...event.data, ...data } } : event);
+    const view = projectLoom(mission("verified"), plan(), [slice("verified")], events);
+    assert.equal(view.closed, false);
+    assert.doesNotMatch(view.notice, /Every planned slice/);
+  }
+});
+
+test("certificate digests bind to their IDs rather than array membership", () => {
+  const checks = ["check:unit", "check:second"];
+  const twoCheckPlan = { ...plan(), slices: [{ ...plan().slices[0]!, checks }] };
+  const twoCheckSlice = { ...slice("verified"), checks };
+  const baseline = completeEvents();
+  const events = [baseline[0]!, ev(4, "check.certified", { ...baseline[0]!.data, checkId: checks[1], certificateId: "cert-2", certificateDigest: "a".repeat(64) }),
+    { ...baseline[1]!, data: { ...baseline[1]!.data, certificateIds: ["cert-2", "cert-1"], certificateDigests: ["c".repeat(64), "a".repeat(64)] } }, baseline[2]!];
+  assert.equal(projectLoom(mission("verified"), twoCheckPlan, [twoCheckSlice], events).closed, false);
+  events[2]!.data.certificateDigests = ["a".repeat(64), "c".repeat(64)];
+  assert.equal(projectLoom(mission("verified"), twoCheckPlan, [twoCheckSlice], events).closed, true);
 });

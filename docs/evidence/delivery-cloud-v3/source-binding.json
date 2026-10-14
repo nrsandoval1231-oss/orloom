@@ -1,0 +1,11 @@
+{
+  "format": "orloom-c3-delivery-cloud-source-binding-v1",
+  "sourceRepo": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\orloom-delivery",
+  "candidateSha": "f6023acade03091a494644409e9bc65d28d59ad4",
+  "baseSha": "0e5daefc4f331b12b7de8030b0707f8bb08fe037",
+  "sourceRef": "refs/heads/feat/certified-delivery",
+  "sourceManifestSha256": "9215357a14e2d83079c8db9aa779969d5f86e53ac556224974979f5750e1923d",
+  "sourceReviewSha256": "7f92604e10615bb53505e5ca8c0da8bb97a2361d049ec40cdecacc81b5619f35",
+  "sourceReviewFile": "C:\\Users\\nrsan\\Documents\\Codex\\2026-10-12\\referenced-chatgpt-conversation-this-is-an-3\\work\\c3-delivery-cloud-v3\\source-review-v3.json",
+  "sourceReviewAdmissionSha256": "16c46f1d4dbc91573bca55cca07bec91d9013c280473b4a082857d153201196b"
+}
