@@ -1,0 +1,57 @@
+{
+  "nodeId": "C3-FIXTURE-THROUGHPUT-01",
+  "status": "IMPLEMENTED_FOCUSED_VALIDATION_PASS_HANDOFF_PENDING_ROOT_GATES_AND_REVIEW",
+  "repository": "work/orloom-fixture-throughput",
+  "branch": "fix/delivery-fixture-throughput",
+  "baseSha": "3a983fa9a51ffb0ac4760bcfc33128883673f024",
+  "candidate": "dirty working tree; no commit created",
+  "changedFiles": [
+    "tests/delivery-effects.test.ts",
+    ".agent/C3-FIXTURE-THROUGHPUT-01-COMPLETION.json"
+  ],
+  "implementation": "Reused one file-scoped PGlite engine, applied all eight migrations once, serialized fixture ownership, truncated every migration-created data table with RESTART IDENTITY CASCADE before each setup, restored the migration-002 mission_governor_lock seed, and closed the engine after the file. A pg_tables inventory guard fails if a new public table is omitted from the reset list. Per-fixture counters and transaction lock remain scoped to each fixture.",
+  "preservedCoverage": "All original 23 delivery-effects tests/subtests remain and pass; the isolation regression brings the total to 24. Migrations 001 through 008 still execute before test data is created.",
+  "validation": [
+    {
+      "command": "$sw=[System.Diagnostics.Stopwatch]::StartNew(); npm run build; if ($LASTEXITCODE -eq 0) { node --test dist/tests/delivery-effects.test.js; $testExit=$LASTEXITCODE } else { $testExit=1 }; $sw.Stop(); \"BUILD_AND_FOCUSED_TEST_EXIT=$testExit ELAPSED_MS=$($sw.ElapsedMilliseconds)\"; exit $testExit",
+      "exitCode": 0,
+      "result": "PASS; corrected TypeScript build and focused delivery-effects suite, 24 tests, 0 failures",
+      "measuredBefore": {
+        "elapsedMs": 20452,
+        "nodeTestDurationMs": 17442.27,
+        "testCount": 23,
+        "disposition": "raw baseline before fixture-reuse edit"
+      },
+      "measuredAfter": {
+        "elapsedMs": 5211,
+        "nodeTestDurationMs": 1958.2011,
+        "testCount": 24,
+        "disposition": "corrected source; raw local timing only"
+      },
+      "environment": "Same Windows checkout, Node/npm installation and command for all runs. Local measurements only; not cloud/CI performance evidence.",
+      "measuredAfterSuperseded": {
+        "elapsedMs": 4808,
+        "nodeTestDurationMs": 1880.6969,
+        "testCount": 24,
+        "disposition": "raw local timing retained but not accepted; version truncated the seeded governor lock"
+      },
+      "sourceOutput": "BUILD_AND_FOCUSED_TEST_EXIT=0 ELAPSED_MS=5211"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "result": "PASS"
+    }
+  ],
+  "testFileSha256": "DA4496539059446B631DEF5808AD651183EC0768822781D5BBFA16464F254F8B",
+  "limits": [
+    "Root must rerun combined/full repository gates and complete integration and independent review against the corrected candidate; its earlier combined PASS preceded this correction.",
+    "No Linux rerun or cloud performance claim is made; exact Linux measurement remains pending Terra/root proof.",
+    "No production source, dependency, manifest, migration, verifier policy, external service, host, provider, commit, or push was changed or invoked."
+  ],
+  "startedAtUtc": "UNKNOWN",
+  "finishedAtUtc": "2026-10-14T02:23:37Z",
+  "elapsedSeconds": null,
+  "modelAndConfig": "UNKNOWN",
+  "tokenUsage": "UNKNOWN"
+}

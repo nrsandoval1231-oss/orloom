@@ -1,4 +1,4 @@
-import { test } from "node:test";
+import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -12,6 +12,27 @@ import type { GitHubInstallationClient } from "../packages/adapters/src/provider
 
 const hash=(value:Uint8Array|string)=>createHash("sha256").update(value).digest("hex");
 const sha="a".repeat(40),tree="b".repeat(40),base="c".repeat(40),digest="d".repeat(64);
+const migrationFiles=["001_initial.sql","002_missions.sql","003_recovery.sql","004_verification.sql","005_learning.sql","006_integration.sql","007_delivery.sql","008_delivery_upload.sql"];
+const resetTables=["jobs","missions","mission_plans","mission_slices","mission_events","mission_governor_lock","capacity_slots","mission_recovery_state","mission_recovery_progress","operational_lessons","operational_lesson_events","verification_attempts","check_certificates","verification_dispatch_failures","operational_lesson_challenges","mission_integration_intents","mission_delivery_intents","mission_delivery_effects"] as const;
+const resetTableSet=new Set<string>(resetTables);
+const resetSql=`TRUNCATE ${resetTables.join(", ")} RESTART IDENTITY CASCADE`;
+let sharedDb:PGlite|undefined;
+let fixtureQueue=Promise.resolve();
+async function assertFixtureSchema(db:PGlite){
+  const inventory=await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public'") as {rows:{tablename:string}[]};
+  assert.deepEqual(inventory.rows.map(row=>row.tablename).filter(name=>!resetTableSet.has(name)).sort(),[],"every migrated public table must be included in fixture reset inventory");
+  const lock=await db.query("SELECT lock_id FROM mission_governor_lock ORDER BY lock_id") as {rows:{lock_id:number}[]};
+  assert.deepEqual(lock.rows,[{lock_id:1}],"migrated governor lock seed is present exactly once");
+}
+async function acquireFixture(){
+  let release!:()=>void;const previous=fixtureQueue;fixtureQueue=new Promise<void>(resolve=>release=resolve);await previous;
+  try{
+    if(!sharedDb){sharedDb=new PGlite();for(const file of migrationFiles)await sharedDb.exec(await readFile(`db/migrations/${file}`,"utf8"));await assertFixtureSchema(sharedDb);}
+    else{await sharedDb.exec(resetSql);await sharedDb.query("INSERT INTO mission_governor_lock(lock_id) VALUES(1) ON CONFLICT DO NOTHING");await assertFixtureSchema(sharedDb);}
+    return{db:sharedDb,release};
+  }catch(error){release();throw error;}
+}
+after(async()=>{await fixtureQueue;if(sharedDb)await sharedDb.close();});
 const command:DeliveryCommandV1={version:"orloom.delivery-command.v1",missionId:"11111111-1111-4111-8111-111111111111",sliceId:"delivery",leaseEpoch:1,integratedSha:sha,treeSha:tree,reviewArtifactId:"review-001",reviewArtifactDigest:"",idempotencyKey:"delivery-idempotency-00001"};
 const policy:DeliveryPolicy={repository:"acme/orloom",appId:11,installationId:9,baseRef:"main",baseSha:base,protectedRefs:["main"],checkIds:["node-repo-suite-v1"],policyVersion:"policy-v1",policyDigest:digest,imageDigest:"e".repeat(64),checkName:"Orloom certified suite"};
 
@@ -19,8 +40,8 @@ type Check=Awaited<ReturnType<GitHubInstallationClient["createDeliveryCheck"]>>;
 type PullRequest=Awaited<ReturnType<GitHubInstallationClient["createDraftPullRequest"]>>;
 
 async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_after"|"throw_absent";prPost?:"normal"|"throw_after";uploadPost?:"normal"|"throw_after"|"throw_absent";branchRead?:"wrong_sha"|"wrong_tree"|"error";baseRead?:"wrong"|"error";appId?:number;checkGetId?:number;prGetNumber?:number;draft?:boolean;state?:string;merged?:boolean;duplicates?:boolean;noUploadCredential?:boolean}={}){
-  const db=new PGlite();
-  for(const file of ["001_initial.sql","002_missions.sql","003_recovery.sql","004_verification.sql","005_learning.sql","006_integration.sql","007_delivery.sql","008_delivery_upload.sql"])await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
+  const fixture=await acquireFixture(),db=fixture.db;
+  try{
   let lock=Promise.resolve();
   const sql:TransactionalSql={
     query:async(text,params)=>await db.query(text,params as never) as never,
@@ -84,17 +105,42 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
   if(mode.noUploadCredential)delete(github as unknown as {withContentsWriteToken?:GitHubInstallationClient["withContentsWriteToken"]}).withContentsWriteToken;
   const integrator={repositoryIdentity:policy.repository,readRef:async()=>sha,inspect:async()=>({candidateSha:sha,treeSha:tree,expectedIntegrationSha:base}),uploadRef:async()=>{uploadPosts++;if(mode.uploadPost==="throw_absent")throw new Error("unavailable");remoteUploaded=true;if(mode.uploadPost==="throw_after")throw new Error("ack lost");}};
   const authority={integrator,reviews:{read:async(id:string)=>id===command.reviewArtifactId?reviewBytes:null},artifacts:{put:async()=>({key:"",sha256:""}),get:async(key:string)=>{const value=artifacts.get(key);if(!value)throw new Error("artifact unavailable");return value;}},github} as never;
-  return{db,store,sqlStore,authority,counts:()=>({uploadPosts,checkPosts,prPosts,checkReads,prReads}),missionId:mission.id,planDigest:planDigest(plan)};
+  return{db,close:async()=>fixture.release(),store,sqlStore,authority,counts:()=>({uploadPosts,checkPosts,prPosts,checkReads,prReads}),missionId:mission.id,planDigest:planDigest(plan)};
+  }catch(error){fixture.release();throw error;}
 }
 function planDigest(plan:{slices:SliceInput[]}){return hash(canonicalJson(plan.slices));}
 
 async function deliver(fixture:Awaited<ReturnType<typeof setup>>){return deliverIntegratedCommit(command,policy,fixture.authority,fixture.store);}
 
+test("serialized shared PGlite fixtures reset mutations after a failed test body",async()=>{
+  const failed=await setup();
+  const failedMissionId=failed.missionId;
+  try{
+    await failed.db.query("UPDATE missions SET objective='mutated before fixture failure' WHERE id=$1",[failedMissionId]);
+    await failed.db.query("INSERT INTO mission_delivery_intents(mission_id,slice_id,lease_epoch,request,state) VALUES($1,'failed-fixture',1,'{}'::jsonb,'unknown')",[failedMissionId]);
+    await failed.db.query("INSERT INTO mission_delivery_effects(mission_id,slice_id,lease_epoch,effect,state) VALUES($1,'failed-fixture',1,'upload','claimed')",[failedMissionId]);
+    await assert.rejects(async()=>{throw new Error("injected fixture failure")},/injected fixture failure/);
+  }finally{await failed.close();}
+  const next=await setup();
+  try{
+    const rows=await next.db.query("SELECT id,objective FROM missions ORDER BY id");
+    assert.equal(rows.rows.length,1,"only the new fixture mission remains");
+    assert.equal((rows.rows[0] as {id:string;objective:string}).id,next.missionId);
+    assert.equal((rows.rows[0] as {objective:string}).objective,"deliver reviewed commit","the next fixture starts from clean migrated database state");
+    const oldMission=await next.db.query("SELECT id FROM missions WHERE id=$1",[failedMissionId]);
+    assert.equal(oldMission.rows.length,0,"the previous fixture mission is absent");
+    const effects=await next.db.query("SELECT mission_id FROM mission_delivery_effects");
+    assert.equal(effects.rows.length,0,"effects from a prior failed fixture cannot leak");
+    const lock=await next.db.query("SELECT lock_id FROM mission_governor_lock ORDER BY lock_id") as {rows:{lock_id:number}[]};
+    assert.deepEqual(lock.rows,[{lock_id:1}],"reset preserves the migration-seeded governor lock row");
+  }finally{await next.close();}
+});
+
 test("positive delivery persists one exact Check GET readback and an open unmerged draft PR",async()=>{
   const f=await setup();try{
     const result=await deliver(f);assert.equal(result.state,"pr_created");assert.equal(result.appId,policy.appId);assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);assert.equal(f.counts().checkReads,1);assert.equal(f.counts().prReads,1);
     const replay=await deliver(f);assert.equal(replay.state,"pr_created");assert.deepEqual(f.counts(),{uploadPosts:1,checkPosts:1,prPosts:1,checkReads:2,prReads:2});
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("delivery rejects duplicate, mismatched, and unknown C4 metadata before any external effect",async()=>{
@@ -111,28 +157,28 @@ test("delivery rejects duplicate, mismatched, and unknown C4 metadata before any
     await rejectRefs([integrationRef,reviewRef,`sha256/${"a".repeat(64)}`]);
     await setRefs([integrationRef,reviewRef]);
     assert.equal((await deliver(f)).state,"pr_created");
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("Check-only interruption is reconciled by exact GET then proceeds to one PR without retrying Check POST",async()=>{
   const f=await setup({checkPost:"throw_after"});try{
     await assert.rejects(deliver(f),/Check write or separate Check readback/);
     const recovered=await deliver(f);assert.equal(recovered.state,"pr_created");assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);assert(f.counts().checkReads>=1);
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("interrupted PR create is reconciled after durable Check and PR claims without retry",async()=>{
   const f=await setup({prPost:"throw_after"});try{
     await assert.rejects(deliver(f),/Draft PR write or separate PR readback/);
     const recovered=await deliver(f);assert.equal(recovered.state,"pr_created");assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("concurrent delivery calls cannot both claim either create effect",async()=>{
   const f=await setup();try{
     const results=await Promise.allSettled([deliver(f),deliver(f)]);
     assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);assert(results.some(x=>x.status==="fulfilled"));
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("upload interruption is reconciled after the exact remote ref appears and is never pushed twice",async()=>{
@@ -143,7 +189,7 @@ test("upload interruption is reconciled after the exact remote ref appears and i
     await assert.rejects(f.store.claimDeliveryEffect!(request,"check"),/Remote upload must be observed/);
     const result=await deliver(f);assert.equal(result.state,"pr_created");
     assert.equal(f.counts().uploadPosts,1);assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks",async t=>{
@@ -152,7 +198,7 @@ test("a prior claimed upload with an absent branch, wrong branch or moved base s
       await assert.rejects(deliver(f));
       await assert.rejects(deliver(f));
       assert.equal(f.counts().uploadPosts,mode.uploadPost||mode.branchRead?1:0);assert.equal(f.counts().checkPosts,0);assert.equal(f.counts().prPosts,0);
-    }finally{await f.db.close();}
+    }finally{await f.close();}
   });
 });
 
@@ -161,18 +207,18 @@ test("unresolved absent effect remains UNKNOWN and is never blindly retried",asy
     await assert.rejects(deliver(f),/Check write or separate Check readback/);
     await assert.rejects(deliver(f),/prior Check write may have occurred/);
     assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,0);
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("missing scoped upload credential capability closes delivery before creating a claim",async()=>{
   const f=await setup({noUploadCredential:true});try{
     await assert.rejects(deliver(f),/closed without controller-owned upload/);
     const q=await f.db.query("SELECT effect FROM mission_delivery_effects WHERE mission_id=$1",[f.missionId]);assert.equal(q.rows.length,0);
-  }finally{await f.db.close();}
+  }finally{await f.close();}
 });
 
 test("wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success",async t=>{
   for(const scenario of [{name:"wrong App in Check readback",mode:{appId:999}},{name:"Check GET returns a different id",mode:{checkGetId:82}},{name:"PR GET returns a different number",mode:{prGetNumber:92}},{name:"configured App policy mismatch",mode:{configuredAppId:99}},{name:"ambiguous Checks",mode:{duplicates:true}},{name:"closed draft",mode:{state:"closed"}},{name:"merged draft",mode:{merged:true}},{name:"non-draft PR",mode:{draft:false}}]){
-    await t.test(scenario.name,async()=>{const f=await setup(scenario.mode);try{await assert.rejects(deliver(f));const state=await f.db.query("SELECT state FROM mission_delivery_intents WHERE mission_id=$1",[f.missionId]);assert.notEqual((state.rows[0] as {state:string}|undefined)?.state,"pr_created");}finally{await f.db.close();}});
+    await t.test(scenario.name,async()=>{const f=await setup(scenario.mode);try{await assert.rejects(deliver(f));const state=await f.db.query("SELECT state FROM mission_delivery_intents WHERE mission_id=$1",[f.missionId]);assert.notEqual((state.rows[0] as {state:string}|undefined)?.state,"pr_created");}finally{await f.close();}});
   }
 });
