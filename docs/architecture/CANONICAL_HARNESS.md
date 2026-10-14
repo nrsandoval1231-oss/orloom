@@ -21,9 +21,9 @@ Orloom is a commercial cloud-native autonomous software engineering platform. St
 - Living circular Loom: visualizes real mission, agent, dependency, drift, progress, verification and learning events; never invents completion or activity.
 - Preserve Intent → Plan → Implement → Verify → Learn → Update as the canonical engineering loop.
 
-## Revised integration boundary (2026-10-13)
+## Integration boundary and historical directive
 
-PR #2 is frozen at `8bbcfffbf631e5ad2972e34b41284198afc566e2`. Do not modify, merge, rebase, close, or continue that broker implementation. Develop independent components from main after PR #1's verified integration. Preserve the existing broker exactly; do not create a competing DeepSeek broker. Versioned progress and decision contracts may be added to the control plane independently, without claiming the frozen broker consumes them.
+The 2026-10-13 directive froze PR #2 at `8bbcfffbf631e5ad2972e34b41284198afc566e2` and prohibited modifying, merging, rebasing, closing or continuing that broker while independent components advanced after PR #1. That procedural restriction is historical and superseded by the owner's 2026-10-14 direction to consolidate reviewed work, clean up open PRs and establish a clean foundation. Preserve the broker's original source and evidence rather than create a competing broker. The current successor composes that source with normal startup disabled; its reviewed typed recovery transport is not yet connected to broker execution. Source inclusion does not establish candidate admission, recovery execution, safe cancellation, live providers or deployment. See [foundation status](../FOUNDATION_STATUS.md) for current acceptance; the target architecture below is unchanged.
 
 Recovery follows Detect → Diagnose → Jev Strategy Selection → Governor Authorization → Execute → Evaluate, with materially different approved strategies, bounded attempts/budgets, durable outcomes and Sol escalation when needed. Interrupted effects retain UNKNOWN quarantine.
 
@@ -75,3 +75,4 @@ Aura and forge-agent are reference repositories, not automatic code imports. Pre
 
 ## Delivery principle
 Build the full coherent product architecture without artificial feature deferral; use vertical integration and executable acceptance criteria so the system delivers real engineering outcomes rather than endless agent activity.
+

@@ -1,0 +1,39 @@
+{
+  "packet": "ORL-005B",
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation files; manifest .agent/WORKER-ORL-005B-MANIFEST.json",
+  "status": "implementation candidate ready for controller review; runtime and live acceptance blocked",
+  "started_utc": "2026-10-13T03:28:22Z",
+  "finished_utc": "2026-10-13T04:03:07Z",
+  "planning_duration": "UNKNOWN",
+  "build_duration": "UNKNOWN",
+  "validation_duration": "UNKNOWN",
+  "audit_duration": "UNKNOWN",
+  "repair_count": 0,
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "validation": [
+    { "command": "npm ci", "exit_code": 0 },
+    { "command": "npm run typecheck", "exit_code": 0 },
+    { "command": "npm test", "exit_code": 0, "evidence": "31 tests passed; build included" },
+    { "command": "npm run validate", "exit_code": 0 },
+    { "command": "git diff --check", "exit_code": 0 }
+  ],
+  "focused_tests": [
+    "worker transport claims through real HTTP, patches an owned path, stores evidence, and only submits awaiting_verification",
+    "DeepSeek HTTP adapter probes exact function-call support and suppresses reasoning fields",
+    "input reservation blocks before the first billable capability probe",
+    "durable STOP before probe prevents billable provider effect",
+    "DeepSeek ambiguous POST is not retried, response redirects are disabled, and hostile paths fail closed",
+    "high progress volume retains a complete immutable index with bounded terminal references",
+    "candidate bundle verifies against immutable base and advertises exact candidate SHA"
+  ],
+  "limitations": [
+    "No DeepSeek provider call was made; actual model tool support, remote usage/cost, and live handoff remain UNKNOWN.",
+    "No Docker/runsc runtime proof was performed; deployment image build, container cleanup behavior, representative build capacity, and multi-slot host capacity remain unverified.",
+    "The real HTTP integration test uses A's memory store and an injected workspace/provider; the separate disposable Git test verifies candidate bundle reimport, not the full HTTP-to-runsc checkout path.",
+    "No independent review or acceptance verdict has been recorded; controller verification remains required.",
+    "No external changes, commit, push, deployment, or spending occurred."
+  ]
+}

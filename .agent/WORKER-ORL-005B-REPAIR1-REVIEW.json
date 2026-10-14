@@ -1,0 +1,36 @@
+{
+  "packet": "ORL-005B",
+  "repair": 1,
+  "verdict": "PASS",
+  "scope": "frozen source and deterministic fixture review only",
+  "reviewed_at_utc": "2026-10-13T04:36:27Z",
+  "branch": "feat/deepseek-worker-broker",
+  "base_sha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "candidate": "uncommitted frozen worker implementation",
+  "manifest": ".agent/WORKER-ORL-005B-MANIFEST.json",
+  "manifest_sha256": "c2e01434a67883038daec2c853b345f9f899987bc31a55a6feb1233dca4b9fce",
+  "files_verified": 15,
+  "post_review_formatting_followup": {
+    "scope_verdict": "PASS for EOF formatting only; the original 15-file manifest no longer matches current raw bytes",
+    "path": "apps/worker/src/docker-runtime.ts",
+    "reviewed_raw_sha256": "425ffa4c70e45a7ea6be2f76eb328922f48b09ce7",
+    "current_raw_sha256": "6768d91df414c548c4b86b75e343596c03b77915589dd5c33ddb158da90dcf02",
+    "staged_lf_sha256": "6a4c8d455df3bcebdc9a75a8d9c7da319e3f2a9b93db375a55bf03e6a95e1404",
+    "evidence": "Independently reconstructed the prior raw SHA-256 from current decoded text.TrimEnd() plus two LF bytes; current file has one CRLF EOF and staged Git blob has one LF EOF. The substantive text before trailing whitespace is identical. Staged git diff --check exits 0.",
+    "boundary": "This limited follow-up does not review or bind other staging changes; use the controller's regenerated staged-blob manifest for the commit identity."
+  },
+  "prior_review": ".agent/WORKER-ORL-005B-REVIEW.json",
+  "findings": [],
+  "prior_findings_closed": [
+    "B-001: timeout, abort, stdin close/error, and Docker child exit now reject a backpressured write; regression covers listener cleanup and early exit",
+    "B-002: create retains exact container ID and ownership labels; cleanup inspects ID/labels, removes by ID, verifies absence, and surfaces unresolved Docker state; a candidate is not reported before cleanup",
+    "B-003: the frozen pricing snapshot is checked immediately before each billable probe/completion; expiry between calls prevents the next call and is tested",
+    "B-004: a bounded operator-configured poll pool can claim and run two distinct leases concurrently; tests prove overlap and shutdown drain without asserting six-live-lane host capacity"
+  ],
+  "independent_evidence": [
+    "Manifest SHA-256 and all 15 listed file hashes matched the frozen candidate",
+    "Controller independently reported typecheck, 39 tests, validate, and diff check exit 0 on this replacement source",
+    "Repair tests cover interrupted sandbox RPC as UNKNOWN, uncertain cleanup suppressing candidate callback, exact owned-container cleanup, stale pricing, and two concurrent fixture leases"
+  ],
+  "qualification": "PASS resolves the four prior source-review findings. It does not certify Docker/runsc behavior on the host, a built/pinned sandbox image, actual credential isolation, representative offline build capacity, two live worker containers, six live lanes, HTTPS GitHub checkout, R2, DeepSeek model support or costs, or full product completion. Those remain separate runtime/live gates. The existing 32 MiB workspace and Node-only image are fixture limits; no dependency-cache architecture is accepted by this review. The separate contents:read-only checkout helper remains outside this 15-file manifest and retains its prior independent hash record."
+}

@@ -1,0 +1,11 @@
+# Orloom current state
+
+Owner directive: implement the complete canonical harness in [CANONICAL_HARNESS.md](../docs/architecture/CANONICAL_HARNESS.md). Bounded checkpoints do not complete the parent objective. No push, merge, deployment, or product-completion claim is authorized by this checkpoint.
+
+Current checkout: `feat/deepseek-worker-broker`, reviewed commit `6a128423d069718f37bcde34207806b9e35e826c`, stacked on PR1's former head `2d45b64e24817a14826a6c9466145909680fec0b`. PR1 is merged at `6110c692f47202978b2d22d22f6522aa4aa59277`; PR2 still needs controller retarget/reconciliation. Previous state bytes are archived at `work/worker-runtime-proof/CURRENT_STATE.pre-review-guard.md` (SHA-256 `4c6f42824c2e0fe7ffce8e011c3ac13de4b4976630550d48827aabd102e4a0b`). Runtime source and evidence identities are in `work/worker-runtime-proof/runtime-source-manifest.json`.
+
+ORL-005B has a bounded nonbillable fixture runtime checkpoint. The post-review rerun exercised production `executeLease`, HTTP claim/result, `DockerWorkerRuntime`, Docker `runsc`, candidate bundle/evidence readback, cancellation/cleanup, and protected-container equality, reaching only `awaiting_verification`; see [result](../work/worker-runtime-proof/RUNTIME-PROOF-RESULT.md). Sol review found the old dormant live branch's pricing timestamp and rounded cap check unsafe. The branch was removed: the harness accepts fixture mode only and rejects other modes before inspecting/creating its proof root. The retained live-mode guard test and fresh fixture proof pass.
+
+Live DeepSeek remains blocked and unimplemented in this harness. The expected root-owned `/etc/orloom/infisical-client-secret` was absent at the last metadata check. No retrieval or provider call occurred; the shared USD 5 cap remains USD 0 confirmed and USD 0 reserved. No live model usage, pricing, outcome, throughput, or six-lane capacity is established. GitHub App checkout, R2, production worker bootstrap, Hostinger A deployment, verifier/integration, and product completion also remain open.
+
+Next: controller reruns mandatory deterministic gates and obtains Sol review on this exact changed candidate. Keep live execution closed until separately reviewed credential retrieval, verified pricing, and capped reservation exist. Canonical product completion remains open.

@@ -85,7 +85,9 @@ export interface GitHubRequestBoundary {
   installation(id: number, token?:string): Promise<GitHubRequestClient>;
 }
 
-export function createGitHubAppAdapter(config: { appId: number; privateKey: string }, boundary?: GitHubRequestBoundary): GitHubInstallationClient {
+export interface GitHubCheckoutClient { createCheckoutToken(installationId: number, repository: string): Promise<string>; }
+
+export function createGitHubAppAdapter(config: { appId: number; privateKey: string }, boundary?: GitHubRequestBoundary): GitHubInstallationClient & GitHubCheckoutClient {
   const app = boundary ? undefined : new App({ appId: config.appId, privateKey: config.privateKey });
   const appRequests: GitHubRequestClient = boundary?.app ?? {
     request: async (route, parameters) => app!.octokit.request(route as never, parameters as never)
@@ -108,6 +110,19 @@ export function createGitHubAppAdapter(config: { appId: number; privateKey: stri
         permissions: { contents: "read", checks: "write" }
       });
       const token=(created.data as Record<string,unknown>|null)?.token;if(typeof token!=="string"||!token)throw new Error("GitHub did not return an installation token");
+      return token;
+    },
+    async createCheckoutToken(installationId, repository) {
+      if (!Number.isSafeInteger(installationId) || installationId < 1 || typeof repository !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/.test(repository) || repository === "." || repository === "..") {
+        throw new Error("Installation and repository scope are required");
+      }
+      const created = await appRequests.request("POST /app/installations/{installation_id}/access_tokens", {
+        installation_id: installationId,
+        repositories: [repository],
+        permissions: { contents: "read" }
+      });
+      const token = (created.data as Record<string, unknown> | null)?.token;
+      if (typeof token !== "string" || token.trim().length === 0) throw new Error("GitHub did not return an installation token");
       return token;
     },
     async createCheckRun(installationId, repository, headSha, name, conclusion) {

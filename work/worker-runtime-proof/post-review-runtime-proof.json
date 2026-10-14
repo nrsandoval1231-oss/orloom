@@ -1,0 +1,517 @@
+{
+  "version": "orloom.pr2.runtime-proof.v1",
+  "runId": "orloom-pr2-20261013183734-9292bfc9",
+  "startedAtUtc": "2026-10-13T18:37:34.168Z",
+  "status": "PASS",
+  "mode": "fixture",
+  "candidate": {
+    "branch": "feat/deepseek-worker-broker",
+    "head": "6a128423d069718f37bcde34207806b9e35e826c"
+  },
+  "scope": "actual executeLease / HTTP control protocol / DockerWorkerRuntime; isolated local fixture; no integration, push, verification, or PR",
+  "provider": {
+    "kind": "deterministic test double",
+    "liveCalls": 0
+  },
+  "controls": {
+    "claim": "PASS",
+    "terminalResults": [
+      {
+        "outcome": "CANDIDATE",
+        "evidenceRefCount": 5,
+        "candidateSha": "8a069f94e6f4fc93c30cefb94dac978fc86c15a4",
+        "acknowledged": "PASS"
+      }
+    ],
+    "leaseEpoch": 1,
+    "capacitySlot": 1,
+    "baseSha": "225041f041327b4890958d73060a617bd61bc032",
+    "policyDigest": "fdbe543b6ded2d1fe89b5f3dceb1520c30b7f10b1fe5644c78c2f18300a460ac",
+    "missionId": "c3f43adf-7f8a-4236-99d8-fe8ece2ca2d4",
+    "sliceId": "slice-runtime",
+    "result": "awaiting_verification",
+    "progressSummary": [
+      {
+        "ordinal": 1,
+        "phase": "provider-tool-probe",
+        "status": "started",
+        "providerCalls": 0,
+        "inputTokens": 0,
+        "outputTokens": 0
+      },
+      {
+        "ordinal": 2,
+        "phase": "provider-tool-probe",
+        "status": "completed",
+        "providerCalls": 1,
+        "inputTokens": 2,
+        "outputTokens": 1
+      },
+      {
+        "ordinal": 3,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 1,
+        "inputTokens": 2,
+        "outputTokens": 1
+      },
+      {
+        "ordinal": 4,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 5,
+        "phase": "tool-read_file",
+        "status": "started",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 6,
+        "phase": "tool-read_file",
+        "status": "completed",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 7,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 2,
+        "inputTokens": 8,
+        "outputTokens": 6
+      },
+      {
+        "ordinal": 8,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 9,
+        "phase": "tool-apply_patch",
+        "status": "started",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 10,
+        "phase": "tool-apply_patch",
+        "status": "completed",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 11,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 3,
+        "inputTokens": 14,
+        "outputTokens": 11
+      },
+      {
+        "ordinal": 12,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 13,
+        "phase": "tool-run_check",
+        "status": "started",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 14,
+        "phase": "tool-run_check",
+        "status": "completed",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 15,
+        "phase": "provider-completion",
+        "status": "started",
+        "providerCalls": 4,
+        "inputTokens": 20,
+        "outputTokens": 16
+      },
+      {
+        "ordinal": 16,
+        "phase": "provider-completion",
+        "status": "completed",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      },
+      {
+        "ordinal": 17,
+        "phase": "candidate",
+        "status": "started",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      },
+      {
+        "ordinal": 18,
+        "phase": "candidate",
+        "status": "completed",
+        "providerCalls": 5,
+        "inputTokens": 26,
+        "outputTokens": 21
+      }
+    ],
+    "candidateSha": "8a069f94e6f4fc93c30cefb94dac978fc86c15a4",
+    "resultEvidenceRefs": [
+      "candidate-bundle:sha256/dda64964b5359e872d7c0f1b2536c3d274fda351c4032fba8cbf815ec597c5ab",
+      "candidate-diff:sha256/8a53451ce7816e616a9d2983a1d0591059bad7a68aa5df6ab48fbfb45550d00b",
+      "evidence-index:sha256/2a95d3b0953ba5dc20e30dcef7242da7e92e952b185aaccd2c3b298102d0489a",
+      "provider-usage:sha256/b6ccdc04b442a401ecebd59bf0ba2322b9f27559311d59376576964e324a3747",
+      "sandbox-policy:sha256/373db0091ac89d0e08516e027d5b9ea7545782feeffcc36ccb3ce652f4d52d90"
+    ]
+  },
+  "docker": {
+    "imageRef": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+    "protectedBefore": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "protectedAfter": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "containers": [
+      {
+        "id": "c649f6ec7172658280816045f4390c0079144d41d5743c522e335755c99ef6cb",
+        "name": "orloom-worker-1-39799f00",
+        "runtime": "runsc",
+        "networkMode": "none",
+        "readonlyRootfs": true,
+        "user": "65532:65532",
+        "mounts": [],
+        "tmpfsPaths": [
+          "/tmp",
+          "/work"
+        ],
+        "capDrop": [
+          "ALL"
+        ],
+        "securityOpt": [
+          "no-new-privileges:true"
+        ],
+        "pidsLimit": 64,
+        "memoryBytes": 268435456,
+        "memorySwapBytes": 268435456,
+        "nanoCpus": 500000000,
+        "image": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+        "labels": {
+          "owned": "true",
+          "leaseEpoch": "1",
+          "instance": "orloom-worker-1-39799f00"
+        },
+        "sensitiveEnvNameCount": 0
+      },
+      {
+        "id": "eff86f144fce77e78949a353b80bd101a648127ef61d303d0b8e26b1c21adcd5",
+        "name": "orloom-worker-1-c5b7f472",
+        "runtime": "runsc",
+        "networkMode": "none",
+        "readonlyRootfs": true,
+        "user": "65532:65532",
+        "mounts": [],
+        "tmpfsPaths": [
+          "/tmp",
+          "/work"
+        ],
+        "capDrop": [
+          "ALL"
+        ],
+        "securityOpt": [
+          "no-new-privileges:true"
+        ],
+        "pidsLimit": 64,
+        "memoryBytes": 268435456,
+        "memorySwapBytes": 268435456,
+        "nanoCpus": 500000000,
+        "image": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+        "labels": {
+          "owned": "true",
+          "leaseEpoch": "1",
+          "instance": "orloom-worker-1-c5b7f472"
+        },
+        "sensitiveEnvNameCount": 0
+      }
+    ],
+    "cleanupAfterCandidate": [],
+    "cancellationContainer": {
+      "id": "eff86f144fce77e78949a353b80bd101a648127ef61d303d0b8e26b1c21adcd5",
+      "name": "orloom-worker-1-c5b7f472",
+      "runtime": "runsc",
+      "networkMode": "none",
+      "readonlyRootfs": true,
+      "user": "65532:65532",
+      "mounts": [],
+      "tmpfsPaths": [
+        "/tmp",
+        "/work"
+      ],
+      "capDrop": [
+        "ALL"
+      ],
+      "securityOpt": [
+        "no-new-privileges:true"
+      ],
+      "pidsLimit": 64,
+      "memoryBytes": 268435456,
+      "memorySwapBytes": 268435456,
+      "nanoCpus": 500000000,
+      "image": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+      "labels": {
+        "owned": "true",
+        "leaseEpoch": "1",
+        "instance": "orloom-worker-1-c5b7f472"
+      },
+      "sensitiveEnvNameCount": 0
+    },
+    "cancellation": {
+      "interruptedRpcRejected": true,
+      "exactOwnedContainerAbsent": true
+    }
+  },
+  "artifacts": [
+    {
+      "name": "pricing-snapshot",
+      "key": "sha256/49122da26bd4dbb033029722cd26ee53a5323efe708047488176cafe4d8144ad",
+      "sha256": "49122da26bd4dbb033029722cd26ee53a5323efe708047488176cafe4d8144ad",
+      "bytes": 380
+    },
+    {
+      "name": "sandbox-policy",
+      "key": "sha256/373db0091ac89d0e08516e027d5b9ea7545782feeffcc36ccb3ce652f4d52d90",
+      "sha256": "373db0091ac89d0e08516e027d5b9ea7545782feeffcc36ccb3ce652f4d52d90",
+      "bytes": 845
+    },
+    {
+      "name": "provider-attempt-1",
+      "key": "sha256/7620c869654588f927ffaa1c46ca79b5ba39ffe125be4f76a744240762d7a1d2",
+      "sha256": "7620c869654588f927ffaa1c46ca79b5ba39ffe125be4f76a744240762d7a1d2",
+      "bytes": 509
+    },
+    {
+      "name": "provider-usage-probe",
+      "key": "sha256/da763cdb6902732d1bc31509908f30b8f2c1631a600945accd9085be831164ab",
+      "sha256": "da763cdb6902732d1bc31509908f30b8f2c1631a600945accd9085be831164ab",
+      "bytes": 467
+    },
+    {
+      "name": "provider-attempt-2",
+      "key": "sha256/51ccb12700409578ed85eb513136ebc07d67762426db34433a7b709f185a2761",
+      "sha256": "51ccb12700409578ed85eb513136ebc07d67762426db34433a7b709f185a2761",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-2",
+      "key": "sha256/d56aac14127708f3ffbee3af003c51a339de732dd4e6b2e3ecbb79cd34453fae",
+      "sha256": "d56aac14127708f3ffbee3af003c51a339de732dd4e6b2e3ecbb79cd34453fae",
+      "bytes": 467
+    },
+    {
+      "name": "provider-attempt-3",
+      "key": "sha256/bd1295caf3a9328b49efd65c5248dd587fd18530aa952093a42eb69541b3afa1",
+      "sha256": "bd1295caf3a9328b49efd65c5248dd587fd18530aa952093a42eb69541b3afa1",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-3",
+      "key": "sha256/87b60e1f31768d63f0d4282d4cd68be88cbb1fe1776de8389bd9a736a27f4ff8",
+      "sha256": "87b60e1f31768d63f0d4282d4cd68be88cbb1fe1776de8389bd9a736a27f4ff8",
+      "bytes": 469
+    },
+    {
+      "name": "provider-attempt-4",
+      "key": "sha256/1b7f44f0df57c808227b47c03fe7d3928435b7a7817bf40f97a56da72ff5d2f1",
+      "sha256": "1b7f44f0df57c808227b47c03fe7d3928435b7a7817bf40f97a56da72ff5d2f1",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-4",
+      "key": "sha256/7871801232ed430409f5c44eda070f5dd8cd0a1954d775cd62d0dc03654b31d4",
+      "sha256": "7871801232ed430409f5c44eda070f5dd8cd0a1954d775cd62d0dc03654b31d4",
+      "bytes": 469
+    },
+    {
+      "name": "check-check:unit",
+      "key": "sha256/deda5e7a6623bf3b39b59399a5dde57369cf51371539ed6993cad8adc27ea3f7",
+      "sha256": "deda5e7a6623bf3b39b59399a5dde57369cf51371539ed6993cad8adc27ea3f7",
+      "bytes": 652
+    },
+    {
+      "name": "provider-attempt-5",
+      "key": "sha256/606417863a383104a68987784f044d0adc71b982ea1e5a2772308cc1130e654e",
+      "sha256": "606417863a383104a68987784f044d0adc71b982ea1e5a2772308cc1130e654e",
+      "bytes": 497
+    },
+    {
+      "name": "provider-usage-5",
+      "key": "sha256/e58b71bf57a66260722810dcf5774f64a57a665a9684aa2efc93f1a0ada78fb6",
+      "sha256": "e58b71bf57a66260722810dcf5774f64a57a665a9684aa2efc93f1a0ada78fb6",
+      "bytes": 469
+    },
+    {
+      "name": "candidate-diff",
+      "key": "sha256/8a53451ce7816e616a9d2983a1d0591059bad7a68aa5df6ab48fbfb45550d00b",
+      "sha256": "8a53451ce7816e616a9d2983a1d0591059bad7a68aa5df6ab48fbfb45550d00b",
+      "bytes": 141
+    },
+    {
+      "name": "candidate-bundle",
+      "key": "sha256/dda64964b5359e872d7c0f1b2536c3d274fda351c4032fba8cbf815ec597c5ab",
+      "sha256": "dda64964b5359e872d7c0f1b2536c3d274fda351c4032fba8cbf815ec597c5ab",
+      "bytes": 432
+    },
+    {
+      "name": "provider-usage",
+      "key": "sha256/b6ccdc04b442a401ecebd59bf0ba2322b9f27559311d59376576964e324a3747",
+      "sha256": "b6ccdc04b442a401ecebd59bf0ba2322b9f27559311d59376576964e324a3747",
+      "bytes": 670
+    },
+    {
+      "name": "progress",
+      "key": "sha256/d9114b7557962e54478df74f72578f24bd797b27adc15378877cf4e114440227",
+      "sha256": "d9114b7557962e54478df74f72578f24bd797b27adc15378877cf4e114440227",
+      "bytes": 528
+    },
+    {
+      "name": "progress",
+      "key": "sha256/c176a32026b8fcccd3f9f97a4a4e088a5d18161641f88afbd6c08ce95f1392e0",
+      "sha256": "c176a32026b8fcccd3f9f97a4a4e088a5d18161641f88afbd6c08ce95f1392e0",
+      "bytes": 664
+    },
+    {
+      "name": "progress",
+      "key": "sha256/efacf603981bb3027a9193901d6d870eb7ac92ee4d5e052dae87bb77b67ec587",
+      "sha256": "efacf603981bb3027a9193901d6d870eb7ac92ee4d5e052dae87bb77b67ec587",
+      "bytes": 796
+    },
+    {
+      "name": "progress",
+      "key": "sha256/51ee21aa7798a2cec77e1e32de7d2fb13090a0cc3304ba36a502f2e1cf765fc6",
+      "sha256": "51ee21aa7798a2cec77e1e32de7d2fb13090a0cc3304ba36a502f2e1cf765fc6",
+      "bytes": 932
+    },
+    {
+      "name": "progress",
+      "key": "sha256/1ac1f6681ce47b3fc10d6837a769a57913321fb49786cdb7f701c6c81a26bf74",
+      "sha256": "1ac1f6681ce47b3fc10d6837a769a57913321fb49786cdb7f701c6c81a26bf74",
+      "bytes": 992
+    },
+    {
+      "name": "progress",
+      "key": "sha256/e27f7448fefade6e79ece1d42769715fc72cfa2eb6c38f298de235997b500840",
+      "sha256": "e27f7448fefade6e79ece1d42769715fc72cfa2eb6c38f298de235997b500840",
+      "bytes": 1061
+    },
+    {
+      "name": "progress",
+      "key": "sha256/af29c2b6aadc5b105c6d3b38132016c6c74c7506dd74712173319a9a9ceb1689",
+      "sha256": "af29c2b6aadc5b105c6d3b38132016c6c74c7506dd74712173319a9a9ceb1689",
+      "bytes": 1198
+    },
+    {
+      "name": "progress",
+      "key": "sha256/9b2f7e74b74f8bc0ea7d57a83476e5d1a131d3e927598886a0ae1029a12c2415",
+      "sha256": "9b2f7e74b74f8bc0ea7d57a83476e5d1a131d3e927598886a0ae1029a12c2415",
+      "bytes": 1336
+    },
+    {
+      "name": "progress",
+      "key": "sha256/46a65d6114529889c068a717547662f7e1b3b05da65245db2267604a090253f6",
+      "sha256": "46a65d6114529889c068a717547662f7e1b3b05da65245db2267604a090253f6",
+      "bytes": 1398
+    },
+    {
+      "name": "progress",
+      "key": "sha256/d1be95710616b1e16cebcc9172d7385c4adc7cc93e1c3814df6ff0f1e45e5a42",
+      "sha256": "d1be95710616b1e16cebcc9172d7385c4adc7cc93e1c3814df6ff0f1e45e5a42",
+      "bytes": 1468
+    },
+    {
+      "name": "progress",
+      "key": "sha256/a9674954144a8e6c1662f3cad8065d75e8e4148f918c4f93a827e364a252ee64",
+      "sha256": "a9674954144a8e6c1662f3cad8065d75e8e4148f918c4f93a827e364a252ee64",
+      "bytes": 1603
+    },
+    {
+      "name": "progress",
+      "key": "sha256/debe1f1258ad7171ba65f9b265ae60d3636fbf601a990d2be4e808fa8d63f72e",
+      "sha256": "debe1f1258ad7171ba65f9b265ae60d3636fbf601a990d2be4e808fa8d63f72e",
+      "bytes": 1739
+    },
+    {
+      "name": "progress",
+      "key": "sha256/8e6c7a27b4613f48e1cff465fc5b5b17610212a578683dcefbbcf2acb4f12f75",
+      "sha256": "8e6c7a27b4613f48e1cff465fc5b5b17610212a578683dcefbbcf2acb4f12f75",
+      "bytes": 1824
+    },
+    {
+      "name": "progress",
+      "key": "sha256/3abea822cc7ad110d587e9c6b9e28dd32388fb1e74684039507862474e5fa7d4",
+      "sha256": "3abea822cc7ad110d587e9c6b9e28dd32388fb1e74684039507862474e5fa7d4",
+      "bytes": 1960
+    },
+    {
+      "name": "progress",
+      "key": "sha256/8a58fc6e4cdd00de9fe4199e0533f209b9127071042512c9e04bfe2a99ba7025",
+      "sha256": "8a58fc6e4cdd00de9fe4199e0533f209b9127071042512c9e04bfe2a99ba7025",
+      "bytes": 2072
+    },
+    {
+      "name": "progress",
+      "key": "sha256/2d7b87e638ef765f8de3c83bfec3b84b6f9b180b7da7a887d864485425718564",
+      "sha256": "2d7b87e638ef765f8de3c83bfec3b84b6f9b180b7da7a887d864485425718564",
+      "bytes": 2208
+    },
+    {
+      "name": "progress",
+      "key": "sha256/c30edeb7a4fb164908adea7ee7f562548b4ea46c6f8728e45df682713fd5b3ae",
+      "sha256": "c30edeb7a4fb164908adea7ee7f562548b4ea46c6f8728e45df682713fd5b3ae",
+      "bytes": 2263
+    },
+    {
+      "name": "progress",
+      "key": "sha256/888f5f432a18715da4cf298df8428310ea1c5338d8925182bbba6991d2b01039",
+      "sha256": "888f5f432a18715da4cf298df8428310ea1c5338d8925182bbba6991d2b01039",
+      "bytes": 2524
+    }
+  ],
+  "limitations": [
+    "GitHub App checkout, R2, production worker bootstrap, production Hostinger A deployment, representative build capacity, and six live lanes are not proven."
+  ],
+  "finishedAtUtc": "2026-10-13T18:37:38.773Z",
+  "durationMs": 4605,
+  "usage": {
+    "calls": 0,
+    "inputTokens": 0,
+    "outputTokens": 0
+  },
+  "result": "awaiting_verification"
+}

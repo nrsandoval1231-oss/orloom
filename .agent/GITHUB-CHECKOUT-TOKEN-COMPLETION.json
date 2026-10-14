@@ -1,0 +1,31 @@
+{
+  "packet": "GITHUB-CHECKOUT-TOKEN",
+  "node": "ORL-005B-checkout-token-adapter",
+  "status": "implementation_ready_for_controller_validation",
+  "repository": "outputs/orloom",
+  "branch": "feat/deepseek-worker-broker",
+  "baseSha": "2d45b64e24817a14826a6c9466145909680fec0b",
+  "startUtc": "2026-10-13T03:29:28Z",
+  "finishUtc": "2026-10-13T03:33:52Z",
+  "changedFiles": [
+    "packages/adapters/src/providers.ts",
+    "tests/github-checkout-token.test.ts",
+    ".agent/GITHUB-CHECKOUT-TOKEN-PACKET.json",
+    ".agent/GITHUB-CHECKOUT-TOKEN-COMPLETION.json"
+  ],
+  "implementation": "Added createCheckoutToken with positive safe-integer installation ID and repository slug validation, one-repository contents:read-only permission request, and nonempty token enforcement. Existing adapter behavior remains unchanged.",
+  "validation": {
+    "focusedTypeScriptTranspile": "PASS; transpiled config.ts, providers.ts, and the new test to a temporary ignored workspace directory; temporary output removed.",
+    "focusedRuntimeTests": {
+      "result": "PASS",
+      "passed": 3,
+      "failed": 0
+    },
+    "scopedDiffCheck": "PASS",
+    "npmRunTypecheck": "NOT RUN; controller owns serialized combined gates.",
+    "npmBuildAndFullTestSuite": "NOT RUN; controller owns serialized combined gates."
+  },
+  "priorAttempt": "An initial focused tsc invocation was blocked by an unrelated missing @modelcontextprotocol/sdk/types.js declaration from @openai/codex-sdk. No repository build artifacts were retained. The focused runtime checks were run via TypeScript transpileModule and passed.",
+  "externalEffects": "None. No GitHub API calls, secrets, commit, push, merge, or deployment.",
+  "tokenUsage": "UNKNOWN"
+}

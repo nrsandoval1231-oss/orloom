@@ -1,0 +1,89 @@
+{
+  "version": "orloom.pr2.runtime-proof.v1",
+  "runId": "orloom-pr2-20261013145723-57bb9989",
+  "startedAtUtc": "2026-10-13T14:57:23.526Z",
+  "status": "FAIL",
+  "mode": "fixture",
+  "candidate": {
+    "branch": "feat/deepseek-worker-broker",
+    "head": "8bbcfffbf631e5ad2972e34b41284198afc566e2"
+  },
+  "scope": "actual executeLease / HTTP control protocol / DockerWorkerRuntime; isolated local fixture; no integration, push, verification, or PR",
+  "provider": {
+    "kind": "deterministic test double",
+    "liveCalls": 0
+  },
+  "controls": {
+    "claim": "PASS",
+    "leaseEpoch": 1,
+    "capacitySlot": 1,
+    "baseSha": "e793a4657a4c466d1580aabdc55029714ea4c6ff",
+    "policyDigest": "fdbe543b6ded2d1fe89b5f3dceb1520c30b7f10b1fe5644c78c2f18300a460ac",
+    "missionId": "d7f8d655-b8f7-48d5-ac39-59de52265ea0",
+    "sliceId": "slice-runtime",
+    "result": "unknown",
+    "candidateSha": null,
+    "resultEvidenceRefs": []
+  },
+  "docker": {
+    "imageRef": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+    "protectedBefore": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "protectedAfter": {
+      "id": "5825fae55e2817dab3f3b8f552ea713f3e6124d0d647a33398e3c5b04b7cdd67",
+      "startedAt": "2026-10-12T23:51:46.164222792Z",
+      "restartCount": 0,
+      "status": "running"
+    },
+    "containers": [
+      {
+        "id": "a1cbfcb51ae7705c0ad065ccad1b3ad07d3e086e016b9ecc460d0961a2424645",
+        "name": "orloom-worker-1-9ce0e785",
+        "runtime": "runsc",
+        "networkMode": "none",
+        "readonlyRootfs": true,
+        "user": "65532:65532",
+        "mounts": [],
+        "tmpfsPaths": [
+          "/tmp",
+          "/work"
+        ],
+        "capDrop": [
+          "ALL"
+        ],
+        "securityOpt": [
+          "no-new-privileges:true"
+        ],
+        "pidsLimit": 64,
+        "memoryBytes": 268435456,
+        "memorySwapBytes": 268435456,
+        "nanoCpus": 500000000,
+        "image": "sha256:8b5bcbe33141560166240c95a19f474d2b730324ec7f8861e763fac3fd9b00ad",
+        "labels": {
+          "owned": "true",
+          "leaseEpoch": "1",
+          "instance": "orloom-worker-1-9ce0e785"
+        },
+        "sensitiveEnvNameCount": 0
+      }
+    ]
+  },
+  "artifacts": [],
+  "limitations": [
+    "GitHub App checkout, R2, production worker bootstrap, production Hostinger A deployment, representative build capacity, and six live lanes are not proven."
+  ],
+  "failureType": "Error",
+  "providerFailureMayBeUnknown": false,
+  "finishedAtUtc": "2026-10-13T14:57:26.459Z",
+  "durationMs": 2933,
+  "usage": {
+    "calls": 0,
+    "inputTokens": 0,
+    "outputTokens": 0
+  },
+  "result": "UNKNOWN"
+}

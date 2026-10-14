@@ -2,11 +2,19 @@
 
 Orloom is a single-operator engineering harness being developed into the platform defined by [the canonical harness specification](docs/architecture/CANONICAL_HARNESS.md). It is not yet a working end-to-end autonomous engineering platform.
 
-## Current consolidation checkpoint: 2026-10-14
+## Current worker-source checkpoint: 2026-10-14
 
-The repair candidate is based on PR #17 at `410882d4afff33e028be50b816ad69eb387eae6d`. It combines the existing judgment/recovery, evidence-governed learning, scheduling, verification, local integration, remote-delivery and real-event Living Loom source with repairs for seven audited correctness defects. Independent review accepted the bounded repair source: 167/167 tests passed with zero failures/skips, and typecheck, build and structure validation passed. A separate clean locked-install rerun also passed all 167 tests and validation gates. The reviewed source is bound by a retained 89-file SHA-256 manifest. Publication identity is the containing Git commit and its associated PR; no merge or deployment is claimed. See [the consolidation validation record](docs/validation/2026-10-14-consolidation.md).
+[Repair PR #18](https://github.com/nrsandoval1231-oss/orloom/pull/18) is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. The worker successor composes the PR #2 broker/runtime/checkout source onto that repaired baseline, while keeping normal worker startup disabled. Independent review accepted this bounded source slice: 188/188 tests passed with zero skips/failures; build, typecheck and structure validation passed. Its [worker validation ledger](docs/validation/2026-10-14-worker-composition.md) records this separate acceptance scope.
 
-PR #1 was merged at `6110c692f47202978b2d22d22f6522aa4aa59277`; this is the historical main baseline observed for this consolidation, not a claim about a later branch tip. Its [bounded PostgreSQL evidence](docs/evidence/pr1-revalidation/EVIDENCE.md) remains valid only within that retained scope. The owner's latest direction authorizes cleanup of the open PRs and advancing reviewed, ready work. Earlier frozen-head/no-further-merge instructions are historical. PR #2 worker-broker composition is being evaluated separately and is not claimed as included or accepted here.
+The source now includes the preserved broker entrypoint, isolated-runtime interfaces, scoped checkout-token helper, candidate-bundle transport and hardened typed HTTP recovery client. Normal `main.js` exits before secret loading, claims or provider calls; the retained `broker-main.ts` is not an approved deployment entrypoint. Candidate-bundle admission into an independently observed verifier checkout, recovery strategy/checkpoint execution, owner cancellation and durable interruption reconciliation remain unimplemented. No live worker, Jev execution or measured learning improvement is implied.
+
+See [the foundation acceptance checklist and next steps](docs/FOUNDATION_STATUS.md). The reviewed source foundation is ready for the next bounded implementation step; autonomous product completion remains open.
+
+## Historical repair consolidation checkpoint: 2026-10-14
+
+The repair candidate is based on PR #17 at `410882d4afff33e028be50b816ad69eb387eae6d`. It combines the existing judgment/recovery, evidence-governed learning, scheduling, verification, local integration, remote-delivery and real-event Living Loom source with repairs for seven audited correctness defects. Independent review accepted the bounded repair source: 167/167 tests passed with zero failures/skips, and typecheck, build and structure validation passed. A separate clean locked-install rerun also passed all 167 tests and validation gates. The reviewed source is bound by a retained 89-file SHA-256 manifest. That repair source was merged through PR #18 as identified above; the separate worker successor and operational deployment are not certified by the repair result. See [the consolidation validation record](docs/validation/2026-10-14-consolidation.md).
+
+PR #1 was merged at `6110c692f47202978b2d22d22f6522aa4aa59277`; this is the historical main baseline observed for this consolidation, not a claim about a later branch tip. Its [bounded PostgreSQL evidence](docs/evidence/pr1-revalidation/EVIDENCE.md) remains valid only within that retained scope. The owner's latest direction authorizes cleanup of the open PRs and advancing reviewed, ready work. Earlier frozen-head/no-further-merge instructions are historical. PR #2 was excluded from that repair checkpoint. Its worker source is now included in this separate successor, with independent results recorded in the worker ledger and activation still closed.
 
 The latest retained actual full cloud-suite attempt identified by the audit was **FAIL**, with zero certificates, on `f6023acade03091a494644409e9bc65d28d59ad4`: Unix symlink teardown failed with ENOTDIR after 271438 ms. Its PR #14 evidence is preserved as exact original blobs in this consolidation; those records remain bound to the failed historical source, not the repaired candidate. PR #15's fixture repair and PR #17's throughput changes are present in this candidate's base, but neither substitutes for a successful new exact-source isolated cloud run. The earlier [suite failure](docs/evidence/c3-suite-duration/EVIDENCE.md) remains historical evidence, not the latest result.
 
@@ -36,7 +44,7 @@ npm start
 - `POST /api/jobs` requires that cookie and accepts `{"repository":"owner/name","task":"..."}`. Repository is limited to 256 characters and task to 20,000 characters. A created job is queued only.
 - `GET /api/jobs/{id}` requires the same cookie.
 
-There is no run/shell endpoint. The worker entrypoint exits because no isolated execution provider is configured. Interrupted work that had entered `running` becomes `unknown`; an expired lease that had not started may return to `queued`. The lease token fences stale starts and completions. No external side effect is automatically replayed.
+There is no run/shell endpoint. The normal worker entrypoint deliberately exits before configuration or external effects, even though broker/runtime source is now present; activation requires closing the explicit composition gaps. Interrupted work that had entered `running` becomes `unknown`; an expired lease that had not started may return to `queued`. The lease token fences stale starts and completions. No external side effect is automatically replayed.
 
 ## Mission API
 
@@ -56,7 +64,7 @@ The read-only [Living Loom](docs/living-loom.md) is available at `/loom?mission=
 
 The migrations under `db/migrations/` define queue, mission, and subsequent additive state. Local tests use embedded PGlite; cloud mode uses `PostgresJobStore` and `SqlMissionStore` with a real PostgreSQL pool and fails startup if initialization or readiness checks fail. It never silently falls back to memory.
 
-The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. The Codex adapter configuration rejects API-key billing. OAuth cache presence is not proof of an operational product integration. The control plane exposes fenced worker leases, but this branch does not provide a live worker consuming them. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
+The adapters implement GitHub App installation token/check requests, webhook HMAC verification, conditional hash-addressed R2 object operations, and a typed Codex SDK constructor using an explicit environment, dedicated `CODEX_HOME`, ChatGPT subscription authentication, and working directory. The Codex adapter configuration rejects API-key billing. OAuth cache presence is not proof of an operational product integration. The control plane exposes fenced worker leases and this branch retains broker source, but normal worker startup remains disabled and no operational live worker is established. See [deployment prerequisites](docs/deployment.md) before any dedicated-worker login.
 
 ## Intended deployment topology
 
@@ -64,7 +72,7 @@ The target topology uses Cloudflare web delivery and protection, a cloud control
 
 ## Trust boundaries
 
-Browser code never receives a GitHub, R2, database, or Codex credential. The session token is entered into the dashboard and retained only in a strict HttpOnly cookie; use TLS and a managed session design before remote hosting. Tokens and private keys should be entered later through the provider dashboard or dedicated secret manager, not chat, source, build arguments, or repository variables.
+Browser code never receives a GitHub, R2, database, or Codex credential. Local loopback mode uses the supplied session token in its HttpOnly cookie. Cloud mode instead returns a random opaque session ID in a Secure, HttpOnly, SameSite=Strict cookie; the login token remains server-side, sessions expire after eight hours, and restart invalidates them. Keep cloud hosting behind its required HTTPS origin/Host checks and one app replica. Tokens and private keys should be entered later through the provider dashboard or dedicated secret manager, not chat, source, build arguments, or repository variables.
 
 Orloom-owned CI must keep trusted validation commands outside the untrusted target checkout. Do not add GitHub Actions workflows to Orloom. A target repository must not be allowed to replace the validation policy used to grade its own changes. The current local `scripts/validate.mjs` only checks this foundation's structure and is not a secure hostile-code sandbox.
 
