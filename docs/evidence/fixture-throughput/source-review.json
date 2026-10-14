@@ -1,0 +1,25 @@
+{
+  "reviewType": "independent_exact_candidate_source_review",
+  "candidateSha": "e078a51b340de4f6cf65efbfe1d8281df82157c4",
+  "baseSha": "3a983fa9a51ffb0ac4760bcfc33128883673f024",
+  "sourceManifestSha256": "ea8723d05edce88373f0f5206e2acf68e7ef5578f857080a4ba11db0d15826e3",
+  "sourceManifestEntries": 149,
+  "verdict": "PASS_SOURCE",
+  "packet": ".agent/C3-FIXTURE-THROUGHPUT-01.md",
+  "changedApplicationFile": "tests/delivery-effects.test.ts",
+  "findings": [],
+  "reviewEvidence": [
+    "Candidate checkout is clean at the exact reviewed SHA; diff check passes. The test-file SHA-256 matches the 149-entry source manifest.",
+    "The existing 23 delivery-effects tests and subtests remain; one isolation regression raises the file total to 24. Root combined gates ran 151 tests with 151 passing, all 14 commands exiting zero.",
+    "One file-scoped PGlite engine executes migrations 001 through 008 once. A promise queue grants one fixture at a time; setup failure releases its queue slot, every current test closes in a finally block, and the file after hook waits for the queue then closes the engine.",
+    "Before a later fixture is granted, TRUNCATE covers every migration-created public table with RESTART IDENTITY CASCADE. A pg_tables inventory rejects any newly created public table missing from the reset list. The migration-002 governor lock row is restored and asserted after each reset.",
+    "Counters, simulated remote state, SQL transaction lock, and other mutable test doubles are constructed inside each setup. The new regression mutates mission and delivery effect rows, injects a rejected body error, releases the fixture, and verifies the next fixture has no prior mission or effect and exactly one governor lock seed."
+  ],
+  "timingDisposition": "Completion retains before, after, and superseded local Windows timings. The superseded version omitted the governor lock seed and is not acceptance evidence. Different full-root gate conditions and absent exact Linux rerun do not establish a cloud speedup.",
+  "limits": [
+    "This accepts only the frozen source and local deterministic gates. Exact Linux/cloud verifier behavior and measured throughput remain open.",
+    "The failure regression models a rejected test body whose finally releases the fixture; it does not prove recovery from process termination or a missing finally. Current tests all release in finally, and setup failure releases in catch.",
+    "No production source, migration, dependency, verifier policy, external service, or product completion is accepted by this review."
+  ],
+  "completionCandidate": false
+}
