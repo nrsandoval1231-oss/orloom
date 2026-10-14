@@ -1,0 +1,5 @@
+accepted_full_suite=tests 244 / pass 230 / fail 13 / skipped 1 / cancelled 0 / 70193.99 ms
+focused_cancellation=tests 15 / pass 15 / fail 0
+migration_idempotency=all 9 migrations applied 3x cleanly (005_learning.sql pre-existing break fixed)
+failures=the 13 are exactly tests/candidate-admission.test.ts under the documented Linux/POSIX private-root guard; unchanged from baseline
+evidence_class=source + fixture/PGlite only; no live PostgreSQL, Docker/runsc, Linux, provider or publication

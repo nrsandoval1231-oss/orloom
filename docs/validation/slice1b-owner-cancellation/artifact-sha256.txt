@@ -1,0 +1,12 @@
+# SHA-256 over the committed blob bytes of each retained Slice 1b artifact.
+# Git normalizes text to LF via .gitattributes, so these hashes are
+# reproducible from the commit rather than from a Windows working tree.
+5788d66de95014588ba7fa680293a879366f77e276e82c7470769ad8a16c435b  build.log
+59e6663b5e3eef96528f1cb6f453ee6b2c290ab746f8c3e670d2508c2b4c9793  environment.txt
+10dd20ea97e0e8eb4f6553716123592982258d887e025b822d15aec575a28e26  focused-cancellation.log
+721665bd5fc012529ef32e01c58f42004bfa88e05565556ce79c57e3f466f57f  full-suite.log
+ef5977b8a526b954a47d68ab8b9835ab4ff3771595a889ab65a5b92fa148ba7b  migration-idempotency-probe.log
+a69b64f0c80109216401d295bffa2e5447225ad4e5ced64861a570c2f5f67674  slice1b.diff
+f3ff11868617a11d3131e2764fe78a35e3a9765ce161ffd3abf6df702fb998fe  suite-summary.txt
+131b2368169b85fa3067ea6be86ea47e2d091d347a98dbef25976a9174307250  typecheck.log
+d8edcbe354e5407b0f4d5f1d2ac1b932b643c426d805412e83b4e3089818fa62  validate.log

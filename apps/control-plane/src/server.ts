@@ -130,16 +130,30 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
         const request:IntegrationRequestV1={version:"orloom.integration-request.v1",missionId:decodeURIComponent(integrationRoute[1]!),sliceId:decodeURIComponent(integrationRoute[2]!),expectedIntegrationSha:v.expectedIntegrationSha,candidateSha:v.candidateSha,leaseEpoch:Number(v.leaseEpoch),requiredCheckIds:v.requiredCheckIds as string[],reviewArtifactId:v.reviewArtifactId,reviewArtifactDigest:v.reviewArtifactDigest};
         return send(res,200,JSON.stringify(await governor.integrateVerifiedSlice(request,trustedChecks,localIntegration)));
       }
-      const missionRoute = req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)(?:\/(plan|approve|events|lessons|loom))?$/);
+      const missionRoute = req.url?.split("?",1)[0]?.match(/^\/api\/missions\/([^/?]+)(?:\/(plan|approve|events|lessons|loom|cancel|cancellation))?$/);
       if (missionRoute && req.method === "POST") {
         if (!validSession(req, config, sessions)) return send(res,401,JSON.stringify({error:"Unauthorized"}));
         const id=decodeURIComponent(missionRoute[1]!);
         if(missionRoute[2]==="plan"){const input=parseJson(await body(req)) as {slices?:unknown[]}|null;if(!input||!Array.isArray(input.slices))return send(res,400,JSON.stringify({error:"Invalid plan recommendation"}));const slices=input.slices.map(raw=>{if(!raw||typeof raw!=="object"||Array.isArray(raw))throw new MissionValidationError("invalid slice record");const v=raw as Record<string,unknown>;return{id:v.id as string,objective:v.objective as string,dependencies:v.dependencies as string[],owner:v.owner as string,scopes:v.scopes as string[],checks:v.checks as string[],budgetCents:v.budgetCents as number};});return send(res,201,JSON.stringify(await governor.recommend(id,slices,"owner-session")));}
         if(missionRoute[2]==="approve"){await body(req);return send(res,200,JSON.stringify(await governor.approve(id)));}
+        if(missionRoute[2]==="cancel"){
+          if(typeof missionStore.requestCancel!=="function")return send(res,503,JSON.stringify({error:"Owner cancellation is unavailable"}));
+          const raw=parseJson(await body(req));if(!raw||typeof raw!=="object"||Array.isArray(raw))return send(res,400,JSON.stringify({error:"Invalid cancellation request"}));
+          const value=raw as Record<string,unknown>,keys=["ownerRequestId","reason"];
+          if(Object.keys(value).length!==keys.length||Object.keys(value).some(key=>!keys.includes(key))||typeof value.ownerRequestId!=="string"||typeof value.reason!=="string"||!/^[A-Za-z0-9._:-]{1,128}$/.test(value.ownerRequestId)||!value.reason.trim()||value.reason.length>2_000)return send(res,400,JSON.stringify({error:"Invalid cancellation request"}));
+          await governor.requestCancel(id,value.ownerRequestId,value.reason);
+          return send(res,202,JSON.stringify({accepted:true}));
+        }
       }
       if (missionRoute && req.method === "GET") {
         if (!validSession(req, config, sessions)) return send(res,401,JSON.stringify({error:"Unauthorized"}));
         const id=decodeURIComponent(missionRoute[1]!);
+        if(missionRoute[2]==="cancellation"){
+          if(typeof missionStore.requestCancel!=="function")return send(res,503,JSON.stringify({error:"Owner cancellation is unavailable"}));
+          const record=await governor.get(id);if(!record)return send(res,404,JSON.stringify({error:"Not found"}));
+          const status=record.mission.status;
+          return send(res,200,JSON.stringify({missionId:id,status,requested:status==="cancelling"||status==="cancelled",slices:record.slices.map(slice=>({sliceId:slice.id,status:slice.status,leaseEpoch:slice.leaseEpoch,leaseRetained:slice.leaseExpiresAt!==null}))}));
+        }
         if(missionRoute[2]==="events"){const after=Number(new URL(req.url!,"http://local").searchParams.get("after")??"0");if(!Number.isSafeInteger(after)||after<0)return send(res,400,JSON.stringify({error:"Invalid event cursor"}));return send(res,200,JSON.stringify(await governor.events(id,after)));}
         if(missionRoute[2]==="lessons"){return send(res,200,JSON.stringify(await governor.lessons(id)));}
         if(missionRoute[2]==="loom"){

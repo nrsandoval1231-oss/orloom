@@ -3,12 +3,40 @@ import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingDecisionRecord, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
+import { canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingDecisionRecord, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
 import { downstreamDepths, rankSchedulingChoices, schedulingSnapshotDigest, validateSchedulingDecision } from "./scheduling.js";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const newSecret = () => randomBytes(32).toString("base64url");
 const isTerminalRecoveryProgress=(p:RecoveryProgress)=>p.status==="failed"||p.status==="passed";
 export class MemoryMissionStore implements MissionStore {
+  async requestCancel(missionId:string,ownerRequestId:string,reason:string):Promise<void>{
+    if(!/^[A-Za-z0-9._:-]{1,128}$/.test(ownerRequestId)||typeof reason!=="string"||!reason.trim()||reason.length>2_000)throw new MissionValidationError("Cancellation request is invalid");
+    const m=this.mustMission(missionId),prior=this.cancellations.get(missionId);
+    if(prior){if(prior.ownerRequestId!==ownerRequestId)throw new MissionConflictError("Mission already has a different cancellation request");return;}
+    if(m.status==="cancelling"||m.status==="cancelled")throw new MissionConflictError("Mission already has a different cancellation request");
+    // A verified mission is terminal; refuse rather than destroy the signal.
+    if(m.status==="verified")throw new MissionConflictError("Mission is already verified and cannot be cancelled");
+    const record={ownerRequestId,reason,requestedAt:new Date().toISOString(),completedAt:null as string|null};
+    this.cancellations.set(missionId,record);
+    for(const s of this.slices.values()){
+      if(s.missionId!==missionId)continue;
+      // A cancel_requested slice keeps leaseToken/leaseExpiresAt so the
+      // cancellation poll can authenticate its lease; nothing is refunded.
+      if(s.status==="running")s.status="cancel_requested";
+      else if(s.status==="waiting_dependency"||s.status==="ready"||s.status==="blocked")s.status="cancelled";
+    }
+    // A `verified` slice is settled and is not uncertain. A `blocked` slice is
+    // counted as holding a capacity slot, so cancelling it releases that slot
+    // while reserved spend is retained.
+    const uncertain=[...this.slices.values()].some(s=>s.missionId===missionId&&["running","cancel_requested","awaiting_verification","unknown"].includes(s.status));
+    if(uncertain)m.status="cancelling";else{m.status="cancelled";record.completedAt=new Date().toISOString();}
+    this.event(missionId,"mission.cancellation_requested",{ownerRequestId,reason});
+  }
+  async cancellationStatus(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string):Promise<boolean>{
+    const s=this.slices.get(`${missionId}:${sliceId}`);
+    if(!s||!leaseToken||!capabilityToken||s.leaseEpoch!==epoch||!s.leaseToken||s.leaseToken!==`${hash(leaseToken)}:${hash(capabilityToken)}`||!s.leaseExpiresAt||new Date(s.leaseExpiresAt).getTime()<=Date.now())return false;
+    return s.status==="cancel_requested";
+  }
   async createVerificationAttempt():Promise<void>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot issue certification attempts");}
   async submitVerification():Promise<never>{throw new MissionConflictError("Trusted verification requires PostgreSQL; memory store cannot certify receipts");}
   async createRecoveryAttempt(_binding:RecoveryAttemptBinding):Promise<void>{throw new MissionConflictError("Trusted recovery requires PostgreSQL; memory store cannot create trusted attempts");}
@@ -18,6 +46,7 @@ export class MemoryMissionStore implements MissionStore {
   async getCertificateRequest():Promise<null>{return null;}
   async awaitingVerification():Promise<never[]>{return[];}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
+  private cancellations = new Map<string,{ownerRequestId:string;reason:string;requestedAt:string;completedAt:string|null}>();
   private slots = new Map<number, { digest: string; expires: string; enabled: boolean }>(); private occupied = new Map<string, number>();
   private progress = new Map<string, RecoveryProgress>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
   async configureCapacity(count:number,digest:string|null,expires:string|null){for(let i=1;i<=6;i++){if(i<=count&&digest&&expires)this.slots.set(i,{digest,expires,enabled:true});else{const old=this.slots.get(i);if(old)this.slots.set(i,{...old,enabled:false});}}}
@@ -32,10 +61,10 @@ export class MemoryMissionStore implements MissionStore {
     const free=[...this.slots.entries()].filter(([slot,x])=>x.enabled&&Date.parse(x.expires)>now.getTime()&&![...this.occupied.values()].includes(slot)).length;
     const choices:SchedulingChoice[]=[];
     for(const s of this.slices.values()){
-      if(s.status!=="ready")continue;const plan=this.plans.get(s.missionId),mission=this.missions.get(s.missionId);if(!plan?.approvedAt||!mission||plan.slices.some(d=>s.dependencies.includes(d.id)&&this.slices.get(`${s.missionId}:${d.id}`)?.status!=="verified"))continue;
+      if(s.status!=="ready")continue;const plan=this.plans.get(s.missionId),mission=this.missions.get(s.missionId);if(!plan?.approvedAt||!mission||mission.status==="cancelling"||mission.status==="cancelled"||plan.slices.some(d=>s.dependencies.includes(d.id)&&this.slices.get(`${s.missionId}:${d.id}`)?.status!=="verified"))continue;
       if(!allowedPlanChecks?.length||plan.slices.some(slice=>!slice.checks.length||slice.checks.some(check=>!allowedPlanChecks.includes(check))))continue;
       if(mission.reservedCents+s.budgetCents>mission.budgetCents)continue;
-      const running=[...this.slices.values()].filter(x=>["running","awaiting_verification","unknown","blocked"].includes(x.status)&&this.missions.get(x.missionId)?.repository===mission.repository);
+      const running=[...this.slices.values()].filter(x=>["running","cancel_requested","awaiting_verification","unknown","blocked"].includes(x.status)&&this.missions.get(x.missionId)?.repository===mission.repository);
       if(running.some(x=>x.scopes.some(a=>s.scopes.some(b=>scopesOverlap(a,b)))))continue;
       const cohort=scopeCohort(s.scopes),lessons=this.lessonRows.filter(l=>l.status==="promoted"&&l.repository===mission.repository&&l.policyDigest===recoveryPolicyDigest&&l.cohort===cohort&&s.checks.includes(l.fromCheckId)).map(l=>({id:l.id,version:l.lessonVersion,challengeDigest:l.challengeDigest,checkId:l.fromCheckId,strategyId:l.strategyId,policyDigest:l.policyDigest})).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,8);
       choices.push({missionId:s.missionId,sliceId:s.id,repository:mission.repository,planDigest:hash(canonicalJson(plan.slices)),dependencies:[...s.dependencies],scopes:[...s.scopes],budgetCents:s.budgetCents,missionBudgetCents:mission.budgetCents,reservedBudgetCents:mission.reservedCents,downstreamDepth:downstreamDepths(plan.slices).get(s.id)??0,scopeRisk:s.scopes.reduce((n,x)=>n+(/[?*[{]/.test(x)?100:Math.max(0,4-x.split("/").length)),0),lessons});
@@ -51,10 +80,10 @@ export class MemoryMissionStore implements MissionStore {
     if(preferred){const index=candidates.findIndex(x=>`${x.missionId}:${x.id}`===preferred);if(index>0)candidates.unshift(...candidates.splice(index,1));}
     for (const s of candidates) {
       const p = this.plans.get(s.missionId)!; if (!p.approvedAt || p.slices.some(d => s.dependencies.includes(d.id) && this.slices.get(`${s.missionId}:${d.id}`)?.status !== "verified")) continue;
-      const repository=this.missions.get(s.missionId)!.repository;const running = [...this.slices.values()].filter(x => ["running","awaiting_verification","unknown","blocked"].includes(x.status) && this.missions.get(x.missionId)?.repository===repository);
+      const repository=this.missions.get(s.missionId)!.repository;const running = [...this.slices.values()].filter(x => ["running","cancel_requested","awaiting_verification","unknown","blocked"].includes(x.status) && this.missions.get(x.missionId)?.repository===repository);
       if (running.some(x => x.scopes.some(a => s.scopes.some(b => scopesOverlap(a,b))))) continue;
       const slot = [...this.slots.entries()].find(([n,x])=>x.enabled&&new Date(x.expires)>now&&![...this.occupied.values()].includes(n)); if(!slot||!policyDigest) continue;
-      const m = this.missions.get(s.missionId)!; if (m.reservedCents + s.budgetCents > m.budgetCents) continue;
+      const m = this.missions.get(s.missionId)!; if (m.status==="cancelling"||m.status==="cancelled") continue; if (m.reservedCents + s.budgetCents > m.budgetCents) continue;
       const leaseToken = newSecret(), capabilityToken = newSecret(),planDigest=hash(canonicalJson(p.slices)); s.status = "running"; s.leaseEpoch++; s.leaseToken = `${hash(leaseToken)}:${hash(capabilityToken)}`; s.leaseExpiresAt = new Date(now.getTime() + leaseSeconds*1000).toISOString(); this.occupied.set(`${s.missionId}:${s.id}`,slot[0]);this.leaseBindings.set(`${s.missionId}:${s.id}:${s.leaseEpoch}`,{planDigest,policyDigest:policyDigest+":"+recoveryPolicyDigest}); m.reservedCents += s.budgetCents; m.status = this.missionStatus(m.id);
       this.event(m.id, "slice.claimed", { sliceId: s.id, owner: s.owner, epoch: s.leaseEpoch, scopes: s.scopes, schedulingDecisionId:advice?.decisionId??null, schedulingAdvice: advice?{status:unchanged?advice.status:"stale_fallback",adviceStatus:advice.status,dispatchMayHaveOccurred:advice.dispatchMayHaveOccurred,preferredCandidateId:advice.preferredCandidateId,validatedCandidateId:advice.validatedCandidateId,snapshotDigest:advice.snapshotDigest,modelId:advice.modelId,tokenUsage:advice.tokenUsage,tokenUsageStatus:advice.tokenUsageStatus}:null }); return { mission: m, slice: { ...s, leaseToken: null }, epoch: s.leaseEpoch, leaseToken, capabilityToken, leaseExpiresAt: s.leaseExpiresAt, capacitySlot:slot[0], trustedCheckPolicyDigest:policyDigest, planDigest };
     } return null;
@@ -193,7 +222,7 @@ export class MemoryMissionStore implements MissionStore {
     throw new MissionConflictError("Independent lesson verification is unavailable; candidate remains unpromoted");
   }
   async expire(now = new Date(), limit = 100) { let n=0; const expired=[...this.slices.values()].filter(s=>s.status==="running"&&s.leaseExpiresAt&&new Date(s.leaseExpiresAt)<=now).sort((a,b)=>a.leaseExpiresAt!.localeCompare(b.leaseExpiresAt!)).slice(0,Math.max(1,Math.min(limit,1000))); for (const s of expired) { s.status="unknown";s.leaseToken=null;s.leaseExpiresAt=null; const m=this.missions.get(s.missionId)!;m.status=this.missionStatus(m.id);this.event(m.id,"slice.lease_expired_unknown",{sliceId:s.id,epoch:s.leaseEpoch});n++; } return n; }
-  private missionStatus(id:string):Mission["status"]{const states=[...this.slices.values()].filter(x=>x.missionId===id).map(x=>x.status);return states.length>0&&states.every(x=>x==="verified")?"verified":states.includes("unknown")?"unknown":states.includes("blocked")?"blocked":states.includes("running")?"running":states.includes("awaiting_verification")?"awaiting_verification":"ready";}
+  private missionStatus(id:string):Mission["status"]{const m=this.missions.get(id);if(m&&(m.status==="cancelling"||m.status==="cancelled"))return m.status;const states=[...this.slices.values()].filter(x=>x.missionId===id).map(x=>x.status);return states.length>0&&states.every(x=>x==="verified")?"verified":states.includes("unknown")?"unknown":states.includes("blocked")?"blocked":states.includes("running")?"running":states.includes("awaiting_verification")?"awaiting_verification":"ready";}
   private mustMission(id:string){const m=this.missions.get(id);if(!m)throw new MissionConflictError("Mission not found");return m;}
   private mustRunning(missionId:string,id:string,epoch:number,token:string,cap:string){ const s=this.slices.get(`${missionId}:${id}`),slot=s?this.slots.get(this.occupied.get(`${s.missionId}:${s.id}`)??-1):undefined;if(!s||s.status!=="running"||!slot||!slot.enabled||new Date(slot.expires)<=new Date()||s.leaseEpoch!==epoch||!s.leaseExpiresAt||new Date(s.leaseExpiresAt)<=new Date()||s.leaseToken!==`${hash(token)}:${hash(cap)}`)throw new MissionConflictError("Lease is stale, expired, or unauthorized");return s; }
 }

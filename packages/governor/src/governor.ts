@@ -173,6 +173,15 @@ export class MissionGovernor {
   submit(input: MissionInput) { validateMission(input); return this.store.submit(input); }
   recommend(missionId: string, slices: SliceInput[], recommendedBy: string) { validatePlan(missionId, slices, recommendedBy); const strategies=this.config.trustedStrategies??{};const allowed=new Set(Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]));if(slices.some(s=>!s.checks.length||s.checks.some(c=>!allowed.has(c))))throw new MissionValidationError("slice checks must be selected from the trusted operator policy");return this.store.recommendPlan(missionId, slices, recommendedBy); }
   approve(missionId: string) { return this.store.approvePlan(missionId); }
+  /** Owner-only cancellation seam. The HTTP layer never calls the store directly. */
+  requestCancel(missionId: string, ownerRequestId: string, reason: string) {
+    if (!this.store.requestCancel) throw new MissionConflictError("Owner cancellation is unavailable in this store");
+    return this.store.requestCancel(missionId, ownerRequestId, reason);
+  }
+  cancellationStatus(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string) {
+    if (!this.store.cancellationStatus) throw new MissionConflictError("Owner cancellation is unavailable in this store");
+    return this.store.cancellationStatus(missionId, sliceId, epoch, leaseToken, capabilityToken);
+  }
   deliverIntegratedCommit(input:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority){return deliverIntegratedCommit(input,policy,authority,this.store);}
   private integrationReviewMatches(raw:Buffer|null,request:IntegrationRequestV1,slice:MissionSlice,treeSha:string){
     if(!raw||createHash("sha256").update(raw).digest("hex")!==request.reviewArtifactDigest)return false;

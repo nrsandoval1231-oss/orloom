@@ -17,6 +17,7 @@ ALTER TABLE verification_attempts DROP CONSTRAINT IF EXISTS verification_attempt
 CREATE UNIQUE INDEX IF NOT EXISTS verification_attempts_final_unique ON verification_attempts(mission_id,slice_id,lease_epoch,check_id) WHERE purpose='final';
 CREATE UNIQUE INDEX IF NOT EXISTS verification_attempts_recovery_unique ON verification_attempts(mission_id,slice_id,lease_epoch,recovery_ordinal) WHERE purpose='recovery';
 CREATE UNIQUE INDEX IF NOT EXISTS verification_attempts_recovery_event_unique ON verification_attempts(attempt_id) WHERE purpose='recovery';
+ALTER TABLE verification_attempts DROP CONSTRAINT IF EXISTS verification_attempts_recovery_binding_check;
 ALTER TABLE verification_attempts ADD CONSTRAINT verification_attempts_recovery_binding_check CHECK (
   (purpose='final' AND recovery_ordinal IS NULL AND target_check_id IS NULL AND strategy_id IS NULL)
   OR (purpose='recovery' AND recovery_ordinal > 0 AND target_check_id IS NOT NULL AND strategy_id IS NOT NULL)
