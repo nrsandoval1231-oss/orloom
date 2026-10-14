@@ -1,8 +1,8 @@
 import { readFile, readdir, symlink, chmod, mkdir, rm } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
-import { ADMITTED_DEPENDENCIES, SuiteAdmissionError, admitSuiteInput, discoverSuiteTests, verifySuiteInputUnchanged } from './suite-policy.js';
-import { enforceSuiteDeadline, executeStages, runSerialTestFiles } from './stage-runner.js';
+import { ADMITTED_DEPENDENCIES, SuiteAdmissionError, admitSuiteInput, assertEligibleAskpassSources, discoverSuiteTests, verifySuiteInputUnchanged } from './suite-policy.js';
+import { enforceSuiteDeadline, executeStages, runSerialTestFiles, runStage } from './stage-runner.js';
 import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostics.js';
 
 const root = '/work/source';
@@ -21,7 +21,13 @@ const env = { PATH: '/usr/local/bin:/usr/bin:/bin', HOME: '/nonexistent', LANG: 
 
 async function* fixedStages() {
   yield { name: POLICY_STAGE_ORDER[1], file: '/usr/local/bin/node', args: ['/opt/orloom-verifier/node_modules/typescript/bin/tsc', '--noEmit'], cwd: root, env, maxLogBytes: logLimit };
-  yield { name: POLICY_STAGE_ORDER[2], file: '/usr/local/bin/node', args: ['/opt/orloom-verifier/node_modules/typescript/bin/tsc'], cwd: root, env, maxLogBytes: logLimit };
+  yield { name: POLICY_STAGE_ORDER[2], execute: async () => {
+    const build = await runStage('/usr/local/bin/node', ['/opt/orloom-verifier/node_modules/typescript/bin/tsc'], { cwd: root, env, timeoutMs: remainingMs(), maxLogBytes: logLimit });
+    if (build.exitCode !== 0 || build.timedOut || build.spawnError || build.truncated || build.signal) return build;
+    const copy = await runStage('/usr/local/bin/node', ['/opt/orloom-verifier/copy-git-askpass.js', root], { cwd: root, env, timeoutMs: remainingMs(), maxLogBytes: logLimit });
+    const stdout = Buffer.concat([build.stdout, copy.stdout]), stderr = Buffer.concat([build.stderr, copy.stderr]);
+    return { ...copy, stdout, stderr, truncated: Boolean(build.truncated || copy.truncated || stdout.length > logLimit || stderr.length > logLimit) };
+  } };
   let tests;
   yield { name: POLICY_STAGE_ORDER[3], execute: async () => {
     try { tests = discoverSuiteTests(await readdir(path.join(root, 'dist/tests'))); }
@@ -48,6 +54,7 @@ try {
   add(out, `STAGE ${activeStage} START\n`, true);
   admittedManifest = JSON.parse(await readFile('/work/manifest.json', 'utf8'));
   await admitSuiteInput(root, admittedManifest.files);
+  assertEligibleAskpassSources(admittedManifest.files);
   await chmod(root, 0o755);
   await symlink('/opt/orloom-verifier/node_modules', path.join(root, 'node_modules'));
   await rm(path.join(root, 'dist'), { recursive: true, force: true });

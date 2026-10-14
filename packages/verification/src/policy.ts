@@ -10,18 +10,18 @@ function bindPolicy(image: string, imageDigest: Sha256): CheckPolicy {
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const NODE_REPO_SUITE_BINDING = Object.freeze({
-  manifestVersion: "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s",
+  manifestVersion: "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1",
   timeouts: Object.freeze({ suiteExecutionMs: 360_000, dockerAttachMs: 390_000, hostLauncherMs: 405_000, attemptLifetimeMs: 420_000 }),
   diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v4", maxFrames: 64, maxBytes: 16_384, maxElapsedMs: 360_000, maxTestOrdinal: 64, maxTestFileNameBytes: 128, authority: "advisory-only" }),
   dependencies: Object.freeze({
-    packageJsonSha256: "ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df",
+    packageJsonSha256: "c7fdcfa70e2be9c2fa77f7c7812dff23729469797b5dfc8114b9d61ff20957df",
     packageLockSha256: "1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4",
   }),
   tools: Object.freeze({ nodeVersion: "24.15.0", nodeBinarySha256: "d1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c", typescriptVersion: "5.9.3", stageEnvironment: Object.freeze({ PATH: "/usr/local/bin:/usr/bin:/bin", HOME: "/nonexistent", LANG: "C", CI: "1", NODE_ENV: "test" }) }),
   stages: Object.freeze([
     Object.freeze({ name: "dependency-lock-admission", argv: Object.freeze(["trusted digest and repository-policy checks"]) }),
     Object.freeze({ name: "typecheck", argv: Object.freeze(["/usr/local/bin/node", "/opt/orloom-verifier/node_modules/typescript/bin/tsc", "--noEmit"]) }),
-    Object.freeze({ name: "clean-build", argv: Object.freeze(["/usr/local/bin/node", "/opt/orloom-verifier/node_modules/typescript/bin/tsc"]) }),
+    Object.freeze({ name: "clean-build", argv: Object.freeze(["/usr/local/bin/node", "/opt/orloom-verifier/node_modules/typescript/bin/tsc", "then", "/usr/local/bin/node", "/opt/orloom-verifier/copy-git-askpass.js", "/work/source"]) }),
     Object.freeze({ name: "test-discovery", argv: Object.freeze(["readdir dist/tests; require one or more *.test.js"]) }),
     Object.freeze({ name: "node-tests", argv: Object.freeze(["for each trusted sorted discovered *.test.js: /usr/local/bin/node --test --test-concurrency=1 dist/tests/<basename>"]) }),
     Object.freeze({ name: "foundation-validation", argv: Object.freeze(["/usr/local/bin/node", "scripts/validate.mjs"]) }),
@@ -31,7 +31,7 @@ export const NODE_REPO_SUITE_BINDING = Object.freeze({
 });
 function bindSuite(image: string, imageDigest: Sha256): CheckPolicy {
   const resources = NODE_REPO_SUITE_BINDING.resources;
-  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v5", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
+  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v6", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const CHECK_POLICIES: Readonly<Record<string, CheckPolicy>> = Object.freeze({

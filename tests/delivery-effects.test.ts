@@ -18,9 +18,9 @@ const policy:DeliveryPolicy={repository:"acme/orloom",appId:11,installationId:9,
 type Check=Awaited<ReturnType<GitHubInstallationClient["createDeliveryCheck"]>>;
 type PullRequest=Awaited<ReturnType<GitHubInstallationClient["createDraftPullRequest"]>>;
 
-async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_after"|"throw_absent";prPost?:"normal"|"throw_after";appId?:number;checkGetId?:number;prGetNumber?:number;draft?:boolean;state?:string;merged?:boolean;duplicates?:boolean}={}){
+async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_after"|"throw_absent";prPost?:"normal"|"throw_after";uploadPost?:"normal"|"throw_after"|"throw_absent";branchRead?:"wrong_sha"|"wrong_tree"|"error";baseRead?:"wrong"|"error";appId?:number;checkGetId?:number;prGetNumber?:number;draft?:boolean;state?:string;merged?:boolean;duplicates?:boolean;noUploadCredential?:boolean}={}){
   const db=new PGlite();
-  for(const file of ["001_initial.sql","002_missions.sql","003_recovery.sql","004_verification.sql","005_learning.sql","006_integration.sql","007_delivery.sql"])await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
+  for(const file of ["001_initial.sql","002_missions.sql","003_recovery.sql","004_verification.sql","005_learning.sql","006_integration.sql","007_delivery.sql","008_delivery_upload.sql"])await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
   let lock=Promise.resolve();
   const sql:TransactionalSql={
     query:async(text,params)=>await db.query(text,params as never) as never,
@@ -52,11 +52,12 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
   const store=Object.create(sqlStore) as MissionStore;
   store.getIntegratedCertificate=async(_m,_s,_e,id)=>id===certificate.checkId?certificate:null;
   store.getTrustedAttempt=async id=>id===request.attemptId?{purpose:"final",request,outcome:"pass",receipt,targetCheckId:null,strategyId:null,recoveryOrdinal:null,headObservedAt:now,headObservationDigest:digest,leasePolicyDigest:digest}:null;
-  let check:Check|undefined,pr:PullRequest|undefined,checkPosts=0,prPosts=0,checkReads=0,prReads=0;
+  let check:Check|undefined,pr:PullRequest|undefined,remoteUploaded=false,uploadPosts=0,checkPosts=0,prPosts=0,checkReads=0,prReads=0;
   const github:GitHubInstallationClient={
     appId:mode.configuredAppId??policy.appId,
+    withContentsWriteToken:async<T>(_install:number,_repo:string,action:(token:string)=>Promise<T>):Promise<T>=>action("fixture-token"),
     createInstallationToken:async()=>"fixture",createCheckRun:async()=>{},
-    inspectBranch:async(_install,_repo,ref)=>ref==="main"?{sha:base,treeSha:tree}:{sha,treeSha:tree},
+    inspectBranch:async(_install,_repo,ref)=>{if(ref==="main"){if(mode.baseRead==="error")throw new Error("unavailable");return{sha:mode.baseRead==="wrong"?"f".repeat(40):base,treeSha:tree};}if(mode.branchRead==="error")throw new Error("unavailable");if(!remoteUploaded)return null;return{sha:mode.branchRead==="wrong_sha"?"f".repeat(40):sha,treeSha:mode.branchRead==="wrong_tree"?"f".repeat(40):tree};},
     listCheckRuns:async(_install,_repo,headSha,name,externalId)=>{
       if(mode.duplicates){const existing=check??{id:81,headSha,name,externalId,conclusion:"success",appId:policy.appId};return[existing,{...existing,id:existing.id+1}];}
       return check?[check]:[];
@@ -80,9 +81,10 @@ async function setup(mode:{configuredAppId?:number;checkPost?:"normal"|"throw_af
     },
     getPullRequest:async(_install,_repo,number)=>{prReads++;if(!pr||pr.number!==number)throw new Error("PR unavailable");return{...pr,number:mode.prGetNumber??pr.number};}
   };
-  const integrator={repositoryIdentity:policy.repository,readRef:async()=>sha,inspect:async()=>({candidateSha:sha,treeSha:tree,expectedIntegrationSha:base})};
+  if(mode.noUploadCredential)delete(github as unknown as {withContentsWriteToken?:GitHubInstallationClient["withContentsWriteToken"]}).withContentsWriteToken;
+  const integrator={repositoryIdentity:policy.repository,readRef:async()=>sha,inspect:async()=>({candidateSha:sha,treeSha:tree,expectedIntegrationSha:base}),uploadRef:async()=>{uploadPosts++;if(mode.uploadPost==="throw_absent")throw new Error("unavailable");remoteUploaded=true;if(mode.uploadPost==="throw_after")throw new Error("ack lost");}};
   const authority={integrator,reviews:{read:async(id:string)=>id===command.reviewArtifactId?reviewBytes:null},artifacts:{put:async()=>({key:"",sha256:""}),get:async(key:string)=>{const value=artifacts.get(key);if(!value)throw new Error("artifact unavailable");return value;}},github} as never;
-  return{db,store,sqlStore,authority,counts:()=>({checkPosts,prPosts,checkReads,prReads}),missionId:mission.id,planDigest:planDigest(plan)};
+  return{db,store,sqlStore,authority,counts:()=>({uploadPosts,checkPosts,prPosts,checkReads,prReads}),missionId:mission.id,planDigest:planDigest(plan)};
 }
 function planDigest(plan:{slices:SliceInput[]}){return hash(canonicalJson(plan.slices));}
 
@@ -91,7 +93,7 @@ async function deliver(fixture:Awaited<ReturnType<typeof setup>>){return deliver
 test("positive delivery persists one exact Check GET readback and an open unmerged draft PR",async()=>{
   const f=await setup();try{
     const result=await deliver(f);assert.equal(result.state,"pr_created");assert.equal(result.appId,policy.appId);assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);assert.equal(f.counts().checkReads,1);assert.equal(f.counts().prReads,1);
-    const replay=await deliver(f);assert.equal(replay.state,"pr_created");assert.deepEqual(f.counts(),{checkPosts:1,prPosts:1,checkReads:2,prReads:2});
+    const replay=await deliver(f);assert.equal(replay.state,"pr_created");assert.deepEqual(f.counts(),{uploadPosts:1,checkPosts:1,prPosts:1,checkReads:2,prReads:2});
   }finally{await f.db.close();}
 });
 
@@ -99,7 +101,7 @@ test("delivery rejects duplicate, mismatched, and unknown C4 metadata before any
   const f=await setup();
   try{
     const setRefs=async(refs:string[])=>f.db.query("UPDATE mission_slices SET evidence_refs=$2::jsonb WHERE mission_id=$1 AND id=$3",[f.missionId,canonicalJson(refs),command.sliceId]);
-    const rejectRefs=async(refs:string[])=>{await setRefs(refs);await assert.rejects(deliver(f),/C4 attribution|content-addressed|artifact unavailable/);assert.deepEqual(f.counts(),{checkPosts:0,prPosts:0,checkReads:0,prReads:0});};
+    const rejectRefs=async(refs:string[])=>{await setRefs(refs);await assert.rejects(deliver(f),/C4 attribution|content-addressed|artifact unavailable/);assert.deepEqual(f.counts(),{uploadPosts:0,checkPosts:0,prPosts:0,checkReads:0,prReads:0});};
     const integrationRef=`integration:${command.integratedSha}`,reviewRef=`review:${command.reviewArtifactDigest}`;
     await rejectRefs([integrationRef,integrationRef,reviewRef]);
     await rejectRefs([integrationRef,reviewRef,reviewRef]);
@@ -133,11 +135,39 @@ test("concurrent delivery calls cannot both claim either create effect",async()=
   }finally{await f.db.close();}
 });
 
+test("upload interruption is reconciled after the exact remote ref appears and is never pushed twice",async()=>{
+  const f=await setup({uploadPost:"throw_after"});try{
+    await assert.rejects(deliver(f),/Remote upload or separate SHA\/tree\/base readback is unresolved/);
+    assert.deepEqual(f.counts(),{uploadPosts:1,checkPosts:0,prPosts:0,checkReads:0,prReads:0});
+    const request:DeliveryRequestV1={version:"orloom.delivery-request.v1",missionId:command.missionId,sliceId:command.sliceId,leaseEpoch:command.leaseEpoch,integratedSha:command.integratedSha,treeSha:command.treeSha,repository:policy.repository.toLowerCase(),appId:policy.appId,installationId:policy.installationId,branch:`orloom/delivery/${command.missionId}/${hash(command.sliceId).slice(0,12)}`,baseRef:policy.baseRef,baseSha:policy.baseSha,checkIds:policy.checkIds,reviewArtifactId:command.reviewArtifactId,reviewArtifactDigest:command.reviewArtifactDigest,idempotencyKey:command.idempotencyKey};
+    await assert.rejects(f.store.claimDeliveryEffect!(request,"check"),/Remote upload must be observed/);
+    const result=await deliver(f);assert.equal(result.state,"pr_created");
+    assert.equal(f.counts().uploadPosts,1);assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,1);
+  }finally{await f.db.close();}
+});
+
+test("a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks",async t=>{
+  for(const mode of [{uploadPost:"throw_absent" as const},{branchRead:"wrong_sha" as const},{branchRead:"wrong_tree" as const},{baseRead:"wrong" as const},{baseRead:"error" as const}])await t.test(JSON.stringify(mode),async()=>{
+    const f=await setup(mode);try{
+      await assert.rejects(deliver(f));
+      await assert.rejects(deliver(f));
+      assert.equal(f.counts().uploadPosts,mode.uploadPost||mode.branchRead?1:0);assert.equal(f.counts().checkPosts,0);assert.equal(f.counts().prPosts,0);
+    }finally{await f.db.close();}
+  });
+});
+
 test("unresolved absent effect remains UNKNOWN and is never blindly retried",async()=>{
   const f=await setup({checkPost:"throw_absent"});try{
     await assert.rejects(deliver(f),/Check write or separate Check readback/);
     await assert.rejects(deliver(f),/prior Check write may have occurred/);
     assert.equal(f.counts().checkPosts,1);assert.equal(f.counts().prPosts,0);
+  }finally{await f.db.close();}
+});
+
+test("missing scoped upload credential capability closes delivery before creating a claim",async()=>{
+  const f=await setup({noUploadCredential:true});try{
+    await assert.rejects(deliver(f),/closed without controller-owned upload/);
+    const q=await f.db.query("SELECT effect FROM mission_delivery_effects WHERE mission_id=$1",[f.missionId]);assert.equal(q.rows.length,0);
   }finally{await f.db.close();}
 });
 

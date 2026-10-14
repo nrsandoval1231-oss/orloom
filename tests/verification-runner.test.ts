@@ -70,14 +70,14 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v5");
+  assert.equal(suite.version, "orloom.node-repo-suite.v6");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
   assert.equal(suite.timeoutMs, 405_000);
   assert.equal(suite.maxConcurrent, 1);
-  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s");
+  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.memoryBytes, 2 * 1024 * 1024 * 1024);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
-  assert.equal(suite.digest, "5b57ce4b9ee14cf42300ee0773d73125a2aaa0519e70c0b5a4cb956f90f304ed");
+  assert.equal(suite.digest, "a55910cf21d81f4810e403f4bfd47aa893c7ccdd5ed019a599a9f1e4937e4811");
   assert.notEqual(suite.digest, "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8", "suite deadline changes must invalidate the previous policy digest");
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
@@ -117,9 +117,16 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
   assert.match(suiteRunner, /const limit = 360_000/);
   assert.match(suiteRunner, /runSerialTestFiles\(tests/);
+  assert.match(suiteRunner, /copy-git-askpass\.js/);
+  const trustedCopy = await readFile("infra/verifier-isolation/copy-git-askpass.js", "utf8");
+  assert.match(trustedCopy, /git-askpass\.sh.*git-askpass\.cmd.*git-askpass\.ps1/s);
+  assert.match(trustedCopy, /entry\.isSymbolicLink\(\)/);
+  assert.match(trustedCopy, /includes\(13\)/);
+  assert.match(trustedCopy, /chmod\(target, 0o755\)/);
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
   assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
+  assert.match(dockerfile, /copy-git-askpass\.js/);
 });
 
 test("repository suite runs every discovered test file serially and binds the new policy digest", async () => {
@@ -237,7 +244,7 @@ test("local npm accepts distinct sanitized config paths", { skip: ![
 });
 
 test("repository suite admission accepts the exact dependency pair and rejects stale locks and overrides", async () => {
-  const { ADMITTED_DEPENDENCIES, admitSuiteInput, verifySuiteInputUnchanged } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
+  const { ADMITTED_DEPENDENCIES, REQUIRED_ASKPASS_SOURCES, admitSuiteInput, assertEligibleAskpassSources, verifySuiteInputUnchanged } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
   const root = await mkdtemp(path.join(os.tmpdir(), "orl-suite-admission-"));
   const readOnlySource = await mkdtemp(path.join(os.tmpdir(), "orl-suite-readonly-source-"));
   const sourceLock = path.join(readOnlySource, "package-lock.json");
@@ -263,6 +270,10 @@ test("repository suite admission accepts the exact dependency pair and rejects s
       }));
     };
     const actualManifest = await resolveManifestFiles("/work/manifest.json", gitManifest);
+    assert.deepEqual(REQUIRED_ASKPASS_SOURCES, ["packages/integration/src/git-askpass.sh", "packages/integration/src/git-askpass.cmd", "packages/integration/src/git-askpass.ps1"]);
+    const helperManifest = await Promise.all(REQUIRED_ASKPASS_SOURCES.map(async path => { const bytes = await readFile(path); return { path, bytes: bytes.length, sha256: (await import("node:crypto")).createHash("sha256").update(bytes).digest("hex") }; }));
+    assert.doesNotThrow(() => assertEligibleAskpassSources([...actualManifest, ...helperManifest]));
+    assert.throws(() => assertEligibleAskpassSources(helperManifest.filter(item => item.path !== "packages/integration/src/git-askpass.sh")), /eligible input snapshot/);
     const fixtureManifestPath = path.join(root, "manifest.json");
     await writeFile(fixtureManifestPath, JSON.stringify({ files: [{ path: "fixture", bytes: 0, sha256: "0".repeat(64) }] }));
     assert.equal((await resolveManifestFiles(fixtureManifestPath, async () => { throw new Error("must not require Git in extracted sandbox"); }))[0].path, "fixture");

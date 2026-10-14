@@ -15,7 +15,7 @@ export interface IntegrationRequestV1 { version:"orloom.integration-request.v1";
 export interface IntegrationIntentV1 extends IntegrationRequestV1 { treeSha:string; certificateIds:string[]; certificateDigests:string[]; state:"pending"|"integrated"|"unknown"; observedIntegrationSha:string|null; }
 export interface DeliveryRequestV1 { version:"orloom.delivery-request.v1"; missionId:string; sliceId:string; leaseEpoch:number; integratedSha:string; treeSha:string; repository:string; appId:number; installationId:number; branch:string; baseRef:string; baseSha:string; checkIds:string[]; reviewArtifactId:string; reviewArtifactDigest:string; idempotencyKey:string; }
 export interface DeliveryIntentV1 extends DeliveryRequestV1 { state:"pending"|"check_created"|"pr_created"|"unknown"; checkRunId:string|null; pullRequestNumber:number|null; observedRemoteSha:string|null; }
-export type DeliveryEffectV1 = "check" | "pull_request";
+export type DeliveryEffectV1 = "upload" | "check" | "pull_request";
 export interface DeliveryEffectClaimV1 { claimed:boolean; state:"claimed"|"observed"; externalId:string|null; }
 export type ProgressStatus = "started" | "passed" | "failed" | "blocked" | "unknown";
 export interface ProgressV1 {

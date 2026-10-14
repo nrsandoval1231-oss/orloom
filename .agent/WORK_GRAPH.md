@@ -1,19 +1,17 @@
 # Orloom Work Graph
 
-Canonical: docs/architecture/CANONICAL_HARNESS.md. Earlier graph bytes and attempts are preserved in .agent/history/delivery-composition-20261013/WORK_GRAPH.md. Main6110c692 is accepted PR1; full product completion remains OPEN.
+Canonical: docs/architecture/CANONICAL_HARNESS.md. Previous graph retained in history/remote-upload-20261014. Main6110c692 accepted; product completion OPEN.
 
-| Node | Dependencies | Current evidence and next gate |
-|---|---|---|
-| Mission control | foundation | PR1 merged with independent source and real PostgreSQL proof |
-| DeepSeek broker | PR1 | PR2 FROZEN; excluded from all current work |
-| Jev gateway / recovery | PR1 | C1a source545279c and controlled realPG behavior accepted; live Jev and wider recovery behavior OPEN |
-| Evidence learning | C1a, C3 | Source3472725 and activation-impact controls composed; genuine runtime activation, comparable outcomes and measured benefit OPEN |
-| Adaptive Athena scheduling | C1a, learning | Source157fea3 independently accepted; deterministic dependency/capacity/scope/budget authority preserved; cloud behavior OPEN |
-| Orloom CI | trusted policy | Syntax runtime accepted; full-suite cloud8f271de FAIL297978ms/zero cert; nonroot fixture repair6406393 composed; new combined exact cloud proof required |
-| Local integration | C3 contracts | Source2a02606 PASS99 tests and independent source/realPG two-pool replay proof; controlled verifier inputs only; evidence5c71c6b/PR12 |
-| Delivery pipeline | integration, App/R2 | Accepted base f6023ac carries 134-test source review and bounded PostgreSQL delivery proof; composition successor wires delivery behind explicit cloud/SQL config and fixed repository/full-suite policy; cloud startup, remote upload, credentialed publication and successor review remain OPEN |
-| Controller startup composition | accepted C4 delivery | 3962ee0 PASS138 gates but independent FIX policy-domain mismatch; C4-COMPOSE-POLICY-01 separates lease/suite digests and locked original-attempt fencing; focused19 PASS, exact final gates/review pending |
-| Living Loom | structured C1-C4 events | Sourcebd2bb5e PASS110/source/browser; f602 controlled actual PostgreSQL viewer PASS with desktop/mobile reload and independent review; no builder ran; V4 preserved |
-| Cloud end-to-end | all above, secure credentials | Implementation and external gates remain OPEN; no production acceptance |
+| Node | State / next gate |
+|---|---|
+| Mission control | PR1 merged, source and actual PostgreSQL accepted |
+| DeepSeek broker | PR2 FROZEN and excluded |
+| Jev/recovery, learning, scheduling | Source composed; live Jev, genuine activation and comparable benefit OPEN |
+| Orloom CI | Actual full-suite f602 FAIL271438ms/zero certificates; d4 fixture repair composed; focused Linux and full successor proof OPEN |
+| Local integration | 2a02606 source and actual two-pool PostgreSQL replay accepted bounded |
+| Controller and delivery | 0725 policy composition and f602 delivery actual PostgreSQL accepted bounded |
+| Reserved remote upload | C4-REMOTE-UPLOAD-01 implemented; root gates and independent review NEXT; actual PostgreSQL and credentialed publication OPEN |
+| Living Loom | Source and controlled actual PostgreSQL browser proof accepted bounded; live builder display OPEN |
+| Cloud end-to-end | Secure credentials, authentic verification and integrated deployed campaign OPEN |
 
-Current direction: freeze and VALIDATE C4-COMPOSE-POLICY-01, independently review, then execute actual PostgreSQL startup-policy proof. Cloud packaging requires a specialist cross-consumer schema repair after pre-upload failures; no resources were started. Jev remains excluded pending durable spend authorization. No competing broker/scheduler, new paid host, automatic product merge, or direct-to-main source push. Provider calls0. The earlier $5 ceiling is DeepSeek-only.
+Direction VALIDATE combined upload source with the reviewed Linux fixture fix. No competing broker/scheduler, automatic product merge, paid host or direct-to-main source push. Provider calls0.

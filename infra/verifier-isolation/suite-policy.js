@@ -3,9 +3,13 @@ import { lstat, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 export const ADMITTED_DEPENDENCIES = Object.freeze({
-  'package.json': 'ce03aab4cd061600bbcf1930380861797b4b8fa7369204b701255df1551820df',
+  'package.json': 'c7fdcfa70e2be9c2fa77f7c7812dff23729469797b5dfc8114b9d61ff20957df',
   'package-lock.json': '1c9fb3bc8b944f210492b4ae1a2750605d8495f349000464d17afcaa4f9ff1b4',
 });
+export const REQUIRED_ASKPASS_SOURCES = Object.freeze(['packages/integration/src/git-askpass.sh', 'packages/integration/src/git-askpass.cmd', 'packages/integration/src/git-askpass.ps1']);
+export function assertEligibleAskpassSources(files) {
+  if (!Array.isArray(files) || REQUIRED_ASKPASS_SOURCES.some(path => !files.some(item => item?.path === path))) throw new SuiteAdmissionError('trusted askpass sources are absent from the eligible input snapshot');
+}
 export class SuiteAdmissionError extends Error {}
 export async function admitSuiteInput(root, files) {
   for (const [name, expected] of Object.entries(ADMITTED_DEPENDENCIES)) {

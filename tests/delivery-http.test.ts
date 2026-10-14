@@ -94,11 +94,11 @@ test("delivery route maps unexpected store failures to a generic unavailable res
     getTrustedAttempt: async () => null
   } as never;
   const trustedAuthority = {
-    integrator: { repositoryIdentity: policy.repository },
+    integrator: { repositoryIdentity: policy.repository, uploadRef: async () => undefined },
     reviews: {},
     artifacts: {},
-    github: { appId: policy.appId }
-  } as DeliveryAuthority;
+    github: { appId: policy.appId, withContentsWriteToken: async () => undefined }
+  } as unknown as DeliveryAuthority;
   await withServer({ policy, authority: trustedAuthority }, async url => {
     const response = await send(url, command);
     assert.equal(response.status, 503);

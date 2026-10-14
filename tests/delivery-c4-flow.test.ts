@@ -26,7 +26,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
   const root = await mkdtemp(join(tmpdir(), "orloom-delivery-c4-"));
   const db = new PGlite();
   try {
-    for (const migration of ["001_initial.sql", "002_missions.sql", "003_recovery.sql", "004_verification.sql", "005_learning.sql", "006_integration.sql", "007_delivery.sql"]) {
+    for (const migration of ["001_initial.sql", "002_missions.sql", "003_recovery.sql", "004_verification.sql", "005_learning.sql", "006_integration.sql", "007_delivery.sql", "008_delivery_upload.sql"]) {
       await db.exec(await readFile(`db/migrations/${migration}`, "utf8"));
     }
     let transactionTail = Promise.resolve();
@@ -52,7 +52,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     const policyDigest = hash("trusted verifier suite policy"), leasePolicyDigest = hash(JSON.stringify(["node-repo-suite-v1"]));
     await store.configureCapacity(1, hash("capacity evidence"), new Date(Date.now() + 120_000).toISOString());
 
-    const source = join(root, "source"), bare = join(root, "bare.git"), template = join(root, "empty-template");
+    const source = join(root, "source"), bare = join(root, "bare.git"), remote = join(root, "destination bare.git"), template = join(root, "empty-template");
     await mkdir(template);
     await exec("git", ["init", "-q", "-b", "main", source], { windowsHide: true, timeout: 15_000 });
     await git(source, ["config", "user.name", "C4 delivery fixture"]);
@@ -62,6 +62,8 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     await git(source, ["commit", "-qm", "base"]);
     const baseSha = await git(source, ["rev-parse", "HEAD"]);
     await exec("git", ["clone", "-q", "--bare", `--template=${template}`, source, bare], { windowsHide: true, timeout: 15_000 });
+    await exec("git", ["init", "-q", "--bare", `--template=${template}`, remote], { windowsHide: true, timeout: 15_000 });
+    await exec("git", ["--git-dir",remote,"fetch","-q",bare,`${baseSha}:refs/heads/main`],{windowsHide:true,timeout:15_000});
     await git(bare, ["update-ref", "refs/heads/orloom-integration", baseSha]);
     await writeFile(join(source, "src.txt"), "candidate\n");
     await git(source, ["commit", "-qam", "candidate"]);
@@ -69,7 +71,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     await git(source, ["push", "-q", bare, `${candidateSha}:refs/heads/candidate`]);
 
     const repository = "owner/orloom";
-    const integrator = await BareGitFastForwardIntegrator.open(bare, repository);
+    const integrator = await BareGitFastForwardIntegrator.openWithTestRemote(bare, repository, new URL(`file:///${remote.replaceAll("\\","/")}`).href);
     const inspection = await integrator.inspect({ expectedRefSha: baseSha, candidateSha, scopes: ["src.txt"] });
     const mission = await store.submit({ repository, baseSha, objective: "deliver a trusted integrated change", acceptance: ["publish retained proof"], budgetCents: 100 });
     const slices: SliceInput[] = [{ id: "delivery", objective: "change src.txt", dependencies: [], owner: "builder", scopes: ["src.txt"], checks: ["node-repo-suite-v1"], budgetCents: 100 }];
@@ -135,8 +137,12 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     const prs = new Map<number, { number: number; draft: boolean; state: string; merged: boolean; headRepository: string | null; headRef: string; headSha: string; baseRepository: string | null; baseRef: string; baseSha: string }>();
     const github = {
       appId: deliveryPolicy.appId,
+      withContentsWriteToken: async (_installationId:number,_repo:string,action:(token:string)=>Promise<unknown>)=>action("controlled-test-token"),
       createInstallationToken: async () => "controlled-test-token",
-      inspectBranch: async (_installationId: number, _repo: string, ref: string) => ref === "main" ? { sha: baseSha, treeSha: "" } : { sha: candidateSha, treeSha: inspection.treeSha },
+      inspectBranch: async (_installationId: number, _repo: string, ref: string) => {
+        const result=await exec("git",["--git-dir",remote,"rev-parse","--verify",`refs/heads/${ref}`],{encoding:"utf8",windowsHide:true,timeout:15_000}).catch(()=>null);
+        if(!result)return null;const sha=result.stdout.trim();const tree=await exec("git",["--git-dir",remote,"rev-parse",`${sha}^{tree}`],{encoding:"utf8",windowsHide:true,timeout:15_000});return{sha,treeSha:tree.stdout.trim()};
+      },
       listCheckRuns: async () => [...checks.values()],
       createDeliveryCheck: async (_installationId: number, _repo: string, headSha: string, name: string, externalId: string) => {
         const value = { id: 17, headSha, name, externalId, conclusion: "success", appId: deliveryPolicy.appId };
@@ -163,11 +169,14 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
       artifacts: { put: async () => { throw new Error("delivery must not create evidence artifacts"); }, get: async (key) => { const bytes = artifacts.get(key); if (!bytes) throw new Error("artifact not found"); return bytes; } },
       github
     };
+    const concurrent=await Promise.allSettled([governor.deliverIntegratedCommit(command,deliveryPolicy,authority),governor.deliverIntegratedCommit(command,deliveryPolicy,authority)]);
+    assert(concurrent.some(x=>x.status==="fulfilled"));
     const result = await governor.deliverIntegratedCommit(command, deliveryPolicy, authority);
     assert.equal(result.state, "pr_created");
     assert.equal(result.integratedSha, candidateSha);
     assert.equal(checks.size, 1);
     assert.equal(prs.size, 1);
+    const remoteHead=await exec("git",["--git-dir",remote,"rev-parse",`refs/heads/${result.branch}`],{encoding:"utf8",windowsHide:true,timeout:15_000});assert.equal(remoteHead.stdout.trim(),candidateSha);
   } finally {
     await db.close();
     await rm(root, { recursive: true, force: true });

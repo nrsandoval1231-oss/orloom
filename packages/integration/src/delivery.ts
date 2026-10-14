@@ -17,8 +17,8 @@ export interface DeliveryAuthority {integrator:LocalIntegrator;reviews:DeliveryR
 function validateCommand(x:DeliveryCommandV1,p:DeliveryPolicy){const fields=["version","missionId","sliceId","leaseEpoch","integratedSha","treeSha","reviewArtifactId","reviewArtifactDigest","idempotencyKey"];if(!x||Object.keys(x).length!==fields.length||fields.some(k=>!Object.hasOwn(x,k))||x.version!=="orloom.delivery-command.v1"||!/^[-a-f0-9]{36}$/.test(x.missionId)||! /^[A-Za-z0-9._:-]{1,120}$/.test(x.sliceId)||!Number.isSafeInteger(x.leaseEpoch)||x.leaseEpoch<1||!sha1.test(x.integratedSha)||!sha1.test(x.treeSha)||!sha256.test(x.reviewArtifactDigest)||! /^[A-Za-z0-9._:-]{16,180}$/.test(x.idempotencyKey)||! /^[A-Za-z0-9._:-]{1,180}$/.test(x.reviewArtifactId)||! /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(p.repository)||!Number.isSafeInteger(p.appId)||p.appId<1||!Number.isSafeInteger(p.installationId)||p.installationId<1||!p.baseRef||!sha1.test(p.baseSha)||!p.policyVersion||!sha256.test(p.policyDigest)||!sha256.test(p.imageDigest)||!p.checkIds.includes("node-repo-suite-v1")||new Set(p.checkIds).size!==p.checkIds.length||!p.checkName||!Array.isArray(p.protectedRefs))throw new MissionConflictError("Delivery request or immutable controller delivery policy is invalid");}
 const checkIdFor=(missionId:string,sliceId:string,epoch:number,sha:string)=>`${missionId}:${sliceId}:${epoch}:${sha}`;
 const branchFor=(missionId:string,sliceId:string)=>`orloom/delivery/${missionId}/${hash(sliceId).slice(0,12)}`;
-function assertRemote(remote:{sha:string;treeSha:string},sha:string,tree:string){if(remote.sha!==sha||remote.treeSha!==tree)throw new MissionConflictError("Remote delivery branch does not match the integrated commit and tree");}
-function assertBase(remote:{sha:string;treeSha:string},sha:string){if(remote.sha!==sha)throw new MissionConflictError("Remote base ref no longer matches the approved pinned commit");}
+function assertRemote(remote:{sha:string;treeSha:string}|null,sha:string,tree:string){if(!remote||remote.sha!==sha||remote.treeSha!==tree)throw new MissionConflictError("Remote delivery branch does not match the integrated commit and tree");}
+function assertBase(remote:{sha:string;treeSha:string}|null,sha:string){if(!remote||remote.sha!==sha)throw new MissionConflictError("Remote base ref no longer matches the approved pinned commit");}
 function assertPr(pr:{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string},request:DeliveryRequestV1,expectedNumber?:number){if(!Number.isSafeInteger(pr.number)||pr.number<1||(expectedNumber!==undefined&&pr.number!==expectedNumber)||!pr.draft||pr.state!=="open"||pr.merged||pr.headRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.headRef!==request.branch||pr.headSha!==request.integratedSha||pr.baseRepository?.toLowerCase()!==request.repository.toLowerCase()||pr.baseRef!==request.baseRef||pr.baseSha!==request.baseSha)throw new MissionConflictError("Draft PR readback differs from the exact approved delivery identity");}
 async function verifyArtifact(store:ArtifactStore,r:{key:string;sha256:string;bytes:number}){if(!sha256.test(r.sha256)||r.key!==`sha256/${r.sha256}`||!Number.isSafeInteger(r.bytes)||r.bytes<0)throw new MissionConflictError("Trusted evidence artifact reference is malformed");const bytes=await store.get(r.key);if(bytes.byteLength!==r.bytes||hash(bytes)!==r.sha256)throw new MissionConflictError("Trusted evidence artifact could not be read back by its content digest");}
 function asRecord(x:unknown):Record<string,unknown>{if(!x||typeof x!=="object"||Array.isArray(x))throw new MissionConflictError("Retained trusted receipt is malformed");return x as Record<string,unknown>;}
@@ -35,10 +35,10 @@ function deliveryRequest(command:DeliveryCommandV1,policy:DeliveryPolicy,branch:
   return{version:"orloom.delivery-request.v1",missionId:command.missionId,sliceId:command.sliceId,leaseEpoch:command.leaseEpoch,integratedSha:command.integratedSha,treeSha:command.treeSha,repository:policy.repository.toLowerCase(),appId:policy.appId,installationId:policy.installationId,branch,baseRef:policy.baseRef,baseSha:policy.baseSha,checkIds,reviewArtifactId:command.reviewArtifactId,reviewArtifactDigest:command.reviewArtifactDigest,idempotencyKey:command.idempotencyKey};
 }
 
-/** Publish retained evidence only after durable, exact-identity effect claims. This function never pushes Git data. */
+/** Upload the verified integration commit, then publish retained evidence after exact remote readback and durable effect claims. */
 export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority,store:MissionStore):Promise<DeliveryIntentV1>{
   validateCommand(command,policy);
-  if(!authority?.integrator||!authority.reviews||!authority.artifacts||!authority.github||!store.getIntegratedIntent||!store.getIntegratedCertificate||!store.createDeliveryIntent||!store.updateDeliveryIntent||!store.getDeliveryIntent||!store.claimDeliveryEffect||!store.observeDeliveryEffect||!store.getTrustedAttempt)throw new MissionConflictError("Delivery is closed without controller-owned local, retained evidence, PostgreSQL, review, and GitHub services");
+  if(!authority?.integrator?.uploadRef||!authority.reviews||!authority.artifacts||!authority.github?.withContentsWriteToken||!store.getIntegratedIntent||!store.getIntegratedCertificate||!store.createDeliveryIntent||!store.updateDeliveryIntent||!store.getDeliveryIntent||!store.claimDeliveryEffect||!store.observeDeliveryEffect||!store.getTrustedAttempt)throw new MissionConflictError("Delivery is closed without controller-owned upload, retained evidence, PostgreSQL, review, and GitHub services");
   if(authority.github.appId!==policy.appId)throw new MissionConflictError("Configured GitHub App identity differs from the immutable delivery policy");
   const repository=policy.repository.toLowerCase();
   if(authority.integrator.repositoryIdentity!==repository)throw new MissionConflictError("Local integration repository is not the configured delivery repository");
@@ -96,6 +96,23 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
     assertRemote(await remote(),command.integratedSha,command.treeSha);
     assertBase(await base(),policy.baseSha);
   };
+  let branchRead:{sha:string;treeSha:string}|null,baseRead:{sha:string;treeSha:string}|null;
+  try{[branchRead,baseRead]=await Promise.all([remote(),base()]);assertBase(baseRead,policy.baseSha);}catch{return markUnknown("Remote branch or pinned base readback failed before upload");}
+  const uploadClaim=await store.claimDeliveryEffect(request,"upload");
+  if(branchRead){
+    try{assertRemote(branchRead,command.integratedSha,command.treeSha);if(uploadClaim.externalId&&uploadClaim.externalId!==command.integratedSha)throw new MissionConflictError("Remote upload readback differs from the durable effect identity");await store.observeDeliveryEffect(request,"upload",command.integratedSha);}
+    catch{return markUnknown("Existing remote branch does not pass exact upload readback");}
+  }else if(!uploadClaim.claimed){
+    try{branchRead=await remote();assertRemote(branchRead,command.integratedSha,command.treeSha);baseRead=await base();assertBase(baseRead,policy.baseSha);if(uploadClaim.externalId&&uploadClaim.externalId!==command.integratedSha)throw new MissionConflictError("Remote upload readback differs from the durable effect identity");await store.observeDeliveryEffect(request,"upload",command.integratedSha);}
+    catch{return markUnknown("Prior upload may have occurred; absent or conflicting ref remains unresolved");}
+  }else{
+    try{
+      baseRead=await base();assertBase(baseRead,policy.baseSha);
+      await authority.github.withContentsWriteToken(policy.installationId,repository,token=>authority.integrator.uploadRef!({branch:request.branch,candidateSha:command.integratedSha,protectedRefs:policy.protectedRefs,token}));
+      branchRead=await remote();assertRemote(branchRead,command.integratedSha,command.treeSha);baseRead=await base();assertBase(baseRead,policy.baseSha);
+      await store.observeDeliveryEffect(request,"upload",command.integratedSha);
+    }catch{return markUnknown("Remote upload or separate SHA/tree/base readback is unresolved; write will not be repeated");}
+  }
   try{await verifyRemoteAndBase();}catch{return markUnknown("Remote branch or pinned base readback drifted before delivery");}
 
   const checkClaim=await store.claimDeliveryEffect(request,"check");

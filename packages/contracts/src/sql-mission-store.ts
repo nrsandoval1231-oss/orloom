@@ -135,6 +135,10 @@ export class SqlMissionStore implements MissionStore {
       const q=await tx.query("SELECT * FROM mission_delivery_intents WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 FOR UPDATE",[request.missionId,request.sliceId,request.leaseEpoch]);
       if(!q.rows[0])throw new MissionConflictError("Delivery intent must be durable before claiming an external effect");
       this.assertDeliveryBinding(this.deliveryIntent(q.rows[0]),request);
+      if(effect!=="upload"){
+        const uploaded=await tx.query("SELECT state,external_id FROM mission_delivery_effects WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 AND effect='upload' FOR UPDATE",[request.missionId,request.sliceId,request.leaseEpoch]);
+        if(uploaded.rows[0]?.state!=="observed"||String(uploaded.rows[0]?.external_id)!==request.integratedSha)throw new MissionConflictError("Remote upload must be observed at the integrated SHA before Check or PR effects");
+      }
       const inserted=await tx.query("INSERT INTO mission_delivery_effects(mission_id,slice_id,lease_epoch,effect,state) VALUES($1,$2,$3,$4,'claimed') ON CONFLICT DO NOTHING RETURNING state,external_id",[request.missionId,request.sliceId,request.leaseEpoch,effect]);
       if(inserted.rows[0])return{claimed:true,state:"claimed",externalId:null};
       const existing=await tx.query("SELECT state,external_id FROM mission_delivery_effects WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 AND effect=$4 FOR UPDATE",[request.missionId,request.sliceId,request.leaseEpoch,effect]);
@@ -143,7 +147,7 @@ export class SqlMissionStore implements MissionStore {
     });
   }
   async observeDeliveryEffect(request:DeliveryRequestV1,effect:DeliveryEffectV1,externalId:string):Promise<void>{
-    if(!externalId)throw new MissionConflictError("Observed delivery effect requires its external identity");
+    if(!externalId||(effect==="upload"&&externalId!==request.integratedSha))throw new MissionConflictError("Observed delivery effect requires its exact external identity");
     await this.db.transaction(async tx=>{
       await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
       const q=await tx.query("SELECT state,external_id FROM mission_delivery_effects WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 AND effect=$4 FOR UPDATE",[request.missionId,request.sliceId,request.leaseEpoch,effect]);
