@@ -8,7 +8,7 @@ const maxJournalBytes = 64 * 1024;
 const maxJournalFiles = 10_000;
 const recordNamePattern = /^[a-f0-9]{64}\.json$/;
 const digestPattern = /^[a-f0-9]{64}$/;
-const imageRefPattern = /^(?:ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:|sha256:)[a-f0-9]{64}$/;
+const imageRefPattern = /^(?:ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:|sha256:)[a-f0-9]{64}$/i;
 const dockerNamePattern = /^[a-z0-9][a-z0-9_.-]{0,127}$/;
 const lockName = ".runtime-journal.lock";
 

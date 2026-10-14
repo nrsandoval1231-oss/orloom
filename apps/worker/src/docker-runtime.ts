@@ -99,11 +99,13 @@ export function ownershipLabels(name: string, leaseEpoch: number): Record<string
 }
 
 /** Controller-issued lease facts only. The worker derives this identity from the
- * signed lease; it never asserts a run identity of its own. */
+ * signed lease; it never asserts a run identity of its own. Expiry is excluded
+ * deliberately: heartbeats renew it, so including it would change the identity
+ * of a live lease and could admit a second container at the same epoch. */
 export function controllerRunIdFor(lease: WorkerLeaseContract): string {
   return createHash("sha256").update(JSON.stringify([
     lease.protocol, lease.mission.id, lease.slice.id, lease.leaseEpoch,
-    lease.planDigest, lease.trustedCheckPolicyDigest, lease.leaseExpiresAt,
+    lease.planDigest, lease.trustedCheckPolicyDigest,
   ])).digest("hex");
 }
 
@@ -114,17 +116,24 @@ export interface DurableContainerCreation {
   imageRef: string;
   labels: Record<string, string>;
   create(): Promise<{ id: string }>;
+  /** Invoked with the created container immediately after creation and before
+   * the durable binding is attempted. The caller must take ownership here: if
+   * the binding write fails, the container already exists and is only
+   * reclaimable through whatever this callback retained. */
+  retain?(created: { id: string }): void;
 }
 
 /** Persists controller-owned runtime intent before the container is created and
  * retains the returned container identity afterwards. A create failure leaves
  * the durable intent unresolved on purpose: it is evidence of a possible
- * container, not something to erase. Reconciliation of that evidence is a
- * separate gate. */
+ * container, not something to erase. The same is true of a failed binding
+ * write, and `retain` exists so the caller can still clean up in that case.
+ * Reconciliation of that evidence is a separate gate. */
 export async function createContainerWithDurableIntent(options: DurableContainerCreation): Promise<{ id: string }> {
   const labelsDigest = ownershipLabelsDigest(options.labels);
   await options.journal.recordIntent({ identity: options.identity, name: options.name, imageRef: options.imageRef, labelsDigest });
   const created = await options.create();
+  options.retain?.(created);
   await options.journal.recordCreated(options.identity, created.id, labelsDigest);
   return created;
 }
@@ -340,9 +349,13 @@ class DockerWorkspace implements WorkerWorkspace {
     const labels = ownershipLabels(name, this.lease.leaseEpoch);
     let launched: DockerRpc | undefined;
     const create = async (): Promise<{ id: string }> => {
-      launched = await DockerRpc.launch(docker, config, name, this.lease.leaseEpoch, this.options.imageRef);
-      return { id: launched.id };
+      const rpc = await DockerRpc.launch(docker, config, name, this.lease.leaseEpoch, this.options.imageRef);
+      launched = rpc;
+      return { id: rpc.id };
     };
+    // Ownership is taken before the durable binding is attempted, so a failed
+    // binding still leaves a closable RPC and cannot orphan the container.
+    const retain = (): void => { if (launched) this.rpc = launched; };
     const journal = this.options.runtimeJournal;
     if (journal) {
       await createContainerWithDurableIntent({
@@ -352,19 +365,20 @@ class DockerWorkspace implements WorkerWorkspace {
         imageRef: this.options.imageRef,
         labels,
         create,
+        retain,
       });
     } else {
       await create();
+      retain();
     }
     if (!launched) throw new WorkerProtocolError("Sandbox container was not created");
-    this.rpc = launched;
     const files = await collectFiles(this.repoCheckout.directory);
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
     const allowedIds = [...new Set(this.lease.slice.checks)].sort();
     if (allowedIds.some(id => !policyIds.includes(id))) throw new WorkerProtocolError("Slice requested a check without a trusted sandbox implementation");
     const checks = Object.fromEntries(allowedIds.map(id => [id, this.options.checks[id]]));
-    await this.rpc.request("init", { files, checks }, signal);
+    await launched.request("init", { files, checks }, signal);
   }
   private get client() { if (!this.rpc) throw new WorkerProtocolError("Sandbox is not ready"); return this.rpc; }
   async readFile(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ text: string }>("read_file", { path: filePath }, signal)).text; }
