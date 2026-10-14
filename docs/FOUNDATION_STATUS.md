@@ -16,6 +16,7 @@ Updated 2026-10-14 after merged repair PR #18 and worker PR #19. Orloom's canoni
 
 The optional controller-owned source bridge admits persisted final candidates through hash-checked bundle/index artifacts, strict base/direct-child/scoped Git validation, a private immutable object store and per-candidate verifier observation. It retains the existing trusted check/certificate boundary. See [the separate validation record](validation/2026-10-14-foundation.md) and [composition limits](verification.md#controller-owned-candidate-admission-source). It has no startup wiring, live artifact transport proof or recovery checkpoint support.
 
+- [x] Slice 0 baseline recheck, 2026-10-14: `main` `86a972300708f9bc05f557c5c09efd1c0f7e2ba6`, tree `10de087b4999e1d3264c644a752d651df04a3927`, zero open PRs; fresh locked install, typecheck, build and validation exit 0; suite 189/202 on Windows with all 13 failures classified as the documented Linux/POSIX candidate-admission platform guard; retained 119-file manifest re-verified byte-for-byte. [Baseline record](validation/2026-10-14-slice0-baseline.md). No runtime gate closed.
 - [x] Independent inactive-boundary review accepted the bridge with no remaining blocking finding.
 - [x] Fresh locked install, build/typecheck/validate and full serial suite: 202/202 tests, zero failures/skips/cancellations; 119-file source manifest verified unchanged before/after. Original harness failure and clean rerun are preserved in the separate ledger.
 

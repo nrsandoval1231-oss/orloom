@@ -1,0 +1,13 @@
+# SHA-256 over the committed blob bytes of each retained Slice 0 artifact.
+# Git normalizes text to LF via .gitattributes, so these hashes are
+# reproducible from the commit rather than from a Windows working tree.
+cebdff92c0eb4d290b531c6f823f3f08a856523fed1067806b7ef89303b435f5  00-context.txt
+c26d179f8ec7762ff1f97c54abcd02db799ff5a8cf5c7739f5912f40334ed84e  01-typecheck.log
+f1d5bba80ad7f8cf27a7dff3a6f954de192c2cdb11cff02c85288f37e28c2083  02-build.log
+82a87c6d7fe48eff41c79d3f1114673782cb0f01301f3c9602a09357775342d4  03-validate.log
+0b8dafed6b6974618ba79a1c7613d18ebf30f923f7911295cb22c1af00555591  04-tests.log
+d906221df973ed22942e63ad18c3cf221b580d358aceace8038109dfe70c95a2  05-summary.txt
+f74ad27a27e485955506ab6756938720a011017f58030d05323bec83116ab056  06-manifest-verification.json
+475694c82f88cab684aff0b6796a13244a2e0f2cfcf20d022fb4ed29a2497634  environment.txt
+515079138de65fdcd510d013310608b9de9999bd3feff2d68d8626ac3e80d22a  verification-report.json
+cedd7c2ac06da538ef2f5112732b98628d91c6ad379fdcc3e6d9999badb0809f  verify-manifest.mjs

@@ -1,0 +1,6 @@
+typecheck exit=0  seconds=3.8
+build     exit=0  seconds=3.9
+validate  exit=0  seconds=0.5
+test      exit=1  seconds=78.2
+worktree_clean_after=
+True

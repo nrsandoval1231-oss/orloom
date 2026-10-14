@@ -1,0 +1,6 @@
+repo=orloom
+host_os=Windows ($env:OS / pwsh)
+node=v24.18.0
+npm=11.16.0
+kernel=
+os.platform=win32 os.release=node arch=arm64
