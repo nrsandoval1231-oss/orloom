@@ -12,6 +12,7 @@ Canonical: docs/architecture/CANONICAL_HARNESS.md. Previous graph retained in hi
 | Controller and delivery | 0725 policy composition and f602 delivery actual PostgreSQL accepted bounded |
 | Reserved remote upload | 954622e passed150 tests/source review and actual two-pool PostgreSQL/ref-replay proof, independently accepted bounded; PR16. Credentialed publication OPEN |
 | Living Loom | Source and controlled actual PostgreSQL browser proof accepted bounded; live builder display OPEN |
+| Delivery fixture throughput | e078a51 source accepted: 151 tests/14 gates, independent review; draft PR17. Actual Linux timing OPEN |
 | Cloud end-to-end | Secure credentials, authentic verification and integrated deployed campaign OPEN |
 
 Direction VALIDATE focused Linux fixture recovery, then exact full cloud suite; prepare scoped App/R2 publication only with secure connections. No competing broker/scheduler, automatic product merge, paid host or direct-to-main source push. Provider calls0.
