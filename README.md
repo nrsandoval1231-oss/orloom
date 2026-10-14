@@ -2,13 +2,17 @@
 
 Orloom is a single-operator engineering harness being developed into the platform defined by [the canonical harness specification](docs/architecture/CANONICAL_HARNESS.md). It is not yet a working end-to-end autonomous engineering platform.
 
-## Current worker-source checkpoint: 2026-10-14
+## Current foundation checkpoint: 2026-10-14
 
-[Repair PR #18](https://github.com/nrsandoval1231-oss/orloom/pull/18) is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. The worker successor composes the PR #2 broker/runtime/checkout source onto that repaired baseline, while keeping normal worker startup disabled. Independent review accepted this bounded source slice: 188/188 tests passed with zero skips/failures; build, typecheck and structure validation passed. Its [worker validation ledger](docs/validation/2026-10-14-worker-composition.md) records this separate acceptance scope.
+[Repair PR #18](https://github.com/nrsandoval1231-oss/orloom/pull/18) is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. [Worker PR #19](https://github.com/nrsandoval1231-oss/orloom/pull/19) is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, preserving reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`. It composes the PR #2 broker/runtime/checkout source onto the repaired baseline, while keeping normal worker startup disabled. Independent review accepted this bounded source slice: 188/188 tests passed with zero skips/failures; build, typecheck and structure validation passed. Its [worker validation ledger](docs/validation/2026-10-14-worker-composition.md) records this separate acceptance scope.
 
-The source now includes the preserved broker entrypoint, isolated-runtime interfaces, scoped checkout-token helper, candidate-bundle transport and hardened typed HTTP recovery client. Normal `main.js` exits before secret loading, claims or provider calls; the retained `broker-main.ts` is not an approved deployment entrypoint. Candidate-bundle admission into an independently observed verifier checkout, recovery strategy/checkpoint execution, owner cancellation and durable interruption reconciliation remain unimplemented. No live worker, Jev execution or measured learning improvement is implied.
+The source now includes the preserved broker entrypoint, isolated-runtime interfaces, scoped checkout-token helper, candidate-bundle transport and hardened typed HTTP recovery client. Normal `main.js` exits before secret loading, claims or provider calls; the retained `broker-main.ts` is not an approved deployment entrypoint. An optional controller-owned candidate-admission source now validates persisted bundle/index bindings and imports exact candidate objects into a private verifier object store. It is dependency-injected only, with no normal-startup wiring; [its separate validation record](docs/validation/2026-10-14-foundation.md) governs this addition. Recovery strategy/checkpoint execution, owner cancellation and durable interruption reconciliation remain unimplemented. No live worker, Jev execution or measured learning improvement is implied.
 
-See [the foundation acceptance checklist and next steps](docs/FOUNDATION_STATUS.md). The reviewed source foundation is ready for the next bounded implementation step; autonomous product completion remains open.
+The separate candidate-admission successor passed independent boundary review and a clean locked-install repeat: 202/202 tests, zero skips/failures, with build/typecheck/validate passing. Its 119-file source manifest is retained in [foundation validation](docs/validation/2026-10-14-foundation.md). These are source/fixture results; no live runtime gate is closed.
+
+All 16 original open PRs (#2–17) are resolved; PR #2 was closed as superseded after source/evidence preservation. The repository had zero open PRs at the verified 2026-10-14 04:40 UTC cleanup checkpoint; later successor PRs have their own status.
+
+See [the foundation acceptance checklist and next steps](docs/FOUNDATION_STATUS.md). The source foundation and its remaining operational gates are tracked separately; autonomous product completion remains open.
 
 ## Historical repair consolidation checkpoint: 2026-10-14
 
@@ -99,4 +103,5 @@ Historical standalone visual experiments are archived in [prototypes/v1](prototy
 **Visual north star:** The owner begins with an idea; specialist agents visibly weave a five-sector 3D torus around a central mission. The ring closes only when versioned requirements are independently verified. Source bundles, dependency links, drift, and decisions must be inspectable and evidence-backed.
 
 **Execution north star:** GitHub is source control, **not GitHub Actions CI**. Orloom-owned isolated workers and trusted Orloom verification policies enforce acceptance. Athena and Jev may advise or select bounded strategies, but deterministic host policy owns authorization and irreversible actions.
+
 

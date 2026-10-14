@@ -1,6 +1,6 @@
 # Foundation acceptance and next steps
 
-Updated 2026-10-14 for the worker-source successor. Orloom's canonical architecture and product vision are unchanged. The goal is a clean, verified foundation with explicit next steps, not a new architecture or an implicit live rollout.
+Updated 2026-10-14 after merged repair PR #18 and worker PR #19. Orloom's canonical architecture and product vision are unchanged. The goal is a clean, verified foundation with explicit next steps, not a new architecture or an implicit live rollout.
 
 ## Accepted source groundwork
 
@@ -9,13 +9,22 @@ Updated 2026-10-14 for the worker-source successor. Orloom's canonical architect
 - [x] Worker broker/runtime/checkout source composed with hardened typed recovery receipts; independent [worker-source acceptance](validation/2026-10-14-worker-composition.md), 188/188 tests, zero failures/skips; build/typecheck/validate passed.
 - [x] Normal worker startup remains fail-closed before credentials, claims or provider calls. No environment-variable bypass or new execution authority.
 - [x] Historical evidence has explicit provenance; current-facing docs distinguish source acceptance from runtime and product outcomes.
-- [ ] Verify successor publication tree, reviewed source bindings and documentation overlay; record its PR disposition. Source review is complete, but this checklist does not claim successor merge.
+- [x] Worker [PR #19](https://github.com/nrsandoval1231-oss/orloom/pull/19) merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; source, documentation and historical-evidence publication readback verified.
+- [x] All 16 original open PRs (#2–17) resolved, including PR #2 closed as superseded; zero open PRs at the verified 2026-10-14 04:40 UTC cleanup checkpoint. Later foundation work is a separate successor.
+
+## Candidate-admission successor
+
+The optional controller-owned source bridge admits persisted final candidates through hash-checked bundle/index artifacts, strict base/direct-child/scoped Git validation, a private immutable object store and per-candidate verifier observation. It retains the existing trusted check/certificate boundary. See [the separate validation record](validation/2026-10-14-foundation.md) and [composition limits](verification.md#controller-owned-candidate-admission-source). It has no startup wiring, live artifact transport proof or recovery checkpoint support.
+
+- [x] Independent inactive-boundary review accepted the bridge with no remaining blocking finding.
+- [x] Fresh locked install, build/typecheck/validate and full serial suite: 202/202 tests, zero failures/skips/cancellations; 119-file source manifest verified unchanged before/after. Original harness failure and clean rerun are preserved in the separate ledger.
 
 ## Ordered next-step map
 
-1. Candidate admission bridge: authenticate a worker's immutable bundle, enforce repository/base/candidate and digest bindings, and import into a controller-owned checkout independently observed by the verifier. Prove hostile/malformed/stale input denial and an ordinary successful handoff. Upcoming; not implemented by this worker-source slice.
+1. Operational admission composition: explicitly compose the optional controller-owned final-candidate bridge with protected artifact transport and the independent verifier. Establish authentic runtime handoff and durable retention/reconciliation. The source bridge alone does not activate the worker or certify live candidates.
 2. Recovery and interruption execution: connect bounded recovery/checkpoint strategies, owner cancellation, exact-container reconciliation and conservative spend/capacity handling. Preserve UNKNOWN quarantine until safe reconciliation; no blind retry or refund.
 3. Authentic integrated validation: clean deployment image, trusted runsc full suite, live PostgreSQL and an independently verified one-mission delivery path. Fixtures and PGlite do not close these gates.
 4. Authorized operation: secure provider/App/R2 configuration and explicit deployment/activation prerequisites, followed by measured fresh-task baseline-versus-strategy evaluation. No live Jev/DeepSeek, productive six-lane capacity or learning-gain claim exists here.
 
 A ready source foundation means known invariants are reviewed, source tests pass, historical evidence is preserved and unfinished capabilities stay disabled. It does not mean the autonomous engineering product is complete. This checklist grants no credentials, new spending, deployment or provider authority.
+

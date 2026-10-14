@@ -1,0 +1,10 @@
+{
+  "packages/adapters/src/candidate-artifacts.ts": "d641c2bd833845d8a518b33613d10cf88da59b9cf352dbefbdafbf89c10c947a",
+  "packages/contracts/src/verification.ts": "e61f41066ec702788118b552f7872a3f0e78416fae88504daa9e807ef98119af",
+  "packages/governor/src/governor.ts": "1240f6eb49a79370036dda28c1ce61ede6fe98d7a2fecbdfc629f43629b4695d",
+  "packages/verification/src/admitting-runner.ts": "bea4b60ab122b90132c6aa788a67f4dd1c2281c452dbd9d6c489454831065319",
+  "packages/verification/src/candidate-admission.ts": "f6b51917c49308284ed66491879aa90707e0783e7ebb344fe648bd9db885278a",
+  "packages/verification/src/repository.ts": "ffb848806ab938543d0bbca43cdd34c64335ed6e373db2f989a382111ddbee6d",
+  "tests/candidate-admission.test.ts": "89dc42132f6f458b20af685ec13b713c52e9664dbf6974fd35330fb5ae3051e1",
+  "tests/candidate-artifact-reader.test.ts": "2ad7484576c4aea984764b003824e7d6990d7a3e63d9e2341b01b85f63fb28cb"
+}

@@ -1,0 +1,97 @@
+{
+  "verified_at_utc": "2026-10-14T04:53:30Z",
+  "result": "PASS: independent source-only foundation verification",
+  "source": "Materialized frozen release-candidate snapshot. Not an actual published Git checkout SHA. Local-only Git index created without commit or remote to satisfy git ls-files test prerequisite.",
+  "upstream_baseline_provided_by_coordinator": "d99b26ec828495b7648179a144bc4e38f5c5f80c",
+  "node": "v24.19.0",
+  "npm": "11.9.0",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "c458c72a38a6e3811a3bc8739e8c253b3621ce0a69480c0a1bead476fe9694a3",
+  "source_file_count": 119,
+  "source_integrity": "All 119 non-documentation source/test/build/config paths match frozen original before and after tests; Git blob SHA1, SHA256, mode, size provided per file. All newly added shipped non-documentation files included.",
+  "excluded": "Generated dependencies/dist/.git, docs/**, .md/.mdx documentation, and explicitly unshipped root audit-runtime-sql-probe.mjs diagnostic. Documentation reviewed separately.",
+  "gates": [
+    {
+      "command": "npm ci --cache <fresh-private-cache> --no-audit --no-fund",
+      "exit_code": 0,
+      "detail": "Fresh isolated dependency directory and cache; locked install added 99 packages."
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0
+    },
+    {
+      "command": "npm run validate",
+      "exit_code": 0
+    },
+    {
+      "command": "npm exec --offline -c 'node --test --test-concurrency=1 dist/tests/*.test.js'",
+      "exit_code": 0,
+      "tests": 202,
+      "pass": 202,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 88881.444016
+    }
+  ],
+  "initial_harness_failure": "Initial full suite without Git metadata: 201/202 passed, zero skips, sole failure git ls-files: not a git repository. Original log retained. Created local-only Git index and reran unchanged full suite successfully.",
+  "scope_limits": [
+    "No live providers or credentials exercised.",
+    "No Docker or runsc runtime acceptance claimed.",
+    "SQL regression coverage is fixture-backed PGlite; no live PostgreSQL acceptance claimed.",
+    "No deployment, activation, production readiness, or published-tree integrity claim. Parent must compare published tree with exact source manifest."
+  ],
+  "artifacts": [
+    {
+      "path": "source-manifest.json",
+      "sha256": "c458c72a38a6e3811a3bc8739e8c253b3621ce0a69480c0a1bead476fe9694a3",
+      "bytes": 30973
+    },
+    {
+      "path": "npm-ci.log",
+      "sha256": "4abd187b98857d867343d7ce68f24905a1a3f30c2707608e91dd321e63488c45",
+      "bytes": 333
+    },
+    {
+      "path": "typecheck.log",
+      "sha256": "f0f7fec08a86f241c8c6aeda649c25befba09c5ff7f600ceb20b5b3c38c13bec",
+      "bytes": 360
+    },
+    {
+      "path": "build.log",
+      "sha256": "d0c0c148777e7f549615ee3a66e48a2577a13b2a05914667497f87b89c88be6f",
+      "bytes": 384
+    },
+    {
+      "path": "validate.log",
+      "sha256": "a1f7d327c65a94b568f5961cf6be89da2f3938043446e5b7e71d4126b2fc2af4",
+      "bytes": 204
+    },
+    {
+      "path": "full-suite.log",
+      "sha256": "6dd79732ed2e8458c282642cb785ed0d58d211ba2ce03b121141010f743566a8",
+      "bytes": 20411
+    },
+    {
+      "path": "full-suite-without-git-metadata.log",
+      "sha256": "c64168a95b421a5be6d2b060befd2366f5ec74655ec743124c13170d347742fc",
+      "bytes": 21463
+    },
+    {
+      "path": "gates.log",
+      "sha256": "71a10053c16206d732a70996b7a81f30bef7d9163c54418767198d72c5828b6d",
+      "bytes": 509
+    },
+    {
+      "path": "environment.txt",
+      "sha256": "a7994badaaba9c462b628412bbb2de9e61878a19952036a6835a09cd744ac70e",
+      "bytes": 46
+    }
+  ]
+}

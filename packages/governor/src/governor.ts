@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import { ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
-import { CheckCertificateV1, parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
+import { CandidateAdmissionTransientError, CandidateAdmissionBindingV1, CheckCertificateV1, parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { scopeCohort } from "../../learning/src/lesson-policy.js";
 import type { LearningActivation } from "../../learning/src/activation.js";
@@ -11,6 +11,7 @@ import type { LocalIntegrator } from "../../integration/src/local.js";
 import { deliverIntegratedCommit, type DeliveryAuthority, type DeliveryCommandV1, type DeliveryPolicy } from "../../integration/src/delivery.js";
 
 export interface TrustedCheckRunner {
+  forCandidate?(binding:CandidateAdmissionBindingV1):Promise<TrustedCheckRunner>;
   prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
   observeHead(repository:string):Promise<{sha:string;observedAt:string;digest:string}>;
   run(request:TrustedCheckRequestV1,bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}):Promise<TrustedCheckReceiptV1>;
@@ -25,7 +26,7 @@ export interface TrustedCheckIntegrationBinding {
   readonly leasePolicyDigest: string;
 }
 export class TrustedCheckCoordinator implements TrustedCheckService {
-  private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}}>();
+  private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};runner:TrustedCheckRunner}>();
   constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[];attemptLifetimeMs:number},private readonly clock=()=>new Date()){
     if(!Number.isSafeInteger(settings.attemptLifetimeMs)||settings.attemptLifetimeMs<1||settings.attemptLifetimeMs>TRUSTED_CHECK_LIMITS.maxLifetimeMs)throw new Error("trusted check attempt lifetime is outside contract bounds");
   }
@@ -45,27 +46,34 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     if(input.purpose==="recovery")await this.store.recoveryPolicyLease(input.missionId,input.sliceId,input.epoch,input.leaseToken,input.capabilityToken);
     let bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};
     const candidateSha=input.purpose==="final"?slice.candidateSha!:input.candidateSha;
-    try{bundle=await this.runner.prepareBundle(record.mission.repository,record.mission.baseSha,candidateSha);}catch{if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
+    let runner=this.runner;
+    try{
+      if(this.runner.forCandidate){
+        if(input.purpose!=="final")throw new MissionConflictError("Recovery candidate checkpoint admission is not configured");
+        runner=await this.runner.forCandidate(this.candidateBinding(record,slice,candidateSha));
+      }
+      bundle=await runner.prepareBundle(record.mission.repository,record.mission.baseSha,candidateSha);
+    }catch(error){if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
     let head:{sha:string;observedAt:string;digest:string};
-    try{head=await this.runner.observeHead(record.mission.repository);}catch{if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
+    try{head=await runner.observeHead(record.mission.repository);}catch(error){if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
     if(head.sha!==candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
     const now=this.clock(),expires=new Date(now.getTime()+this.settings.attemptLifetimeMs),attemptId=randomUUID();
     const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId:input.missionId,sliceId:input.sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId:input.checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
     const capability=randomBytes(32).toString("base64url");
     const binding={request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest};
     if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}
-    this.pending.set(attemptId,{capability,bundle});return request;
+    this.pending.set(attemptId,{capability,bundle,runner});return request;
   }
   async run(value:TrustedCheckRequestV1):Promise<TrustedCheckReceiptV1>{
     const request=parseTrustedCheckRequestV1(value),pending=this.pending.get(request.attemptId);
     if(!pending)throw new MissionConflictError("Trusted verifier attempt is unavailable after process restart");
-    try{return await this.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted verifier did not produce a receipt; attempt will expire UNKNOWN");}
+    try{return await pending.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted verifier did not produce a receipt; attempt will expire UNKNOWN");}
   }
   async submit(value:TrustedCheckReceiptV1,capability:string):Promise<CheckCertificateV1|null>{
     const receipt=value,request=parseTrustedCheckRequestV1(receipt.request),pending=this.pending.get(request.attemptId);
     if(!pending||!secretMatches(pending.capability,capability))throw new MissionConflictError("Verifier capability is invalid or expired");
     try{
-      await this.runner.verifyArtifacts(receipt);const head=await this.runner.observeHead(request.repository);
+      await pending.runner.verifyArtifacts(receipt);const head=await pending.runner.observeHead(request.repository);
       if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
       return await this.store.submitVerification!(receipt,createHash("sha256").update(capability).digest("hex"),head.sha,head.observedAt,head.digest,randomUUID());
     }finally{this.pending.delete(request.attemptId);}
@@ -75,9 +83,9 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     const request=await this.prepareShared({...input,purpose:"recovery"}),pending=this.pending.get(request.attemptId);
     if(!pending)throw new MissionConflictError("Trusted recovery capability was lost");
     let receipt:TrustedCheckReceiptV1;
-    try{receipt=await this.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted recovery execution is unavailable; attempt remains UNKNOWN until expiry");}
+    try{receipt=await pending.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted recovery execution is unavailable; attempt remains UNKNOWN until expiry");}
     try{
-      await this.runner.verifyArtifacts(receipt);const head=await this.runner.observeHead(request.repository);
+      await pending.runner.verifyArtifacts(receipt);const head=await pending.runner.observeHead(request.repository);
       if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
       return await this.store.submitRecoveryVerification(receipt,createHash("sha256").update(pending.capability).digest("hex"),head.sha,head.observedAt,head.digest);
     }finally{this.pending.delete(request.attemptId);}
@@ -120,7 +128,14 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     const request=await this.store.getCertificateRequest?.(missionId,sliceId,checkId);if(!request||request.policyVersion!==this.settings.policyVersion||request.policyDigest!==this.settings.policyDigest||request.verifierImageDigest!==this.settings.imageDigest)return null;
     const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);
     if(!record||!slice||certificate.repository!==record.mission.repository||certificate.candidateSha!==slice.candidateSha||certificate.leaseEpoch!==slice.leaseEpoch||certificate.policyDigest!==this.settings.policyDigest)return null;
-    const head=await this.runner.observeHead(record.mission.repository);return head.sha===certificate.localHeadSha?certificate:null;
+    try {
+      const runner=this.runner.forCandidate?await this.runner.forCandidate(this.candidateBinding(record,slice,certificate.candidateSha)):this.runner;
+      const head=await runner.observeHead(record.mission.repository);return head.sha===certificate.localHeadSha?certificate:null;
+    }catch{return null;}
+  }
+  private candidateBinding(record:NonNullable<Awaited<ReturnType<MissionStore["getMission"]>>>,slice:MissionSlice,candidateSha:string):CandidateAdmissionBindingV1 {
+    if(!record.plan?.approvedAt||slice.candidateSha!==candidateSha||slice.status!=="awaiting_verification")throw new MissionConflictError("Persisted final candidate admission is unavailable");
+    return {version:"orloom.candidate-admission.v1",missionId:record.mission.id,sliceId:slice.id,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,baseSha:record.mission.baseSha,candidateSha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),trustedCheckPolicyDigest:this.settings.leasePolicyDigest,scopes:[...slice.scopes],evidenceRefs:[...slice.evidenceRefs]};
   }
   async getIntegratedCertificate(missionId:string,sliceId:string,leaseEpoch:number,checkId:string){
     if(!this.store.getIntegratedCertificate||!this.store.getTrustedAttempt)return null;
