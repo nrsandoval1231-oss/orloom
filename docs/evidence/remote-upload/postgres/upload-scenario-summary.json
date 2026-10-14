@@ -1,0 +1,100 @@
+{
+  "candidateSha": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+  "execution": "EXECUTED_LOCAL_POSTGRES_AND_BARE_GIT_ONLY",
+  "sourcePipeline": "production SqlMissionStore + deliverIntegratedCommit + BareGitFastForwardIntegrator.openWithTestRemote",
+  "database": "fresh local PostgreSQL with independent pools and eight real migrations",
+  "actualEffect": "controlled local bare Git receive-pack ref updates using file URL; no App/network/provider request",
+  "controlledBoundaries": [
+    "fake scoped App token callback with fake token never logged",
+    "fake GitHub Check/PR APIs",
+    "controlled verifier receipt and final PASS certificate",
+    "controlled independent-review fixture",
+    "in-memory content-addressed artifact reader"
+  ],
+  "assertions": [
+    {
+      "at": "2026-10-14T02:08:57.912Z",
+      "name": "fresh_eight_migrations_independent_pool_backends",
+      "migrationCount": 8,
+      "independentBackendPids": true
+    },
+    {
+      "at": "2026-10-14T02:09:03.747Z",
+      "name": "success-actual-remote-upload",
+      "initialReservedRefExists": false,
+      "uploadInvocations": 1,
+      "finalReservedRefSha": "34eb2bde5f9089aa59c9d91b078a32c2b35f6b4e",
+      "uploadEffect": "observed",
+      "checkPosts": 1,
+      "prPosts": 1
+    },
+    {
+      "at": "2026-10-14T02:09:09.630Z",
+      "name": "concurrent-duplicate-claim-one-actual-ref-advance",
+      "callers": 2,
+      "uploadInvocations": 1,
+      "reservedRefAdvancedFromAbsentTo": "af91038d0eb6692df90294806300cb5cb45cc76b",
+      "durableUploadEffect": {
+        "state": "observed",
+        "external_id": "af91038d0eb6692df90294806300cb5cb45cc76b"
+      },
+      "callerOutcomes": [
+        "fulfilled",
+        "rejected"
+      ]
+    },
+    {
+      "at": "2026-10-14T02:09:15.805Z",
+      "name": "push-effect-then-interrupt-before-ack-replay-without-second-push",
+      "uploadInvocationsAcrossInterruptAndReplay": 1,
+      "uploadEffect": "observed",
+      "remoteRefSha": "a2be910510d549a869170b922929fe3eddfe6386",
+      "replayCheckPosts": 1,
+      "replayPrPosts": 1
+    },
+    {
+      "at": "2026-10-14T02:09:19.156Z",
+      "name": "absent-ref-after-prior-claim-remains-unknown",
+      "uploadEffect": "claimed",
+      "uploadInvocations": 0,
+      "checkPosts": 0,
+      "prPosts": 0
+    },
+    {
+      "at": "2026-10-14T02:09:23.152Z",
+      "name": "remote-branch-drift-after-write-blocks-check-and-pr",
+      "actualUploadCalls": 1,
+      "uploadEffect": "claimed",
+      "checkPosts": 0,
+      "prPosts": 0
+    },
+    {
+      "at": "2026-10-14T02:09:26.963Z",
+      "name": "remote-branch-created-after-absence-read-is-not-overwritten",
+      "actualUploadCalls": 1,
+      "remoteRefSha": "c90ad2496e00f03393081c75d2cf7db673ab20a1",
+      "uploadEffect": "claimed",
+      "checkPosts": 0,
+      "prPosts": 0
+    },
+    {
+      "at": "2026-10-14T02:09:30.578Z",
+      "name": "pinned-base-drift-blocks-upload-check-and-pr",
+      "actualUploadCalls": 0,
+      "uploadEffect": null,
+      "checkPosts": 0,
+      "prPosts": 0
+    },
+    {
+      "at": "2026-10-14T02:09:33.480Z",
+      "name": "dedicated-integration-ref-drift-blocks-check-and-pr",
+      "actualUploadCalls": 0,
+      "checkPosts": 0,
+      "prPosts": 0
+    }
+  ],
+  "limitations": [
+    "No real GitHub App, external URL, R2, provider, host, or network credential was used.",
+    "Receipt and review are controlled fixtures; this is not authentic CI/review or live publication evidence."
+  ]
+}

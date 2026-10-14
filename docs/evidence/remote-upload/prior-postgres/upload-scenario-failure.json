@@ -1,0 +1,5 @@
+{
+  "scenario": "success-actual-remote-upload",
+  "code": "MissionConflictError",
+  "message": "Trusted check coordinator does not match the configured lease and full-suite policy binding"
+}

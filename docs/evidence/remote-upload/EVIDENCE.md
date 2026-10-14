@@ -1,0 +1,9 @@
+# Governed remote upload evidence
+
+Exact source 954622e0013b201ed9f027bc0dac4656d0f0d82f passed all 150 tests and 14 root gates, then independent source review. The rejected 56eb790 source and review are retained: ordinary Git push could advance a competing ancestor ref. The accepted successor uses an expected-empty lease on the exact reserved ref, with no unrestricted force.
+
+A fresh private PostgreSQL 18.6 cluster applied eight migrations and used two independent connection pools with the production Governor, SqlMissionStore, delivery service and actual local bare Git transport. It demonstrated one upload under concurrent claims (one caller fulfilled, one rejected), exact readback, replay after a write before acknowledgment without another upload, unresolved absent claims, competing branch preservation, and closed Check/PR gates after remote, base or local-ref drift. The owned cluster stopped. Independent runtime review is retained alongside exact helper/build hashes.
+
+The first database attempt rejected a helper's incorrect lease-policy binding before upload. Its evidence and exact helper bytes are preserved. The repaired scenario separates lease-check and verifier-suite policy identities. Local timestamps are retained as observed; a known local/cloud clock offset prevents cross-host timing claims.
+
+GitHub App, Check/PR, verifier receipts, reviews and R2 artifact reads are controlled fixtures. The Git remote is a real local bare repository; its candidate object was preseeded, so this PostgreSQL scenario proves ref publication and does not prove transfer of a previously absent object. This proves bounded database/Git behavior, not live GitHub publication, Linux askpass execution, authentic cloud CI, deployment, provider use or commercial completion. No credentials, connection files or database cluster contents are included.

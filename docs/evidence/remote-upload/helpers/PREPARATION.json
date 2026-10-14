@@ -1,0 +1,95 @@
+{
+  "nodeId": "C4-REMOTE-UPLOAD-POSTGRES-PROOF-PREP",
+  "status": "SCENARIO_REPAIRED_AFTER_RETAINED_ACTUAL_PG_FAILURE_PENDING_ROOT_REEXECUTION",
+  "repository": "work/orloom-remote-upload",
+  "sourceShaUsedForPreparation": "56eb790856b64a3fadf053a959049588d0ea6a26",
+  "requiredFrozenSourceSha": "PENDING_ROOT_FREEZE_SUCCESSOR",
+  "filesSha256": {
+    "work/upg-proof/README.md": "574bf5b2f7b2ce7cd3d089e793844a457322fa2eae80a93b25881afd8a6c7e9f",
+    "work/upg-proof/run.mjs": "e37cc601b766d0d2a49274a29cfc72ded2a2990f2ddee0402590bd51af259440",
+    "work/upg-proof/scenario.mjs": "733e4d24053dfbb3c8d0bbe9ed4bd09379a3af360bae122bbfbd368c5b564d3c",
+    "work/upg-proof/create-manifests.mjs": "010477d0c0f9cb5a25ac6f21e2aa2ef18de2a2417ede3db93f10d6267cb05493",
+    "work/upg-proof/attempts/scenario-failed-f4a193db.mjs": "f4a193dbd381d1d9356bff73706a4f7ee4d41444b94fd605ffcd84adab2819b9"
+  },
+  "scope": [
+    "work/upg-proof/README.md",
+    "work/upg-proof/run.mjs",
+    "work/upg-proof/scenario.mjs",
+    "work/upg-proof/create-manifests.mjs",
+    "work/upg-proof/PREPARATION.json",
+    "work/upg-proof/attempts/scenario-failed-f4a193db.mjs"
+  ],
+  "validation": [
+    {
+      "command": "node --check work/upg-proof/run.mjs",
+      "exitCode": 0,
+      "result": "PASS; syntax only"
+    },
+    {
+      "command": "node --check work/upg-proof/scenario.mjs",
+      "exitCode": 0,
+      "result": "PASS; syntax only"
+    },
+    {
+      "command": "node --check work/upg-proof/create-manifests.mjs",
+      "exitCode": 0,
+      "result": "PASS; syntax only"
+    },
+    {
+      "check": "SHA-256 source/copy equality for all static askpass assets",
+      "result": "PASS at preparation snapshot; hashes recorded in README",
+      "files": [
+        "packages/integration/src/git-askpass.sh",
+        "packages/integration/src/git-askpass.cmd",
+        "packages/integration/src/git-askpass.ps1",
+        "dist/packages/integration/src/git-askpass.sh",
+        "dist/packages/integration/src/git-askpass.cmd",
+        "dist/packages/integration/src/git-askpass.ps1"
+      ]
+    }
+  ],
+  "platformModeStatus": "UNPROVEN_ON_WINDOWS; runner and manifest creator enforce the copied Unix helper executable bit only on POSIX. The eventual Linux proof must check it.",
+  "proofDesign": [
+    "Production SqlMissionStore, delivery service, and BareGitFastForwardIntegrator.openWithTestRemote() over actual local bare repositories",
+    "Fresh PostgreSQL schema from migrations 001 through 008 and two independent pools",
+    "Successful exact upload/readback, concurrent duplicate claim, interrupted post-push acknowledgement/replay, prior claimed-but-absent UNKNOWN, remote branch/base/local integration ref drift, and branch-creation race after absence read",
+    "Controlled fake App token callback, GitHub Check/PR APIs, receipt/verifier, independent review, and in-memory content-addressed artifact reader"
+  ],
+  "notRun": [
+    "scenario re-execution after repair; requires root authorization and exact frozen source binding",
+    "full repository gates",
+    "live GitHub/App credential, provider, host, external network, R2, or publication operation"
+  ],
+  "limits": [
+    "First actual PostgreSQL run failed at success scenario due solely observed fixture lease-policy binding mismatch; owned cluster cleanup reported STOPPED_OWNED_CLUSTER.",
+    "Repair is static and syntax-checked only. No repaired PostgreSQL behavior result is claimed.",
+    "No actual external GitHub or provider proof can be inferred from controlled local fixtures."
+  ],
+  "startedAtUtc": "UNKNOWN",
+  "finishedAtUtc": "2026-10-14T02:02:33Z",
+  "elapsedSeconds": null,
+  "modelAndConfig": "UNKNOWN",
+  "tokenUsage": "UNKNOWN",
+  "failureAndRepair": {
+    "firstActualRun": {
+      "evidence": "work/upg-proof/runtime/1791943561462-cc2062e4-54d4-42f8-9e29-fe1b83955b74/evidence",
+      "candidateSha": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+      "outcome": "FAIL",
+      "cleanup": "STOPPED_OWNED_CLUSTER",
+      "failedPhase": "scenario",
+      "scenario": "success-actual-remote-upload",
+      "error": "MissionConflictError: Trusted check coordinator does not match the configured lease and full-suite policy binding",
+      "executedScenarioSha256": "f4a193dbd381d1d9356bff73706a4f7ee4d41444b94fd605ffcd84adab2819b9"
+    },
+    "preservedExactExecutedScenario": "work/upg-proof/attempts/scenario-failed-f4a193db.mjs",
+    "repair": "Split leasePolicyDigest (SHA-256 of JSON [\"node-repo-suite-v1\"]) from verifier policyDigest. Use lease digest for store.claim, coordinator lease binding, and governor trusted-check policy digest; retain verifier suite digest for delivery/check receipts and policy.",
+    "validation": [
+      {
+        "command": "node --check work/upg-proof/scenario.mjs",
+        "exitCode": 0,
+        "result": "PASS; syntax only; no PostgreSQL rerun"
+      }
+    ],
+    "next": "Root/Terra may generate exact-candidate manifests and authorize a separate re-execution; no success is claimed."
+  }
+}

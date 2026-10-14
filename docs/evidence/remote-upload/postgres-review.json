@@ -1,0 +1,40 @@
+{
+  "reviewType": "independent_bounded_actual_postgres_runtime_review",
+  "candidateSha": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+  "baseSha": "884e91d5fb2760cc77bab9c75aae48d545dfc6e3",
+  "verdict": "PASS_CONTROLLED_POSTGRES_BEHAVIOR_ONLY",
+  "evidenceRoot": "work/upg-proof/runtime/1791943734082-7b2bbd12-9b04-4a99-a61b-6a9f8a8110b9/evidence",
+  "sourceReview": "work/remote-upload-source-review-954622e.json: PASS_SOURCE",
+  "controllerGates": "work/remote-upload-controller-gates-2026-10-14T02-04-23-622Z.log: 14 commands exit 0; 150 tests pass; diff check passes",
+  "identity": {
+    "sourceCheckout": "clean at candidate SHA during independent review",
+    "runner": "run.mjs checks clean source HEAD, complete compiled JS inventory and hashes, exact static helper set and hashes, copied helper equality, and candidate binding before launching PostgreSQL",
+    "currentScenarioSha256": "733e4d24053dfbb3c8d0bbe9ed4bd09379a3af360bae122bbfbd368c5b564d3c",
+    "helperManifestSha256": "b63840ab097425ce7c8847321580874817ffe1c0db06b4b05500a8796abf7175",
+    "preflight": "preflight.json records candidate SHA, PostgreSQL 18.6, compiled module hashes, and static helper hashes"
+  },
+  "acceptedEvidence": [
+    "Fresh local PostgreSQL cluster applied migrations 001 through 008; two independent pg pools held distinct backend PIDs.",
+    "Production SqlMissionStore, deliverIntegratedCommit, and BareGitFastForwardIntegrator.openWithTestRemote drove a local bare Git reserved ref from absent to the integrated SHA/tree; durable upload effect became observed before controlled Check and draft PR calls.",
+    "Two concurrent delivery callers produced one uploadRef invocation and one observed SQL effect; the losing caller rejected.",
+    "An injected failure after the actual ref write and before SQL observation left a claimed effect; replay read the ref, observed the effect, and proceeded without a second uploadRef invocation.",
+    "A previously claimed upload with an absent ref remained claimed and made no upload, Check, or PR call.",
+    "Branch drift after write, branch creation after absence read, pinned base drift, and local integration ref drift blocked downstream Check and PR calls. The independently created branch was preserved.",
+    "The successful manifest and runner log report STOPPED_OWNED_CLUSTER after scenario success; runner cleanup checks the owned marker and postmaster identity before stopping and checks the loopback port afterward."
+  ],
+  "priorFailure": {
+    "evidenceRoot": "work/upg-proof/runtime/1791943561462-cc2062e4-54d4-42f8-9e29-fe1b83955b74/evidence",
+    "outcome": "FAIL in scenario at trusted lease/full-suite policy binding; owned cluster reported stopped",
+    "preservedExecutedScenario": "work/upg-proof/attempts/scenario-failed-f4a193db.mjs",
+    "repair": "The later scenario separated lease policy digest from verifier suite policy digest; current scenario hash agrees with PREPARATION.json and the successful run contains all nine assertions. The first failure is retained, not treated as a pass."
+  },
+  "findings": [],
+  "limits": [
+    "This proves controlled local PostgreSQL and bare Git ref behavior only. GitHub App, Check, PR, verifier receipt, independent review, and artifact reader were controlled fakes; no real GitHub, R2, cloud, host, provider, credentialed publication, or deployed recovery is established.",
+    "The fixture seeds the candidate Git object on its local bare remote and deletes the temporary ref before delivery. It tests the production push's reserved ref creation and lease behavior, but not transfer of a previously absent Git object.",
+    "The run occurred on Windows. Unix askpass executable mode is explicitly UNPROVEN_ON_WINDOWS; Linux transport remains a separate gate.",
+    "The runtime manifest binds candidate source and compiled/helper hashes, but does not record an executed scenario-script hash. The reviewed current scenario hash matches the preparation record; runtime evidence alone cannot cryptographically prove the scenario bytes at execution time.",
+    "Cleanup is supported by runner-owned identity checks and recorded STOPPED_OWNED_CLUSTER, not an independent live process inspection in this read-only review."
+  ],
+  "completionCandidate": false
+}

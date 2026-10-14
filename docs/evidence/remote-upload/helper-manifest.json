@@ -1,0 +1,11 @@
+{
+  "candidateSha": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+  "files": {
+    "packages/integration/src/git-askpass.sh": "d509f44d0830f81b108748ce7286721f6721f393890f7c6980187819ce8ec027",
+    "dist/packages/integration/src/git-askpass.sh": "d509f44d0830f81b108748ce7286721f6721f393890f7c6980187819ce8ec027",
+    "packages/integration/src/git-askpass.cmd": "d418cd8baf4052e2557c91896996908f79fdcdd73b4eb5532a4cd98b3f9d38ba",
+    "dist/packages/integration/src/git-askpass.cmd": "d418cd8baf4052e2557c91896996908f79fdcdd73b4eb5532a4cd98b3f9d38ba",
+    "packages/integration/src/git-askpass.ps1": "36730886175b075200421f5a9ddbb2d5e7b055e831af56d6aa9199a7165c85a7",
+    "dist/packages/integration/src/git-askpass.ps1": "36730886175b075200421f5a9ddbb2d5e7b055e831af56d6aa9199a7165c85a7"
+  }
+}

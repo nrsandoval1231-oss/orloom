@@ -1,0 +1,140 @@
+{
+  "candidate": "954622e0013b201ed9f027bc0dac4656d0f0d82f",
+  "files": [
+    {
+      "file": "postgres/manifest.json",
+      "sha256": "26e9d6d6f49cd2e03a1d4113f3f7cd726d4e9ddbe4a25ba9b750fe307f33bc36",
+      "bytes": 350
+    },
+    {
+      "file": "postgres/preflight.json",
+      "sha256": "1092def55bb7b8ed65f03afc86e103856dd28dba82ef0411d2134ea6744f76e6",
+      "bytes": 8445
+    },
+    {
+      "file": "postgres/runner.jsonl",
+      "sha256": "077356f5fdc9b697d9c278e2651a515af0563dd7a70b0d201fea718a2803956b",
+      "bytes": 208
+    },
+    {
+      "file": "postgres/postgres.log",
+      "sha256": "a7025c9da8983bcc7e6085204321f1e8d4404627a3ff07ad7724529721798094",
+      "bytes": 1213
+    },
+    {
+      "file": "postgres/upload-scenario.jsonl",
+      "sha256": "4b3dfdec615dafcdc276ce172e4231fd7e29dbbdc834f27e493de279b9fa8d1b",
+      "bytes": 1876
+    },
+    {
+      "file": "postgres/upload-scenario-summary.json",
+      "sha256": "ea49806f9361296c02ec47bd66256d2233350d840f9b07bc819c11fc879c7696",
+      "bytes": 3467
+    },
+    {
+      "file": "prior-postgres/manifest.json",
+      "sha256": "029a7489aed7ebc4cf24fb6d5ac7513521fca537689ead2e67cedff625f9b391",
+      "bytes": 426
+    },
+    {
+      "file": "prior-postgres/preflight.json",
+      "sha256": "1092def55bb7b8ed65f03afc86e103856dd28dba82ef0411d2134ea6744f76e6",
+      "bytes": 8445
+    },
+    {
+      "file": "prior-postgres/runner.jsonl",
+      "sha256": "7ef0495158fa6c6724612633e48d113080138d8909dd5538aa8dcee50091d002",
+      "bytes": 108
+    },
+    {
+      "file": "prior-postgres/postgres.log",
+      "sha256": "1a6fda0cfe5668bb0e808d3c68b62fa596323d2b5c81ff49d324f199db931f1d",
+      "bytes": 1213
+    },
+    {
+      "file": "prior-postgres/upload-scenario.jsonl",
+      "sha256": "11c528a5c8d969bedd2a4942254073cd3464195d3db86abf23a6591eaf0e55a4",
+      "bytes": 141
+    },
+    {
+      "file": "prior-postgres/upload-scenario-failure.json",
+      "sha256": "e56b3653ee86a4382fa5c326665fdd95b3b7cc276b17da13e64014f08c8bc922",
+      "bytes": 191
+    },
+    {
+      "file": "prior-source-review.json",
+      "sha256": "2e77b245756891734b72b543503fb13179edd293e7bb3df07422c6c305aaa636",
+      "bytes": 3380
+    },
+    {
+      "file": "source-review.json",
+      "sha256": "af472f2b8a08ad6ae23f53110b3e4231dd8827074909ebee07d375b0c437f8c5",
+      "bytes": 1928
+    },
+    {
+      "file": "postgres-review.json",
+      "sha256": "871ec50fbcc899599ad884c7a88237405029baafe38065e3cd46dbae64cc9db5",
+      "bytes": 4269
+    },
+    {
+      "file": "prior-http-failure.log",
+      "sha256": "54398241900a99a3ba4008b1a6ef2e6f9014afae74f642f6cd79abefb3d86477",
+      "bytes": 17572
+    },
+    {
+      "file": "prior-source-gates.log",
+      "sha256": "8ee80836d97ddef1767414b7a29e5ac7c6d395bf0bdf22133c573cf378e92e4b",
+      "bytes": 17908
+    },
+    {
+      "file": "controller-gates.log",
+      "sha256": "0f9190c9b270affdf0b62c9609cf9ec83ffc2432d4aee748463ad9ce3196dc30",
+      "bytes": 17895
+    },
+    {
+      "file": "transport-repair.json",
+      "sha256": "66aba36ba75287fc2b7b9748335950fb074e17be96310e637679c92f72914af7",
+      "bytes": 1371
+    },
+    {
+      "file": "transport-direction.md",
+      "sha256": "caa1c025f8b6128cd946c4ec98a8620673bb62ebf805d0fd8353adf1e228e9c2",
+      "bytes": 5109
+    },
+    {
+      "file": "helpers/run.mjs",
+      "sha256": "e37cc601b766d0d2a49274a29cfc72ded2a2990f2ddee0402590bd51af259440",
+      "bytes": 10199
+    },
+    {
+      "file": "helpers/scenario.mjs",
+      "sha256": "733e4d24053dfbb3c8d0bbe9ed4bd09379a3af360bae122bbfbd368c5b564d3c",
+      "bytes": 24540
+    },
+    {
+      "file": "helpers/create-manifests.mjs",
+      "sha256": "010477d0c0f9cb5a25ac6f21e2aa2ef18de2a2417ede3db93f10d6267cb05493",
+      "bytes": 3013
+    },
+    {
+      "file": "helpers/scenario-prior.mjs",
+      "sha256": "f4a193dbd381d1d9356bff73706a4f7ee4d41444b94fd605ffcd84adab2819b9",
+      "bytes": 24358
+    },
+    {
+      "file": "helpers/PREPARATION.json",
+      "sha256": "0bd7804395e8ea826a111fcf035b69059c31b1a0fb8611ae95d388e255866a90",
+      "bytes": 5004
+    },
+    {
+      "file": "compiled-manifest.json",
+      "sha256": "eb45fbd60f44d4264169d313765a180c2fbc8e8b71518a8454fc5406ac076f6c",
+      "bytes": 7709
+    },
+    {
+      "file": "helper-manifest.json",
+      "sha256": "b63840ab097425ce7c8847321580874817ffe1c0db06b4b05500a8796abf7175",
+      "bytes": 791
+    }
+  ]
+}
