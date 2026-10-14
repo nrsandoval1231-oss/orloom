@@ -9,3 +9,6 @@ docs/evidence/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-
 
 # This executed helper's retained hash includes its final blank line.
 docs/evidence/c3-runtime/helpers/continue-proof.sh whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve the exact executed startup-policy helper bytes, including its final blank line.
+docs/evidence/controller-policy-postgres/helpers/scenario.mjs whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
