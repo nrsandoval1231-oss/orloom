@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ADMITTED_DEPENDENCIES, SuiteAdmissionError, admitSuiteInput, assertEligibleAskpassSources, discoverSuiteTests, verifySuiteInputUnchanged } from './suite-policy.js';
 import { enforceSuiteDeadline, executeStages, runSerialTestFiles, runStage } from './stage-runner.js';
 import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostics.js';
+import { writeResultMarker } from './emit-result.js';
 
 const root = '/work/source';
 const limit = 360_000, logLimit = 65_536, start = performance.now();
@@ -17,7 +18,7 @@ function add(target, text, isOut) {
   if (next > logLimit) { overflow = true; return; }
   target.push(bytes); if (isOut) outSize = next; else errSize = next;
 }
-const env = { PATH: '/usr/local/bin:/usr/bin:/bin', HOME: '/nonexistent', LANG: 'C', CI: '1', NODE_ENV: 'test' };
+const env = { PATH: '/usr/local/bin:/usr/bin:/bin', HOME: '/nonexistent', TMPDIR: '/work', LANG: 'C', CI: '1', NODE_ENV: 'test' };
 
 async function* fixedStages() {
   yield { name: POLICY_STAGE_ORDER[1], file: '/usr/local/bin/node', args: ['/opt/orloom-verifier/node_modules/typescript/bin/tsc', '--noEmit'], cwd: root, env, maxLogBytes: logLimit };
@@ -102,14 +103,10 @@ try {
 }
 result = enforceSuiteDeadline(result, remainingMs);
 process.exitCode = result.exitCode === 0 ? 0 : result.exitCode === 1 ? 1 : 70;
-let marker = { exitCode: result.exitCode, truncated: result.truncated, stdoutBytes: result.stdout.length, stderrBytes: result.stderr.length, stdout: result.stdout.toString('base64'), stderr: result.stderr.toString('base64') };
-let markerLine = `ORLOOM-RESULT:${Buffer.from(JSON.stringify(marker)).toString('base64')}\n`;
 const finalResult = enforceSuiteDeadline(result, remainingMs);
 if (finalResult !== result) {
   result = finalResult; process.exitCode = 70;
-  marker = { exitCode: result.exitCode, truncated: result.truncated, stdoutBytes: result.stdout.length, stderrBytes: result.stderr.length, stdout: result.stdout.toString('base64'), stderr: result.stderr.toString('base64') };
-  markerLine = `ORLOOM-RESULT:${Buffer.from(JSON.stringify(marker)).toString('base64')}\n`;
 }
-process.stdout.write(markerLine);
+await writeResultMarker({ exitCode: result.exitCode, truncated: result.truncated, stdoutBytes: result.stdout.length, stderrBytes: result.stderr.length, stdout: result.stdout.toString('base64'), stderr: result.stderr.toString('base64') });
 if (result.exitCode !== null) process.exit(result.exitCode === 0 ? 0 : result.exitCode === 1 ? 1 : 70);
 process.exit(70);

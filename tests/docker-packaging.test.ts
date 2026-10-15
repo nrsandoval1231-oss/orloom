@@ -1,12 +1,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { chmod, cp, lstat, mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 test("control-plane Docker build stage includes and runs its asset-copy helper", async () => {
   const stage = await mkdtemp(join(tmpdir(), "orloom-docker-build-"));
+  async function makeWritable(target: string): Promise<void> {
+    let info;
+    try { info = await lstat(target); } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return; throw error; }
+    if (info.isSymbolicLink()) return;
+    if (info.isDirectory()) {
+      await chmod(target, 0o700);
+      for (const entry of await readdir(target)) await makeWritable(join(target, entry));
+    } else await chmod(target, 0o600);
+  }
   try {
     const dockerfile = await readFile("apps/control-plane/Dockerfile", "utf8");
     const buildStage = dockerfile.split(/^FROM /m)[1]!;
@@ -29,5 +38,5 @@ test("control-plane Docker build stage includes and runs its asset-copy helper",
       assert.deepEqual(await readFile(output), await readFile(join("packages/integration/src", name)));
       if (name.endsWith(".sh") && process.platform !== "win32") assert((await stat(output)).mode & 0o111);
     }
-  } finally { await rm(stage, { recursive: true, force: true }); }
+  } finally { await makeWritable(stage); await rm(stage, { recursive: true, force: true }); }
 });

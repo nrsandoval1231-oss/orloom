@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { writeResultMarker } from './emit-result.js';
 
 const input = '/work';
 const checkPolicy = process.env.ORLOOM_CHECK_POLICY;
@@ -39,6 +40,6 @@ const code = await new Promise(resolve => { child.on('close', (c, signal) => res
 clearTimeout(timer);
 const result = { exitCode: code, truncated: overflow, stdoutBytes: outBytes, stderrBytes: errBytes,
   stdout: Buffer.concat(stdout).toString('base64'), stderr: Buffer.concat(stderr).toString('base64') };
-process.stdout.write(`ORLOOM-RESULT:${Buffer.from(JSON.stringify(result)).toString('base64')}\n`);
+await writeResultMarker(result);
 if (code === null || overflow) process.exit(70);
 process.exit(code === 0 ? 0 : 1);

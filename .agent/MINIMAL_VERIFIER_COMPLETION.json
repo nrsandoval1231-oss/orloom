@@ -1,0 +1,76 @@
+{
+  "task": "minimal-verifier-qualification-2026-10-15",
+  "status": "SECOND_REPAIR_SOURCE_READY_CONTROLLER_IMAGE_REBUILD_REQUIRED",
+  "baseCommit": "9457b1bcb10b085602f337b253580d23ad0b1d93",
+  "changedFiles": [
+    "infra/verifier-isolation/Dockerfile",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/emit-result.js",
+    "infra/verifier-isolation/run-check.js",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "packages/verification/src/policy.ts",
+    "tests/approved-worker-startup.test.ts",
+    "tests/docker-packaging.test.ts",
+    "tests/verification-runner.test.ts",
+    ".agent/MINIMAL_VERIFIER_PACKET.md",
+    ".agent/CURRENT_STATE.md",
+    ".agent/WORK_GRAPH.md"
+  ],
+  "repairs": [
+    {
+      "rootCause": "Trusted repository-suite child processes inherited /tmp, which is mounted noexec even though the suite already has executable writable /work.",
+      "change": "Bind TMPDIR=/work into the trusted stage environment, record it in the suite policy manifest, and increment the suite policy identity to v7. HOME remains /nonexistent. Seven stages and launcher sandbox limits are unchanged."
+    },
+    {
+      "rootCause": "Linux private-policy test fixture chose os.homedir(), which resolves to /nonexistent in the verifier stage.",
+      "change": "Use the trusted TMPDIR parent (or repository parent fallback) for the fixture so it remains outside /work/source and preserves POSIX permission checks."
+    },
+    {
+      "rootCause": "Docker packaging test copies read-only source directory modes and recursive cleanup cannot remove those copied directories as nonroot.",
+      "change": "Fixture cleanup skips symlinks, restores write/search permission to copied directories before descending, and restores file write permission only within its private stage. Production input and mode checks are unchanged."
+    },
+    {
+      "rootCause": "The production full-suite result marker was written to a pipe and immediately followed by process.exit(), which could discard queued tail bytes; retained RED ended at exactly 65,536 characters with unterminated JSON.",
+      "change": "Both syntax and full-suite paths now share emit-result.js and await the stdout write callback before exiting. The regression sends a 233,167-byte complete marker through a deliberately slow pipe reader. Marker schema, max log sizes, deadlines, UNKNOWN classification, and sandbox limits are unchanged. Policy advances v7 to v8."
+    }
+  ],
+  "policy": {
+    "id": "node-repo-suite-v1",
+    "oldVersion": "orloom.node-repo-suite.v6",
+    "newVersion": "orloom.node-repo-suite.v8",
+    "newDigest": "9d6d53f336b2719712ed6ba836b090198538ceb790c1f542b5930069353e1417",
+    "allSevenStagesPreserved": true,
+    "sandboxResourceAndDeadlineLimitsChanged": false
+  },
+  "imageRecipe": {
+    "base": "node@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d",
+    "nodeVersion": "24.15.0",
+    "nodeBinarySha256": "d1de76d8edf2fededf6f8b30d244e2c0529ac607923a018283b77e9c74bd932c",
+    "install": "Full locked dependencies through bundled npm; scripts disabled; sanitized environment; separate empty user/global config; cache removed.",
+    "debianSnapshot": "2026-10-14",
+    "privateRecipe": "C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/host-preparation-2026-10-15/minimal-verifier/Dockerfile.slim"
+  },
+  "validation": [
+    { "command": "git diff --check", "result": "PASS" },
+    { "command": "node --check infra/verifier-isolation/run-check.js infra/verifier-isolation/run-repo-suite.js infra/verifier-isolation/emit-result.js tests/verification-runner.test.ts", "result": "PASS on Windows Node v24.21.0" },
+    { "command": "Slow-consumer pipe probe of production emit-result.js with stdout and stderr payloads each 65,536 bytes", "result": "PASS; captured the complete 233,167-byte ORLOOM-RESULT frame and both decoded log payloads exactly." },
+    { "command": "node --test --test-name-pattern=\"trusted result marker survives\" tests/verification-runner.test.ts", "result": "BLOCKED before test execution: Node could not resolve generated packages/verification/src/artifact-store.js in this unbuilt Windows checkout. The production helper was independently exercised by the passing slow-consumer pipe probe above." },
+    { "command": "Transpile policy.ts and canonical.ts with existing sibling TypeScript, load policy and calculate suite digest", "result": "PASS; computed v8 digest 9d6d53f336b2719712ed6ba836b090198538ceb790c1f542b5930069353e1417." },
+    { "command": "Exact policy-stage environment parity", "result": "PASS; helper and policy both bind HOME=/nonexistent and TMPDIR=/work." },
+    { "command": "Retained Linux fail-before evidence", "result": "Original private node-repo-suite-v1-qualification-stdout.txt is 79,280 bytes; marker line ended at 65,536 chars; JSON parse reported UnterminatedJSON at byte 49,141. Not rewritten." },
+    { "command": "node ..\\orloom\\node_modules\\typescript\\bin\\tsc --noEmit", "result": "BLOCKED: Windows denied creating a junction to the existing node_modules; compilation then lacked Node type declarations." },
+    { "command": "wsl --list --quiet", "result": "BLOCKED: WSL returned Wsl/E_ACCESSDENIED." },
+    { "command": "Git Bash syntax check for infra/verifier-isolation/launch-verifier.sh", "result": "BLOCKED: sandbox denied NtCreateDirectoryObject during bash startup." }
+  ],
+  "remaining": [
+    "The controller's in-progress v2 image contains stale helper bytes from repair one; preserve its current evidence. Rebuild a new exact image from the corrected helper and run build, typecheck, validate, focused affected tests and all 66 tests under the existing nonroot/read-only-source policy.",
+    "Controller to retain frozen source/build/input/image identity evidence and compare the old retained RED with repaired exact-policy behavior.",
+    "Independent exact-source review remains pending.",
+    "No Linux-only behavior, Docker image build, runsc certification, host proof, full suite pass or PR publication is claimed by this builder."
+  ],
+  "repairCount": 2,
+  "startedAtUtc": "UNKNOWN",
+  "finishedAtUtc": "2026-10-15T21:11:57Z",
+  "model": "GPT-6; exact configuration identity unavailable",
+  "externalActions": { "Docker": "NOT RUN", "host": "NOT RUN", "commit": "NOT RUN", "push": "NOT RUN", "merge": "NOT RUN" }
+}

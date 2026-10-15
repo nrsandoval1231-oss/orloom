@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-15T21:25:46.865Z",
+  "image": "sha256:0f068249a489b8a74a4ff3ad513b02ae5319a3531256f1b0c132dc7ffb6882cf",
+  "container": "f0adb157a955b08a9679c953e1c197476b912b5784ba27091f641a8ce3fa19e2",
+  "runtime": "runc",
+  "exitCode": 0,
+  "innerExitCode": 0,
+  "truncated": false,
+  "parseError": null,
+  "elapsedMs": 206150,
+  "testFiles": 66,
+  "testSummaries": 66,
+  "tests": 383,
+  "pass": 382,
+  "fail": 0,
+  "skipped": 1,
+  "stages": [
+    "STAGE dependency-lock-admission END 0",
+    "STAGE typecheck END 0",
+    "STAGE clean-build END 0",
+    "STAGE test-discovery END 0",
+    "STAGE node-tests END 0",
+    "STAGE foundation-validation END 0",
+    "STAGE offline-security-policy END 0"
+  ],
+  "sourceManifestSha256": "d82ee73941cd4a66d99dd41aace557402962bdcae7a40ff044058054bccac596",
+  "runscAcceptance": "NOT RUN"
+}
