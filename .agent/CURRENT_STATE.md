@@ -1,47 +1,18 @@
 # Orloom current state
 
-Updated 2026-10-14. Canonical authority: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md), the preserved product/Living Loom vision and the latest owner direction.
+Updated 2026-10-15 UTC. Canonical authority: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md) and latest owner instruction. Product completion remains OPEN.
 
-## Current foundation and authority
+Baseline main `eed0a9264ec2b5c64f59a247a4aa6be93e3677e4`, tree `6666a4b575e6fc412b0a165eebbde720f1a83423`. Active isolated branch: `feat/approved-worker-composition`. [Packet](APPROVED_COMPOSITION_PACKET.md), [graph](WORK_GRAPH.md), [acceptance ledger](../docs/validation/2026-10-15-approved-composition.md). Previous state and graph bytes are archived unchanged under `.agent/archive/2026-10-15-before-approved-composition-*`.
 
-- Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving exact reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`.
-- The repair remains independently accepted at its 89-file manifest: 167/167 tests, zero failures/skips/cancellations, including a clean locked-install repeat. [Its validation ledger](../docs/validation/2026-10-14-consolidation.md) is preserved unchanged.
-- Worker PR #19 is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; publication readback and evidence preservation verified. It includes PR #2 broker/runtime/checkout source and hardened typed recovery transport, while keeping normal startup disabled. [Worker validation](../docs/validation/2026-10-14-worker-composition.md) records final independent results and publication identity for this distinct source slice.
-- Independent worker v2 source review: accepted for bounded source merge with startup disabled; build/typecheck/validate PASS, serial full suite 188/188 with zero skips/failures. The review-time manifest and current documentation overlay are distinguished in the worker ledger.
-- Twelve original PR #2 source/test files retain original Git blob identities. Normal worker main refuses before secrets, claims or network. Preserved broker-main is historical executable source, not an approved deployment entrypoint.
-- Owner-authorized cleanup/advancement of reviewed, ready work continues. No blanket frozen-head/no-merge restriction is current. All 16 original open PRs (#2–17) are resolved; PR #2 was closed as superseded. Open PR count was zero at the verified 2026-10-14 04:40 UTC cleanup checkpoint, before later foundation work.
-- PR #2 evidence preservation includes 40 missing original evidence blobs, three archival state records and three historical checkpoint documents. These proofs remain tied to original source and controlled fixtures.
+This candidate composes protected admission into explicitly configured verifier startup, adds the trusted in-process one-approved-slice Docker execution API and controller-private cancellation settlement. Lease content/credentials are validated before builder work. Existing executeLease, candidate importer, independent verifier and Loom remain authoritative. Cancellation before runtime launch or after candidate submission can settle conservatively; UNKNOWN retains quarantine and all reserved spend. Terminal journal evidence supports restart settlement replay.
 
-## Candidate-admission successor
+Independent review returned FIX, then PASS for the repaired bounded source. Final build/typecheck/validate passed; Linux Node 24.22.0 serial suite: 285/287 pass, zero failures, two existing skips, 125907 ms. Actual PostgreSQL 18 fresh database/two-pool proof passed. The 126-entry final source manifest has zero mismatches after the suite; see exact evidence in the ledger.
 
-The optional controller-owned admission source validates persisted final-candidate/index/bundle bindings, imports a single direct-child candidate into a private bare store, and binds the existing verifier to independently extracted source and a candidate-local head. Normal startup does not instantiate this bridge. Recovery checkpoint admission remains refused. [The separate foundation validation record](../docs/validation/2026-10-14-foundation.md) governs this successor; neither older ledger is broadened.
+Normal worker main remains disabled. The generic lane is an injectable fixture/source seam; the concrete wrapper constructs DockerWorkerRuntime with the trusted journal bridge. No provider execution, operational deployment, runsc image acceptance, real R2/App publication or autonomous verified PR is established. If SQL intent persists but trusted file intent cannot be written, automatic settlement remains quarantined for operator recovery. Spend is not refunded without authoritative billing evidence.
 
-Independent final foundation validation passed a fresh locked install, build/typecheck/validate and 202/202 tests with zero failures/skips/cancellations. The 119-file manifest remained unchanged before/after. Initial missing-Git-index harness failure and full successful rerun are both retained in the foundation ledger. Boundary review accepted the inactive source scope with no blocking findings.
+Next action: publish the focused branch and review PR, then obtain independent publication review before any merge or release. Do not merge or deploy.
 
-## Implemented source versus operational acceptance
-
-The base composes judgment/recovery, evidence-governed learning, Athena scheduling, trusted verification, local integration, event-driven Loom and closed-by-default delivery. The remote-upload source implements reserved-branch transport, scoped App contents authority, fresh SHA/tree readback and UNKNOWN reconciliation. No real GitHub credential/upload/publication is established by the consolidation.
-
-Normal executable startup supplies no live judgment, scheduling or learning-activation adapter. The normal worker entrypoint deliberately refuses execution despite included broker/runtime source. The recovery HTTP client validates typed and bound Governor receipts, but no broker recovery executor consumes them. Measured improvement remains null; deterministic fixture ordering, retained lessons and positive episodes are not causal improvement. Six attested lease slots are not six productive isolated builders.
-
-## Historical evidence retained at its original scope
-
-- PR #1: bounded actual PostgreSQL concurrency/restart evidence, accepted at historical main `6110c692f47202978b2d22d22f6522aa4aa59277`.
-- Local integration `2a02606`, delivery `f6023ac` and controller `0725fa2`: independently accepted source and bounded actual PostgreSQL proofs. Their owned clusters were stopped. Loom also has controlled PostgreSQL/Chromium viewer evidence. These do not establish live builders or authenticate a new candidate.
-- Latest audited actual full cloud-suite attempt: `f6023acade03091a494644409e9bc65d28d59ad4`, FAIL after 271438 ms, zero certificates; Unix symlink teardown raised ENOTDIR. PR #14 retains evidence/cleanup. Its 95 evidence blobs and two historical state files are preserved unchanged in the consolidated tree; their evidence scope remains historical.
-- Fixture repair `d4c1428` and throughput source `e078a51` are composed in the base. The latter retained source review reported 151 tests/14 root gates. Those historical results are not final combined-candidate results, Linux timing proof or cloud certification.
-- Remote-upload source `954622e` retained 150 tests/source acceptance and bounded two-pool PostgreSQL/local bare-Git ref-replay evidence. The proof preseeded the candidate object and did not prove real credentialed new-object publication.
-- PR #15 repair records and historical state/manifest blobs are preserved; the all-stack path inventory finds no absent paths across the 15 untruncated PR #3–17 trees after 97 evidence additions (historical archives additional). This is path coverage, not a new runtime proof.
-- Earlier frozen-head/host-attempt instructions and their outcomes remain historical records. V1–V4 prototypes remain synthetic, preserved and outside live harness telemetry.
-
-## Foundation next steps
-
-The [foundation checklist](../docs/FOUNDATION_STATUS.md) separates accepted source groundwork from product activation. Next: bounded recovery/cancellation execution and explicitly configured admission/runtime composition, followed by authentic integrated validation. Retain the existing architecture and safety boundaries.
-
-## Open finish gates
-
-operational composition of the optional candidate-bundle importer; recovery checkpoint/strategy executor; cancellation propagation, exact-container reconciliation and conservative spend/quarantine release; clean Docker image acceptance; authentic runsc full-suite certification; live PostgreSQL validation of the combined repairs; secure provider/App/R2 credentials; bounded live Jev and builder execution with spend control; real Sol planning and multiple builders; fresh-task baseline/strategy learning evaluation; operational publication; deployment and cross-component recovery.
-
-This work does not grant new provider spending, credentials, paid-host authority, automatic retries of UNKNOWN side effects, or production deployment permission. Use secure configuration flows and the actual scoped owner authority for each next step.
+Remaining product gates: operational startup/restart ownership; secure provider/App/R2 configuration and bounded spending; owner target task/base/scopes/checks; Sol planning; multiple isolated productive lanes; bounded checkpoint recovery; lesson activation and measured fresh-task benefits; exact-candidate runsc final checks; real UI execution/recovery controls; operational delivery and release authority. Existing deployed UI/version is unchanged and unknown. Fixtures are not live evidence.
 
 
+PR25 exact-head review repair: blank-template/R2-only activation and R2 private secret-file regressions reproduced and fixed. [Repair ledger](../docs/validation/2026-10-15-pr25-startup-repair.md): build/typecheck/validate PASS, Linux 288/290 with zero failures/two existing skips, real PostgreSQL PASS, 127 source entries unchanged. Earlier independent source PASS applies to its historical scope; repaired head requires fresh review. Next authorized source work is explicit-config operational startup on a separate stacked branch; no live-provider/host/release authority granted.

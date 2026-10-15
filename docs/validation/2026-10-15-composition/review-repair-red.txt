@@ -1,0 +1,53 @@
+PR25 exact-head review repair: red run before implementation
+Commit: 8c25eea
+
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+
+BUILD_EXIT=0
+
+Γ£ö factory stays disabled without explicit configuration and builds a valid runner (4.034ms)
+Γ£û blank sample environment plus owner session token and R2-only settings do not activate verification (0.5833ms)
+Γ£û R2 file secret settings are resolved securely and invalid files override raw values (2.3718ms)
+Γ£ö partial or malformed admission configuration fails closed (0.6653ms)
+Γ£ö rejects artifact roots equal to or below source root and relative roots (0.226ms)
+Γ£ö rejects temporary paths, overlap in either direction, and malformed maps (0.4277ms)
+Γä╣ tests 6
+Γä╣ suites 0
+Γä╣ pass 4
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 159.7347
+
+Γ£û failing tests:
+
+test at dist\tests\verification-config.test.js:22:1
+Γ£û blank sample environment plus owner session token and R2-only settings do not activate verification (0.5833ms)
+  Error: trusted verification and candidate-admission configuration must be complete
+      at createTrustedVerificationRunner (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/verifier/src/index.js:13:15)
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/verification-config.test.js:24:24)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at dist\tests\verification-config.test.js:27:1
+Γ£û R2 file secret settings are resolved securely and invalid files override raw values (2.3718ms)
+  Error: trusted verification and candidate-admission configuration must be complete
+      at createTrustedVerificationRunner (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/verifier/src/index.js:13:15)
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/verification-config.test.js:38:29)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+FOCUSED_TEST_EXIT=1
+

@@ -1,0 +1,27 @@
+PR25 exact-head review repair: green run after implementation
+Commit before changes: 8c25eea
+
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+
+BUILD_EXIT=0
+
+Γ£ö factory stays disabled without explicit configuration and builds a valid runner (4.1015ms)
+Γ£ö blank sample environment plus owner session token and R2-only settings do not activate verification (0.4165ms)
+Γ£ö R2 file secret settings are resolved securely and invalid files override raw values (7.2769ms)
+Γ£ö partial or malformed admission configuration fails closed (0.3671ms)
+Γ£ö rejects artifact roots equal to or below source root and relative roots (0.2206ms)
+Γ£ö rejects temporary paths, overlap in either direction, and malformed maps (0.4339ms)
+Γä╣ tests 6
+Γä╣ suites 0
+Γä╣ pass 6
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 204.7495
+
+FOCUSED_TEST_EXIT=0
+

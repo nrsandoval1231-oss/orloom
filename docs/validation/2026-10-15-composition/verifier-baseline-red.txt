@@ -1,0 +1,47 @@
+Γ£û factory stays disabled without explicit configuration and builds a valid runner (1.4439ms)
+Γ£û partial or malformed admission configuration fails closed (0.4355ms)
+Γ£ö rejects artifact roots equal to or below source root and relative roots (0.3793ms)
+Γ£ö rejects temporary paths, overlap in either direction, and malformed maps (0.421ms)
+Γä╣ tests 4
+Γä╣ suites 0
+Γä╣ pass 2
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 79.7183
+
+Γ£û failing tests:
+
+test at dist\tests\verification-config.test.js:13:1
+Γ£û factory stays disabled without explicit configuration and builds a valid runner (1.4439ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'TrustedVerificationRunner'
+  - 'AdmittingVerificationRunner'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/verification-config.test.js:16:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'TrustedVerificationRunner',
+    expected: 'AdmittingVerificationRunner',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\verification-config.test.js:18:1
+Γ£û partial or malformed admission configuration fails closed (0.4355ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/verification-config.test.js:22:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /configuration must be complete/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

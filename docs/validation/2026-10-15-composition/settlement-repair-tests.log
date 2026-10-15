@@ -1,0 +1,13 @@
+Γ£ö cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved (1136.7433ms)
+Γ£ö a cancelled candidate awaiting verification settles only after exact runtime absence (828.0048ms)
+Γ£ö pre-runtime cancellation settles atomically only when no binding exists (812.2741ms)
+Γ£ö memory settlement handles a candidate already awaiting verification (1.9892ms)
+Γ£ö memory pre-runtime settlement is idempotent and rejects late new runtime binding (0.4844ms)
+Γä╣ tests 5
+Γä╣ suites 0
+Γä╣ pass 5
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 2891.736

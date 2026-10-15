@@ -1,0 +1,11 @@
+Command: node --test dist/tests/verification-config.test.js dist/tests/candidate-admission.test.js
+Status: NOT RUN; preceding build failed because TypeScript compiler is absent, and dist test outputs are unavailable.
+
+Command: npm ci --ignore-scripts --offline
+Exit: 1
+Exact output:
+npm error code ENOTEMPTY
+npm error syscall rmdir
+npm error path C:\Users\nrsan\Documents\Codex\2026-10-15\task-4\orloom\node_modules\@openai\codex-win32-x64
+npm error errno -4051
+npm error ENOTEMPTY: directory not empty, rmdir 'C:\Users\nrsan\Documents\Codex\2026-10-15\task-4\orloom\node_modules\@openai\codex-win32-x64'

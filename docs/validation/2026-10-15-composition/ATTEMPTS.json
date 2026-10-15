@@ -1,0 +1,17 @@
+{
+  "scope": "approved-composition source and controlled validation",
+  "attempts": [
+    {"action":"initial git clone", "outcome":"sandbox DNS failure; approved escalation clone succeeded"},
+    {"action":"tool availability", "outcome":"sandbox Docker/WSL access and GitHub auth unavailable; approved read-only escalation found existing tools and authenticated account"},
+    {"action":"locked dependency install", "outcome":"concurrent offline install disrupted tooling; controller restored using npm ci --ignore-scripts; 99 packages, audit zero vulnerabilities"},
+    {"action":"initial Windows journal regression", "outcome":"sandbox hard-link EPERM; outside sandbox intended missing entries() assertion reproduced", "evidence":"journal-red.txt"},
+    {"action":"baseline verifier regression", "outcome":"two expected assertions failed against transpiled baseline verifier; production source rebuilt afterward", "evidence":"verifier-baseline-red.txt"},
+    {"action":"Windows focused cancellation suite", "outcome":"two existing loopback HTTP cases EACCES; clean SQL settlement tests passed; Linux validation supersedes environment failures", "evidence":"settlement-focused-tests.log"},
+    {"action":"first controlled integration fixture", "outcome":"test expected login 200, actual specified endpoint response 204; corrected fixture assertion and passing rerun", "evidence":"integration.txt"},
+    {"action":"initial Linux full suite", "outcome":"279 pass / 281 total / 2 existing skips / zero failure; predates final review repairs", "evidence":"linux-suite-initial.txt"},
+    {"action":"independent source review", "outcome":"FIX; bounded repair followed by independent source PASS", "evidence":"REVIEW-1.md and REVIEW-2.md"},
+    {"action":"PostgreSQL rerun using previous proof database", "outcome":"zero claim winners because previous capacity-reuse assertion deliberately left a live lease; new harness uses fresh proof database per run", "evidence":"postgres-shared-fixture-failure.txt"},
+    {"action":"validation script changed while first rerun still executing", "outcome":"first shell later read modified bytes and returned syntax error; concurrent runs wrote same interim log; final suite captured in separate immutable output path", "evidence":"final-linux-suite.txt"}
+  ],
+  "operationalClaims": {"liveProvider":false,"runscAcceptance":false,"deployment":false,"productGeneratedGitHubPR":false,"refunds":false}
+}

@@ -1,0 +1,9 @@
+Γ£ö controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (2905.906631ms)
+Γä╣ tests 1
+Γä╣ suites 0
+Γä╣ pass 1
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 3215.510441

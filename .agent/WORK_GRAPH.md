@@ -35,3 +35,7 @@ Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDAT
 - Linux final gates: install, typecheck, build, validate, verifier regressions, focused suite and full suite passed. Full suite: 247/248 pass, zero failures, one deployment-host ownership/mode test skipped. The exact source and evidence manifests are verified against committed blobs. See [PR23 receipt](../docs/validation/2026-10-14-pr23-verifier-receipt.md).
 - State: implementation and local validation complete; independent review of the exact R candidate is pending. This bounded source proof does not close operational runtime, actual PostgreSQL, runsc, provider, deployment, or product finish gates.
 
+
+| Approved composition successor (2026-10-15) | Active bounded source packet: protected admission startup, exact approved single Docker lane API, trusted cancellation settlement/replay. Final candidate validation/review pending; normal worker main disabled; no live provider/PR or deployment claim. See [ledger](../docs/validation/2026-10-15-approved-composition.md). |
+
+Final source gates for approved composition: build/typecheck/validate PASS; Linux 285/287 with zero failures and two existing skips; actual PostgreSQL two-pool proof PASS; independent bounded source review PASS. Operational gates remain open; exact commit/PR recorded at publication.
