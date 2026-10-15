@@ -1,0 +1,77 @@
+diff --git a/apps/control-plane/src/loom-projection.ts b/apps/control-plane/src/loom-projection.ts
+index b384820..72e5df3 100644
+--- a/apps/control-plane/src/loom-projection.ts
++++ b/apps/control-plane/src/loom-projection.ts
+@@ -49,6 +49,7 @@ export function projectLoom(mission: Mission | null, plan: MissionPlan | null, s
+       if (typeof pr === "number" && Number.isSafeInteger(pr) && pr > 0) refs.push({ kind: "delivery", id: `pull-request:${pr}` });
+       const checkRun = str(d.checkRunId); if (checkRun) refs.push({ kind: "delivery", id: checkRun });
+       const integrated = str(d.integratedSha); if (integrated) refs.push({ kind: "integration", id: integrated });
++      const observedRemoteSha = str(d.observedRemoteSha); if (observedRemoteSha) refs.push({ kind: "delivery", id: observedRemoteSha });
+     }
+     const controllerRunId = str(d.controllerRunId);
+     if (event.type.startsWith("slice.cancellation_settled") && controllerRunId) refs.push({ kind: "recovery", id: controllerRunId });
+diff --git a/apps/control-plane/src/owner-readiness.ts b/apps/control-plane/src/owner-readiness.ts
+index 6bb9f83..6c33ce8 100644
+--- a/apps/control-plane/src/owner-readiness.ts
++++ b/apps/control-plane/src/owner-readiness.ts
+@@ -1,6 +1,7 @@
+ import { createHash } from "node:crypto";
+ import type { Config } from "../../../packages/config/src/config.js";
+ import type { Mission, MissionEvent, MissionPlan, MissionSlice } from "../../../packages/contracts/src/mission.js";
++import type { TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
+ import { canonicalJson } from "../../../packages/judgment/src/canonical.js";
+ 
+ export type OwnerCancellationState = "none" | "requested" | "pre-runtime-settled" | "runtime-absence-settled" | "quarantined-unknown";
+@@ -45,7 +46,7 @@ function validPlan(mission: Mission | null, plan: MissionPlan | null, slices: Mi
+ }
+ 
+ /** Reports only control-plane policy and durable plan prerequisites, never live execution health. */
+-export function evaluateOwnerReadiness(config: Config, authorities: { verification: boolean; integration: boolean; delivery: boolean }, mission: Mission | null, plan: MissionPlan | null, slices: MissionSlice[] | null, now = Date.now()): OwnerReadiness {
++export function evaluateOwnerReadiness(config: Config, authorities: { verification: TrustedCheckCoordinator | null | undefined; integration: boolean; delivery: boolean }, mission: Mission | null, plan: MissionPlan | null, slices: MissionSlice[] | null, now = Date.now()): OwnerReadiness {
+   const reasons: string[] = [];
+   const expiry = config.capacityEvidenceExpiresAt ?? null;
+   const validExpiry = iso(expiry) && Date.parse(expiry) > now;
+@@ -58,14 +59,26 @@ export function evaluateOwnerReadiness(config: Config, authorities: { verificati
+     && Number.isSafeInteger(config.workerMaxWallSeconds) && (config.workerMaxWallSeconds ?? 0) > 0
+     && config.workerAllowedProviders?.length && config.workerAllowedModels?.length);
+   const expectedCheckDigest = config.trustedCheckPolicy?.length ? createHash("sha256").update(canonicalJson(config.trustedCheckPolicy)).digest("hex") : null;
+-  const verificationConfigured = Boolean(authorities.verification && config.trustedCheckPolicy?.length
+-    && digest64(config.trustedCheckPolicyDigest) && expectedCheckDigest === config.trustedCheckPolicyDigest && config.trustedVerifierId
+-    && digest64(config.trustedVerifierImageDigest) && config.trustedVerificationPolicyVersion);
++  let bindingMatches = false;
++  try {
++    const binding = authorities.verification?.integrationBinding();
++    const allowed = binding?.allowedChecks;
++    bindingMatches = Boolean(binding && Array.isArray(allowed) && allowed.length > 0
++      && allowed.every(check => typeof check === "string" && check.length > 0) && new Set(allowed).size === allowed.length
++      && digest64(binding.policyDigest) && binding.policyVersion === config.trustedVerificationPolicyVersion
++      && binding.imageDigest === config.trustedVerifierImageDigest && binding.verifierId === config.trustedVerifierId
++      && binding.leasePolicyDigest === config.trustedCheckPolicyDigest
++      && digest64(config.trustedCheckPolicyDigest) && expectedCheckDigest === config.trustedCheckPolicyDigest
++      && config.trustedCheckPolicy?.length && allowed.every(check => config.trustedCheckPolicy!.includes(check)));
++  } catch { bindingMatches = false; }
++  const verificationConfigured = Boolean(bindingMatches && config.trustedCheckPolicy?.length);
+   const integrationConfigured = config.integrationEnabled === true && authorities.integration;
+   const deliveryConfigured = config.deliveryEnabled === true && authorities.delivery;
+   const planValid = validPlan(mission, plan, slices);
+   const planDigest = planValid ? createHash("sha256").update(canonicalJson(plan!.slices)).digest("hex") : null;
+-  const checksBound = planValid && plan!.slices.every(slice => slice.checks.length > 0 && slice.checks.every(check => config.trustedCheckPolicy?.includes(check)));
++  let coordinatorChecks: readonly string[] = [];
++  try { coordinatorChecks = authorities.verification?.integrationBinding().allowedChecks ?? []; } catch { coordinatorChecks = []; }
++  const checksBound = planValid && plan!.slices.every(slice => slice.checks.length > 0 && slice.checks.every(check => config.trustedCheckPolicy?.includes(check) && coordinatorChecks.includes(check)));
+   const missionPermitsWork = Boolean(mission && !["cancelling", "cancelled", "unknown", "failed"].includes(mission.status));
+   if (!mission || !plan || !slices) reasons.push("Durable mission or plan data is unavailable.");
+   else if (!planValid) reasons.push("The durable approved plan does not match the current mission slices.");
+diff --git a/apps/control-plane/src/server.ts b/apps/control-plane/src/server.ts
+index 054badc..0244041 100644
+--- a/apps/control-plane/src/server.ts
++++ b/apps/control-plane/src/server.ts
+@@ -163,7 +163,7 @@ export function createControlPlane(config: Config, jobs: JobStore, missionStore:
+           const limit=10_000,pageSize=1_000,deadline=Date.now()+8_000,events=[] as Awaited<ReturnType<typeof governor.events>>;let cursor=0,invalid=false,overflow=false;
+           try{while(events.length<=limit){if(Date.now()>=deadline)throw new Error("Loom history read deadline exceeded");let timer:ReturnType<typeof setTimeout>|undefined;let page:Awaited<ReturnType<typeof governor.events>>;try{page=await Promise.race([governor.events(id,cursor),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error("Loom history read deadline exceeded")),Math.max(1,deadline-Date.now()));})]);}finally{if(timer)clearTimeout(timer);}if(!Array.isArray(page)||page.length>pageSize)throw new Error("Invalid mission event page");if(!page.length)break;for(const event of page){if(event.missionId!==id||!Number.isSafeInteger(event.cursor)||event.cursor<=cursor){invalid=true;break;}cursor=event.cursor;events.push(event);if(events.length>limit){overflow=true;break;}}if(invalid||overflow)break;if(page.length<pageSize)break;}}
+           catch{return send(res,503,JSON.stringify({error:"Mission history is unavailable; refresh to reconnect"}));}
+-          if(events.length>limit){events.length=limit;overflow=true;}const historyInvalid=overflow||invalid;const baseProjection=projectLoom(record.mission,record.plan,record.slices,events,{stale:historyInvalid});const baseReadiness=evaluateOwnerReadiness(config,{verification:Boolean(trustedChecks),integration:Boolean(localIntegration),delivery:Boolean(deliveryController?.policy&&deliveryController.authority)},record.mission,record.plan,record.slices);const readiness=historyInvalid||baseProjection.state==="UNKNOWN"?{...baseReadiness,state:"unavailable" as const,reasons:[...baseReadiness.reasons,historyInvalid?"Mission history is truncated or inconsistent.":"Mission state or durable evidence is inconsistent."]}:baseReadiness;const baseCancellation=evaluateOwnerCancellation(record.mission,record.slices,events);const cancellation=historyInvalid?{...baseCancellation,state:"quarantined-unknown" as const,reasons:[...new Set([...baseCancellation.reasons,"Mission history is truncated or inconsistent."])]}:baseCancellation;const projection={...baseProjection,readiness,cancellation};const page=events.filter(event=>event.cursor>after).slice(0,pageSize);const hasMore=events.some(event=>event.cursor>(page.at(-1)?.cursor??after));return send(res,200,JSON.stringify({projection,events:page,overflow,hasMore,nextCursor:page.at(-1)?.cursor??after}));
++          if(events.length>limit){events.length=limit;overflow=true;}const historyInvalid=overflow||invalid;const baseProjection=projectLoom(record.mission,record.plan,record.slices,events,{stale:historyInvalid});const baseReadiness=evaluateOwnerReadiness(config,{verification:trustedChecks,integration:Boolean(localIntegration),delivery:Boolean(deliveryController?.policy&&deliveryController.authority)},record.mission,record.plan,record.slices);const readiness=historyInvalid||baseProjection.state==="UNKNOWN"?{...baseReadiness,state:"unavailable" as const,reasons:[...baseReadiness.reasons,historyInvalid?"Mission history is truncated or inconsistent.":"Mission state or durable evidence is inconsistent."]}:baseReadiness;const baseCancellation=evaluateOwnerCancellation(record.mission,record.slices,events);const cancellation=historyInvalid?{...baseCancellation,state:"quarantined-unknown" as const,reasons:[...new Set([...baseCancellation.reasons,"Mission history is truncated or inconsistent."])]}:baseCancellation;const projection={...baseProjection,readiness,cancellation};const page=events.filter(event=>event.cursor>after).slice(0,pageSize);const hasMore=events.some(event=>event.cursor>(page.at(-1)?.cursor??after));return send(res,200,JSON.stringify({projection,events:page,overflow,hasMore,nextCursor:page.at(-1)?.cursor??after}));
+         }
+         const record=await governor.get(id);return record?send(res,200,JSON.stringify(record)):send(res,404,JSON.stringify({error:"Not found"}));
+       }

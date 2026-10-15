@@ -43,3 +43,6 @@ docs/evidence/validation/2026-10-15-owner-readiness-combined/** -text whitespace
 
 # Preserve final corrected-base UI validation bytes.
 docs/evidence/validation/2026-10-15-owner-readiness-capacity-base/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve exact PR27 mapping regression and gate evidence.
+docs/evidence/validation/2026-10-15-pr27-readiness-observation/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

@@ -13,6 +13,7 @@ const load = file => import(pathToFileURL(join(source, 'dist', file)).href);
 const { createControlPlane } = await load('apps/control-plane/src/server.js');
 const { MemoryJobStore } = await load('packages/contracts/src/memory-store.js');
 const { MemoryMissionStore } = await load('packages/contracts/src/memory-mission-store.js');
+const { TrustedCheckCoordinator } = await load('packages/governor/src/governor.js');
 const require = createRequire(import.meta.url);
 const playwrightPath = process.env.PLAYWRIGHT_MODULE ?? 'C:/Users/nrsan/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright';
 const { chromium } = require(playwrightPath);
@@ -49,6 +50,18 @@ const readyConfig = {
   workerMaxProviderCalls: 1, workerMaxInputTokens: 1000, workerMaxOutputTokens: 1000, workerMaxWallSeconds: 30,
   workerAllowedProviders: ['synthetic-fixture'], workerAllowedModels: ['synthetic-fixture-model'],
   trustedVerifierId: 'synthetic-verifier-fixture', trustedVerifierImageDigest: 'f'.repeat(64), trustedVerificationPolicyVersion: 'synthetic-policy-v1',
+};
+const readyCoordinator = new TrustedCheckCoordinator(store, {}, {
+  imageDigest: readyConfig.trustedVerifierImageDigest, verifierId: readyConfig.trustedVerifierId,
+  policyDigest: createHash('sha256').update('synthetic-verification-policy').digest('hex'),
+  leasePolicyDigest: readyConfig.trustedCheckPolicyDigest, policyVersion: readyConfig.trustedVerificationPolicyVersion,
+  allowedChecks: checks, attemptLifetimeMs: 60_000,
+});
+const startReadyServer = async () => {
+  server = createControlPlane(readyConfig, new MemoryJobStore(), store, undefined, readyCoordinator);
+  await new Promise((resolveListen, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolveListen); });
+  const address = server.address(); assert(address && typeof address === 'object');
+  return `http://127.0.0.1:${address.port}`;
 };
 let origin = await startServer();
 const url = `${origin}/loom?mission=${encodeURIComponent(mission.id)}`;
@@ -168,7 +181,7 @@ try {
   await store.approvePlan(readyMission.id);
   await browser.close(); browser = null;
   await new Promise((resolveClose, reject) => server.close(error => error ? reject(error) : resolveClose()));
-  origin = await startServer(readyConfig);
+  origin = await startReadyServer();
   browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const readyContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
   const readyPage = await readyContext.newPage();

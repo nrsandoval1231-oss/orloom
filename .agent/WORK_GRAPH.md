@@ -62,3 +62,9 @@ External review 5537793590 accepted the prior three direct fixes but reproduced 
 PR25 and PR26 exact heads above passed independent review and remain frozen/unmerged. Owner authorized READY packet OWNER_READINESS_PACKET.md on feat/owner-readiness-recovery, stacked on accepted PR26 9347c170. Existing canonical inspector gains truthful configuration prerequisites, cancellation state and durable recovery references. Final evidence/review/publication tracked in docs/validation/2026-10-15-owner-readiness.md. No live host/runtime/provider/deployment authority.
 
 Rebase override (2026-10-15): the UI successor is locally rebased onto repaired PR26 `2dc187651b2616f8274eba31b07862ffaffafbc6`. Historical UI gates/manifests below apply to pre-rebase `c6a6b264a84a374b82b198ff3129216c25092e09` only. Current combined candidate remains HOLD for fresh source/build/browser/PostgreSQL/full-suite verification and independent review. No UI branch push or PR publication occurred. PR26 exact-head external review remains OPEN.
+
+## Current PR27 correction (2026-10-15)
+
+Main f69e909 contains accepted PR26 a92e6a8 tree. PR27 dd589b8 targets main. External review 5539182411 supersedes prior UI acceptance: actual verifier binding/support and observedRemoteSha projection repairs are READY in PR27_READINESS_OBSERVATION_PACKET.md. Test-first repair, final exact candidate gates and independent review precede same-PR publication. Reviewer owns merge; no activation or deployment. Historical statements above retain their original scope.
+
+PR27 corrected mapping local gates PASS: final Linux382total/380pass/zero failures/two existing skips; build/typecheck/validate, focused24/24, browser, actual PostgreSQL and independent bounded source review PASS. Manifest8de135882a6396b60aa8283801b431cd797f20a11498813e4d4673425461a96d raw/build/staged hashes match. External exact-head review and live product proof OPEN; reviewer owns merges.

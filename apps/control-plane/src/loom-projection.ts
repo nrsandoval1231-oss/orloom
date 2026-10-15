@@ -49,6 +49,7 @@ export function projectLoom(mission: Mission | null, plan: MissionPlan | null, s
       if (typeof pr === "number" && Number.isSafeInteger(pr) && pr > 0) refs.push({ kind: "delivery", id: `pull-request:${pr}` });
       const checkRun = str(d.checkRunId); if (checkRun) refs.push({ kind: "delivery", id: checkRun });
       const integrated = str(d.integratedSha); if (integrated) refs.push({ kind: "integration", id: integrated });
+      const observedRemoteSha = d.observedRemoteSha; if (typeof observedRemoteSha === "string" && /^[a-f0-9]{40}$/i.test(observedRemoteSha)) refs.push({ kind: "delivery", id: observedRemoteSha });
     }
     const controllerRunId = str(d.controllerRunId);
     if (event.type.startsWith("slice.cancellation_settled") && controllerRunId) refs.push({ kind: "recovery", id: controllerRunId });

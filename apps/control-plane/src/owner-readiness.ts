@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Config } from "../../../packages/config/src/config.js";
 import type { Mission, MissionEvent, MissionPlan, MissionSlice } from "../../../packages/contracts/src/mission.js";
+import type { TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { canonicalJson } from "../../../packages/judgment/src/canonical.js";
 
 export type OwnerCancellationState = "none" | "requested" | "pre-runtime-settled" | "runtime-absence-settled" | "quarantined-unknown";
@@ -45,7 +46,7 @@ function validPlan(mission: Mission | null, plan: MissionPlan | null, slices: Mi
 }
 
 /** Reports only control-plane policy and durable plan prerequisites, never live execution health. */
-export function evaluateOwnerReadiness(config: Config, authorities: { verification: boolean; integration: boolean; delivery: boolean }, mission: Mission | null, plan: MissionPlan | null, slices: MissionSlice[] | null, now = Date.now()): OwnerReadiness {
+export function evaluateOwnerReadiness(config: Config, authorities: { verification: TrustedCheckCoordinator | null | undefined; integration: boolean; delivery: boolean }, mission: Mission | null, plan: MissionPlan | null, slices: MissionSlice[] | null, now = Date.now()): OwnerReadiness {
   const reasons: string[] = [];
   const expiry = config.capacityEvidenceExpiresAt ?? null;
   const validExpiry = iso(expiry) && Date.parse(expiry) > now;
@@ -58,14 +59,26 @@ export function evaluateOwnerReadiness(config: Config, authorities: { verificati
     && Number.isSafeInteger(config.workerMaxWallSeconds) && (config.workerMaxWallSeconds ?? 0) > 0
     && config.workerAllowedProviders?.length && config.workerAllowedModels?.length);
   const expectedCheckDigest = config.trustedCheckPolicy?.length ? createHash("sha256").update(canonicalJson(config.trustedCheckPolicy)).digest("hex") : null;
-  const verificationConfigured = Boolean(authorities.verification && config.trustedCheckPolicy?.length
-    && digest64(config.trustedCheckPolicyDigest) && expectedCheckDigest === config.trustedCheckPolicyDigest && config.trustedVerifierId
-    && digest64(config.trustedVerifierImageDigest) && config.trustedVerificationPolicyVersion);
+  let bindingMatches = false, coordinatorChecks: readonly string[] = [];
+  try {
+    const binding = authorities.verification?.integrationBinding();
+    const allowed = binding?.allowedChecks;
+    bindingMatches = Boolean(binding && Array.isArray(allowed) && allowed.length > 0
+      && allowed.every(check => typeof check === "string" && check.length > 0) && new Set(allowed).size === allowed.length
+      && digest64(binding.policyDigest) && typeof config.trustedVerificationPolicyVersion === "string" && config.trustedVerificationPolicyVersion.length > 0 && binding.policyVersion === config.trustedVerificationPolicyVersion
+      && digest64(config.trustedVerifierImageDigest) && binding.imageDigest === config.trustedVerifierImageDigest
+      && typeof config.trustedVerifierId === "string" && config.trustedVerifierId.length > 0 && binding.verifierId === config.trustedVerifierId
+      && binding.leasePolicyDigest === config.trustedCheckPolicyDigest
+      && digest64(config.trustedCheckPolicyDigest) && expectedCheckDigest === config.trustedCheckPolicyDigest
+      && config.trustedCheckPolicy?.length && allowed.every(check => config.trustedCheckPolicy!.includes(check)));
+    if (bindingMatches) coordinatorChecks = allowed!;
+  } catch { bindingMatches = false; }
+  const verificationConfigured = Boolean(bindingMatches && config.trustedCheckPolicy?.length);
   const integrationConfigured = config.integrationEnabled === true && authorities.integration;
   const deliveryConfigured = config.deliveryEnabled === true && authorities.delivery;
   const planValid = validPlan(mission, plan, slices);
   const planDigest = planValid ? createHash("sha256").update(canonicalJson(plan!.slices)).digest("hex") : null;
-  const checksBound = planValid && plan!.slices.every(slice => slice.checks.length > 0 && slice.checks.every(check => config.trustedCheckPolicy?.includes(check)));
+  const checksBound = planValid && plan!.slices.every(slice => slice.checks.length > 0 && slice.checks.every(check => config.trustedCheckPolicy?.includes(check) && coordinatorChecks.includes(check)));
   const missionPermitsWork = Boolean(mission && !["cancelling", "cancelled", "unknown", "failed"].includes(mission.status));
   if (!mission || !plan || !slices) reasons.push("Durable mission or plan data is unavailable.");
   else if (!planValid) reasons.push("The durable approved plan does not match the current mission slices.");

@@ -1,0 +1,20 @@
+# Independent bounded source review — PR27 observation correction
+
+Verdict: PASS (bounded source review; no blocking findings).
+
+Reviewed 2026-10-15 UTC on branch feat/owner-readiness-recovery against base dd589b81ff1445178ef9d11a27eea04dad39b849 and .agent/PR27_READINESS_OBSERVATION_PACKET.md. This verdict supersedes prior source acceptance only for this frozen candidate. It is not live acceptance, merge authorization, or a product-completion verdict.
+
+Exact candidate: source-manifest.json SHA256 5df7ad2e67cc904b087e1386db9e6a4103125516b5e5d68b115eeaa6e905ee0d. Independently recomputed the manifest hash and all 192 listed file hashes: 192 matched, zero mismatches. Root owns the 127-file build manifest and execution gates; this reviewer did not build or execute tests.
+
+Inspected actual diff, owner-readiness.ts, server.ts, loom-projection.ts, focused unit/HTTP regressions, synthetic browser fixture correction, production main.ts coordinator construction, TrustedCheckCoordinator.integrationBinding/allowedChecks and integration checks, SQL delivery event persistence and delivery adapter update calls. The harness references .agent/AGENT_RULES.md, which is absent; CURRENT_STATE.md and the bounded packet were available.
+
+Both reported P2 corrections are present:
+
+- Readiness receives the actual coordinator rather than its truthiness. Its binding must provide nonempty unique checks, valid policy digest, matching configured verifier identity/image/version, matching lease/check-policy digest and valid recomputed configured check digest. Every approved planned check must also be supported by that coordinator. Missing methods, missing binding and throwing access fail closed. Production main constructs allowedChecks from its actual selected check, so a broad configured list cannot stand in for support. The verifier policy digest and lease allowlist digest have distinct roles; the implementation preserves that distinction. A supported subset may satisfy readiness when all planned checks are covered; broader operational integration eligibility remains enforced by Governor and is not granted by this read model.
+- Production SQL check/PR observations persist observedRemoteSha without integratedSha in their observation payload. Delivery timeline projection now retains valid 40-hex observedRemoteSha as a delivery reference. Pending integratedSha remains an integration reference; checkRunId and pullRequestNumber mappings remain intact. Null/malformed remote revisions invent no reference, while a valid retained revision on an UNKNOWN event is an observation rather than completion evidence. The added mapping does not participate in closure logic.
+
+Protected boundaries: owner GET authentication remains before mission/Loom reads; the change only reads coordinator binding metadata and durable history. No prepare/run/probe, worker/provider activity, durable mutation, retry, settlement, release/refund or execution authority is added. Configuration remains allowlisted; liveExecution remains unverified and meaning explicitly excludes live attestation. Canonical loom-page.ts is unchanged. History inconsistency/unavailable handling continues to override readiness. The synthetic browser fixture now supplies a real bounded coordinator without executing it.
+
+Evidence inspected: red-tests.txt records the intended ready-versus-unverified failure and missing remote revision reference failure on the prior product. focused-tests.txt records 24 tests, 24 pass, zero failures/skips. build.txt and typecheck.txt show their compiler commands without diagnostics; validate.txt records foundation validation passed. browser.txt reports PASS_SYNTHETIC_BROWSER; postgres.txt explicitly retains synthetic configuration and no live execution/delivery/deployment limitations. These are inspected artifacts, not independently rerun attestations. Full Linux/full-suite/exact build binding and final browser/PostgreSQL evidence reconciliation remain the root controller's acceptance responsibility.
+
+No source mutations, builds, tests, external calls, publication or merge were performed by this reviewer. Only this review artifact was written.

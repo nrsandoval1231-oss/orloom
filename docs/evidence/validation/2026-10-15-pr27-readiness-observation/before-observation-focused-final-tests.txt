@@ -1,0 +1,32 @@
+Γ£ö readiness is bounded to configuration evidence and becomes unavailable for stale views (1.9042ms)
+Γ£ö cancellation summary reports durable states by exact lease epoch (0.1968ms)
+Γ£ö certificate links exist only while the matching current slice is awaiting verification (0.134ms)
+Γ£ö Loom renders its tested certificate rule and keeps explicit fallback and bounded polling controls (1.1643ms)
+Γ£ö Loom projection preserves ownership and dependencies without inventing progress (2.2021ms)
+Γ£ö durable verified, certified, and integrated evidence closes every planned slice (0.6164ms)
+Γ£ö contradictions, unknown state, duplicate and out-of-order cursors fail closed (0.4185ms)
+Γ£ö candidate, lease, certificate, tree and review bindings must remain exact (0.2474ms)
+Γ£ö durable scheduling, recovery and learning events receive named safe inspector labels (0.2156ms)
+Γ£ö empty, missing, hostile labels and mismatched mission records remain unavailable and text only (0.1255ms)
+Γ£ö approved plan membership and exact proof causality are required for closure (0.2148ms)
+Γ£ö pending certificate IDs bind to certified checks independent of check order (0.1233ms)
+Γ£ö certificate digest contradictions and missing certification digests cannot close Loom (0.8887ms)
+Γ£ö certificate digests bind to their IDs rather than array membership (0.2179ms)
+Γ£ö owner Loom read requires owner session and is side-effect free with memory-store reconstruction (40.9543ms)
+Γ£ö owner Loom projection survives SQL store reload and keeps exact durable cancellation evidence (1272.8799ms)
+Γ£ö inconsistent durable history makes owner readiness unavailable without adding events (6.2694ms)
+Γ£ö Loom readiness uses the actual coordinator binding and fails closed for absent, throwing, or mismatched bindings (20.2228ms)
+Γ£ö owner readiness is bounded, allowlisted, and validates expiring capacity and approved plan (1.8677ms)
+Γ£ö owner cancellation recognizes only exact current-epoch durable settlement events (0.3545ms)
+Γ£ö cancelled or uncertain missions cannot report execution prerequisites ready (1.0185ms)
+Γ£ö readiness requires the coordinator's immutable binding to match configured verifier and planned checks (0.7072ms)
+Γ£ö cancellation displays direct unleased tombstones and rejects duplicate current proof (0.1515ms)
+Γ£ö recovery and delivery timeline retains recorded identity without inferring completion (1.1401ms)
+Γä╣ tests 24
+Γä╣ suites 0
+Γä╣ pass 24
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 1483.5919

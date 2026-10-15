@@ -4,6 +4,7 @@ import { test } from "node:test";
 import { evaluateOwnerCancellation, evaluateOwnerReadiness } from "../apps/control-plane/src/owner-readiness.js";
 import { projectLoom } from "../apps/control-plane/src/loom-projection.js";
 import type { Config } from "../packages/config/src/config.js";
+import type { TrustedCheckCoordinator } from "../packages/governor/src/governor.js";
 import type { Mission, MissionEvent, MissionPlan, MissionSlice } from "../packages/contracts/src/mission.js";
 
 const digest="a".repeat(64), sha="b".repeat(40), checkDigest=createHash("sha256").update('["check:unit"]').digest("hex");
@@ -11,7 +12,9 @@ const mission:Mission={id:"mission-1",repository:"owner/repo",baseSha:sha,object
 const plan:MissionPlan={missionId:mission.id,slices:[{id:"slice-1",objective:"work",dependencies:[],owner:"core",scopes:["src"],checks:["check:unit"],budgetCents:100}],recommendedBy:"owner",recommendedAt:mission.createdAt,approvedAt:mission.createdAt};
 const slices:MissionSlice[]=[{...plan.slices[0]!,missionId:mission.id,status:"ready",leaseEpoch:2,leaseToken:null,leaseExpiresAt:null,candidateSha:null,evidenceRefs:[]}];
 const config:Config={mode:"cloud",port:3000,sessionToken:"never serialize me",workerToken:"worker-secret",capacitySlots:1,maxLanes:1,capacityEvidenceDigest:digest,capacityEvidenceExpiresAt:"2026-10-16T00:00:00.000Z",trustedCheckPolicy:["check:unit"],trustedCheckPolicyDigest:checkDigest,trustedVerifierId:"verifier",trustedVerifierImageDigest:digest,trustedVerificationPolicyVersion:"v1",workerMaxProviderCalls:1,workerMaxInputTokens:1,workerMaxOutputTokens:1,workerMaxWallSeconds:1,workerAllowedProviders:["provider"],workerAllowedModels:["model"],integrationEnabled:true,deliveryEnabled:true,integrationBareRepository:"C:/private/repo",reviewArtifactRoot:"C:/private/reviews",deliveryPolicyFile:"C:/private/policy"};
-const authorities={verification:true,integration:true,delivery:true};
+const coordinatorBinding={allowedChecks:["check:unit"],policyDigest:digest,policyVersion:"v1",imageDigest:digest,verifierId:"verifier",leasePolicyDigest:checkDigest};
+const coordinator={integrationBinding:()=>coordinatorBinding} as unknown as TrustedCheckCoordinator;
+const authorities={verification:coordinator,integration:true,delivery:true};
 const event=(cursor:number,type:string,data:Record<string,unknown>):MissionEvent=>({cursor,type,data,missionId:mission.id,createdAt:mission.createdAt});
 
 test("owner readiness is bounded, allowlisted, and validates expiring capacity and approved plan",()=>{
@@ -49,6 +52,30 @@ test("cancelled or uncertain missions cannot report execution prerequisites read
   assert.equal(evaluateOwnerReadiness({...config,trustedCheckPolicyDigest:digest},authorities,mission,plan,slices,now).state,"unverified");
 });
 
+test("readiness requires the coordinator's immutable binding to match configured verifier and planned checks",()=>{
+  const now=Date.parse("2026-10-15T12:00:00.000Z");
+  const binding={allowedChecks:["node-repo-suite-v1"],policyDigest:digest,policyVersion:"v1",imageDigest:digest,verifierId:"verifier",leasePolicyDigest:checkDigest};
+  const coordinator={integrationBinding:()=>binding};
+  const projected=evaluateOwnerReadiness(config,{verification:coordinator as unknown as TrustedCheckCoordinator,integration:true,delivery:true},mission,plan,slices,now);
+  assert.equal(projected.state,"unverified","broad configured allowlist cannot substitute for coordinator support of each approved check");
+  assert.equal(projected.configuration.verificationConfigured,false);
+  const inconsistent={...binding,leasePolicyDigest:digest};
+  const mismatched=evaluateOwnerReadiness(config,{verification:{integrationBinding:()=>inconsistent} as unknown as TrustedCheckCoordinator,integration:true,delivery:true},mission,plan,slices,now);
+  assert.equal(mismatched.state,"unverified","a present but inconsistent coordinator binding must fail closed");
+  assert.equal(mismatched.configuration.verificationConfigured,false);
+  const missing=evaluateOwnerReadiness(config,{verification:{} as unknown as TrustedCheckCoordinator,integration:true,delivery:true},mission,plan,slices,now);
+  assert.equal(missing.state,"unverified","a truthy object without binding evidence is not a coordinator");
+  const broadChecks=["check:unit","node-repo-suite-v1"], broadDigest=createHash("sha256").update(JSON.stringify(broadChecks)).digest("hex");
+  const broadConfig={...config,trustedCheckPolicy:broadChecks,trustedCheckPolicyDigest:broadDigest};
+  const subset={integrationBinding:()=>({...coordinatorBinding,leasePolicyDigest:broadDigest})} as unknown as TrustedCheckCoordinator;
+  const unsupportedPlan={...plan,slices:[{...plan.slices[0]!,checks:["node-repo-suite-v1"]}]};
+  const unsupportedSlices=[{...slices[0]!,checks:["node-repo-suite-v1"]}];
+  const unsupported=evaluateOwnerReadiness(broadConfig,{...authorities,verification:subset},mission,unsupportedPlan,unsupportedSlices,now);
+  assert.equal(unsupported.configuration.verificationConfigured,true,"a valid configured subset is still an available coordinator");
+  assert.equal(unsupported.state,"unverified","operator policy permission does not prove actual coordinator support");
+  assert.equal(evaluateOwnerReadiness(broadConfig,{...authorities,verification:subset},mission,plan,slices,now).state,"ready","supported planned checks need not use every operator-permitted check");
+});
+
 test("cancellation displays direct unleased tombstones and rejects duplicate current proof",()=>{
   const requested=event(1,"mission.cancellation_requested",{ownerRequestId:"stop"});
   const cancelled={...mission,status:"cancelled" as const};
@@ -61,13 +88,19 @@ test("cancellation displays direct unleased tombstones and rejects duplicate cur
 });
 
 test("recovery and delivery timeline retains recorded identity without inferring completion",()=>{
-  const rows=[event(1,"mission.submitted",{}),event(2,"check.recovery_unknown",{sliceId:"slice-1",leaseEpoch:2,attemptId:"attempt-1",strategyId:"bounded-repair",checkId:"check:unit",candidateSha:sha}),event(3,"delivery.pull_request_observed",{sliceId:"slice-1",leaseEpoch:2,integratedSha:sha,pullRequestNumber:7,checkRunId:"check-8"})];
+  const observedRemoteSha="c".repeat(40);
+  const rows=[event(1,"mission.submitted",{}),event(2,"check.recovery_unknown",{sliceId:"slice-1",leaseEpoch:2,attemptId:"attempt-1",strategyId:"bounded-repair",checkId:"check:unit",candidateSha:sha}),event(3,"delivery.pending",{sliceId:"slice-1",leaseEpoch:2,integratedSha:sha,treeSha:"d".repeat(40)}),event(4,"delivery.check_observed",{sliceId:"slice-1",leaseEpoch:2,checkRunId:"check-8",observedRemoteSha}),event(5,"delivery.pull_request_observed",{sliceId:"slice-1",leaseEpoch:2,pullRequestNumber:7,checkRunId:"check-8",observedRemoteSha}),event(6,"delivery.unknown",{sliceId:"slice-1",leaseEpoch:2,observedRemoteSha:null}),event(7,"delivery.unknown",{sliceId:"slice-1",leaseEpoch:2,observedRemoteSha:"not-a-sha"})];
   const view=projectLoom(mission,plan,slices,rows);
   assert.equal(view.closed,false);
   assert.equal(view.events[1]?.label,"Recovery check unknown");
   assert(view.events[1]?.references.some(ref=>ref.id==="attempt-1"));
   assert(view.events[1]?.references.some(ref=>ref.id==="bounded-repair"));
-  assert(view.events[2]?.references.some(ref=>ref.kind==="delivery"&&ref.id==="pull-request:7"));
   assert(view.events[2]?.references.some(ref=>ref.kind==="integration"&&ref.id===sha));
+  assert(view.events[3]?.references.some(ref=>ref.kind==="delivery"&&ref.id===observedRemoteSha),"check observation must retain the remote revision that was read back");
+  assert(view.events[4]?.references.some(ref=>ref.kind==="delivery"&&ref.id==="pull-request:7"));
+  assert(view.events[4]?.references.some(ref=>ref.kind==="delivery"&&ref.id===observedRemoteSha),"PR observation must retain the remote revision that was read back");
+  assert(!view.events[4]?.references.some(ref=>ref.kind==="integration"),"SQL observation rows contain observedRemoteSha, not pending integratedSha");
+  assert(!view.events[5]?.references.some(ref=>ref.kind==="delivery"),"UNKNOWN readback with no remote SHA must not invent one");
+  assert(!view.events[6]?.references.some(ref=>ref.kind==="delivery"&&ref.id==="not-a-sha"),"malformed remote revisions are not projected as references");
   assert.deepEqual(projectLoom(mission,plan,slices,rows),view,"reconstruction has no synthetic clock/progress");
 });

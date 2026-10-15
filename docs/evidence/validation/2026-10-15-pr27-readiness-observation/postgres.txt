@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "database": "isolated actual PostgreSQL",
+  "connections": 2,
+  "httpRestarts": 2,
+  "ownerAuthentication": true,
+  "expiredUnknown": true,
+  "preRuntimeSettlement": true,
+  "readSideEffects": 0,
+  "reservedCents": 100,
+  "providerCalls": 0,
+  "workerExecutions": 0,
+  "limitations": [
+    "Synthetic local configuration; runtime/provider/image readiness unverified",
+    "No live verification, delivery or deployment"
+  ]
+}

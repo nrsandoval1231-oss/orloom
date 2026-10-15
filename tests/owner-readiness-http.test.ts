@@ -7,6 +7,7 @@ import { MemoryJobStore } from "../packages/contracts/src/memory-store.js";
 import { MemoryMissionStore } from "../packages/contracts/src/memory-mission-store.js";
 import { SqlMissionStore, type TransactionalSql } from "../packages/contracts/src/sql-mission-store.js";
 import type { Config } from "../packages/config/src/config.js";
+import { TrustedCheckCoordinator } from "../packages/governor/src/governor.js";
 
 const token="owner-only-test-secret";
 const config:Config={mode:"local",port:0,sessionToken:token,workerToken:"worker-secret",capacitySlots:0,maxLanes:1,trustedCheckPolicy:[],trustedCheckPolicyDigest:null};
@@ -14,8 +15,8 @@ function sql(db:PGlite):TransactionalSql{
   let tail=Promise.resolve();
   return {query:async(text,params)=>await db.query(text,params as never) as never,transaction:async<T>(work:(tx:{query:TransactionalSql["query"]})=>Promise<T>)=>{let release!:()=>void;const before=tail;tail=new Promise<void>(r=>release=r);return before.then(async()=>{try{await db.exec("BEGIN");const value=await work({query:async(text,params)=>await db.query(text,params as never) as never});await db.exec("COMMIT");return value;}catch(error){await db.exec("ROLLBACK");throw error;}finally{release();}});}};
 }
-async function listen(store:MemoryMissionStore|SqlMissionStore){
-  const server=createControlPlane(config,new MemoryJobStore(),store);await new Promise<void>((resolve,reject)=>{server.once("error",reject);server.listen(0,"127.0.0.1",resolve);});
+async function listen(store:MemoryMissionStore|SqlMissionStore,configured:Config=config,coordinator?:TrustedCheckCoordinator){
+  const server=createControlPlane(configured,new MemoryJobStore(),store,undefined,coordinator);await new Promise<void>((resolve,reject)=>{server.once("error",reject);server.listen(0,"127.0.0.1",resolve);});
   const address=server.address();assert(address&&typeof address!=="string");const base=`http://127.0.0.1:${address.port}`;
   const login=await fetch(`${base}/session`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({token})});const cookie=login.headers.get("set-cookie")?.split(";")[0];assert(cookie);
   return {server,base,cookie};
@@ -76,4 +77,22 @@ test("inconsistent durable history makes owner readiness unavailable without add
     assert.equal(payload.projection.cancellation.state,"quarantined-unknown");
     assert.equal(payload.projection.closed,false);
   }finally{await close(app.server);}
+});
+
+test("Loom readiness uses the actual coordinator binding and fails closed for absent, throwing, or mismatched bindings",async()=>{
+  const store=new MemoryMissionStore();
+  const mission=await store.submit({repository:"owner/binding",baseSha:"e".repeat(40),objective:"bind readiness",acceptance:["check"],budgetCents:10});
+  await store.recommendPlan(mission.id,[{id:"slice",objective:"work",dependencies:[],owner:"core",scopes:["src"],checks:["check:unit"],budgetCents:10}],"owner");await store.approvePlan(mission.id);
+  const checks=["check:unit"],policyDigest=(await import("node:crypto")).createHash("sha256").update(JSON.stringify(checks)).digest("hex"),imageDigest="f".repeat(64);
+  const configured:Config={...config,workerToken:"worker-secret",capacitySlots:1,capacityEvidenceDigest:"a".repeat(64),capacityEvidenceExpiresAt:"2099-01-01T00:00:00.000Z",trustedCheckPolicy:checks,trustedCheckPolicyDigest:policyDigest,trustedVerifierId:"verifier",trustedVerifierImageDigest:imageDigest,trustedVerificationPolicyVersion:"v1",workerMaxProviderCalls:1,workerMaxInputTokens:1,workerMaxOutputTokens:1,workerMaxWallSeconds:1,workerAllowedProviders:["provider"],workerAllowedModels:["model"]};
+  const makeCoordinator=(bindingChecks=checks,id="verifier")=>new TrustedCheckCoordinator(store,{} as never,{imageDigest,verifierId:id,policyDigest:"9".repeat(64),leasePolicyDigest:policyDigest,policyVersion:"v1",allowedChecks:bindingChecks,attemptLifetimeMs:60_000});
+  const cases:[string,TrustedCheckCoordinator|undefined][]=[["matching",makeCoordinator()],["missing",undefined],["unsupported",makeCoordinator(["other:check"])],["identity-mismatch",makeCoordinator(checks,"wrong-verifier")],["throwing",{integrationBinding(){throw new Error("unavailable");}} as unknown as TrustedCheckCoordinator]];
+  for(const [name,coordinator] of cases){
+    const app=await listen(store,configured,coordinator);
+    try{
+      const payload=await (await fetch(`${app.base}/api/missions/${mission.id}/loom`,{headers:{cookie:app.cookie}})).json() as any;
+      assert.equal(payload.projection.readiness.state,name==="matching"?"ready":"unverified",name);
+      assert.equal(payload.projection.readiness.configuration.verificationConfigured,name==="matching",name);
+    }finally{await close(app.server);}
+  }
 });
