@@ -1,0 +1,10 @@
+✔ the requested commit is materialized independently of dirty worktree files (27.58473ms)
+✔ committed artifact manifests require valid, present, matching blobs (44.282377ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107.04669

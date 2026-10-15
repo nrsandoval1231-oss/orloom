@@ -1,0 +1,5 @@
+Attempt 1 source commit: 2ae17930290c1f2ce0e45b20a16d34c689728bd0
+Host: Ubuntu on WSL2, Linux x86_64; kernel 6.18.33.2-microsoft-standard-WSL2
+Runtime: Node v24.11.1; npm 11.6.2
+Isolated checkout: /tmp/orloom-1c-xJWySD/source
+Outcome: setup and focused checks passed; full suite failed because the repository's verifier-config tests require persistent artifact paths and reject the /tmp checkout parent.

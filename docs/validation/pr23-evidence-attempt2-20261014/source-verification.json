@@ -1,0 +1,336 @@
+{
+  "schema": "orloom.slice1c.source-verification.v1",
+  "sourceCommit": "7396750c540eeac538b98c7f05c0293bad98cd6a",
+  "checkedOutCommit": "7396750c540eeac538b98c7f05c0293bad98cd6a",
+  "startedAt": "2026-10-15T00:13:51.071Z",
+  "finishedAt": "2026-10-15T00:15:01.148Z",
+  "platform": {
+    "platform": "linux",
+    "release": "6.18.33.2-microsoft-standard-WSL2",
+    "arch": "x64",
+    "node": "v24.11.1",
+    "npm": "11.6.2"
+  },
+  "integrity": [
+    {
+      "manifest": "docs/validation/slice0-baseline/artifact-sha256.txt",
+      "entries": [
+        {
+          "path": "docs/validation/slice0-baseline/00-context.txt",
+          "sha256": "cebdff92c0eb4d290b531c6f823f3f08a856523fed1067806b7ef89303b435f5"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/01-typecheck.log",
+          "sha256": "c26d179f8ec7762ff1f97c54abcd02db799ff5a8cf5c7739f5912f40334ed84e"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/02-build.log",
+          "sha256": "f1d5bba80ad7f8cf27a7dff3a6f954de192c2cdb11cff02c85288f37e28c2083"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/03-validate.log",
+          "sha256": "82a87c6d7fe48eff41c79d3f1114673782cb0f01301f3c9602a09357775342d4"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/04-tests.log",
+          "sha256": "0b8dafed6b6974618ba79a1c7613d18ebf30f923f7911295cb22c1af00555591"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/05-summary.txt",
+          "sha256": "d906221df973ed22942e63ad18c3cf221b580d358aceace8038109dfe70c95a2"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/06-manifest-verification.json",
+          "sha256": "f74ad27a27e485955506ab6756938720a011017f58030d05323bec83116ab056"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/environment.txt",
+          "sha256": "475694c82f88cab684aff0b6796a13244a2e0f2cfcf20d022fb4ed29a2497634"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/npm-ci.log",
+          "sha256": "699c4f8153a82fa0403daebab24a5db219303f7fbe1ab341c307dd7c12adc9ff"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/verification-report.json",
+          "sha256": "9053d6987b182c914b2056b6625e0fcead77e464f5d34b298ff7772cca3681e1"
+        },
+        {
+          "path": "docs/validation/slice0-baseline/verify-manifest.mjs",
+          "sha256": "cedd7c2ac06da538ef2f5112732b98628d91c6ad379fdcc3e6d9999badb0809f"
+        }
+      ]
+    },
+    {
+      "manifest": "docs/validation/slice1a-runtime-intent/artifact-sha256.txt",
+      "entries": [
+        {
+          "path": "docs/validation/slice1a-runtime-intent/build.log",
+          "sha256": "5788d66de95014588ba7fa680293a879366f77e276e82c7470769ad8a16c435b"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/environment.txt",
+          "sha256": "90d8b03e1e4d60759857d3105da7763139cb1b71fca5ae5195156613c103ab00"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/focused-runtime-intent.log",
+          "sha256": "1cac1aa9af9b40dc3f74fa9873efb61d39e3673c76b3f47c71769c5adc3cb19a"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/focused-runtime-journal.log",
+          "sha256": "8f3966ffec2a80940e67b3e80b60cc1494ee2b6eabaec616721f012acfb11900"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/full-suite-clean.log",
+          "sha256": "60b773407d5ccefe011d26c0cbd6956a156673983bf4a22d04aabe97cd49bfaa"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/slice1a.diff",
+          "sha256": "6323495357c1fb2e981198a403f836fa7a72c4bce3446c32897c2870ad0dc989"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/suite-summary.txt",
+          "sha256": "5983824948bbfb0fd6910aa58806e8e80c3edded2071d34576f2eb733c896443"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/typecheck.log",
+          "sha256": "131b2368169b85fa3067ea6be86ea47e2d091d347a98dbef25976a9174307250"
+        },
+        {
+          "path": "docs/validation/slice1a-runtime-intent/validate.log",
+          "sha256": "d8edcbe354e5407b0f4d5f1d2ac1b932b643c426d805412e83b4e3089818fa62"
+        }
+      ]
+    },
+    {
+      "manifest": "docs/validation/slice1b-owner-cancellation/artifact-sha256.txt",
+      "entries": [
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/build.log",
+          "sha256": "5788d66de95014588ba7fa680293a879366f77e276e82c7470769ad8a16c435b"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/environment.txt",
+          "sha256": "59e6663b5e3eef96528f1cb6f453ee6b2c290ab746f8c3e670d2508c2b4c9793"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/focused-cancellation.log",
+          "sha256": "10dd20ea97e0e8eb4f6553716123592982258d887e025b822d15aec575a28e26"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/full-suite.log",
+          "sha256": "721665bd5fc012529ef32e01c58f42004bfa88e05565556ce79c57e3f466f57f"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/migration-idempotency-probe.log",
+          "sha256": "ef5977b8a526b954a47d68ab8b9835ab4ff3771595a889ab65a5b92fa148ba7b"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/slice1b.diff",
+          "sha256": "a69b64f0c80109216401d295bffa2e5447225ad4e5ced64861a570c2f5f67674"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/suite-summary.txt",
+          "sha256": "f3ff11868617a11d3131e2764fe78a35e3a9765ce161ffd3abf6df702fb998fe"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/typecheck.log",
+          "sha256": "131b2368169b85fa3067ea6be86ea47e2d091d347a98dbef25976a9174307250"
+        },
+        {
+          "path": "docs/validation/slice1b-owner-cancellation/validate.log",
+          "sha256": "d8edcbe354e5407b0f4d5f1d2ac1b932b643c426d805412e83b4e3089818fa62"
+        }
+      ]
+    },
+    {
+      "manifest": "docs/validation/slice1c-review-findings/artifact-sha256.txt",
+      "entries": [
+        {
+          "path": "docs/validation/slice1c-review-findings/build.log",
+          "sha256": "5788d66de95014588ba7fa680293a879366f77e276e82c7470769ad8a16c435b"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/cap-measurement.log",
+          "sha256": "aa8266266824329c45de49b58a598c5f6348bca7fb3311853406daf7aa7de85a"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/discrimination-before-fix.log",
+          "sha256": "0214f1cc132003e1226f3293aa5a7c061b217368ac61e417eaa7015710ada92e"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/environment.txt",
+          "sha256": "381227cabb566a3e181201ec9d59e3751847b69cfe00da8d9074600b338d0591"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/focused-review-findings.log",
+          "sha256": "aacb6c63a44b00c0f56147dac0c8fa0fd2fb0f348882859ee7406552288fde59"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/full-suite.log",
+          "sha256": "9d32083be332fd9340c2992b7112a2766c3a42381f93c5c115621272756cf02d"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/typecheck.log",
+          "sha256": "131b2368169b85fa3067ea6be86ea47e2d091d347a98dbef25976a9174307250"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/validate.log",
+          "sha256": "d8edcbe354e5407b0f4d5f1d2ac1b932b643c426d805412e83b4e3089818fa62"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/verification-after.txt",
+          "sha256": "1b6728856ecd0887468ffa21df3625b28e30946dbaef76881f6820ae9ee3c066"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/verification-before.log",
+          "sha256": "6f6b905ef0e7ec49940ba788a4ce4ff7c76279a2a0c136eb1207350d1ad68da5"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/verify-1c.mjs",
+          "sha256": "83ef0256d6d5b427c47cb3af1ddeb0b1013e511207b9e64a0ab72ca3e3bfe783"
+        }
+      ]
+    },
+    {
+      "manifest": "PR23-source-sha256.txt",
+      "entries": [
+        {
+          "path": ".agent/PR23-REPAIR-001.md",
+          "sha256": "ec8c01efe1617868b9642c6a1aa6275e9048ab309de16810374692b98a015703"
+        },
+        {
+          "path": "docs/validation/2026-10-14-pr23-verifier-repair.md",
+          "sha256": "57bffdc352880ff4fef8e182fdf32737f2b034a26a11041129203f1278ed2b02"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/artifact-sha256.txt",
+          "sha256": "68132289895bdba368009c200bdc76bcdd31488f93ff4550bf4b37247d422a19"
+        },
+        {
+          "path": "docs/validation/slice1c-review-findings/verify-1c.mjs",
+          "sha256": "83ef0256d6d5b427c47cb3af1ddeb0b1013e511207b9e64a0ab72ca3e3bfe783"
+        },
+        {
+          "path": "tests/slice1c-verifier.test.mjs",
+          "sha256": "2d1357e868ff2e5bd671f2dd36de8ffce57663209c346314d4424614d6c772bf"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exitCode": 0,
+      "durationMs": 3353.77,
+      "log": "01-npm-ci.log",
+      "logSha256": "4b9cea22c4095681cca1a3ec16d44d9f52d24a4a3dc5a56dc4a49dd0d45a4b8d"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "durationMs": 2276.32,
+      "log": "02-npm-run.log",
+      "logSha256": "cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "durationMs": 2522.91,
+      "log": "03-npm-run.log",
+      "logSha256": "0a0094152b2c787e8f893aa9a450b5e17992131e06df800162107099bb018eef"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "durationMs": 83.9,
+      "log": "04-npm-run.log",
+      "logSha256": "43b1fff7014f60d7b15ea7ea7967e196f31ed102fa87e661c206fdc6161219a1"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/slice1c-verifier.test.mjs"
+      ],
+      "exitCode": 0,
+      "durationMs": 126.22,
+      "log": "05-node---test.log",
+      "logSha256": "19b216a893aefbf0ac7156b531160a6e5f07d808a51af06d0ec8661df72fcdb3"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "dist/tests/runtime-journal-review-findings.test.js",
+        "dist/tests/runtime-journal.test.js",
+        "dist/tests/runtime-intent-persistence.test.js",
+        "dist/tests/runtime-cancellation.test.js",
+        "dist/tests/runtime-claim-regressions.test.js",
+        "dist/tests/missions.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 22744.46,
+      "log": "06-node---test.log",
+      "logSha256": "1e455a18b097f919ac05c195fe73a75f5599b11dae8dc6f7c1eb74645872d7c6"
+    },
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exitCode": 0,
+      "durationMs": 38507.47,
+      "log": "07-npm-test.log",
+      "logSha256": "eb7240dffd0e6eb47e5f983a4b2d0841563d295791ff9068e36a8723451ed15c"
+    }
+  ],
+  "logArtifacts": [
+    {
+      "name": "01-npm-ci.log",
+      "sha256": "4b9cea22c4095681cca1a3ec16d44d9f52d24a4a3dc5a56dc4a49dd0d45a4b8d"
+    },
+    {
+      "name": "02-npm-run.log",
+      "sha256": "cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe"
+    },
+    {
+      "name": "03-npm-run.log",
+      "sha256": "0a0094152b2c787e8f893aa9a450b5e17992131e06df800162107099bb018eef"
+    },
+    {
+      "name": "04-npm-run.log",
+      "sha256": "43b1fff7014f60d7b15ea7ea7967e196f31ed102fa87e661c206fdc6161219a1"
+    },
+    {
+      "name": "05-node---test.log",
+      "sha256": "19b216a893aefbf0ac7156b531160a6e5f07d808a51af06d0ec8661df72fcdb3"
+    },
+    {
+      "name": "06-node---test.log",
+      "sha256": "1e455a18b097f919ac05c195fe73a75f5599b11dae8dc6f7c1eb74645872d7c6"
+    },
+    {
+      "name": "07-npm-test.log",
+      "sha256": "eb7240dffd0e6eb47e5f983a4b2d0841563d295791ff9068e36a8723451ed15c"
+    }
+  ],
+  "status": "PASS"
+}

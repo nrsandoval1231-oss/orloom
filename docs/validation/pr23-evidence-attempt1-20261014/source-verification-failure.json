@@ -1,0 +1,122 @@
+{
+  "schema": "orloom.slice1c.source-verification.v1",
+  "sourceCommit": "2ae17930290c1f2ce0e45b20a16d34c689728bd0",
+  "startedAt": "2026-10-15T00:11:13.587Z",
+  "finishedAt": "2026-10-15T00:12:32.310Z",
+  "status": "FAIL",
+  "error": "Error: npm test failed with exit 1; see /mnt/c/Users/nrsan/Nucleus/02_Projects/Orloom-pr23/docs/validation/pr23-evidence-20261014/07-npm-test.log",
+  "completedCommands": [
+    {
+      "command": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exitCode": 0,
+      "durationMs": 4208.62,
+      "log": "01-npm-ci.log",
+      "logSha256": "651abfba979a283881f582993b2f8282b4670b59405b83ed1b8200422f653882"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "durationMs": 2368.38,
+      "log": "02-npm-run.log",
+      "logSha256": "cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "durationMs": 2503.46,
+      "log": "03-npm-run.log",
+      "logSha256": "0a0094152b2c787e8f893aa9a450b5e17992131e06df800162107099bb018eef"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "durationMs": 81.66,
+      "log": "04-npm-run.log",
+      "logSha256": "43b1fff7014f60d7b15ea7ea7967e196f31ed102fa87e661c206fdc6161219a1"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tests/slice1c-verifier.test.mjs"
+      ],
+      "exitCode": 0,
+      "durationMs": 131.2,
+      "log": "05-node---test.log",
+      "logSha256": "be3eb353eaa591ae016136bad8beb46ad45952036a3b985bfa4f2dcfde3e2558"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "dist/tests/runtime-journal-review-findings.test.js",
+        "dist/tests/runtime-journal.test.js",
+        "dist/tests/runtime-intent-persistence.test.js",
+        "dist/tests/runtime-cancellation.test.js",
+        "dist/tests/runtime-claim-regressions.test.js",
+        "dist/tests/missions.test.js"
+      ],
+      "exitCode": 0,
+      "durationMs": 25386.44,
+      "log": "06-node---test.log",
+      "logSha256": "25d46d19f928631254d922cda414ad5ade893e92087394c465964c4d1f93becc"
+    },
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exitCode": 1,
+      "durationMs": 43492.46,
+      "log": "07-npm-test.log",
+      "logSha256": "fe3e1a17fd502d3c2d0886d1844209d3a41d6711c806c09eee819bad4bd36c0e"
+    }
+  ],
+  "failureLogFiles": [
+    {
+      "name": "01-npm-ci.log",
+      "sha256": "651abfba979a283881f582993b2f8282b4670b59405b83ed1b8200422f653882"
+    },
+    {
+      "name": "02-npm-run.log",
+      "sha256": "cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe"
+    },
+    {
+      "name": "03-npm-run.log",
+      "sha256": "0a0094152b2c787e8f893aa9a450b5e17992131e06df800162107099bb018eef"
+    },
+    {
+      "name": "04-npm-run.log",
+      "sha256": "43b1fff7014f60d7b15ea7ea7967e196f31ed102fa87e661c206fdc6161219a1"
+    },
+    {
+      "name": "05-node---test.log",
+      "sha256": "be3eb353eaa591ae016136bad8beb46ad45952036a3b985bfa4f2dcfde3e2558"
+    },
+    {
+      "name": "06-node---test.log",
+      "sha256": "25d46d19f928631254d922cda414ad5ade893e92087394c465964c4d1f93becc"
+    },
+    {
+      "name": "07-npm-test.log",
+      "sha256": "fe3e1a17fd502d3c2d0886d1844209d3a41d6711c806c09eee819bad4bd36c0e"
+    }
+  ]
+}
