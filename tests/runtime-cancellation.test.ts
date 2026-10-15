@@ -534,3 +534,35 @@ test("an owner request id may be reused on a different mission", async () => {
     assert.equal((await missionStore.getMission(second.id))!.mission.status, "cancelled");
   } finally { await db.close(); }
 });
+
+test('running lease polls owner cancellation over HTTP with exact credentials; stale requests reveal no cancellation', async () => {
+  const missionStore = new MemoryMissionStore();
+  await missionStore.configureCapacity(1, sha('a'), future());
+  const mission = await approvedMission(missionStore, 'owner/repo', [slice('slice', 'src')]);
+  const grant = await missionStore.claim(300, sha('c'), ['check:unit']); assert(grant);
+  const server = createControlPlane({ mode: 'local', port: 0, sessionToken: 'owner', workerToken: 'worker', capacitySlots: 1, maxLanes: 6, trustedCheckPolicy: ['check:unit'], trustedCheckPolicyDigest: sha('c') }, new MemoryJobStore(), missionStore);
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address(); assert(address && typeof address !== 'string');
+  const base = `http://127.0.0.1:${address.port}`;
+  const url = `${base}/api/worker/missions/${mission.id}/slices/slice/cancellation`;
+  const headers = { authorization: `Bearer ${grant.capabilityToken}`, 'x-orloom-lease-token': grant.leaseToken, 'x-orloom-lease-epoch': String(grant.epoch), 'content-type': 'application/json' };
+  try {
+    const poll = async (h = headers) => {
+      const response = await fetch(url, { method: 'POST', headers: h, body: '{}' });
+      assert.equal(response.status, 200); return (await response.json() as { requested: boolean }).requested;
+    };
+    assert.equal(await poll(), false);
+    const login = await fetch(`${base}/session`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: 'owner' }) });
+    const cookie = login.headers.get('set-cookie')!.split(';')[0]!;
+    for (let i = 0; i < 2; i++) assert.equal((await fetch(`${base}/api/missions/${mission.id}/cancel`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ ownerRequestId: 'repeat', reason: 'stop running worker' }) })).status, 202);
+    assert.equal(await poll(), true);
+    assert.equal(await poll({ ...headers, 'x-orloom-lease-epoch': String(grant.epoch + 1) }), false);
+    assert.equal(await poll({ ...headers, authorization: 'Bearer foreign' }), false);
+    assert.equal(await poll({ ...headers, 'x-orloom-lease-token': 'foreign' }), false);
+    const retained = await missionStore.getMission(mission.id); assert(retained);
+    assert.equal(retained.mission.status, 'cancelling');
+    assert.equal(retained.mission.reservedCents, 100);
+    assert.equal(retained.slices[0]!.status, 'cancel_requested');
+    assert.equal(await missionStore.claim(300, sha('c'), ['check:unit']), null);
+  } finally { await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
+});

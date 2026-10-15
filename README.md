@@ -2,6 +2,8 @@
 
 Orloom is a single-operator engineering harness being developed into the platform defined by [the canonical harness specification](docs/architecture/CANONICAL_HARNESS.md). It is not yet a working end-to-end autonomous engineering platform.
 
+The [active-worker cancellation successor](docs/validation/2026-10-15-active-worker-cancellation.md) adds source-level cancellation propagation and exact-container restart reconciliation. Genuine isolated-runtime proof and trusted controller settlement remain open; normal worker startup, capacity release and budget refunds remain disabled.
+
 ## Current foundation checkpoint: 2026-10-14
 
 [Repair PR #18](https://github.com/nrsandoval1231-oss/orloom/pull/18) is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, preserving reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. [Worker PR #19](https://github.com/nrsandoval1231-oss/orloom/pull/19) is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, preserving reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`. It composes the PR #2 broker/runtime/checkout source onto the repaired baseline, while keeping normal worker startup disabled. Independent review accepted this bounded source slice: 188/188 tests passed with zero skips/failures; build, typecheck and structure validation passed. Its [worker validation ledger](docs/validation/2026-10-14-worker-composition.md) records this separate acceptance scope.

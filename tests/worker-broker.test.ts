@@ -136,3 +136,31 @@ test("uncertain sandbox cleanup prevents candidate submission and reports UNKNOW
   assert.equal(results[0]?.outcome, "UNKNOWN");
   assert.equal(results[0]?.candidateSha, undefined);
 });
+
+test("owner cancellation during provider execution fences a late reply and closes workspace exactly once", async () => {
+  const lease = leaseWithInputLimit(10_000);
+  let cancelled = false, closed = 0, patches = 0, commits = 0, completions = 0;
+  const results: unknown[] = [];
+  const evidence = new Map<string, Uint8Array>();
+  const store = { async put(bytes: Uint8Array) { const hash = createHash('sha256').update(bytes).digest('hex'); const key = `sha256/${hash}`; evidence.set(key, bytes); return { key, sha256: hash }; }, async get(key: string) { return evidence.get(key)!; } };
+  const provider = {
+    async listModels() { return [model]; },
+    async probeTools(id: string) { return { model: id, inputTokens: 1, outputTokens: 1 }; },
+    async complete(id: string, _messages: unknown[], signal: AbortSignal) {
+      completions++; cancelled = true;
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('cancellation never reached running provider')), 5000);
+        signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      });
+      // A noncooperating transport returns a late tool call after abort.
+      return { model: id, inputTokens: 1, outputTokens: 1, message: { role: 'assistant' as const, content: null, tool_calls: [{ id: 'late', type: 'function' as const, function: { name: 'apply_patch', arguments: JSON.stringify({ path: 'src/file.ts', oldText: 'old', newText: 'new' }) } }] } };
+    }
+  };
+  const workspace = { async checkout() {}, async readFile() { return 'old'; }, async listFiles() { return []; }, async replaceText() { patches++; }, async runCheck() { throw new Error('unexpected'); }, async commitCandidate() { commits++; throw new Error('unexpected'); }, async close() { closed++; } };
+  await executeLease(lease, { control: { async claim() { return null; }, async heartbeat() {}, async cancellationRequested() { return cancelled; }, async result(_lease, result) { results.push(result); } }, provider, runtime: { async create() { return workspace; } }, evidence: store, progress: new R2WorkerProgressSink(store), checks: { 'check:unit': ['unit-check'] }, options });
+  assert.equal(completions, 1);
+  assert.equal(patches, 0);
+  assert.equal(commits, 0);
+  assert.equal(closed, 1);
+  assert.deepEqual(results.map(x => (x as { outcome: string }).outcome), ['UNKNOWN']);
+});

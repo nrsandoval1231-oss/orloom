@@ -4,6 +4,8 @@ import { loadConfig } from "../../../packages/config/src/config.js";
 import { R2WorkerProgressSink, DeepSeekHttpClient, executeLease, HttpControlPlane, WorkerProtocolError, type WorkerCheckCommand } from "../../../packages/agents/src/worker.js";
 import type { WorkerPricingSnapshot } from "../../../packages/agents/src/worker.js";
 import { DockerWorkerRuntime } from "./docker-runtime.js";
+import { acquireWorkerServiceLock } from "./service-lock.js";
+import { FileRuntimeJournal } from "./runtime-journal.js";
 import { runWorkerPollPool } from "./poll-pool.js";
 
 async function secret(name: string): Promise<string> {
@@ -54,7 +56,11 @@ async function bootstrap() {
   const artifacts = createR2ArtifactStore({ accountId: await secret("ORLOOM_R2_ACCOUNT_ID"), accessKeyId: await secret("ORLOOM_R2_ACCESS_KEY_ID"), secretAccessKey: await secret("ORLOOM_R2_SECRET_ACCESS_KEY"), bucket: await secret("ORLOOM_R2_BUCKET") });
   const control = new HttpControlPlane(controlUrl, await secret("ORLOOM_WORKER_TOKEN"));
   const provider = new DeepSeekHttpClient(await secret("ORLOOM_DEEPSEEK_API_KEY"));
-  const runtime = new DockerWorkerRuntime({ imageRef, installationId, checkoutTokens: github, checks });
+  const runtimeJournal = await FileRuntimeJournal.openOperational("/var/lib/orloom/worker-runtime");
+  const runtime = new DockerWorkerRuntime({ imageRef, installationId, checkoutTokens: github, checks, runtimeJournal });
+  // Dedicated service ownership is required: reconcile interrupted containers
+  // before the first claim, never while another broker owns active work.
+  await runtime.reconcileInterrupted();
   const progress = new R2WorkerProgressSink(artifacts);
   const options = { allowedModels: config.workerAllowedModels ?? [], allowedProviders: config.workerAllowedProviders ?? [], trustedChecks: config.trustedCheckPolicy ?? [], trustedCheckPolicyDigest: config.trustedCheckPolicyDigest ?? "", trustedCheckCommands: checks, sandboxImageRef: imageRef, maxToolCalls, pricing };
   const checkIds = Object.fromEntries((config.trustedCheckPolicy ?? []).map(id => [id, [id]]));
@@ -62,18 +68,21 @@ async function bootstrap() {
 }
 
 async function main() {
-  const deps = await bootstrap();
-  const shutdown = new AbortController();
-  process.once("SIGTERM", () => shutdown.abort());
-  process.once("SIGINT", () => shutdown.abort());
-  await runWorkerPollPool({
-    concurrency: deps.concurrency,
-    pollIntervalMs: 3_000,
-    signal: shutdown.signal,
-    claim: () => deps.control.claim(),
-    execute: lease => executeLease(lease, { control: deps.control, provider: deps.provider, runtime: deps.runtime, evidence: deps.artifacts, progress: deps.progress, checks: deps.checkIds, options: deps.options }),
-    onPollError: () => process.stderr.write("Orloom worker poll failed; no job was acknowledged.\n")
-  });
+  const serviceLock = await acquireWorkerServiceLock();
+  try {
+    const deps = await bootstrap();
+    const shutdown = new AbortController();
+    process.once("SIGTERM", () => shutdown.abort());
+    process.once("SIGINT", () => shutdown.abort());
+    await runWorkerPollPool({
+      concurrency: deps.concurrency,
+      pollIntervalMs: 3_000,
+      signal: shutdown.signal,
+      claim: () => deps.control.claim(),
+      execute: lease => executeLease(lease, { control: deps.control, provider: deps.provider, runtime: deps.runtime, evidence: deps.artifacts, progress: deps.progress, checks: deps.checkIds, options: deps.options }),
+      onPollError: () => process.stderr.write("Orloom worker poll failed; no job was acknowledged.\n")
+    });
+  } finally { await serviceLock.release(); }
 }
 
 main().catch(() => {
