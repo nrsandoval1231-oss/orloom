@@ -22,6 +22,10 @@ The optional controller-owned source bridge admits persisted final candidates th
 - [x] Independent inactive-boundary review accepted the bridge with no remaining blocking finding.
 - [x] Fresh locked install, build/typecheck/validate and full serial suite: 202/202 tests, zero failures/skips/cancellations; 119-file source manifest verified unchanged before/after. Original harness failure and clean rerun are preserved in the separate ledger.
 
+## Active-worker cancellation successor (2026-10-15, draft)
+
+The [active-worker cancellation source record](validation/2026-10-15-active-worker-cancellation.md) adds authenticated polling, local abort fencing, exact-container termination/absence reconciliation and an exclusive Linux broker lifetime lock. Source and simulated-runtime acceptance are separate from genuine Docker/runsc proof. **Operational acceptance remains OPEN:** trusted controller settlement is not composed; capacity and budgets remain retained, and normal worker startup remains disabled. This successor does not close the next-step gates below.
+
 ## Ordered next-step map
 
 1. Operational admission composition: explicitly compose the optional controller-owned final-candidate bridge with protected artifact transport and the independent verifier. Establish authentic runtime handoff and durable retention/reconciliation. The source bridge alone does not activate the worker or certify live candidates.

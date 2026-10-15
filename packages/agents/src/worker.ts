@@ -32,6 +32,7 @@ export function validateLease(value: unknown, now = Date.now()): WorkerLeaseCont
 
 export interface ControlPlane {
   claim(): Promise<WorkerLeaseContract | null>;
+  cancellationRequested?(lease: WorkerLeaseContract): Promise<boolean>;
   heartbeat(lease: WorkerLeaseContract): Promise<void>;
   result(lease: WorkerLeaseContract, result: WorkerResult): Promise<void>;
 }
@@ -49,6 +50,13 @@ export class HttpControlPlane implements ControlPlane {
     return validateLease(await responseJson(response, 256_000));
   }
 
+  async cancellationRequested(lease: WorkerLeaseContract): Promise<boolean> {
+    const response = await this.call(lease, "cancellation", {});
+    const value = await responseJson(response, 1024) as { requested?: unknown };
+    if (typeof value?.requested !== "boolean") throw new WorkerProtocolError("Malformed cancellation status");
+    return value.requested;
+  }
+
   async heartbeat(lease: WorkerLeaseContract): Promise<void> {
     await this.call(lease, "heartbeat", {});
   }
@@ -58,7 +66,7 @@ export class HttpControlPlane implements ControlPlane {
     await this.call(lease, route, result);
   }
 
-  private async call(lease: WorkerLeaseContract, route: string, body: unknown): Promise<void> {
+  private async call(lease: WorkerLeaseContract, route: string, body: unknown): Promise<Response> {
     const path = `/api/worker/missions/${encodeURIComponent(lease.mission.id)}/slices/${encodeURIComponent(lease.slice.id)}/${route}`;
     const response = await this.fetcher(new URL(path, this.baseUrl), {
       method: "POST",
@@ -66,9 +74,25 @@ export class HttpControlPlane implements ControlPlane {
       body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(10_000)
     });
     if (!response.ok) throw new WorkerProtocolError(`${route} failed with HTTP ${response.status}`);
+    return response;
   }
 
   private bootstrapHeaders() { return { authorization: `Bearer ${this.bootstrapToken}`, "content-type": "application/json" }; }
+}
+
+/** Serialized, fail-closed monitoring. Transport ambiguity stops local execution,
+ * but does not claim owner cancellation or prove process termination. */
+export function monitorCancellation(control: Pick<ControlPlane, "cancellationRequested">, lease: WorkerLeaseContract, controller: AbortController, intervalMs = 1_000): { ready: Promise<void>; stop(): Promise<void> } {
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let pending: Promise<void> = Promise.resolve();
+  const poll = async () => {
+    try { if (await control.cancellationRequested?.(lease)) controller.abort(); }
+    catch { controller.abort(); }
+    if (!stopped && !controller.signal.aborted && control.cancellationRequested) timer = setTimeout(() => { pending = poll(); }, intervalMs);
+  };
+  pending = poll();
+  return { ready: pending, async stop() { stopped = true; if (timer) clearTimeout(timer); await pending; } };
 }
 
 export interface DeepSeekMessage { role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: DeepSeekToolCall[]; }
@@ -326,13 +350,17 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     progressEntries.push({ reference: response.reference, digest: response.digest });
     if (response.decision === "STOP") throw new ProgressStop("Durable policy requested stop at a safe boundary");
   };
+  const cancellation = monitorCancellation(deps.control, lease, controller);
   const heartbeatTimer = setInterval(() => { void deps.control.heartbeat(lease).catch(() => controller.abort()); }, 30_000);
   try {
+    await cancellation.ready;
+    if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     workspace = await deps.runtime.create(lease);
     await workspace.checkout(lease.mission.repository, lease.mission.baseSha, controller.signal);
     if (limits.maxOutputTokens < 16 || calls >= limits.maxProviderCalls || conservativeInputReservation(model, PROBE_MESSAGES, true) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Mandatory tool probe does not fit the remaining execution limits");
     await recordProviderAttempt(1, "tool-capability-probe");
     await emit("provider-tool-probe", "started");
+    if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     assertPricingCurrent();
     const probe = await deps.provider.probeTools(model, controller.signal);
     calls++;
@@ -353,6 +381,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
       if (conservativeInputReservation(model, messages) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Provider request does not fit the remaining input-token reservation");
       await recordProviderAttempt(calls + 1, "tool-loop");
       await emit("provider-completion", "started");
+      if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
       assertPricingCurrent();
       const reply = await deps.provider.complete(model, messages, controller.signal, remainingOutput);
       calls++;
@@ -388,6 +417,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
         messages.push({ role: "tool", tool_call_id: tool.id, content: sanitized(JSON.stringify(result)) });
       }
     }
+    if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     await emit("candidate", "started");
     const candidate = await workspace.commitCandidate(controller.signal);
     if (!sha.test(candidate.candidateSha)) throw new WorkerProtocolError("Workspace returned an invalid candidate SHA");
@@ -401,6 +431,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     await saveEvidence("provider-usage", new TextEncoder().encode(usage), "application/json");
     await saveEvidenceIndex();
     if (workspace) { const closing = workspace; workspace = undefined; await closing.close(); }
+    if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     terminalAttempted = true;
     await deps.control.result(lease, { candidateSha: candidate.candidateSha, evidenceRefs: terminalEvidenceRefs() });
   } catch (error) {
@@ -421,6 +452,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
   } finally {
     clearTimeout(timer);
     clearInterval(heartbeatTimer);
+    await cancellation.stop();
     if (workspace) { const closing = workspace; workspace = undefined; await closing.close(); }
   }
 }

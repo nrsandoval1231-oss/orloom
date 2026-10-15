@@ -6,7 +6,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import type { WorkerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import { checkoutExact, type CheckoutFetchTransport, type ReadOnlyCheckoutToken } from "../../../packages/agents/src/github-checkout.js";
 import { assertWorkerScopePath, WorkerProtocolError, type WorkerCheckCommand, type WorkerCheckExecution, type WorkerRuntime, type WorkerWorkspace } from "../../../packages/agents/src/worker.js";
-import { ownershipLabelsDigest, type RuntimeIdentity, type RuntimeJournal } from "./runtime-journal.js";
+import { RUNTIME_RECONCILER_SOURCE, ownershipLabelsDigest, type RuntimeIdentity, type RuntimeJournal, type RuntimeJournalEntry, type RuntimeReconciliationObservation } from "./runtime-journal.js";
 
 export interface DockerWorkerRuntimeOptions {
   imageRef: string;
@@ -83,7 +83,7 @@ async function collectFiles(root: string): Promise<Array<{ path: string; bytesBa
   return rows;
 }
 
-interface ContainerInfo { id: string; labels: Record<string, string>; }
+interface ContainerInfo { id: string; labels: Record<string, string>; imageRef?: string; name?: string; running?: boolean; }
 export interface DockerContainerControl {
   inspect(id: string): Promise<ContainerInfo | null>;
   remove(id: string): Promise<void>;
@@ -138,17 +138,56 @@ export async function createContainerWithDurableIntent(options: DurableContainer
   return created;
 }
 
-export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>): Promise<void> {
+interface ExpectedContainer { name: string; imageRef: string; }
+
+function matchesContainerIdentity(current: ContainerInfo, id: string, expected: ExpectedContainer, labelsDigest: string): boolean {
+  return current.id.toLowerCase() === id.toLowerCase() && current.imageRef === expected.imageRef
+    && current.name === `/${expected.name}` && ownershipLabelsDigest(current.labels) === labelsDigest;
+}
+
+export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>, expected: ExpectedContainer): Promise<void> {
   if (!/^[a-f0-9]{64}$/i.test(id)) throw new WorkerProtocolError("Docker returned an invalid container identity");
   const current = await control.inspect(id);
   if (!current) return;
-  if (current.id.toLowerCase() !== id.toLowerCase() || Object.entries(expectedLabels).some(([key, value]) => current.labels[key] !== value)) throw new WorkerProtocolError("Refusing to remove a container without the exact Orloom ownership labels");
+  if (!matchesContainerIdentity(current, id, expected, ownershipLabelsDigest(expectedLabels))) throw new WorkerProtocolError("Refusing to remove a container without exact Orloom runtime identity and ownership labels");
   try { await control.remove(id); }
   catch (error) {
     if (await control.inspect(id)) throw new Error("Owned sandbox removal failed and the container remains present", { cause: error });
     return;
   }
   if (await control.inspect(id)) throw new WorkerProtocolError("Owned sandbox container remains present after removal");
+}
+
+/** Trusted host API only: never accepts a worker-submitted termination receipt.
+ * Call on restart before admitting work, with exclusive service ownership of the
+ * journal. Unbound create intents remain quarantined: name absence alone cannot
+ * exclude an in-flight create. No capacity or budget mutation is performed. */
+export async function reconcileInterruptedWorkers(journal: RuntimeJournal, control: DockerContainerControl, entries?: readonly RuntimeJournalEntry[]): Promise<RuntimeReconciliationObservation[]> {
+  const observations: RuntimeReconciliationObservation[] = [];
+  for (const entry of entries ?? await journal.unresolved()) {
+    let outcome: "absent" | "unknown" = "unknown";
+    if (entry.containerId) {
+      try {
+        const current = await control.inspect(entry.containerId);
+        if (!current) outcome = "absent";
+        else if (matchesContainerIdentity(current, entry.containerId, entry, entry.labelsDigest)) {
+          // Removal by immutable ID kills all container processes. The CLI exit
+          // status (including success) is never proof of termination by itself.
+          try { await control.remove(entry.containerId); } catch { /* inspect independently */ }
+          if (await control.inspect(entry.containerId) === null) outcome = "absent";
+        }
+      } catch { /* daemon/identity uncertainty is not absence */ }
+    }
+    const observation: RuntimeReconciliationObservation = {
+      source: RUNTIME_RECONCILER_SOURCE, outcome, identity: entry.identity,
+      name: entry.name, imageRef: entry.imageRef, labelsDigest: entry.labelsDigest,
+      containerId: entry.containerId, observedAt: new Date().toISOString(),
+    };
+    if (outcome === "absent") await journal.recordAbsent(observation);
+    else if (entry.state !== "unknown") await journal.recordUnknown(observation);
+    observations.push(observation);
+  }
+  return observations;
 }
 
 export async function waitForWritableDrain(stream: NodeJS.WritableStream, signal: AbortSignal, child?: ChildProcessWithoutNullStreams): Promise<void> {
@@ -174,7 +213,7 @@ export async function waitForWritableDrain(stream: NodeJS.WritableStream, signal
   });
 }
 
-type InspectedDockerContainer = { Id?: unknown; Config?: { Labels?: unknown }; State?: { Running?: unknown } };
+type InspectedDockerContainer = { Id?: unknown; Name?: unknown; Config?: { Labels?: unknown; Image?: unknown }; State?: { Running?: unknown } };
 
 async function dockerCommand(docker: string, configDirectory: string, args: string[], timeoutMs = 15_000): Promise<string> {
   return await new Promise((resolve, reject) => {
@@ -206,7 +245,8 @@ function dockerControl(docker: string, configDirectory: string): DockerContainer
       let parsed: InspectedDockerContainer;
       try { parsed = JSON.parse(raw) as InspectedDockerContainer; } catch { throw new WorkerProtocolError("Docker returned malformed container inspection data"); }
       if (typeof parsed.Id !== "string" || !parsed.Config?.Labels || typeof parsed.Config.Labels !== "object" || Array.isArray(parsed.Config.Labels)) throw new WorkerProtocolError("Docker inspection omitted container identity or ownership labels");
-      return { id: parsed.Id, labels: parsed.Config.Labels as Record<string, string> };
+      if (typeof parsed.Config.Image !== "string" || typeof parsed.Name !== "string" || typeof parsed.State?.Running !== "boolean") throw new WorkerProtocolError("Docker inspection omitted runtime identity");
+      return { id: parsed.Id, labels: parsed.Config.Labels as Record<string, string>, imageRef: parsed.Config.Image, name: parsed.Name, running: parsed.State.Running };
     },
     async remove(id) { await dockerCommand(docker, configDirectory, dockerRemoveArgs(id), 7_000); }
   };
@@ -222,7 +262,7 @@ class DockerRpc {
   private readonly configDirectory: string;
   private readonly containerId: string;
   private readonly ownershipLabels: Record<string, string>;
-  private constructor(docker: string, configDirectory: string, child: ChildProcessWithoutNullStreams, containerId: string, ownershipLabels: Record<string, string>) {
+  private constructor(docker: string, configDirectory: string, child: ChildProcessWithoutNullStreams, containerId: string, ownershipLabels: Record<string, string>, private readonly expectedContainer: ExpectedContainer) {
     this.child = child;
     this.containerId = containerId;
     this.ownershipLabels = ownershipLabels;
@@ -236,7 +276,7 @@ class DockerRpc {
   }
   /** The retained Docker container identity for this exact sandbox. */
   get id(): string { return this.containerId; }
-  static async launch(docker: string, configDirectory: string, name: string, leaseEpoch: number, imageRef: string): Promise<DockerRpc> {
+  static async launch(docker: string, configDirectory: string, name: string, leaseEpoch: number, imageRef: string, beforeStart?: (id: string) => Promise<void>): Promise<DockerRpc> {
     validImageRef(imageRef);
     const labels = ownershipLabels(name, leaseEpoch);
     const createArgs = ["create", "--interactive", "--pull=never", `--name=${name}`, ...Object.entries(labels).map(([key, value]) => `--label=${key}=${value}`), "--runtime=runsc", "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL", "--security-opt=no-new-privileges:true", "--pids-limit=64", "--memory=256m", "--memory-swap=256m", "--cpus=0.5", "--tmpfs=/tmp:rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700", "--tmpfs=/work:rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700", "--workdir=/work", "--entrypoint=/usr/local/bin/node", imageRef, "/opt/orloom/sandbox-entry.js"];
@@ -246,24 +286,25 @@ class DockerRpc {
     catch (error) {
       try {
         const maybeCreated = await control.inspect(name);
-        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels);
+        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels, { name, imageRef });
       } catch (cleanupError) { throw new Error("Docker create outcome and exact-name cleanup are unresolved", { cause: cleanupError }); }
       throw error;
     }
     if (!/^[a-f0-9]{64}$/i.test(id)) {
       try {
         const maybeCreated = await control.inspect(name);
-        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels);
+        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels, { name, imageRef });
       } catch (cleanupError) { throw new Error("Docker create returned an invalid ID and exact-name cleanup is unresolved", { cause: cleanupError }); }
       throw new WorkerProtocolError("Docker create did not return an exact container ID");
     }
     try {
       const inspected = await control.inspect(id);
-      if (!inspected || inspected.id.toLowerCase() !== id.toLowerCase() || Object.entries(labels).some(([key, value]) => inspected.labels[key] !== value)) throw new WorkerProtocolError("Created sandbox container failed exact ownership inspection");
+      if (!inspected || !matchesContainerIdentity(inspected, id, { name, imageRef }, ownershipLabelsDigest(labels))) throw new WorkerProtocolError("Created sandbox container failed exact ownership inspection");
+      await beforeStart?.(id);
       const child = spawn(docker, ["--config", configDirectory, "--host", "unix:///var/run/docker.sock", "start", "--attach", "--interactive", id], { shell: false, windowsHide: true, stdio: ["pipe", "pipe", "pipe"], env: { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: process.env.HOME ?? "/root", DOCKER_CONFIG: configDirectory } });
-      return new DockerRpc(docker, configDirectory, child, id, labels);
+      return new DockerRpc(docker, configDirectory, child, id, labels, { name, imageRef });
     } catch (error) {
-      await cleanupOwnedContainer(control, id, labels).catch(cleanupError => { throw new Error("Sandbox setup failed and owned container cleanup is unresolved", { cause: cleanupError }); });
+      await cleanupOwnedContainer(control, id, labels, { name, imageRef }).catch(cleanupError => { throw new Error("Sandbox setup failed and owned container cleanup is unresolved", { cause: cleanupError }); });
       throw error;
     }
   }
@@ -293,7 +334,13 @@ class DockerRpc {
       const closed = await this.waitForChildClose(3_000);
       if (!closed) this.child.kill("SIGKILL");
     }
-    await cleanupOwnedContainer(dockerControl(this.docker, this.configDirectory), this.containerId, this.ownershipLabels);
+    await cleanupOwnedContainer(dockerControl(this.docker, this.configDirectory), this.containerId, this.ownershipLabels, this.expectedContainer);
+  }
+  async detach(): Promise<void> {
+    this.failAll(new Error("Sandbox detached; outcome requires durable reconciliation"));
+    this.child.stdin.destroy();
+    if (this.child.exitCode === null && this.child.signalCode === null) this.child.kill("SIGKILL");
+    if (!await this.waitForChildClose(3_000)) throw new WorkerProtocolError("Docker attach child termination UNKNOWN");
   }
   private onData(part: Buffer) {
     this.buffer += part.toString("utf8");
@@ -332,6 +379,9 @@ class DockerWorkspace implements WorkerWorkspace {
   private repoCheckout?: Awaited<ReturnType<typeof checkoutExact>>;
   private rpc?: DockerRpc;
   private clientConfig?: string;
+  private closePromise?: Promise<void>;
+  private interrupted = false;
+  private get identity(): RuntimeIdentity { return { missionId: this.lease.mission.id, sliceId: this.lease.slice.id, leaseEpoch: this.lease.leaseEpoch, controllerRunId: controllerRunIdFor(this.lease) }; }
   constructor(private readonly lease: WorkerLeaseContract, private readonly options: DockerWorkerRuntimeOptions) {}
   async checkout(repository: string, baseSha: string, signal?: AbortSignal) {
     if (signal?.aborted) throw new WorkerProtocolError("Worker lease deadline reached before checkout");
@@ -341,6 +391,7 @@ class DockerWorkspace implements WorkerWorkspace {
     const scratch = this.options.scratchRoot ?? "/var/lib/orloom/worker-jobs";
     await mkdir(scratch, { recursive: true, mode: 0o700 });
     this.repoCheckout = await checkoutExact(this.lease, this.options.installationId, this.options.checkoutTokens, scratch, signal, this.options.checkoutTransport);
+    if (signal?.aborted) throw new WorkerProtocolError("Sandbox cancelled after checkout");
     const config = await mkdtemp(path.join(tmpdir(), "orloom-docker-config-"));
     await chmod(config, 0o700);
     this.clientConfig = config;
@@ -349,7 +400,11 @@ class DockerWorkspace implements WorkerWorkspace {
     const labels = ownershipLabels(name, this.lease.leaseEpoch);
     let launched: DockerRpc | undefined;
     const create = async (): Promise<{ id: string }> => {
-      const rpc = await DockerRpc.launch(docker, config, name, this.lease.leaseEpoch, this.options.imageRef);
+      const rpc = await DockerRpc.launch(docker, config, name, this.lease.leaseEpoch, this.options.imageRef,
+        async id => {
+          if (this.options.runtimeJournal) await this.options.runtimeJournal.recordCreated(this.identity, id, ownershipLabelsDigest(labels));
+          if (signal?.aborted) throw new WorkerProtocolError("Sandbox cancelled before start");
+        });
       launched = rpc;
       return { id: rpc.id };
     };
@@ -358,20 +413,18 @@ class DockerWorkspace implements WorkerWorkspace {
     const retain = (): void => { if (launched) this.rpc = launched; };
     const journal = this.options.runtimeJournal;
     if (journal) {
-      await createContainerWithDurableIntent({
-        journal,
-        identity: { missionId: this.lease.mission.id, sliceId: this.lease.slice.id, leaseEpoch: this.lease.leaseEpoch, controllerRunId: controllerRunIdFor(this.lease) },
-        name,
-        imageRef: this.options.imageRef,
-        labels,
-        create,
-        retain,
-      });
+      await journal.recordIntent({ identity: this.identity, name, imageRef: this.options.imageRef, labelsDigest: ownershipLabelsDigest(labels) });
+      await create();
+      retain();
     } else {
       await create();
       retain();
     }
     if (!launched) throw new WorkerProtocolError("Sandbox container was not created");
+    const abort = () => { this.interrupted = true; void this.close().catch(() => undefined); };
+    signal?.addEventListener("abort", abort, { once: true });
+    this.detachAbort = () => signal?.removeEventListener("abort", abort);
+    if (signal?.aborted) { abort(); throw new WorkerProtocolError("Sandbox cancelled before initialization"); }
     const files = await collectFiles(this.repoCheckout.directory);
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
@@ -380,7 +433,8 @@ class DockerWorkspace implements WorkerWorkspace {
     const checks = Object.fromEntries(allowedIds.map(id => [id, this.options.checks[id]]));
     await launched.request("init", { files, checks }, signal);
   }
-  private get client() { if (!this.rpc) throw new WorkerProtocolError("Sandbox is not ready"); return this.rpc; }
+  private detachAbort?: () => void;
+  private get client() { if (this.interrupted) throw new WorkerProtocolError("Cancelled workspace is fenced"); if (!this.rpc) throw new WorkerProtocolError("Sandbox is not ready"); return this.rpc; }
   async readFile(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ text: string }>("read_file", { path: filePath }, signal)).text; }
   async listFiles(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ files: string[] }>("list_files", { path: filePath }, signal)).files; }
   async replaceText(filePath: string, oldText: string, newText: string, signal?: AbortSignal) { await this.client.request("replace_text", { path: filePath, oldText, newText }, signal); }
@@ -434,8 +488,20 @@ class DockerWorkspace implements WorkerWorkspace {
       await rm(bundlePath, { force: true });
     }
   }
-  async close() {
-    try { await this.rpc?.close(); } finally {
+  close(): Promise<void> {
+    this.interrupted = true;
+    return this.closePromise ??= this.closeOnce();
+  }
+  private async closeOnce(): Promise<void> {
+    this.detachAbort?.();
+    try {
+      if (this.options.runtimeJournal && this.clientConfig) {
+        const entries = (await this.options.runtimeJournal.unresolved()).filter(row => row.identity.controllerRunId === this.identity.controllerRunId && row.identity.missionId === this.identity.missionId && row.identity.sliceId === this.identity.sliceId && row.identity.leaseEpoch === this.identity.leaseEpoch);
+        const results = await reconcileInterruptedWorkers(this.options.runtimeJournal, dockerControl(this.options.dockerPath ?? "/usr/bin/docker", this.clientConfig), entries);
+        if (results.some(row => row.outcome !== "absent")) throw new WorkerProtocolError("Sandbox termination UNKNOWN; runtime quarantine retained");
+      } else await this.rpc?.close();
+    } finally {
+      await this.rpc?.detach();
       if (this.clientConfig) await rm(this.clientConfig, { recursive: true, force: true });
       await this.repoCheckout?.dispose();
     }
@@ -445,5 +511,13 @@ class DockerWorkspace implements WorkerWorkspace {
 
 export class DockerWorkerRuntime implements WorkerRuntime {
   constructor(private readonly options: DockerWorkerRuntimeOptions) { validImageRef(options.imageRef); }
+  async reconcileInterrupted(): Promise<void> {
+    if (!this.options.runtimeJournal) throw new WorkerProtocolError("Durable runtime journal is required for restart reconciliation");
+    const config = await mkdtemp(path.join(tmpdir(), "orloom-reconcile-config-"));
+    try {
+      const results = await reconcileInterruptedWorkers(this.options.runtimeJournal, dockerControl(this.options.dockerPath ?? "/usr/bin/docker", config));
+      if (results.some(row => row.outcome === "unknown")) throw new WorkerProtocolError("Interrupted runtime UNKNOWN; new work remains disabled");
+    } finally { await rm(config, { recursive: true, force: true }); }
+  }
   async create(lease: WorkerLeaseContract): Promise<WorkerWorkspace> { return new DockerWorkspace(lease, this.options); }
 }

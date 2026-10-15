@@ -62,23 +62,25 @@ test("Docker rm argv uses only supported remove flags", () => { const id = "a".r
 test("sandbox cleanup verifies exact owner, removes by ID, and checks absence", async () => {
   const id = "a".repeat(64);
   const labels = { "com.orloom.worker-owned": "true", "com.orloom.lease-epoch": "4", "com.orloom.instance": "lease-a" };
-  let current: { id: string; labels: Record<string, string> } | null = { id, labels };
+  const expected = { name: 'lease-a', imageRef: sandboxImageRef };
+  const identity = { name: '/lease-a', imageRef: sandboxImageRef };
+  let current: { id: string; labels: Record<string, string>; name: string; imageRef: string } | null = { id, labels, ...identity };
   let removed = "";
   const control: DockerContainerControl = { async inspect(asked) { assert.equal(asked, id); return current; }, async remove(asked) { removed = asked; current = null; } };
-  await cleanupOwnedContainer(control, id, labels);
+  await cleanupOwnedContainer(control, id, labels, expected);
   assert.equal(removed, id);
   let absentRemove = false;
-  await cleanupOwnedContainer({ async inspect() { return null; }, async remove() { absentRemove = true; } }, id, labels);
+  await cleanupOwnedContainer({ async inspect() { return null; }, async remove() { absentRemove = true; } }, id, labels, expected);
   assert.equal(absentRemove, false, "already-crashed container is verified absent without a blind removal");
   let foreignRemoved = false;
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels: { ...labels, "com.orloom.worker-owned": "false" } }; }, async remove() { foreignRemoved = true; } }, id, labels), /ownership labels/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, ...identity, labels: { ...labels, "com.orloom.worker-owned": "false" } }; }, async remove() { foreignRemoved = true; } }, id, labels, expected), /ownership labels/);
   assert.equal(foreignRemoved, false);
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { throw new Error("Docker daemon unavailable"); }, async remove() {} }, id, labels), /unavailable/);
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels }; }, async remove() {} }, id, labels), /remains present/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { throw new Error("Docker daemon unavailable"); }, async remove() {} }, id, labels, expected), /unavailable/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels, ...identity }; }, async remove() {} }, id, labels, expected), /remains present/);
   let removedThenLostConnection = false;
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { if (removedThenLostConnection) throw new Error("inspection connection lost"); return { id, labels }; }, async remove() { removedThenLostConnection = true; } }, id, labels), /inspection connection lost/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { if (removedThenLostConnection) throw new Error("inspection connection lost"); return { id, labels, ...identity }; }, async remove() { removedThenLostConnection = true; } }, id, labels, expected), /inspection connection lost/);
   let removeReturnedError = false;
-  await cleanupOwnedContainer({ async inspect() { return removeReturnedError ? null : { id, labels }; }, async remove() { removeReturnedError = true; throw new Error("already gone"); } }, id, labels);
+  await cleanupOwnedContainer({ async inspect() { return removeReturnedError ? null : { id, labels, ...identity }; }, async remove() { removeReturnedError = true; throw new Error("already gone"); } }, id, labels, expected);
 });
 
 test("pricing expiry between calls blocks the next billable request and preserves snapshot evidence", async () => {
@@ -135,4 +137,32 @@ test("uncertain sandbox cleanup prevents candidate submission and reports UNKNOW
   assert.equal(results.length, 1);
   assert.equal(results[0]?.outcome, "UNKNOWN");
   assert.equal(results[0]?.candidateSha, undefined);
+});
+
+test("owner cancellation during provider execution fences a late reply and closes workspace exactly once", async () => {
+  const lease = leaseWithInputLimit(10_000);
+  let cancelled = false, closed = 0, patches = 0, commits = 0, completions = 0;
+  const results: unknown[] = [];
+  const evidence = new Map<string, Uint8Array>();
+  const store = { async put(bytes: Uint8Array) { const hash = createHash('sha256').update(bytes).digest('hex'); const key = `sha256/${hash}`; evidence.set(key, bytes); return { key, sha256: hash }; }, async get(key: string) { return evidence.get(key)!; } };
+  const provider = {
+    async listModels() { return [model]; },
+    async probeTools(id: string) { return { model: id, inputTokens: 1, outputTokens: 1 }; },
+    async complete(id: string, _messages: unknown[], signal: AbortSignal) {
+      completions++; cancelled = true;
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('cancellation never reached running provider')), 5000);
+        signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
+      });
+      // A noncooperating transport returns a late tool call after abort.
+      return { model: id, inputTokens: 1, outputTokens: 1, message: { role: 'assistant' as const, content: null, tool_calls: [{ id: 'late', type: 'function' as const, function: { name: 'apply_patch', arguments: JSON.stringify({ path: 'src/file.ts', oldText: 'old', newText: 'new' }) } }] } };
+    }
+  };
+  const workspace = { async checkout() {}, async readFile() { return 'old'; }, async listFiles() { return []; }, async replaceText() { patches++; }, async runCheck() { throw new Error('unexpected'); }, async commitCandidate() { commits++; throw new Error('unexpected'); }, async close() { closed++; } };
+  await executeLease(lease, { control: { async claim() { return null; }, async heartbeat() {}, async cancellationRequested() { return cancelled; }, async result(_lease, result) { results.push(result); } }, provider, runtime: { async create() { return workspace; } }, evidence: store, progress: new R2WorkerProgressSink(store), checks: { 'check:unit': ['unit-check'] }, options });
+  assert.equal(completions, 1);
+  assert.equal(patches, 0);
+  assert.equal(commits, 0);
+  assert.equal(closed, 1);
+  assert.deepEqual(results.map(x => (x as { outcome: string }).outcome), ['UNKNOWN']);
 });
