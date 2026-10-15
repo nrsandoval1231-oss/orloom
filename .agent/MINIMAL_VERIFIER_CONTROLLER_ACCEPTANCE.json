@@ -1,5 +1,5 @@
 {
-  "recordedUtc": "2026-10-15T21:30:10.838Z",
+  "recordedUtc": "2026-10-15T21:43:21.467Z",
   "scope": "local runc image/source qualification only",
   "baseCommit": "9457b1bcb10b085602f337b253580d23ad0b1d93",
   "builderModel": "gpt-6-luna",
@@ -18,6 +18,7 @@
   "inputManifestSha256": "d82ee73941cd4a66d99dd41aace557402962bdcae7a40ff044058054bccac596",
   "image": "sha256:0f068249a489b8a74a4ff3ad513b02ae5319a3531256f1b0c132dc7ffb6882cf",
   "independentSourceReview": "NO MATERIAL FINDINGS R2",
+  "fullGitCandidateAdmission": "OPEN: check snapshot only; publication6c242f0 full tree exceeds unchanged16MiB cap before manifest",
   "hostRunsc": "OPEN",
   "publicationHeadReview": "OPEN",
   "liveTask": "OPEN",

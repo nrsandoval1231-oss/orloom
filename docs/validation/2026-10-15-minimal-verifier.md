@@ -29,9 +29,10 @@ A further production defect appeared with large results: immediate process.exit 
 | Frozen inputs |201 files; exact input-manifest.json SHA256 `d82ee73941cd4a66d99dd41aace557402962bdcae7a40ff044058054bccac596`; source-manifest.json is a separately formatted array of the same entries. Controller rechecked every file after run. Archive2013184 bytes. |
 | Independent R2 source review | No material findings; source-review-r2.md. Source approval only. |
 | Host runsc suite | OPEN; no verifier imported or host acceptance performed for this source repair. |
+| Full Orloom Git admission | NOT PROVEN by the check snapshot. At publication6c242f0,1771 tracked blobs total17156078 bytes, already378862 over the existing16777216-byte cap before manifest overhead. The guard remains unchanged. |
 | Live provider/GitHub task | OPEN; no credentialed task or paid-provider execution. |
 
-Every discovered file ran; no tests/checks were omitted to qualify the image. The existing skip explicitly requires deployment-host ownership/mode acceptance. The sanitized local-npm configuration test runs because this image contains the baked npm path; environments without an eligible npm path skip it. Prior ledgers and their different environment-dependent counts remain unchanged.
+Every discovered file in the frozen201-file check snapshot ran; no test or required stage was omitted. This snapshot contains the application/test/helper/packaging inputs, not the complete Git tree with historical evidence. It qualifies local image/check compatibility, not end-to-end Git candidate admission. The existing skip explicitly requires deployment-host ownership/mode acceptance. The sanitized local-npm test runs because this image contains the baked npm path; other environments may skip it. Prior ledgers remain unchanged.
 
 ## Boundaries
 

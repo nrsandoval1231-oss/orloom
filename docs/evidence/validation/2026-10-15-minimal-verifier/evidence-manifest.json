@@ -4,6 +4,10 @@
     "sha256": "00f14b534ef434bb129d5cbc14fe2f980fe618935d48823ef625dc72adf5ea10"
   },
   {
+    "path": "full-tree-admission-sizing.json",
+    "sha256": "480b747b60d609c51de28f2b1629b174cc0a82d42a9ebd1931dcb7b1da5d717b"
+  },
+  {
     "path": "image-build.txt",
     "sha256": "fd0b5903d40434dac623f6ba9f44da56f9a785ee076c900a99922efe63bbd7cb"
   },
