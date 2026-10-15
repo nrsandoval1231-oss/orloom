@@ -52,9 +52,10 @@ export function verifyManifests(repo, commit, manifestPaths) {
   return manifestPaths.map(manifest => ({ manifest, entries: verifyArtifactManifest(repo, commit, manifest) }));
 }
 
-export function materializeCommit(sourceRepo, commit, parent = os.tmpdir()) {
+export function materializeCommit(sourceRepo, commit, parent = path.join(os.homedir(), ".cache", "orloom-verification")) {
   if (!/^[a-f0-9]{40,64}$/.test(commit)) throw new Error("commit must be a full object ID");
   runGit(sourceRepo, ["cat-file", "-e", `${commit}^{commit}`]);
+  mkdirSync(parent, { recursive: true });
   const root = mkdtempSync(path.join(parent, "orloom-1c-"));
   const checkout = path.join(root, "source");
   try {

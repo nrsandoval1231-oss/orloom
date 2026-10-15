@@ -1,6 +1,6 @@
 # SHA-256 over committed source-candidate blobs; this manifest is explicitly self-excluded.
-fdc61bee8ca0435908a8fd36973c90ca32e346c6cc1f6f59049a42f18a7118cd  .agent/PR23-REPAIR-001.md
-c8ffc9c0ce79678b0f4d6a35e7a7c90547b00f8fd25a1741e1eef8633f121bb6  docs/validation/2026-10-14-pr23-verifier-repair.md
-f23d6de3dc917a374ca4bf97922b3c38cc63a6e38a16499c579844091ce0c906  docs/validation/slice1c-review-findings/artifact-sha256.txt
-7bd43cab86b3891b58a1f45fb8c88e7e05d0d6833b83ddcb48827e4e9deda5cf  docs/validation/slice1c-review-findings/verify-1c.mjs
+ec8c01efe1617868b9642c6a1aa6275e9048ab309de16810374692b98a015703  .agent/PR23-REPAIR-001.md
+57bffdc352880ff4fef8e182fdf32737f2b034a26a11041129203f1278ed2b02  docs/validation/2026-10-14-pr23-verifier-repair.md
+68132289895bdba368009c200bdc76bcdd31488f93ff4550bf4b37247d422a19  docs/validation/slice1c-review-findings/artifact-sha256.txt
+83ef0256d6d5b427c47cb3af1ddeb0b1013e511207b9e64a0ab72ca3e3bfe783  docs/validation/slice1c-review-findings/verify-1c.mjs
 2d1357e868ff2e5bd671f2dd36de8ffce57663209c346314d4424614d6c772bf  tests/slice1c-verifier.test.mjs
