@@ -11,6 +11,10 @@ const name = 'orloom-worker-1-proof';
 const imageRef = `sha256:${'a'.repeat(64)}`;
 const id = 'b'.repeat(64);
 const labels = runtime.ownershipLabels(name, 1);
+// Production remains Linux-only; portable tests exercise reconciliation without
+// claiming operational ownership/mode acceptance on another platform.
+const openTestJournal = (root: string) => process.platform === 'linux'
+  ? FileRuntimeJournal.openOperational(root) : FileRuntimeJournal.openPortableTestRoot(root);
 
 test('trusted cancellation reconciler exists', () => {
   assert.equal(typeof (runtime as Record<string, unknown>).reconcileInterruptedWorkers, 'function');
@@ -20,7 +24,7 @@ for (const scenario of ['removed', 'daemon-down', 'wrong-label', 'wrong-image', 
   test(`restart reconciliation: ${scenario}`, async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'orloom-cancel-'));
     try {
-      const journal = await FileRuntimeJournal.openOperational(root);
+      const journal = await openTestJournal(root);
       await journal.recordIntent({ identity, name, imageRef, labelsDigest: ownershipLabelsDigest(labels) });
       if (scenario !== 'unbound-intent') await journal.recordCreated(identity, id, ownershipLabelsDigest(labels));
       let present = true, removals = 0;
@@ -42,7 +46,7 @@ for (const scenario of ['removed', 'daemon-down', 'wrong-label', 'wrong-image', 
       const absent = ['removed', 'remove-error-but-absent'].includes(scenario);
       assert.equal(outcomes[0]?.outcome, absent ? 'absent' : 'unknown');
       assert.equal(removals, ['removed', 'remove-error-but-absent', 'still-present'].includes(scenario) ? 1 : 0);
-      const reopened = await FileRuntimeJournal.openOperational(root);
+      const reopened = await openTestJournal(root);
       assert.equal((await reopened.unresolved()).length, absent ? 0 : 1);
       await reconcile(reopened, control); // repeated requests are safe, never launch anything
       if (absent) assert.equal(removals, 1);

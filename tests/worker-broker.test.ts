@@ -62,23 +62,25 @@ test("Docker rm argv uses only supported remove flags", () => { const id = "a".r
 test("sandbox cleanup verifies exact owner, removes by ID, and checks absence", async () => {
   const id = "a".repeat(64);
   const labels = { "com.orloom.worker-owned": "true", "com.orloom.lease-epoch": "4", "com.orloom.instance": "lease-a" };
-  let current: { id: string; labels: Record<string, string> } | null = { id, labels };
+  const expected = { name: 'lease-a', imageRef: sandboxImageRef };
+  const identity = { name: '/lease-a', imageRef: sandboxImageRef };
+  let current: { id: string; labels: Record<string, string>; name: string; imageRef: string } | null = { id, labels, ...identity };
   let removed = "";
   const control: DockerContainerControl = { async inspect(asked) { assert.equal(asked, id); return current; }, async remove(asked) { removed = asked; current = null; } };
-  await cleanupOwnedContainer(control, id, labels);
+  await cleanupOwnedContainer(control, id, labels, expected);
   assert.equal(removed, id);
   let absentRemove = false;
-  await cleanupOwnedContainer({ async inspect() { return null; }, async remove() { absentRemove = true; } }, id, labels);
+  await cleanupOwnedContainer({ async inspect() { return null; }, async remove() { absentRemove = true; } }, id, labels, expected);
   assert.equal(absentRemove, false, "already-crashed container is verified absent without a blind removal");
   let foreignRemoved = false;
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels: { ...labels, "com.orloom.worker-owned": "false" } }; }, async remove() { foreignRemoved = true; } }, id, labels), /ownership labels/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, ...identity, labels: { ...labels, "com.orloom.worker-owned": "false" } }; }, async remove() { foreignRemoved = true; } }, id, labels, expected), /ownership labels/);
   assert.equal(foreignRemoved, false);
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { throw new Error("Docker daemon unavailable"); }, async remove() {} }, id, labels), /unavailable/);
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels }; }, async remove() {} }, id, labels), /remains present/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { throw new Error("Docker daemon unavailable"); }, async remove() {} }, id, labels, expected), /unavailable/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { return { id, labels, ...identity }; }, async remove() {} }, id, labels, expected), /remains present/);
   let removedThenLostConnection = false;
-  await assert.rejects(cleanupOwnedContainer({ async inspect() { if (removedThenLostConnection) throw new Error("inspection connection lost"); return { id, labels }; }, async remove() { removedThenLostConnection = true; } }, id, labels), /inspection connection lost/);
+  await assert.rejects(cleanupOwnedContainer({ async inspect() { if (removedThenLostConnection) throw new Error("inspection connection lost"); return { id, labels, ...identity }; }, async remove() { removedThenLostConnection = true; } }, id, labels, expected), /inspection connection lost/);
   let removeReturnedError = false;
-  await cleanupOwnedContainer({ async inspect() { return removeReturnedError ? null : { id, labels }; }, async remove() { removeReturnedError = true; throw new Error("already gone"); } }, id, labels);
+  await cleanupOwnedContainer({ async inspect() { return removeReturnedError ? null : { id, labels, ...identity }; }, async remove() { removeReturnedError = true; throw new Error("already gone"); } }, id, labels, expected);
 });
 
 test("pricing expiry between calls blocks the next billable request and preserves snapshot evidence", async () => {

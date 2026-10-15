@@ -138,11 +138,18 @@ export async function createContainerWithDurableIntent(options: DurableContainer
   return created;
 }
 
-export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>): Promise<void> {
+interface ExpectedContainer { name: string; imageRef: string; }
+
+function matchesContainerIdentity(current: ContainerInfo, id: string, expected: ExpectedContainer, labelsDigest: string): boolean {
+  return current.id.toLowerCase() === id.toLowerCase() && current.imageRef === expected.imageRef
+    && current.name === `/${expected.name}` && ownershipLabelsDigest(current.labels) === labelsDigest;
+}
+
+export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>, expected: ExpectedContainer): Promise<void> {
   if (!/^[a-f0-9]{64}$/i.test(id)) throw new WorkerProtocolError("Docker returned an invalid container identity");
   const current = await control.inspect(id);
   if (!current) return;
-  if (current.id.toLowerCase() !== id.toLowerCase() || Object.entries(expectedLabels).some(([key, value]) => current.labels[key] !== value)) throw new WorkerProtocolError("Refusing to remove a container without the exact Orloom ownership labels");
+  if (!matchesContainerIdentity(current, id, expected, ownershipLabelsDigest(expectedLabels))) throw new WorkerProtocolError("Refusing to remove a container without exact Orloom runtime identity and ownership labels");
   try { await control.remove(id); }
   catch (error) {
     if (await control.inspect(id)) throw new Error("Owned sandbox removal failed and the container remains present", { cause: error });
@@ -163,7 +170,7 @@ export async function reconcileInterruptedWorkers(journal: RuntimeJournal, contr
       try {
         const current = await control.inspect(entry.containerId);
         if (!current) outcome = "absent";
-        else if (current.id === entry.containerId && current.imageRef === entry.imageRef && current.name === `/${entry.name}` && ownershipLabelsDigest(current.labels) === entry.labelsDigest) {
+        else if (matchesContainerIdentity(current, entry.containerId, entry, entry.labelsDigest)) {
           // Removal by immutable ID kills all container processes. The CLI exit
           // status (including success) is never proof of termination by itself.
           try { await control.remove(entry.containerId); } catch { /* inspect independently */ }
@@ -255,7 +262,7 @@ class DockerRpc {
   private readonly configDirectory: string;
   private readonly containerId: string;
   private readonly ownershipLabels: Record<string, string>;
-  private constructor(docker: string, configDirectory: string, child: ChildProcessWithoutNullStreams, containerId: string, ownershipLabels: Record<string, string>) {
+  private constructor(docker: string, configDirectory: string, child: ChildProcessWithoutNullStreams, containerId: string, ownershipLabels: Record<string, string>, private readonly expectedContainer: ExpectedContainer) {
     this.child = child;
     this.containerId = containerId;
     this.ownershipLabels = ownershipLabels;
@@ -279,25 +286,25 @@ class DockerRpc {
     catch (error) {
       try {
         const maybeCreated = await control.inspect(name);
-        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels);
+        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels, { name, imageRef });
       } catch (cleanupError) { throw new Error("Docker create outcome and exact-name cleanup are unresolved", { cause: cleanupError }); }
       throw error;
     }
     if (!/^[a-f0-9]{64}$/i.test(id)) {
       try {
         const maybeCreated = await control.inspect(name);
-        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels);
+        if (maybeCreated) await cleanupOwnedContainer(control, maybeCreated.id, labels, { name, imageRef });
       } catch (cleanupError) { throw new Error("Docker create returned an invalid ID and exact-name cleanup is unresolved", { cause: cleanupError }); }
       throw new WorkerProtocolError("Docker create did not return an exact container ID");
     }
     try {
       const inspected = await control.inspect(id);
-      if (!inspected || inspected.imageRef !== imageRef || inspected.name !== `/${name}` || inspected.id.toLowerCase() !== id.toLowerCase() || Object.entries(labels).some(([key, value]) => inspected.labels[key] !== value)) throw new WorkerProtocolError("Created sandbox container failed exact ownership inspection");
+      if (!inspected || !matchesContainerIdentity(inspected, id, { name, imageRef }, ownershipLabelsDigest(labels))) throw new WorkerProtocolError("Created sandbox container failed exact ownership inspection");
       await beforeStart?.(id);
       const child = spawn(docker, ["--config", configDirectory, "--host", "unix:///var/run/docker.sock", "start", "--attach", "--interactive", id], { shell: false, windowsHide: true, stdio: ["pipe", "pipe", "pipe"], env: { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: process.env.HOME ?? "/root", DOCKER_CONFIG: configDirectory } });
-      return new DockerRpc(docker, configDirectory, child, id, labels);
+      return new DockerRpc(docker, configDirectory, child, id, labels, { name, imageRef });
     } catch (error) {
-      await cleanupOwnedContainer(control, id, labels).catch(cleanupError => { throw new Error("Sandbox setup failed and owned container cleanup is unresolved", { cause: cleanupError }); });
+      await cleanupOwnedContainer(control, id, labels, { name, imageRef }).catch(cleanupError => { throw new Error("Sandbox setup failed and owned container cleanup is unresolved", { cause: cleanupError }); });
       throw error;
     }
   }
@@ -327,7 +334,7 @@ class DockerRpc {
       const closed = await this.waitForChildClose(3_000);
       if (!closed) this.child.kill("SIGKILL");
     }
-    await cleanupOwnedContainer(dockerControl(this.docker, this.configDirectory), this.containerId, this.ownershipLabels);
+    await cleanupOwnedContainer(dockerControl(this.docker, this.configDirectory), this.containerId, this.ownershipLabels, this.expectedContainer);
   }
   async detach(): Promise<void> {
     this.failAll(new Error("Sandbox detached; outcome requires durable reconciliation"));
