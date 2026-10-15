@@ -28,3 +28,10 @@ Direction: preserve source and evidence; validate/review one coherent candidate;
 
 Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDATION_STATUS.md). Candidate admission is a bounded optional source bridge; runtime composition and all activation gates remain open. No broad architecture rewrite or live activation is implied.
 
+## PR23 verifier repair — review pending
+
+- `PR23-REPAIR-001` repairs `docs/validation/slice1c-review-findings/verify-1c.mjs` to verify a full requested commit from a fresh user-local Linux clone, run locked install/build/validation/tests against that checkout, and fail closed on missing or malformed committed manifests/blobs.
+- Source candidate S: `7396750c540eeac538b98c7f05c0293bad98cd6a`. Evidence candidate E: `81067c0be674b3c1e1821144b69cc5b3eb736858`. E retains both the failed `/tmp` harness attempt and the passing persistent-checkout run; the old Windows logs are unchanged.
+- Linux final gates: install, typecheck, build, validate, verifier regressions, focused suite and full suite passed. Full suite: 247/248 pass, zero failures, one deployment-host ownership/mode test skipped. The exact source and evidence manifests are verified against committed blobs. See [PR23 receipt](../docs/validation/2026-10-14-pr23-verifier-receipt.md).
+- State: implementation and local validation complete; independent review of the exact R candidate is pending. This bounded source proof does not close operational runtime, actual PostgreSQL, runsc, provider, deployment, or product finish gates.
+

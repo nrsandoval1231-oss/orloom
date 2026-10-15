@@ -1,0 +1,7 @@
+PR23-source-sha256.txt: 5/5 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/slice0-baseline/artifact-sha256.txt: 11/11 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/slice1a-runtime-intent/artifact-sha256.txt: 9/9 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/slice1b-owner-cancellation/artifact-sha256.txt: 9/9 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/slice1c-review-findings/artifact-sha256.txt: 11/11 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/pr23-evidence-attempt1-20261014/artifact-sha256.txt: 10/10 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858
+docs/validation/pr23-evidence-attempt2-20261014/artifact-sha256.txt: 10/10 committed blobs match at 81067c0be674b3c1e1821144b69cc5b3eb736858

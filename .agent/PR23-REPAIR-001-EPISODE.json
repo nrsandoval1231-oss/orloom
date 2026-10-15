@@ -1,0 +1,32 @@
+{
+  "node_id": "PR23-REPAIR-001",
+  "base_sha": "e1ace83b814c38fb9c8b1f6eb26982c05d205ebf",
+  "source_candidate": "7396750c540eeac538b98c7f05c0293bad98cd6a",
+  "evidence_candidate": "81067c0be674b3c1e1821144b69cc5b3eb736858",
+  "source_validation_started_utc": "2026-10-15T00:13:51.071Z",
+  "source_validation_finished_utc": "2026-10-15T00:15:01.148Z",
+  "first_attempt_started_utc": "2026-10-15T00:11:13.587Z",
+  "first_attempt_finished_utc": "2026-10-15T00:12:32.310Z",
+  "lane": "focused, single builder",
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "planning_duration": "UNKNOWN",
+  "build_duration": "UNKNOWN",
+  "validation_duration_ms": 70077,
+  "audit_duration": "UNKNOWN; independent review pending",
+  "elapsed_to_accepted": "UNKNOWN; not independently accepted",
+  "repair_count": 1,
+  "state": "S1 Linux full suite exposed checkout-path guard conflict; S2 persistent-path rerun passed; exact R review pending",
+  "decision": "Use an isolated persistent user-local Linux checkout so existing artifact path policy evaluates the intended candidate rather than rejecting the harness parent",
+  "action": "Make verifier commit-bound, fail closed on committed evidence, retain two attempts, and rerun all source gates from S2",
+  "outcome": "S2 full suite 247 passed, 0 failed, 1 deployment-host ownership/mode test skipped out of 248; focused suite 65 passed, 0 failed, 1 skipped out of 66",
+  "deterministic_evaluation": "npm ci/typecheck/build/validate/verifier regressions/focused suite/full suite exit 0; E committed-blob integrity passes source 5/5 and all six historical/run manifests",
+  "attribution": "S1 had two verifier-config test failures because its /tmp parent triggered the persistent artifact-root guard; the location was changed to a user-local persistent Linux cache and S2 passed",
+  "retained_failures": [
+    "S1 npm test: 245 passed, 2 failed, 1 skipped; both failures retained under docs/validation/pr23-evidence-attempt1-20261014"
+  ],
+  "candidate_lesson": "When exact-source validation uses a fresh Linux checkout, put it outside temporary path components if the application validates persistent path policy against process.cwd()",
+  "lesson_status": "candidate only; not promoted",
+  "authority": "No push, merge, runtime activation, credentials, services, provider calls, or deployment"
+}
