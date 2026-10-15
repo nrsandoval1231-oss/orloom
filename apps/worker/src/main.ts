@@ -24,7 +24,7 @@ import { controllerRunIdForApprovedTask, reconcileApprovedWorkerRetained, runApp
 import { DockerWorkerRuntime } from "./docker-runtime.js";
 import { FileRuntimeJournal } from "./runtime-journal.js";
 import { acquireWorkerServiceLock } from "./service-lock.js";
-import { missingApprovedConfigurationNames, parseApprovedWorkerConfiguration, readApprovedTaskManifest, validateApprovedPricing, type ApprovedTaskManifest } from "./approved-startup.js";
+import { missingApprovedConfigurationNames, parseApprovedWorkerConfiguration, readApprovedTaskManifest, scheduleApprovedTaskExpiry, validateApprovedPricing, type ApprovedTaskManifest } from "./approved-startup.js";
 
 const number = (env: NodeJS.ProcessEnv, name: string, min: number, max: number): number => {
   const raw = env[name]?.trim() ?? "", result = Number(raw);
@@ -152,7 +152,12 @@ function preflightImage(ref: string): void {
 }
 
 async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, signal: AbortSignal, policies: ValidatedWorkerPolicies): Promise<string> {
+  const assertTaskActive = () => {
+    if (signal.aborted) throw new Error("Approved worker task expired or was interrupted");
+    if (Date.parse(task.expiresAt) <= Date.now()) throw new Error("Approved task manifest expired");
+  };
   // All shape, policy, and pointer validation completes before any secret is read.
+  assertTaskActive();
   validateTaskAgainstConfiguration(task, env);
   const githubAppId = number(env, "ORLOOM_GITHUB_APP_ID", 1, Number.MAX_SAFE_INTEGER);
   const githubPrivateKey = readSecret(env, "ORLOOM_GITHUB_PRIVATE_KEY");
@@ -172,9 +177,12 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
   let jobStore: PostgresJobStore | undefined;
   try {
     lock = await acquireWorkerServiceLock(env.ORLOOM_WORKER_SERVICE_LOCK_FILE!);
+    assertTaskActive();
     preflightImage(workerImageRef); preflightImage(task.verifierImageRef);
+    assertTaskActive();
     const connected = await PostgresJobStore.connect(databaseUrl);
     jobStore = connected;
+    assertTaskActive();
     const store = new SqlMissionStore(connected);
     const capacityExpires = env.ORLOOM_CAPACITY_EVIDENCE_EXPIRES_AT!;
     await store.configureCapacity(1, env.ORLOOM_CAPACITY_EVIDENCE_SHA256!, capacityExpires);
@@ -184,6 +192,7 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
       trustedCheckPolicy: policyIds, executionConfigured: true,
       progressLimits: { maxProviderCalls: number(env, "ORLOOM_WORKER_MAX_PROVIDER_CALLS", 1, 64), maxInputTokens: number(env, "ORLOOM_WORKER_MAX_INPUT_TOKENS", 1, 1_000_000), maxOutputTokens: number(env, "ORLOOM_WORKER_MAX_OUTPUT_TOKENS", 1, 100_000), maxWallSeconds: number(env, "ORLOOM_WORKER_MAX_WALL_SECONDS", 1, 3600) }
     });
+    assertTaskActive();
     const runner = await createTrustedVerificationRunner(env);
     if (!runner) throw new Error("Trusted verification configuration is not enabled");
     const verifierDigest = task.verifierImageRef.match(/sha256:([a-f0-9]{64})$/i)?.[1]?.toLowerCase();
@@ -204,9 +213,10 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
         reviewArtifactRoot: env.ORLOOM_REVIEW_ARTIFACT_ROOT!.trim(), deliveryEnabled, ...(deliveryEnabled ? { deliveryPolicyFile: env.ORLOOM_DELIVERY_POLICY_FILE!.trim() } : {})
       };
       const authorities = await createControllerAuthorities(config, { checkId: policy.id, policy, coordinator: trustedChecks }, env);
+      assertTaskActive();
       integrationAuthority = authorities.localIntegration; deliveryController = authorities.deliveryController;
     }
-    let prepareCertifiedIntegration: ((record: NonNullable<Awaited<ReturnType<SqlMissionStore["getMission"]>>>, request: IntegrationRequestV1) => Promise<void>) | undefined;
+    let prepareCertifiedIntegration: ReturnType<typeof createCertifiedIntegrationPreparer> | undefined;
     if (integrationEnabled && integrationRequest) {
       if (typeof (runner as { admitForController?: unknown }).admitForController !== "function" || !integrationAuthority?.integrator) throw new Error("Certified integration requires the trusted admission runner and local integration authority");
       prepareCertifiedIntegration = createCertifiedIntegrationPreparer({
@@ -228,16 +238,17 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
     };
     const limits: WorkerExecutionLimits = { reservedBudgetCents: task.maxBudgetCents, maxProviderCalls: number(env, "ORLOOM_WORKER_MAX_PROVIDER_CALLS", 1, 64), maxInputTokens: number(env, "ORLOOM_WORKER_MAX_INPUT_TOKENS", 1, 1_000_000), maxOutputTokens: number(env, "ORLOOM_WORKER_MAX_OUTPUT_TOKENS", 1, 100_000), maxWallSeconds: number(env, "ORLOOM_WORKER_MAX_WALL_SECONDS", 1, 3600), allowedProviders: jsonValue<string[]>(env, "ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON"), allowedModels: jsonValue<string[]>(env, "ORLOOM_WORKER_ALLOWED_MODELS_JSON") };
     const provider = new DeepSeekHttpClient(deepseekKey);
+    assertTaskActive();
     const serviceResult = await runApprovedWorkerService({ task, executionLimits: limits, minimumSliceBudgetCents, leaseSeconds: 300, signal, ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) }, {
       governor, store, trustedChecks,
       reconcileInterrupted: async target => runtime.reconcileInterrupted(target),
       reconcileRetained: async (target, leaseEpoch) => reconcileApprovedWorkerRetained(runtimeBridge, target, controllerRunIdForApprovedTask(task, leaseEpoch)),
       ...(integrationAuthority ? { integrationAuthority } : {}), ...(prepareCertifiedIntegration ? { prepareCertifiedIntegration } : {}),
       ...(deliveryController ? { deliveryPolicy: deliveryController.policy, deliveryAuthority: deliveryController.authority } : {}),
-      executeLane: async (lease, _binding, laneSignal) => runApprovedDockerWorkerLane(lease, {
+      executeLane: async (lease, _binding, laneSignal, lifecycleGuard) => runApprovedDockerWorkerLane(lease, {
         store, binding: { missionId: task.missionId, slice: { id: lease.slice.id, objective: lease.slice.objective, dependencies: lease.slice.dependencies, owner: lease.slice.owner, scopes: lease.slice.scopes, checks: lease.slice.checks, budgetCents: lease.executionLimits.reservedBudgetCents }, baseSha: task.baseSha, planDigest: task.planDigest, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest },
         control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(checkIds.map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
-        runtimeOptions: { imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, signal: laneSignal
+        runtimeOptions: { imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
       })
     });
     return serviceResult;
@@ -265,15 +276,17 @@ async function main(): Promise<void> {
     const shutdown = new AbortController();
     const onTerm = () => shutdown.abort(new Error("worker service shutdown requested"));
     process.once("SIGTERM", onTerm); process.once("SIGINT", onTerm);
-    const expiryTimer = setTimeout(onTerm, Math.max(0, Date.parse(task.expiresAt) - Date.now())); expiryTimer.unref();
+    let cancelExpiryTimer = () => {};
     try {
+      cancelExpiryTimer = scheduleApprovedTaskExpiry(task.expiresAt, onTerm);
+      if (shutdown.signal.aborted) throw new Error("Approved task manifest expired");
       const result = await runApproved(task, process.env, shutdown.signal, policies);
       process.stdout.write(`Approved worker task ${task.missionId}/${task.sliceId} finished: ${result}.\n`);
     } catch {
       process.stderr.write(`Orloom approved worker task ${task.missionId}/${task.sliceId} failed; details suppressed.\n`);
       process.exitCode = 1;
     } finally {
-      clearTimeout(expiryTimer);
+      cancelExpiryTimer();
       process.removeListener("SIGTERM", onTerm); process.removeListener("SIGINT", onTerm);
     }
   } catch (error) {

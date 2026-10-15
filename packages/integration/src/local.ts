@@ -5,6 +5,7 @@ import { lstat, realpath, readdir, stat, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MissionConflictError } from "../../contracts/src/mission.js";
+import type { LifecycleGuard } from "../../contracts/src/lifecycle.js";
 
 const run = promisify(execFile);
 const sha1 = /^[a-f0-9]{40}$/;
@@ -16,7 +17,7 @@ export function gitAskpassCommand(helper:string){
 export interface LocalIntegrationRequest { expectedRefSha:string; candidateSha:string; scopes:string[]; }
 export interface RemoteUploadRequest { branch:string; candidateSha:string; protectedRefs:string[]; token:string; }
 export interface LocalIntegrationResult { ref:string; previousSha:string; candidateSha:string; treeSha:string; changedPaths:string[]; }
-export interface LocalIntegrator { readonly repositoryIdentity:string; inspect(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>; compareAndSwap(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>; readRef():Promise<string>; uploadRef?(request:RemoteUploadRequest):Promise<void>; }
+export interface LocalIntegrator { readonly repositoryIdentity:string; inspect(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>; compareAndSwap(request:LocalIntegrationRequest,guard?:LifecycleGuard):Promise<LocalIntegrationResult>; readRef():Promise<string>; uploadRef?(request:RemoteUploadRequest,guard?:LifecycleGuard):Promise<void>; }
 
 async function packFromAdmittedSource(source:string,candidateSha:string,baseSha:string):Promise<Buffer>{
   if(process.platform!=="linux")throw new MissionConflictError("Certified candidate import requires the bounded Linux local Git transport");
@@ -101,7 +102,7 @@ export class BareGitFastForwardIntegrator implements LocalIntegrator {
     await indexIntoTarget(this.repository,pack);
     return this.inspect({expectedRefSha:baseSha,candidateSha,scopes});
   }
-  async uploadRef(request:RemoteUploadRequest):Promise<void>{
+  async uploadRef(request:RemoteUploadRequest,guard?:LifecycleGuard):Promise<void>{
     try{
       if(typeof request.token!=="string"||!request.token||request.token.length>4096||/[\r\n\x00]/.test(request.token)||!sha1.test(request.candidateSha)||!/^orloom\/delivery\/[0-9a-f-]{36}\/[a-f0-9]{12}$/.test(request.branch)||request.protectedRefs.some(ref=>ref===request.branch||ref===`refs/heads/${request.branch}`)||request.branch==="orloom/delivery/main")throw new Error();
       const productionUrl=`https://github.com/${this.repositoryIdentity}.git`;
@@ -114,6 +115,7 @@ export class BareGitFastForwardIntegrator implements LocalIntegrator {
       const askpass=gitAskpassCommand(helper);
       const env:NodeJS.ProcessEnv={PATH:process.env.PATH??"",SystemRoot:process.env.SystemRoot??"",ComSpec:process.env.ComSpec??"",HOME:process.env.HOME??process.env.USERPROFILE??"",USERPROFILE:process.env.USERPROFILE??"",GIT_CONFIG_NOSYSTEM:"1",GIT_CONFIG_GLOBAL:process.platform==="win32"?"NUL":"/dev/null",GIT_TERMINAL_PROMPT:"0",GIT_NO_REPLACE_OBJECTS:"1",GIT_ASKPASS:askpass,ORLOOM_GIT_UPLOAD_TOKEN:request.token,GIT_TRACE:"0",GIT_TRACE_PACKET:"0",GIT_TRACE_CURL:"0",GIT_TRACE2:"0",GIT_CURL_VERBOSE:"0",GIT_EXEC_PATH:"",GIT_CONFIG_COUNT:"1",GIT_CONFIG_KEY_0:"credential.helper",GIT_CONFIG_VALUE_0:""};
       const disabled=process.platform==="win32"?"NUL":"/dev/null";
+      await guard?.();
       await run("git",["-c",`core.hooksPath=${disabled}`,"-c","core.fsmonitor=false","--no-pager","-C",this.repository,"push","--no-verify",`--force-with-lease=refs/heads/${request.branch}:`,url,`${request.candidateSha}:refs/heads/${request.branch}`],{encoding:"buffer",maxBuffer:64*1024,timeout:60_000,windowsHide:true,env});
     }catch{throw new MissionConflictError("Remote upload transport failed; outcome requires exact remote reconciliation");}
   }
@@ -133,5 +135,5 @@ export class BareGitFastForwardIntegrator implements LocalIntegrator {
     const treeSha=(await this.git(["rev-parse",`${request.candidateSha}^{tree}`])).trim();if(!sha1.test(treeSha))throw new MissionConflictError("Candidate tree identity is invalid");
     return{ref:this.ref,previousSha:current,candidateSha:request.candidateSha,treeSha,changedPaths:changed};
   }
-  async compareAndSwap(request:LocalIntegrationRequest){const inspected=await this.inspect(request);const current=await this.readRef();if(current===request.candidateSha)return inspected;await this.assertCompleteStore();try{await this.git(["update-ref",this.ref,request.candidateSha,request.expectedRefSha]);}catch{throw new MissionConflictError("Integration ref compare-and-swap failed; reconcile the durable intent before retrying");}const observed=await this.readRef();if(observed!==request.candidateSha)throw new MissionConflictError("Integration ref write outcome is ambiguous");return inspected;}
+  async compareAndSwap(request:LocalIntegrationRequest,guard?:LifecycleGuard){const inspected=await this.inspect(request);const current=await this.readRef();if(current===request.candidateSha)return inspected;await this.assertCompleteStore();await guard?.();try{await this.git(["update-ref",this.ref,request.candidateSha,request.expectedRefSha]);}catch{throw new MissionConflictError("Integration ref compare-and-swap failed; reconcile the durable intent before retrying");}await guard?.();const observed=await this.readRef();if(observed!==request.candidateSha)throw new MissionConflictError("Integration ref write outcome is ambiguous");return inspected;}
 }

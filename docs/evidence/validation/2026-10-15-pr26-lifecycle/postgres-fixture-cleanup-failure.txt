@@ -1,0 +1,21 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'ignored'
+- 'settled'
+
+    at file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/scripts/validate-pr26-lifecycle-postgres.mjs:44:14
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'ignored',
+  expected: 'settled',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.0

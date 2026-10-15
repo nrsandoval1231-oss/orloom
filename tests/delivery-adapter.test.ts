@@ -2,6 +2,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createGitHubAppAdapter, type GitHubRequestBoundary } from "../packages/adapters/src/providers.js";
 
+for (const effect of ["upload-token", "check", "pull-request"] as const) {
+  test(`already-stopped ${effect} adapter does not mint credentials or dispatch`, async () => {
+    let minted=0,dispatched=0;
+    const client=createGitHubAppAdapter({appId:1,privateKey:"synthetic-only"},{app:{request:async()=>{minted++;return{data:{token:"synthetic-token"}};}},installation:async()=>({request:async()=>{dispatched++;throw new Error("unexpected dispatch");}})});
+    const guard=async()=>{throw new Error("fixture lifecycle stopped");};
+    if(effect==="upload-token")await assert.rejects(client.withContentsWriteToken!(7,"acme/orloom",async()=>{dispatched++;},guard),/fixture lifecycle stopped/);
+    else if(effect==="check")await assert.rejects(client.createDeliveryCheck(7,"acme/orloom","a".repeat(40),"check","external","title","summary",guard),/fixture lifecycle stopped/);
+    else await assert.rejects(client.createDraftPullRequest(7,"acme/orloom","orloom/delivery/fixture","main","title","body",guard),/fixture lifecycle stopped/);
+    assert.equal(minted,0,"known stop is checked before scoped token issuance");
+    assert.equal(dispatched,0);
+  });
+}
+
 test("GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities",async()=>{
   const mintCalls:Record<string,unknown>[]=[],installationTokens:string[]=[],calls:Array<{route:string;parameters:Record<string,unknown>}>=[];
   const head="a".repeat(40),tree="b".repeat(40),base="c".repeat(40),baseTree="d".repeat(40),externalId="mission:slice:1:"+head;
@@ -26,4 +39,20 @@ test("branch absence is distinct from inaccessible or wrong repository readback"
   await assert.rejects(denied.inspectBranch(99,"acme/orloom","orloom/delivery/test"),/repository could not be verified/);
   const wrong=make(async()=>({data:{full_name:"other/repo"}}),async()=>({data:{object:{sha:"a".repeat(40)}}}));
   await assert.rejects(wrong.inspectBranch(7,"acme/orloom","orloom/delivery/test"),/repository could not be verified/);
+});
+
+test("lifecycle fence runs after Check and PR installation tokens are acquired but before POST",async()=>{
+  const head="a".repeat(40),events:string[]=[];
+  const boundary:GitHubRequestBoundary={
+    app:{request:async()=>{events.push("token");return{data:{token:"scoped-token"}};}},
+    installation:async(_id,token)=>{assert.equal(token,"scoped-token");events.push("installation");return{request:async(route)=>{events.push(route);if(route.startsWith("POST"))throw new Error("POST must not be reached");return{data:{}};}};}
+  };
+  const client=createGitHubAppAdapter({appId:1,privateKey:"test-only"},boundary);
+  const ended=new Error("lifecycle ended");
+  const guard=async()=>{events.push("guard");if(events.includes("installation"))throw ended;};
+  await assert.rejects(client.createDeliveryCheck(7,"acme/orloom",head,"Orloom suite","external","Title","Summary",guard),error=>error===ended);
+  assert.deepEqual(events,["guard","token","installation","guard"],"Check guard runs with the scoped client ready, directly before dispatch");
+  events.length=0;
+  await assert.rejects(client.createDraftPullRequest(7,"acme/orloom","branch","main","Title","Body",guard),error=>error===ended);
+  assert.deepEqual(events,["guard","token","installation","guard"],"PR guard runs with the scoped client ready, directly before dispatch");
 });

@@ -4,6 +4,7 @@ import { parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, type
 import { DurableArtifactStore } from "./artifact-store.js";
 import { getCheckPolicy, type CheckPolicy } from "./policy.js";
 import { extractCandidateBundle, readApprovedHead, type InputBundle, type RepositoryConfig } from "./repository.js";
+import type { LifecycleGuard } from "../../contracts/src/lifecycle.js";
 export interface SandboxResult { sandboxId: string; exitCode: number | null; signal?: string; timedOut?: boolean; stdout: Buffer; stderr: Buffer; truncated?: boolean; launcherExitCode?: number | null; launcherSignal?: string; launcherTimedOut?: boolean; launcherTruncated?: boolean; }
 export interface SandboxLauncher { launch(policy: CheckPolicy, bundle: InputBundle): Promise<SandboxResult>; }
 export interface TrustedVerificationRunnerOptions { repositories: Readonly<Record<string, RepositoryConfig>>; artifacts: DurableArtifactStore; launcher: SandboxLauncher; verifierId: string; image: string; imageDigest: string; now?: () => Date; }
@@ -39,13 +40,16 @@ export class TrustedVerificationRunner {
     return { stdout, stderr, manifest };
   }
 
-  async run(requestValue: TrustedCheckRequestV1, bundle: InputBundle): Promise<TrustedCheckReceiptV1> {
+  async run(requestValue: TrustedCheckRequestV1, bundle: InputBundle, guard?: LifecycleGuard): Promise<TrustedCheckReceiptV1> {
     const request = parseTrustedCheckRequestV1(requestValue), policy = getCheckPolicy(request.checkId, this.options.image, this.options.imageDigest);
     if (request.policyVersion !== policy.version || request.policyDigest !== policy.digest || request.verifierImageDigest !== this.options.imageDigest || policy.imageDigest !== this.options.imageDigest) throw new Error("request is not bound to the configured verifier image and policy");
     if (bundle.digest !== request.inputBundleDigest || bundle.manifest.length > TRUSTED_CHECK_LIMITS.maxManifestBytes || [...bundle.files.values()].reduce((n, b) => n + b.length, bundle.manifest.length) > policy.maxInputBytes) throw new Error("trusted input bundle does not match request or policy bounds");
     const startedAt = timestamp(this.now());
     let result: SandboxResult | undefined;
     if (Date.parse(startedAt) < Date.parse(request.expiresAt) && this.active < policy.maxConcurrent) {
+      // The trusted controller owns this fence. A stopped lifecycle must not
+      // dispatch a new sandbox after request validation/preflight has completed.
+      await guard?.();
       this.active++;
       try { result = await this.options.launcher.launch(policy, bundle); } catch { /* inability to establish execution is UNKNOWN */ }
       finally { this.active--; }

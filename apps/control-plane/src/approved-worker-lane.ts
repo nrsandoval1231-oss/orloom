@@ -6,6 +6,7 @@ import type { WorkerLeaseContract } from "../../../packages/contracts/src/worker
 import type { TrustedCheckCoordinator } from "../../../packages/governor/src/governor.js";
 import { controllerRunIdFor, DockerWorkerRuntime, type DockerWorkerRuntimeOptions } from "../../worker/src/docker-runtime.js";
 import { TrustedRuntimeJournalBridge } from "./trusted-runtime-journal-bridge.js";
+import type { LifecycleGuard } from "../../../packages/contracts/src/lifecycle.js";
 
 export interface ApprovedWorkerBinding {
   readonly missionId: string;
@@ -29,6 +30,7 @@ export interface ApprovedWorkerLaneDependencies {
   readonly runtimeJournal: TrustedRuntimeJournalBridge;
   readonly now?: () => number;
   readonly signal?: AbortSignal;
+  readonly lifecycleGuard?: LifecycleGuard;
 }
 
 export type ApprovedDockerWorkerLaneDependencies = Omit<ApprovedWorkerLaneDependencies, "createRuntime"> & {
@@ -61,6 +63,7 @@ export function runApprovedDockerWorkerLane(input: unknown, deps: ApprovedDocker
 
 async function runApprovedWorkerLaneOnce(input: WorkerLeaseContract, deps: ApprovedWorkerLaneDependencies): Promise<ApprovedWorkerLaneResult> {
   const lease = validateLease(input, (deps.now ?? Date.now)());
+  const guard: LifecycleGuard = async () => { deps.signal?.throwIfAborted(); await deps.lifecycleGuard?.(); deps.signal?.throwIfAborted(); };
   const { binding, store } = deps;
   const fail = (message: string): never => { throw new Error(`Approved worker lane refused execution: ${message}`); };
 
@@ -93,6 +96,7 @@ async function runApprovedWorkerLaneOnce(input: WorkerLeaseContract, deps: Appro
 
   await deps.runtimeJournal.reconcileRetained(controllerRunIdFor(lease));
   const after = await store.getMission(binding.missionId);
+  await guard();
   const completed = after?.slices.find(row => row.id === binding.slice.id);
   if (!completed) return "unknown";
   if (completed.status === "cancel_requested") {
@@ -101,7 +105,9 @@ async function runApprovedWorkerLaneOnce(input: WorkerLeaseContract, deps: Appro
     if (settled?.slices.find(row => row.id === binding.slice.id)?.status === "cancelled") return "cancelled";
   }
   if (completed.status === "awaiting_verification" && completed.candidateSha) {
-    await deps.trustedChecks.verifySlice(binding.missionId, binding.slice.id);
+    await guard();
+    await deps.trustedChecks.verifySlice(binding.missionId, binding.slice.id, guard);
+    await guard();
     const verified = await store.getMission(binding.missionId);
     const finalSlice = verified?.slices.find(row => row.id === binding.slice.id);
     if (finalSlice?.status === "verified") return "verified";

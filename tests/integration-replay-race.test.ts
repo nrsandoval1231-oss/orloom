@@ -13,6 +13,7 @@ import { BareGitFastForwardIntegrator, type LocalIntegrator } from "../packages/
 import { MissionGovernor, TrustedCheckCoordinator } from "../packages/governor/src/governor.js";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { receiptDigestV1, type CheckCertificateV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
+import { LifecycleStoppedError } from "../packages/contracts/src/lifecycle.js";
 
 const exec = promisify(callbackExecFile);
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -47,7 +48,7 @@ async function waitAtBarrier(value: ReturnType<typeof barrier>) {
 const governorConfig = (policyDigest: string) => ({ maxLanes: 2, capacitySlots: 1, leaseSeconds: 300, trustedCheckPolicyDigest: policyDigest, trustedCheckPolicy: ["node-repo-suite-v1"] });
 const leasePolicyDigest = hash(JSON.stringify(["node-repo-suite-v1"]));
 
-async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, label: string, policy: string) {
+async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, label: string, policy: string, interruptAfterCas = true) {
   const repoRoot = join(root, label), source = join(repoRoot, "source"), bare = join(repoRoot, "bare"), template = join(repoRoot, "empty-template");
   await mkdir(repoRoot, { recursive: true });
   await mkdir(template);
@@ -113,12 +114,14 @@ async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, lab
   const reviewBytes = Buffer.from(canonicalJson({ version: "orloom.independent-review.v1", verdict: "PASS", candidateSha: candidate, treeSha: inspected.treeSha, reviewer: "separate-reviewer", builder: "builder", scopes: ["src.txt"] }));
   const reviews = { read: async (id: string) => id === reviewId ? reviewBytes : null };
   const request: IntegrationRequestV1 = { version: "orloom.integration-request.v1", missionId: mission.id, sliceId: "parent", expectedIntegrationSha: base, candidateSha: candidate, leaseEpoch: grant.epoch, requiredCheckIds: ["node-repo-suite-v1"], reviewArtifactId: reviewId, reviewArtifactDigest: hash(reviewBytes.toString()) };
-  let reviewReads = 0;
-  const interrupted = { integrator: local, reviews: { read: async (id: string) => { if (++reviewReads === 2) throw new Error("controlled interruption after CAS"); return reviews.read(id); } } };
-  await assert.rejects(governor.integrateVerifiedSlice(request, coordinator, interrupted), /controlled interruption after CAS/);
-  assert.equal(await local.readRef(), candidate);
-  assert.equal((await store.getIntegrationIntent!(request))?.state, "pending");
-  assert.equal(successfulCas, 1);
+  if (interruptAfterCas) {
+    let reviewReads = 0;
+    const interrupted = { integrator: local, reviews: { read: async (id: string) => { if (++reviewReads === 2) throw new Error("controlled interruption after CAS"); return reviews.read(id); } } };
+    await assert.rejects(governor.integrateVerifiedSlice(request, coordinator, interrupted), /controlled interruption after CAS/);
+    assert.equal(await local.readRef(), candidate);
+    assert.equal((await store.getIntegrationIntent!(request))?.state, "pending");
+    assert.equal(successfulCas, 1);
+  }
   return { store, governor, coordinator, authority: { integrator: local, reviews }, request, candidate, base, missionId: mission.id, reviewBytes, successfulCas: () => successfulCas };
 }
 
@@ -266,6 +269,145 @@ test("completed exact integration replays reconcile across each pre-finalization
     await db.query("UPDATE mission_integration_intents SET state='unknown' WHERE mission_id=$1 AND slice_id='parent'", [fixture.missionId]);
     await assert.rejects(fixture.governor.integrateVerifiedSlice(fixture.request, fixture.coordinator, fixture.authority), MissionConflictError, "UNKNOWN durable intent cannot replay success");
     await assertNoReplayEffects();
+  } finally {
+    await db.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("stopped completed-integration replay cannot finalize after certificate, review, or ref readback", async () => {
+  const root = await mkdtemp(join(tmpdir(), "orloom-c4-lifecycle-replay-"));
+  const db = new PGlite();
+  try {
+    for (const migration of ["001_initial.sql", "002_missions.sql", "003_recovery.sql", "004_verification.sql", "005_learning.sql", "006_integration.sql"]) await db.exec(await readFile(join("db", "migrations", migration), "utf8"));
+    const store = new SqlMissionStore(testSql(db)), policy = hash("lifecycle-replay-policy");
+    await store.configureCapacity(1, hash("lifecycle-replay-capacity"), new Date(Date.now() + 300_000).toISOString());
+    const fixture = await makeFixture(db, store, root, "lifecycle-replay", policy);
+    await fixture.governor.integrateVerifiedSlice(fixture.request, fixture.coordinator, fixture.authority);
+
+    let finishCalls = 0;
+    const guardedStore = Object.create(store) as SqlMissionStore;
+    guardedStore.finishIntegrationIntent = async (...args: Parameters<NonNullable<SqlMissionStore["finishIntegrationIntent"]>>) => {
+      finishCalls++;
+      return store.finishIntegrationIntent!(...args);
+    };
+    const phases = ["certificate", "review", "ref"] as const;
+    for (const phase of phases) {
+      let stopped = false;
+      const guard = async () => { if (stopped) throw new LifecycleStoppedError("stopped during completed replay readback"); };
+      const coordinator = Object.create(fixture.coordinator) as TrustedCheckCoordinator;
+      if (phase === "certificate") {
+        coordinator.getIntegratedCertificate = async (...args) => {
+          const value = await fixture.coordinator.getIntegratedCertificate(...args);
+          stopped = true;
+          return value;
+        };
+      }
+      const integrator: LocalIntegrator = {
+        ...fixture.authority.integrator,
+        readRef: async () => {
+          const value = await fixture.authority.integrator.readRef();
+          if (phase === "ref") stopped = true;
+          return value;
+        }
+      };
+      const reviews = { read: async (id: string) => {
+        const value = await fixture.authority.reviews.read(id);
+        if (phase === "review") stopped = true;
+        return value;
+      } };
+      const governor = new MissionGovernor(guardedStore, governorConfig(leasePolicyDigest));
+      await assert.rejects(Reflect.apply(governor.integrateVerifiedSlice, governor, [fixture.request, coordinator, { integrator, reviews }, guard]), MissionConflictError, `${phase} stop cannot complete replay`);
+      assert.equal(finishCalls, 0, `${phase} stop prevents finishIntegrationIntent`);
+    }
+  } finally {
+    await db.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("stopped pending integration readbacks become UNKNOWN and never finish", async () => {
+  const root = await mkdtemp(join(tmpdir(), "orloom-c4-lifecycle-pending-"));
+  const db = new PGlite();
+  try {
+    for (const migration of ["001_initial.sql", "002_missions.sql", "003_recovery.sql", "004_verification.sql", "005_learning.sql", "006_integration.sql"]) await db.exec(await readFile(join("db", "migrations", migration), "utf8"));
+    const store = new SqlMissionStore(testSql(db)), policy = hash("lifecycle-pending-policy");
+    await store.configureCapacity(1, hash("lifecycle-pending-capacity"), new Date(Date.now() + 300_000).toISOString());
+    const phases = ["intent", "inspect", "certificate", "review", "ref"] as const;
+    for (const [index, phase] of phases.entries()) {
+      const fixture = await makeFixture(db, store, root, `pending-stop-${index}`, policy);
+      let stopped = false, certReads = 0, reviewReads = 0, refReads = 0, finishCalls = 0;
+      const guard = async () => { if (stopped) throw new LifecycleStoppedError("stopped during pending integration readback"); };
+      const coordinator = Object.create(fixture.coordinator) as TrustedCheckCoordinator;
+      coordinator.getCertificate = async (...args) => {
+        const value = await fixture.coordinator.getCertificate(...args);
+        if (phase === "certificate" && ++certReads === 2) stopped = true;
+        return value;
+      };
+      const integrator: LocalIntegrator = {
+        ...fixture.authority.integrator,
+        inspect: async (...args) => {
+          const value = await fixture.authority.integrator.inspect(...args);
+          if (phase === "inspect") stopped = true;
+          return value;
+        },
+        readRef: async () => {
+          const value = await fixture.authority.integrator.readRef();
+          if (phase === "ref" && ++refReads === 4) stopped = true;
+          return value;
+        }
+      };
+      const reviews = { read: async (id: string) => {
+        const value = await fixture.authority.reviews.read(id);
+        if (phase === "review" && ++reviewReads === 2) stopped = true;
+        return value;
+      } };
+      const guardedStore = Object.create(store) as SqlMissionStore;
+      if (phase === "intent") guardedStore.getIntegrationIntent = async (...args) => {
+        const value = await store.getIntegrationIntent!(...args);
+        stopped = true;
+        return value;
+      };
+      guardedStore.finishIntegrationIntent = async (...args: Parameters<NonNullable<SqlMissionStore["finishIntegrationIntent"]>>) => {
+        finishCalls++;
+        return store.finishIntegrationIntent!(...args);
+      };
+      const governor = new MissionGovernor(guardedStore, governorConfig(leasePolicyDigest));
+      await assert.rejects(Reflect.apply(governor.integrateVerifiedSlice, governor, [fixture.request, coordinator, { integrator, reviews }, guard]), LifecycleStoppedError, `${phase} stop is propagated`);
+      assert.equal(finishCalls, 0, `${phase} stop prevents finishIntegrationIntent`);
+      assert.equal((await store.getIntegrationIntent!(fixture.request))?.state, "unknown", `${phase} stop after CAS retains an UNKNOWN intent`);
+    }
+  } finally {
+    await db.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("stop after creating a new pending intent retains it UNKNOWN without finalization", async () => {
+  const root = await mkdtemp(join(tmpdir(), "orloom-c4-lifecycle-new-intent-"));
+  const db = new PGlite();
+  try {
+    for (const migration of ["001_initial.sql", "002_missions.sql", "003_recovery.sql", "004_verification.sql", "005_learning.sql", "006_integration.sql"]) await db.exec(await readFile(join("db", "migrations", migration), "utf8"));
+    const store = new SqlMissionStore(testSql(db)), policy = hash("lifecycle-new-intent-policy");
+    await store.configureCapacity(1, hash("lifecycle-new-intent-capacity"), new Date(Date.now() + 300_000).toISOString());
+    const fixture = await makeFixture(db, store, root, "new-intent-stop", policy, false);
+    let stopped = false, finishCalls = 0;
+    const guard = async () => { if (stopped) throw new LifecycleStoppedError("stopped after new pending intent commit"); };
+    const guardedStore = Object.create(store) as SqlMissionStore;
+    guardedStore.createIntegrationIntent = async (...args) => {
+      const value = await store.createIntegrationIntent!(...args);
+      stopped = true;
+      return value;
+    };
+    guardedStore.finishIntegrationIntent = async (...args: Parameters<NonNullable<SqlMissionStore["finishIntegrationIntent"]>>) => {
+      finishCalls++;
+      return store.finishIntegrationIntent!(...args);
+    };
+    const governor = new MissionGovernor(guardedStore, governorConfig(leasePolicyDigest));
+    await assert.rejects(Reflect.apply(governor.integrateVerifiedSlice, governor, [fixture.request, fixture.coordinator, fixture.authority, guard]), LifecycleStoppedError);
+    assert.equal(finishCalls, 0, "a stopped new intent is never finalized");
+    assert.equal((await store.getIntegrationIntent!(fixture.request))?.state, "unknown", "the committed intent is retained UNKNOWN after cancellation");
+    assert.equal(await fixture.authority.integrator.readRef(), fixture.base, "no compare-and-swap begins after the lifecycle stop");
   } finally {
     await db.close();
     await rm(root, { recursive: true, force: true });

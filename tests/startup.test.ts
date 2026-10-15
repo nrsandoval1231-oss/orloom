@@ -27,7 +27,10 @@ test("Node env-file startup loads local token and starts the real control-plane 
   child.stderr.on("data", chunk => { logs += String(chunk); });
   try {
     let health: Response | undefined;
-    for (let i = 0; i < 40; i++) {
+    // A cold ESM graph on a mounted checkout can exceed two seconds. Keep a
+    // finite readiness deadline, and fail promptly when the child exits.
+    const deadline = Date.now() + 15_000;
+    while (Date.now() < deadline && child.exitCode === null && child.signalCode === null) {
       try { health = await fetch(`http://127.0.0.1:${port}/health`); if (health.ok) break; }
       catch { await new Promise(resolve => setTimeout(resolve, 50)); }
     }
@@ -35,8 +38,11 @@ test("Node env-file startup loads local token and starts the real control-plane 
     const session = await fetch(`http://127.0.0.1:${port}/session`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: secret }) });
     assert.equal(session.status, 204);
   } finally {
-    child.kill();
-    await new Promise<void>(resolve => child.once("exit", () => resolve()));
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise<void>(resolve => child.once("exit", () => resolve()));
+      child.kill();
+      await exited;
+    }
     await rm(dir, { recursive: true, force: true });
   }
 });

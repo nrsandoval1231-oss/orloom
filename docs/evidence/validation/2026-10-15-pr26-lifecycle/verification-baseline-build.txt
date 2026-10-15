@@ -1,0 +1,10 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+apps/control-plane/src/approved-worker-lane.ts(109,79): error TS2554: Expected 2 arguments, but got 3.
+apps/worker/src/approved-service.ts(167,93): error TS2554: Expected 2 arguments, but got 3.
+apps/worker/src/approved-service.ts(211,123): error TS2554: Expected 3 arguments, but got 4.
+apps/worker/src/approved-service.ts(216,126): error TS2554: Expected 3 arguments, but got 4.
+tests/approved-worker-lane-lifecycle.test.ts(36,187): error TS2322: Type 'string' is not assignable to type 'null'.
+tests/verification-lifecycle.test.ts(33,70): error TS2554: Expected 2 arguments, but got 3.

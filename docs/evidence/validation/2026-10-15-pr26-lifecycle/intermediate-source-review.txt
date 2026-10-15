@@ -1,0 +1,8 @@
+Intermediate independent read-only review: CHANGES NEEDED.
+
+Two findings: admission reread resumes into verifier dispatch without lifecycle guard; integration/replay and delivery final readbacks can persist success after stop. Assigned implementer is correcting these. Timer chunking and adapter pre-mint/post-token dispatch fences looked correct within source scope. No build/test performed by reviewer; fixtures are not live execution proof.
+
+Reviewed SHA256:
+governor.ts 8a30e1e034b9eb69bf2c7a23647b8ffdb6b691bb089e71b004c9020b5a83d0b7
+delivery.ts 6c1f3c3e6f4016d2afbeda8e6f280427dfc3f11503328d5582aa3457f5c8f673
+admitting-runner.ts 50afde8be2b38b3f3038457344fec15ee6d8bf554d42392041816e4005faa92d

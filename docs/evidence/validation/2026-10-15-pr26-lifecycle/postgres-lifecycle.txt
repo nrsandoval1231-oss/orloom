@@ -1,0 +1,48 @@
+{
+  "status": "PASS",
+  "database": "isolated actual PostgreSQL",
+  "connections": 2,
+  "cases": [
+    {
+      "mode": "signal",
+      "result": "unknown",
+      "calls": {
+        "verification": 1,
+        "prepare": 0,
+        "integration": 0,
+        "delivery": 0,
+        "builder": 0
+      },
+      "reservedCents": 100
+    },
+    {
+      "mode": "expiry",
+      "result": "unknown",
+      "calls": {
+        "verification": 1,
+        "prepare": 0,
+        "integration": 0,
+        "delivery": 0,
+        "builder": 0
+      },
+      "reservedCents": 100
+    },
+    {
+      "mode": "owner-cancel",
+      "result": "unknown",
+      "calls": {
+        "verification": 1,
+        "prepare": 0,
+        "integration": 0,
+        "delivery": 0,
+        "builder": 0
+      },
+      "reservedCents": 100
+    }
+  ],
+  "limitations": [
+    "Verification callback and certificate-presence result are explicit synthetic fixtures",
+    "No actual provider, verifier, runtime, integration ref, artifact upload, GitHub Check or PR effect is executed",
+    "Actual SQL mission/lease/cancellation state and conservative reservations are exercised"
+  ]
+}

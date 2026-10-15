@@ -1,0 +1,8 @@
+{
+  "baseline": "9347c1701c8f18ea7e5b037695b88f584a747473",
+  "unchangedArchives": [
+    ".agent/archive/2026-10-15-before-pr26-lifecycle-CURRENT_STATE.md",
+    ".agent/archive/2026-10-15-before-pr26-lifecycle-WORK_GRAPH.md"
+  ],
+  "mismatches": []
+}

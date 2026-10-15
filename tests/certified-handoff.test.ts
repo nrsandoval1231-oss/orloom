@@ -16,8 +16,8 @@ function harness(options:{readbackMutation?:(bytes:Buffer)=>Buffer;missingCertif
   const receiptBody={version:"orloom.trusted-check-receipt.v1" as const,request,verifierId:"verifier",runtime:"runsc" as const,sandboxId:"sandbox",outcome:"pass" as const,exitCode:0,startedAt,finishedAt,stdout:{key:`sha256/${hash(stdout)}` as `sha256/${string}`,sha256:hash(stdout),bytes:stdout.length},stderr:{key:`sha256/${hash(stderr)}` as `sha256/${string}`,sha256:hash(stderr),bytes:stderr.length},inputManifest:{key:`sha256/${hash(manifest)}` as `sha256/${string}`,sha256:hash(manifest),bytes:manifest.length}};
   const receipt={...receiptBody,receiptDigest:receiptDigestV1(receiptBody)};
   const certificate={version:"orloom.check-certificate.v1" as const,certificateId:"cccccccc-cccc-4ccc-8ccc-cccccccccccc",attemptId:request.attemptId,missionId,sliceId,leaseEpoch:1,repository:"owner/repo",candidateSha,localHeadSha:candidateSha,checkId:request.checkId,planDigest,policyVersion:"v1",policyDigest,receiptDigest:receipt.receiptDigest,certifiedAt:startedAt,scope:"local-exact-commit" as const};
-  const stored=new Map<string,Buffer>();
-  const artifacts={async put(bytes:Uint8Array){const value=Buffer.from(bytes),sha256=hash(value),key=`sha256/${sha256}`;stored.set(key,value);return{key,sha256};},async get(key:string){const value=stored.get(key);if(!value)throw new Error("missing");return options.readbackMutation&&key===`sha256/${hash(stdout)}`?options.readbackMutation(value):value;}};
+  const stored=new Map<string,Buffer>();let artifactPuts=0;
+  const artifacts={async put(bytes:Uint8Array){artifactPuts++;const value=Buffer.from(bytes),sha256=hash(value),key=`sha256/${sha256}`;stored.set(key,value);return{key,sha256};},async get(key:string){const value=stored.get(key);if(!value)throw new Error("missing");return options.readbackMutation&&key===`sha256/${hash(stdout)}`?options.readbackMutation(value):value;}};
   const coordinator={integrationBinding:()=>({allowedChecks:[request.checkId],policyDigest,policyVersion:"v1",imageDigest,verifierId:"verifier",leasePolicyDigest}),getCertificate:async()=>options.missingCertificate?null:certificate} as any;
   const store={getTrustedAttempt:async()=>({purpose:"final",outcome:"pass",leasePolicyDigest,request,receipt})} as any;
   let imported=0;
@@ -26,7 +26,7 @@ function harness(options:{readbackMutation?:(bytes:Buffer)=>Buffer;missingCertif
   const reviews={read:async()=>reviewBytes};
   const prepare=createCertifiedIntegrationPreparer({store,coordinator,admittingRunner,integrator,reviews,artifacts});
   const integrationRequest={version:"orloom.integration-request.v1" as const,missionId,sliceId,expectedIntegrationSha:baseSha,candidateSha,leaseEpoch:1,requiredCheckIds:[request.checkId],reviewArtifactId:"review-1",reviewArtifactDigest:hash(reviewBytes)};
-  return{prepare,record,request:integrationRequest,stored,certificate,receipt,imported:()=>imported};
+  return{prepare,record,request:integrationRequest,stored,certificate,receipt,imported:()=>imported,artifactPuts:()=>artifactPuts};
 }
 
 test("certified handoff uploads only digest-matching final verifier evidence after candidate identity checks",async()=>{
@@ -35,6 +35,14 @@ test("certified handoff uploads only digest-matching final verifier evidence aft
   assert.equal(h.stored.get(h.receipt.stdout.key)?.toString(),"trusted stdout");
   assert.equal(h.stored.get(h.receipt.stderr.key)?.length,0);
   assert.equal(h.stored.get(h.receipt.inputManifest.key)?.toString(),"{}\n");
+});
+
+test("certified handoff stops later artifact publication when lifecycle ends after the first put",async()=>{
+  const h=harness();
+  const guard=async()=>{if(h.artifactPuts()>=1)throw new Error("lifecycle ended");};
+  await assert.rejects(h.prepare(h.record,h.request,guard),/lifecycle ended/);
+  assert.equal(h.artifactPuts(),1,"the guard after the first put fences the remaining evidence publications");
+  assert.deepEqual([...h.stored.keys()],[h.receipt.stdout.key],"only the artifact whose put already began is present");
 });
 
 test("certified handoff refuses artifact-store readback substitution and never promotes a Git ref",async()=>{

@@ -1,0 +1,7 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+apps/worker/src/approved-startup.ts(31,85): error TS2741: Property 'now' is missing in type 'typeof globalThis' but required in type 'ApprovedExpiryClock'.
+tests/approved-worker-lifecycle.test.ts(39,136): error TS2345: Argument of type '{ store: MissionStore; reconcileInterrupted(): Promise<void>; reconcileRetained(): Promise<void>; trustedChecks: TrustedCheckCoordinator; governor: MissionGovernor; integrationAuthority: never; prepareCertifiedIntegration(): Promise<...>; }' is not assignable to parameter of type 'ApprovedWorkerServiceDependencies'.
+  Property 'executeLane' is missing in type '{ store: MissionStore; reconcileInterrupted(): Promise<void>; reconcileRetained(): Promise<void>; trustedChecks: TrustedCheckCoordinator; governor: MissionGovernor; integrationAuthority: never; prepareCertifiedIntegration(): Promise<...>; }' but required in type 'ApprovedWorkerServiceDependencies'.

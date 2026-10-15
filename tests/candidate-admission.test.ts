@@ -272,3 +272,46 @@ test("candidate facades share verifier capacity and cannot retarget a prepared s
   assert.equal(second.outcome,"unknown");assert.equal((await first).outcome,"pass");assert.equal(launches,1);
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
+
+test("candidate facade rechecks lifecycle after reread before verifier dispatch",async()=>{
+ const f=await fixture();try{
+  const {CandidateAdmission}=await import("../packages/verification/src/candidate-admission.js");
+  const {AdmittingVerificationRunner}=await import("../packages/verification/src/admitting-runner.js");
+  const {DurableArtifactStore}=await import("../packages/verification/src/artifact-store.js");
+  const {getCheckPolicy}=await import("../packages/verification/src/policy.js");
+  const {LifecycleStoppedError}=await import("../packages/contracts/src/lifecycle.js");
+  let admissionReads=0,launches=0;const controller=new AbortController();
+  const realAdmission=new CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});
+  const admitted=await realAdmission.admit(f.binding);
+  const racedAdmission={async admit(){admissionReads++;if(admissionReads===3)controller.abort();return admitted;}} as unknown as InstanceType<typeof CandidateAdmission>;
+  const imageDigest="a".repeat(64),image=`sha256:${imageDigest}`,policy=getCheckPolicy("node-validate-syntax",image,imageDigest);
+  const facade=await new AdmittingVerificationRunner({repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:new DurableArtifactStore(path.join(f.root,"lifecycle-verification")),verifierId:"controlled-fixture",image,imageDigest,launcher:{async launch(){launches++;return{sandboxId:"fixture",exitCode:0,stdout:Buffer.alloc(0),stderr:Buffer.alloc(0)};}}},racedAdmission).forCandidate(f.binding);
+  const input=await facade.prepareBundle(f.binding.repository,f.binding.baseSha,f.binding.candidateSha);
+  const request:import("../packages/contracts/src/verification.js").TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId:"33333333-3333-4333-8333-333333333333",missionId:f.binding.missionId,sliceId:f.binding.sliceId,leaseEpoch:f.binding.leaseEpoch,repository:f.binding.repository,candidateSha:f.binding.candidateSha,expectedLocalHeadSha:f.binding.candidateSha,planDigest:f.binding.planDigest,checkId:policy.id,policyVersion:policy.version,policyDigest:policy.digest,verifierImageDigest:imageDigest,inputBundleDigest:input.digest,requestedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60_000).toISOString()};
+  const guard=async()=>{if(controller.signal.aborted)throw new LifecycleStoppedError();};
+  const run=facade.run as unknown as (req:typeof request,bundle:typeof input,guard?:()=>Promise<void>)=>Promise<unknown>;
+  await assert.rejects(run(request,input,guard),LifecycleStoppedError);
+  assert.equal(admissionReads,3,"the abort occurs during the awaited request-time candidate reread");
+  assert.equal(launches,0,"the trusted verifier is never dispatched after the reread observes interruption");
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+test("trusted verifier checks lifecycle at the actual sandbox dispatch boundary",async()=>{
+ const f=await fixture();try{
+  const {CandidateAdmission}=await import("../packages/verification/src/candidate-admission.js");
+  const {AdmittingVerificationRunner}=await import("../packages/verification/src/admitting-runner.js");
+  const {DurableArtifactStore}=await import("../packages/verification/src/artifact-store.js");
+  const {getCheckPolicy}=await import("../packages/verification/src/policy.js");
+  const {LifecycleStoppedError}=await import("../packages/contracts/src/lifecycle.js");
+  let launches=0,guardCalls=0;
+  const imageDigest="a".repeat(64),image=`sha256:${imageDigest}`,policy=getCheckPolicy("node-validate-syntax",image,imageDigest);
+  const facade=await new AdmittingVerificationRunner({repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:new DurableArtifactStore(path.join(f.root,"dispatch-boundary-verification")),verifierId:"controlled-fixture",image,imageDigest,launcher:{async launch(){launches++;return{sandboxId:"fixture",exitCode:0,stdout:Buffer.alloc(0),stderr:Buffer.alloc(0)};}}},new CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts})).forCandidate(f.binding);
+  const input=await facade.prepareBundle(f.binding.repository,f.binding.baseSha,f.binding.candidateSha);
+  const request:import("../packages/contracts/src/verification.js").TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId:"44444444-4444-4444-8444-444444444444",missionId:f.binding.missionId,sliceId:f.binding.sliceId,leaseEpoch:f.binding.leaseEpoch,repository:f.binding.repository,candidateSha:f.binding.candidateSha,expectedLocalHeadSha:f.binding.candidateSha,planDigest:f.binding.planDigest,checkId:policy.id,policyVersion:policy.version,policyDigest:policy.digest,verifierImageDigest:imageDigest,inputBundleDigest:input.digest,requestedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60_000).toISOString()};
+  const guard=async()=>{guardCalls++;if(guardCalls===3)throw new LifecycleStoppedError("stopped immediately before sandbox dispatch");};
+  const run=facade.run as unknown as (req:typeof request,bundle:typeof input,guard?:()=>Promise<void>)=>Promise<unknown>;
+  await assert.rejects(run(request,input,guard),LifecycleStoppedError);
+  assert.equal(guardCalls,3,"candidate reread and facade validation complete before the runner's dispatch fence");
+  assert.equal(launches,0,"no sandbox starts after the final lifecycle checkpoint stops");
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});

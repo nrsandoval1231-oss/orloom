@@ -1,0 +1,81 @@
+✖ candidate facade rechecks lifecycle after reread before verifier dispatch (265.882131ms)
+✖ trusted verifier checks lifecycle at the actual sandbox dispatch boundary (314.616966ms)
+✖ lifecycle stop during final PR readback keeps delivery UNKNOWN (1405.325363ms)
+✖ stopped completed-integration replay cannot finalize after certificate, review, or ref readback (1946.95453ms)
+✖ stopped pending integration readbacks become UNKNOWN and never finish (1492.868505ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5961.561073
+
+✖ failing tests:
+
+test at dist/tests/candidate-admission.test.js:446:1
+✖ candidate facade rechecks lifecycle after reread before verifier dispatch (265.882131ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (LifecycleStoppedError).
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/candidate-admission.test.js:467:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at dist/tests/candidate-admission.test.js:475:1
+✖ trusted verifier checks lifecycle at the actual sandbox dispatch boundary (314.616966ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (LifecycleStoppedError).
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/candidate-admission.test.js:491:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at dist/tests/delivery-lifecycle.test.js:190:1
+✖ lifecycle stop during final PR readback keeps delivery UNKNOWN (1405.325363ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/delivery-lifecycle.test.js:197:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Draft PR write or separate PR readback is unresolved/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at dist/tests/integration-replay-race.test.js:272:1
+✖ stopped completed-integration replay cannot finalize after certificate, review, or ref readback (1946.95453ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (MissionConflictError): certificate stop cannot complete replay
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/integration-replay-race.test.js:317:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at dist/tests/integration-replay-race.test.js:326:1
+✖ stopped pending integration readbacks become UNKNOWN and never finish (1492.868505ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection (LifecycleStoppedError): intent stop is propagated
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/integration-replay-race.test.js:380:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    operator: 'rejects',
+    diff: 'simple'
+  }

@@ -1,0 +1,10 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+apps/worker/src/approved-service.ts(130,207): error TS2367: This comparison appears to be unintentional because the types '"blocked" | "unknown" | "planning" | "ready" | "running" | "awaiting_verification" | "verified"' and '"cancelling"' have no overlap.
+apps/worker/src/main.ts(246,110): error TS2379: Argument of type '{ store: SqlMissionStore; binding: { missionId: string; slice: { id: string; objective: string; dependencies: string[]; owner: string; scopes: string[]; checks: string[]; budgetCents: number; }; baseSha: string; planDigest: string; trustedCheckPolicyDigest: string; }; ... 10 more ...; lifecycleGuard: LifecycleGuard ...' is not assignable to parameter of type 'ApprovedDockerWorkerLaneDependencies' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ store: SqlMissionStore; binding: { missionId: string; slice: { id: string; objective: string; dependencies: string[]; owner: string; scopes: string[]; checks: string[]; budgetCents: number; }; baseSha: string; planDigest: string; trustedCheckPolicyDigest: string; }; ... 10 more ...; lifecycleGuard: LifecycleGuard ...' is not assignable to type 'Omit<ApprovedWorkerLaneDependencies, "createRuntime">' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'lifecycleGuard' are incompatible.
+      Type 'LifecycleGuard | undefined' is not assignable to type 'LifecycleGuard'.
+        Type 'undefined' is not assignable to type 'LifecycleGuard'.

@@ -1,0 +1,7 @@
+Validation environment notes:
+- The original mounted Windows worktree cannot be discovered by Linux Git because its .git pointer uses a Windows absolute path.
+- Invoking Linux Node by absolute path without a Linux PATH left the static askpass helper unable to resolve Node.
+- The first private Linux snapshot lived under /tmp; persistent verifier configuration correctly refused its derived roots. Its dependency symlink was staged because the ignore pattern covers directories, not symlink files. Both are validation setup failures, not relaxed production checks.
+- Final snapshot uses a private persistent user-state directory, a minimal Linux PATH, and excludes the dependency symlink from staged files. Source, compiled artifacts and staged bytes are checked before and after testing.
+- Actual PostgreSQL 18.6 uses isolated Unix sockets and two fresh databases under the initializing current-user role; a failed initial postgres-role assumption made no changes. No TCP or host/network setting changed.
+- Both final PostgreSQL checks passed. The task-owned cluster was stopped with pg_ctl -D /tmp/orloom-composition-tsRptg/pgdata stop -m fast. Databases and exact transcripts are retained; no authoritative settlement or refund was fabricated.

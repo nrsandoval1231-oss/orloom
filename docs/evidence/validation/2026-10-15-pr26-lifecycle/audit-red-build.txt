@@ -1,0 +1,17 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/approved-worker-expiry.test.ts(3,10): error TS2305: Module '"../apps/worker/src/approved-startup.js"' has no exported member 'scheduleApprovedTaskExpiry'.
+tests/certified-handoff.test.ts(43,53): error TS2554: Expected 2 arguments, but got 3.
+tests/delivery-adapter.test.ts(10,125): error TS2554: Expected 3 arguments, but got 4.
+tests/delivery-adapter.test.ts(11,146): error TS2554: Expected 7 arguments, but got 8.
+tests/delivery-adapter.test.ts(12,125): error TS2554: Expected 6 arguments, but got 7.
+tests/delivery-adapter.test.ts(53,116): error TS2554: Expected 7 arguments, but got 8.
+tests/delivery-adapter.test.ts(56,101): error TS2554: Expected 6 arguments, but got 7.
+tests/delivery-lifecycle.test.ts(124,78): error TS2554: Expected 4 arguments, but got 5.
+tests/delivery-lifecycle.test.ts(145,85): error TS2554: Expected 4 arguments, but got 5.
+tests/local-integration.test.ts(45,308): error TS2554: Expected 1 arguments, but got 2.
+tests/verification-coordinator-lifecycle.test.ts(21,68): error TS2554: Expected 2 arguments, but got 3.
+tests/verification-coordinator-lifecycle.test.ts(35,68): error TS2554: Expected 2 arguments, but got 3.
+tests/verification-lifecycle.test.ts(33,70): error TS2554: Expected 2 arguments, but got 3.

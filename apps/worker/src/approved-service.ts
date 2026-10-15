@@ -5,6 +5,7 @@ import type { LocalIntegrationAuthority, MissionGovernor, TrustedCheckCoordinato
 import type { DeliveryAuthority, DeliveryCommandV1, DeliveryPolicy } from "../../../packages/integration/src/delivery.js";
 import type { WorkerExecutionLimits, WorkerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
 import type { ApprovedWorkerLaneResult } from "../../control-plane/src/approved-worker-lane.js";
+import { LifecycleStoppedError, type LifecycleGuard } from "../../../packages/contracts/src/lifecycle.js";
 
 export interface ApprovedWorkerTaskBinding {
   readonly missionId: string;
@@ -41,10 +42,10 @@ export interface ApprovedWorkerServiceDependencies {
   /** Replay only retained settlement evidence for this exact task. */
   readonly reconcileRetained: (target: ApprovedClaimTarget, leaseEpoch: number) => Promise<void>;
   /** Production composition supplies runApprovedDockerWorkerLane here. */
-  readonly executeLane: (lease: WorkerLeaseContract, binding: ApprovedWorkerTaskBinding, signal: AbortSignal) => Promise<ApprovedWorkerLaneResult>;
+  readonly executeLane: (lease: WorkerLeaseContract, binding: ApprovedWorkerTaskBinding, signal: AbortSignal, guard?: LifecycleGuard) => Promise<ApprovedWorkerLaneResult>;
   readonly integrationAuthority?: LocalIntegrationAuthority;
   /** Safely copies authentic admitted candidate and verifier evidence into the configured integration stores. */
-  readonly prepareCertifiedIntegration?: (record: NonNullable<Awaited<ReturnType<MissionStore["getMission"]>>>, request: IntegrationRequestV1) => Promise<void>;
+  readonly prepareCertifiedIntegration?: (record: NonNullable<Awaited<ReturnType<MissionStore["getMission"]>>>, request: IntegrationRequestV1, guard?: LifecycleGuard) => Promise<void>;
   readonly deliveryPolicy?: DeliveryPolicy;
   readonly deliveryAuthority?: DeliveryAuthority;
 }
@@ -91,6 +92,12 @@ function targetFor(task: ApprovedWorkerTaskBinding): ApprovedClaimTarget {
   return { missionId: task.missionId, sliceId: task.sliceId, repository: task.repository, baseSha: task.baseSha, planDigest: task.planDigest, maxBudgetCents: task.maxBudgetCents };
 }
 
+async function lifecycleStopped(error: unknown, guard: LifecycleGuard): Promise<boolean> {
+  if (error instanceof LifecycleStoppedError) return true;
+  try { await guard(); return false; }
+  catch (stop) { if (stop instanceof LifecycleStoppedError) return true; throw stop; }
+}
+
 function validateOptions(options: ApprovedWorkerServiceOptions, now: number): void {
   const { task, executionLimits } = options;
   const sha1 = /^[a-f0-9]{40}$/i, sha256 = /^[a-f0-9]{64}$/i;
@@ -122,6 +129,13 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   const task = options.task;
   const target = targetFor(task);
   const signal = options.signal ?? new AbortController().signal;
+  const guard: LifecycleGuard = async () => {
+    if (signal.aborted || Date.parse(task.expiresAt) <= now()) throw new LifecycleStoppedError("Approved worker service was interrupted or expired before the next effect");
+    const current = await deps.store.getMission(task.missionId);
+    const currentSlice = current?.slices.find(row => row.id === task.sliceId);
+    if (!current || !currentSlice || current.mission.status === "cancelling" || current.mission.status === "cancelled" || currentSlice.status === "cancel_requested") throw new LifecycleStoppedError("Approved worker task was durably cancelled before the next effect");
+    if (signal.aborted || Date.parse(task.expiresAt) <= now()) throw new LifecycleStoppedError("Approved worker service was interrupted or expired before the next effect");
+  };
   if (signal.aborted) throw new Error("Approved worker service was interrupted before reconciliation");
 
   const persisted = assertDurableTaskBinding(await deps.store.getMission(task.missionId), task);
@@ -136,7 +150,7 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   const refreshed = assertDurableTaskBinding(await deps.store.getMission(task.missionId), task);
   const slice = refreshed.slices.find(row => row.id === task.sliceId)!;
   if (!slice) throw new Error("Approved task slice is missing from the durable mission");
-  if (slice.status === "verified") return integrateIfExplicit(options, deps, refreshed);
+  if (slice.status === "verified") return integrateIfExplicit(options, deps, refreshed, guard);
   if (slice.status === "cancel_requested" || (slice.status === "unknown" && refreshed.mission.status === "cancelling")) {
     if (slice.leaseEpoch < 1) return "unknown";
     const settlement = await deps.store.settleCancellationBeforeRuntime?.({
@@ -153,33 +167,40 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   }
   if (slice.status === "awaiting_verification") {
     const existingCerts = await Promise.all(slice.checks.map(checkId => deps.trustedChecks.getCertificate(task.missionId, task.sliceId, checkId)));
-    if (existingCerts.every(Boolean)) return integrateIfExplicit(options, deps, refreshed);
+    if (existingCerts.every(Boolean)) return integrateIfExplicit(options, deps, refreshed, guard);
     const eligible = await deps.store.isVerificationDispatchEligible?.(task.missionId, task.sliceId, slice.leaseEpoch, slice.checks);
     if (!eligible) return "unknown";
-    await deps.trustedChecks.verifySlice(task.missionId, task.sliceId);
+    try { await guard(); await deps.trustedChecks.verifySlice(task.missionId, task.sliceId, guard); await guard(); }
+    catch (error) { if (error instanceof LifecycleStoppedError) return "unknown"; throw error; }
     const reconciled = await deps.store.getMission(task.missionId);
     const result = reconciled?.slices.find(row => row.id === task.sliceId);
-    if (result?.status === "verified") return integrateIfExplicit(options, deps, assertDurableTaskBinding(reconciled, task));
+    if (result?.status === "verified") return integrateIfExplicit(options, deps, assertDurableTaskBinding(reconciled, task), guard);
     if (result?.status === "failed" || result?.status === "unknown") return result.status;
     const postVerifyCerts = await Promise.all(slice.checks.map(checkId => deps.trustedChecks.getCertificate(task.missionId, task.sliceId, checkId)));
-    return postVerifyCerts.every(Boolean) && reconciled ? integrateIfExplicit(options, deps, assertDurableTaskBinding(reconciled, task)) : "awaiting_verification";
+    return postVerifyCerts.every(Boolean) && reconciled ? integrateIfExplicit(options, deps, assertDurableTaskBinding(reconciled, task), guard) : "awaiting_verification";
   }
   // Running, cancelled, unknown, or otherwise terminal leases are never restarted as builder work.
   if (slice.status !== "ready") return slice.status === "cancelled" ? "cancelled" : slice.status === "failed" ? "failed" : slice.status === "unknown" ? "unknown" : slice.status === "blocked" ? "blocked" : "idle";
   if (signal.aborted) throw new Error("Approved worker service was interrupted before claim");
 
-  const grant = await deps.governor.claimApproved(target);
+  await guard();
+  let grant: Awaited<ReturnType<MissionGovernor["claimApproved"]>>;
+  try { grant = await deps.governor.claimApproved(target); }
+  catch (error) { if (await lifecycleStopped(error, guard)) return "unknown"; throw error; }
+  try { await guard(); } catch (error) { if (error instanceof LifecycleStoppedError) return "unknown"; throw error; }
   if (!grant) return "idle";
   if (grant.mission.id !== target.missionId || grant.slice.id !== target.sliceId || grant.mission.repository !== target.repository || grant.mission.baseSha !== target.baseSha || grant.planDigest !== target.planDigest || grant.trustedCheckPolicyDigest !== task.trustedCheckPolicyDigest || grant.slice.budgetCents < options.minimumSliceBudgetCents || grant.slice.budgetCents > target.maxBudgetCents) throw new Error("Targeted Governor claim returned a grant outside the approved binding");
   const lease = workerLease(grant, options.executionLimits);
-  const laneResult = await deps.executeLane(lease, task, signal);
+  const laneResult = await deps.executeLane(lease, task, signal, guard);
   if (laneResult !== "verified" && laneResult !== "awaiting_verification") return laneResult;
+  try { await guard(); } catch (error) { if (error instanceof LifecycleStoppedError) return "unknown"; throw error; }
   const completed = await deps.store.getMission(task.missionId);
   if (!completed) return "unknown";
-  return integrateIfExplicit(options, deps, assertDurableTaskBinding(completed, task));
+  return integrateIfExplicit(options, deps, assertDurableTaskBinding(completed, task), guard);
 }
 
-async function integrateIfExplicit(options: ApprovedWorkerServiceOptions, deps: ApprovedWorkerServiceDependencies, record: PersistedMission): Promise<ApprovedWorkerServiceResult> {
+async function integrateIfExplicit(options: ApprovedWorkerServiceOptions, deps: ApprovedWorkerServiceDependencies, record: PersistedMission, guard: LifecycleGuard): Promise<ApprovedWorkerServiceResult> {
+  try { await guard(); } catch (error) { if (error instanceof LifecycleStoppedError) return "unknown"; throw error; }
   const request = options.integrationRequest;
   if (!request) return "awaiting_review";
   if (!deps.integrationAuthority || !deps.prepareCertifiedIntegration) throw new Error("Explicit integration request lacks trusted integration authority or certified artifact preparation");
@@ -193,13 +214,16 @@ async function integrateIfExplicit(options: ApprovedWorkerServiceOptions, deps: 
     if (slice.status === "verified") return "awaiting_review";
     const certs = await Promise.all(request.requiredCheckIds.map(checkId => deps.trustedChecks.getCertificate(request.missionId, request.sliceId, checkId)));
     if (certs.some(cert => !cert)) throw new Error("Independent exact-slice certificates are unavailable for integration");
-    await deps.prepareCertifiedIntegration(record, request);
+    try { await guard(); await deps.prepareCertifiedIntegration(record, request, guard); await guard(); }
+    catch (error) { if (await lifecycleStopped(error, guard)) return "unknown"; throw error; }
   }
-  await deps.governor.integrateVerifiedSlice(request, deps.trustedChecks, deps.integrationAuthority);
+  try { await guard(); await deps.governor.integrateVerifiedSlice(request, deps.trustedChecks, deps.integrationAuthority, guard); await guard(); }
+  catch (error) { if (await lifecycleStopped(error, guard)) return "unknown"; throw error; }
   if (options.deliveryCommand) {
     const command = options.deliveryCommand;
     if (command.missionId !== request.missionId || command.sliceId !== request.sliceId || command.leaseEpoch !== request.leaseEpoch || command.integratedSha !== request.candidateSha || command.reviewArtifactId !== request.reviewArtifactId || command.reviewArtifactDigest !== request.reviewArtifactDigest) throw new Error("Delivery command differs from the explicit certified integration request");
-    await deps.governor.deliverIntegratedCommit(command, deps.deliveryPolicy!, deps.deliveryAuthority!);
+    try { await guard(); await deps.governor.deliverIntegratedCommit(command, deps.deliveryPolicy!, deps.deliveryAuthority!, guard); await guard(); }
+    catch (error) { if (await lifecycleStopped(error, guard)) return "unknown"; throw error; }
     return "delivered";
   }
   return "verified";

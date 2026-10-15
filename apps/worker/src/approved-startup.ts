@@ -19,6 +19,46 @@ export interface ApprovedPricingLimits {
   inputCentsPerMillion: number; outputCentsPerMillion: number; reasoningCentsPerMillion: number; safetyMultiplier: number;
 }
 export type ApprovedWorkerConfiguration = { mode: "disabled" } | { mode: "approved-single"; taskFile: string };
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
+export interface ApprovedExpiryClock {
+  now(): number;
+  setTimeout(callback: () => void, delayMs: number): ReturnType<typeof setTimeout>;
+  clearTimeout(timer: ReturnType<typeof setTimeout>): void;
+}
+
+/** Schedules an absolute manifest deadline in Node-safe chunks and rechecks wall time on every wakeup. */
+export function scheduleApprovedTaskExpiry(expiresAt: string, onExpiry: () => void, clock: ApprovedExpiryClock = {
+  now: Date.now,
+  setTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
+  clearTimeout: timer => clearTimeout(timer),
+}): () => void {
+  const deadline = Date.parse(expiresAt);
+  if (!Number.isFinite(deadline)) throw new Error("Approved task expiry is invalid");
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let finished = false;
+  const cancel = () => {
+    if (finished) return;
+    finished = true;
+    if (timer !== undefined) clock.clearTimeout(timer);
+    timer = undefined;
+  };
+  const check = () => {
+    timer = undefined;
+    if (finished) return;
+    const remaining = deadline - clock.now();
+    if (remaining <= 0) {
+      finished = true;
+      onExpiry();
+      return;
+    }
+    timer = clock.setTimeout(check, Math.min(remaining, MAX_TIMER_DELAY_MS));
+    timer.unref?.();
+  };
+  check();
+  return cancel;
+}
+
 const manifestKeys = ["version", "missionId", "sliceId", "repository", "baseSha", "planDigest", "trustedCheckPolicyDigest", "maxBudgetCents", "expiresAt", "workerImageRef", "verifierImageRef"] as const;
 const digest = /^[a-f0-9]{64}$/;
 const imageRef = /^(?:sha256:|.+@sha256:)[a-f0-9]{64}$/i;
