@@ -28,6 +28,7 @@ export interface ApprovedWorkerLaneDependencies {
   readonly trustedChecks: TrustedCheckCoordinator;
   readonly runtimeJournal: TrustedRuntimeJournalBridge;
   readonly now?: () => number;
+  readonly signal?: AbortSignal;
 }
 
 export type ApprovedDockerWorkerLaneDependencies = Omit<ApprovedWorkerLaneDependencies, "createRuntime"> & {
@@ -87,7 +88,7 @@ async function runApprovedWorkerLaneOnce(input: WorkerLeaseContract, deps: Appro
   // executeLease is the sole builder executor; the coordinator is reached only after durable submission.
   await executeLease(lease as WorkerLeaseContract, {
     control: deps.control, provider: deps.provider, runtime: deps.createRuntime(deps.runtimeJournal), evidence: deps.evidence,
-    progress: deps.progress, checks: deps.checks, options: deps.options, ...(deps.now ? { now: deps.now } : {}),
+    progress: deps.progress, checks: deps.checks, options: deps.options, ...(deps.now ? { now: deps.now } : {}), ...(deps.signal ? { signal: deps.signal } : {}),
   });
 
   await deps.runtimeJournal.reconcileRetained(controllerRunIdFor(lease));

@@ -511,11 +511,12 @@ class DockerWorkspace implements WorkerWorkspace {
 
 export class DockerWorkerRuntime implements WorkerRuntime {
   constructor(private readonly options: DockerWorkerRuntimeOptions) { validImageRef(options.imageRef); }
-  async reconcileInterrupted(): Promise<void> {
+  async reconcileInterrupted(target?: { missionId: string; sliceId: string }): Promise<void> {
     if (!this.options.runtimeJournal) throw new WorkerProtocolError("Durable runtime journal is required for restart reconciliation");
     const config = await mkdtemp(path.join(tmpdir(), "orloom-reconcile-config-"));
     try {
-      const results = await reconcileInterruptedWorkers(this.options.runtimeJournal, dockerControl(this.options.dockerPath ?? "/usr/bin/docker", config));
+      const entries = target ? (await this.options.runtimeJournal.unresolved()).filter(entry => entry.identity.missionId === target.missionId && entry.identity.sliceId === target.sliceId) : undefined;
+      const results = await reconcileInterruptedWorkers(this.options.runtimeJournal, dockerControl(this.options.dockerPath ?? "/usr/bin/docker", config), entries);
       if (results.some(row => row.outcome === "unknown")) throw new WorkerProtocolError("Interrupted runtime UNKNOWN; new work remains disabled");
     } finally { await rm(config, { recursive: true, force: true }); }
   }

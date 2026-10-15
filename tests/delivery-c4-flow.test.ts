@@ -73,6 +73,12 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     const repository = "owner/orloom";
     const integrator = await BareGitFastForwardIntegrator.openWithTestRemote(bare, repository, new URL(`file:///${remote.replaceAll("\\","/")}`).href);
     const inspection = await integrator.inspect({ expectedRefSha: baseSha, candidateSha, scopes: ["src.txt"] });
+    const artifacts = new Map<string, Buffer>();
+    const artifactRef = (bytes: Buffer): { key: `sha256/${string}`; sha256: string; bytes: number } => {
+      const digest = hash(bytes), key = `sha256/${digest}` as `sha256/${string}`;
+      artifacts.set(key, bytes);
+      return { key, sha256: digest, bytes: bytes.byteLength };
+    };
     const mission = await store.submit({ repository, baseSha, objective: "deliver a trusted integrated change", acceptance: ["publish retained proof"], budgetCents: 100 });
     const slices: SliceInput[] = [{ id: "delivery", objective: "change src.txt", dependencies: [], owner: "builder", scopes: ["src.txt"], checks: ["node-repo-suite-v1"], budgetCents: 100 }];
     await store.recommendPlan(mission.id, slices, "owner-session");
@@ -83,14 +89,9 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     assert(grant);
     assert.equal(grant.mission.id, mission.id);
     assert.equal(grant.slice.id, "delivery");
-    await governor.complete(mission.id, "delivery", grant.epoch, grant.leaseToken, grant.capabilityToken, candidateSha, []);
-
-    const artifacts = new Map<string, Buffer>();
-    const artifactRef = (bytes: Buffer): { key: `sha256/${string}`; sha256: string; bytes: number } => {
-      const digest = hash(bytes), key = `sha256/${digest}` as `sha256/${string}`;
-      artifacts.set(key, bytes);
-      return { key, sha256: digest, bytes: bytes.byteLength };
-    };
+    const workerBundle = artifactRef(Buffer.from("controlled worker candidate bundle"));
+    const workerEvidenceRef = `candidate-bundle:${workerBundle.key}`;
+    await governor.complete(mission.id, "delivery", grant.epoch, grant.leaseToken, grant.capabilityToken, candidateSha, [workerEvidenceRef]);
     const runner = {
       prepareBundle: async () => ({ digest: hash("bundle"), manifest: Buffer.from("bundle manifest"), files: new Map([["src.txt", Buffer.from("candidate\n")]]) }),
       observeHead: async (repo: string) => ({ sha: repo === repository ? candidateSha : "", observedAt: new Date().toISOString(), digest: hash(`head:${repo}:${candidateSha}`) }),
@@ -128,7 +129,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     const integrationRequest = { version: "orloom.integration-request.v1" as const, missionId: mission.id, sliceId: "delivery", expectedIntegrationSha: baseSha, candidateSha, leaseEpoch: grant.epoch, requiredCheckIds: ["node-repo-suite-v1"], reviewArtifactId, reviewArtifactDigest: reviewDigest };
     const integrated = await governor.integrateVerifiedSlice(integrationRequest, coordinator, localAuthority);
     assert.equal(integrated.status, "verified");
-    assert.deepEqual(integrated.evidenceRefs, [`integration:${candidateSha}`, `review:${reviewDigest}`]);
+    assert.deepEqual(integrated.evidenceRefs, [workerEvidenceRef, `integration:${candidateSha}`, `review:${reviewDigest}`]);
 
     const deliveryPolicy: DeliveryPolicy = { repository, appId: 7, installationId: 9, baseRef: "main", baseSha, protectedRefs: ["main"], checkIds: ["node-repo-suite-v1"], policyVersion: "fixture-policy-v1", policyDigest, imageDigest: hash("runner image"), checkName: "Orloom certified suite" };
     const command: DeliveryCommandV1 = { version: "orloom.delivery-command.v1", missionId: mission.id, sliceId: "delivery", leaseEpoch: grant.epoch, integratedSha: candidateSha, treeSha: inspection.treeSha, reviewArtifactId, reviewArtifactDigest: reviewDigest, idempotencyKey: "delivery-c4-flow-000001" };
@@ -169,6 +170,19 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
       artifacts: { put: async () => { throw new Error("delivery must not create evidence artifacts"); }, get: async (key) => { const bytes = artifacts.get(key); if (!bytes) throw new Error("artifact not found"); return bytes; } },
       github
     };
+    const retained = (await store.getMission(mission.id))!.slices.find(row => row.id === "delivery")!.evidenceRefs;
+    const unknownRef = `${"unapproved-evidence"}:${workerBundle.key}`;
+    await db.query("UPDATE mission_slices SET evidence_refs=$3::jsonb WHERE mission_id=$1 AND id=$2", [mission.id, "delivery", JSON.stringify([...retained, unknownRef])]);
+    await assert.rejects(governor.deliverIntegratedCommit(command, deliveryPolicy, authority), /evidence/);
+    assert.equal(checks.size, 0, "unknown evidence is rejected before any delivery effect");
+
+    const mismatchDigest = hash("different bytes than stored");
+    artifacts.set(`sha256/${mismatchDigest}`, Buffer.from("actual bytes disagree"));
+    await db.query("UPDATE mission_slices SET evidence_refs=$3::jsonb WHERE mission_id=$1 AND id=$2", [mission.id, "delivery", JSON.stringify([...retained, `candidate-diff:sha256/${mismatchDigest}`])]);
+    await assert.rejects(governor.deliverIntegratedCommit(command, deliveryPolicy, authority), /digest/);
+    assert.equal(checks.size, 0, "named evidence digest mismatch is rejected before any delivery effect");
+    await db.query("UPDATE mission_slices SET evidence_refs=$3::jsonb WHERE mission_id=$1 AND id=$2", [mission.id, "delivery", JSON.stringify(retained)]);
+
     const concurrent=await Promise.allSettled([governor.deliverIntegratedCommit(command,deliveryPolicy,authority),governor.deliverIntegratedCommit(command,deliveryPolicy,authority)]);
     assert(concurrent.some(x=>x.status==="fulfilled"));
     const result = await governor.deliverIntegratedCommit(command, deliveryPolicy, authority);

@@ -1,0 +1,5 @@
+GREEN (targeted claim implementation)
+Command: node --test dist/tests/approved-target-claim.test.js
+Result: 3 passed, 0 failed.
+Coverage: MissionGovernor.claimApproved claims the exact approved slice despite unrelated earlier queued work; no scheduling adapter invocation; invalid base/repository/plan digest/budget ceiling leave reserved spend at zero; PGlite SQL claim selects the target with unrelated ready work present and reserves only target budget.
+Build: npm run build reaches two concurrent startup implementation TypeScript diagnostics in apps/worker/src/approved-startup.ts (lines 51 and 71); the TypeScript output still emitted and the targeted tests passed.

@@ -15,6 +15,25 @@ export interface DeliveryReviewArtifactReader {read(artifactId:string):Promise<B
 export interface DeliveryAuthority {integrator:LocalIntegrator;reviews:DeliveryReviewArtifactReader;artifacts:ArtifactStore;github:GitHubInstallationClient;}
 
 function validateCommand(x:DeliveryCommandV1,p:DeliveryPolicy){const fields=["version","missionId","sliceId","leaseEpoch","integratedSha","treeSha","reviewArtifactId","reviewArtifactDigest","idempotencyKey"];if(!x||Object.keys(x).length!==fields.length||fields.some(k=>!Object.hasOwn(x,k))||x.version!=="orloom.delivery-command.v1"||!/^[-a-f0-9]{36}$/.test(x.missionId)||! /^[A-Za-z0-9._:-]{1,120}$/.test(x.sliceId)||!Number.isSafeInteger(x.leaseEpoch)||x.leaseEpoch<1||!sha1.test(x.integratedSha)||!sha1.test(x.treeSha)||!sha256.test(x.reviewArtifactDigest)||! /^[A-Za-z0-9._:-]{16,180}$/.test(x.idempotencyKey)||! /^[A-Za-z0-9._:-]{1,180}$/.test(x.reviewArtifactId)||! /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(p.repository)||!Number.isSafeInteger(p.appId)||p.appId<1||!Number.isSafeInteger(p.installationId)||p.installationId<1||!p.baseRef||!sha1.test(p.baseSha)||!p.policyVersion||!sha256.test(p.policyDigest)||!sha256.test(p.imageDigest)||!p.checkIds.includes("node-repo-suite-v1")||new Set(p.checkIds).size!==p.checkIds.length||!p.checkName||!Array.isArray(p.protectedRefs))throw new MissionConflictError("Delivery request or immutable controller delivery policy is invalid");}
+
+const workerEvidenceLabels=new Set(["candidate-bundle","candidate-diff","evidence-index","provider-usage","sandbox-policy"]);
+/** Validate retained delivery references without broadening the accepted namespace. */
+export async function validateDeliveryEvidenceReferences(references:readonly string[],integrationMarker:string,reviewMarker:string,artifacts:ArtifactStore):Promise<void>{
+  const seenMarkers=new Set<string>(),seenWorkerEvidence=new Set<string>();
+  for(const reference of references){
+    const raw=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
+    if(raw){const bytes=await artifacts.get(`sha256/${raw[1]}`);if(hash(bytes)!==raw[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");continue;}
+    const named=/^([a-z][a-z0-9-]*):sha256\/([a-f0-9]{64})$/.exec(reference);
+    if(named&&workerEvidenceLabels.has(named[1]!)){
+      if(seenWorkerEvidence.has(named[1]!))throw new MissionConflictError("Integrated slice contains duplicate named worker evidence");
+      const bytes=await artifacts.get(`sha256/${named[2]}`);if(hash(bytes)!==named[2])throw new MissionConflictError("Named worker evidence did not match its content digest");
+      seenWorkerEvidence.add(named[1]!);continue;
+    }
+    if(reference===integrationMarker||reference===reviewMarker){if(seenMarkers.has(reference))throw new MissionConflictError("Integrated slice contains duplicate C4 attribution metadata");seenMarkers.add(reference);continue;}
+    throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution");
+  }
+  if(!seenMarkers.has(integrationMarker)||!seenMarkers.has(reviewMarker))throw new MissionConflictError("Integrated slice lacks exact durable C4 attribution markers");
+}
 const checkIdFor=(missionId:string,sliceId:string,epoch:number,sha:string)=>`${missionId}:${sliceId}:${epoch}:${sha}`;
 const branchFor=(missionId:string,sliceId:string)=>`orloom/delivery/${missionId}/${hash(sliceId).slice(0,12)}`;
 function assertRemote(remote:{sha:string;treeSha:string}|null,sha:string,tree:string){if(!remote||remote.sha!==sha||remote.treeSha!==tree)throw new MissionConflictError("Remote delivery branch does not match the integrated commit and tree");}
@@ -50,22 +69,7 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   if(!integration||integration.state!=="integrated"||integration.observedIntegrationSha!==command.integratedSha||integration.candidateSha!==command.integratedSha||integration.treeSha!==command.treeSha||integration.reviewArtifactId!==command.reviewArtifactId||integration.reviewArtifactDigest!==command.reviewArtifactDigest||canonicalJson([...integration.requiredCheckIds].sort())!==canonicalJson(checkIds))throw new MissionConflictError("Integrated intent does not retain the exact commit, tree, review, and check set");
   const integrationMarker=`integration:${integration.observedIntegrationSha}`;
   const reviewMarker=`review:${integration.reviewArtifactDigest}`;
-  const seenMarkers=new Set<string>();
-  for(const reference of slice.evidenceRefs){
-    const match=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
-    if(match){
-      const bytes=await authority.artifacts.get("sha256/"+match[1]);
-      if(hash(bytes)!==match[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");
-      continue;
-    }
-    if(reference===integrationMarker||reference===reviewMarker){
-      if(seenMarkers.has(reference))throw new MissionConflictError("Integrated slice contains duplicate C4 attribution metadata");
-      seenMarkers.add(reference);
-      continue;
-    }
-    throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution");
-  }
-  if(!seenMarkers.has(integrationMarker)||!seenMarkers.has(reviewMarker))throw new MissionConflictError("Integrated slice lacks exact durable C4 attribution markers");
+  await validateDeliveryEvidenceReferences(slice.evidenceRefs,integrationMarker,reviewMarker,authority.artifacts);
   if(await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration ref moved after integration");
   const inspected=await authority.integrator.inspect({expectedRefSha:integration.expectedIntegrationSha,candidateSha:command.integratedSha,scopes:slice.scopes});
   if(inspected.candidateSha!==command.integratedSha||inspected.treeSha!==command.treeSha||await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration tree changed after integration");

@@ -1,0 +1,2 @@
+Command: npm run build
+Result: PASS after private admission object-store permissions and review-reader composition.

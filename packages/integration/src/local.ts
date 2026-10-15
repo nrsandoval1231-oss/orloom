@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { lstat, realpath, readdir, stat, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -16,6 +17,32 @@ export interface LocalIntegrationRequest { expectedRefSha:string; candidateSha:s
 export interface RemoteUploadRequest { branch:string; candidateSha:string; protectedRefs:string[]; token:string; }
 export interface LocalIntegrationResult { ref:string; previousSha:string; candidateSha:string; treeSha:string; changedPaths:string[]; }
 export interface LocalIntegrator { readonly repositoryIdentity:string; inspect(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>; compareAndSwap(request:LocalIntegrationRequest):Promise<LocalIntegrationResult>; readRef():Promise<string>; uploadRef?(request:RemoteUploadRequest):Promise<void>; }
+
+async function packFromAdmittedSource(source:string,candidateSha:string,baseSha:string):Promise<Buffer>{
+  if(process.platform!=="linux")throw new MissionConflictError("Certified candidate import requires the bounded Linux local Git transport");
+  return new Promise((resolve,reject)=>{
+    const child=spawn("/usr/bin/prlimit",["--as=536870912","--cpu=10","--fsize=33554432","--","/usr/bin/git","--git-dir",source,"-c","core.hooksPath=/dev/null","-c","core.attributesFile=/dev/null","-c","core.fsmonitor=false","-c","protocol.allow=never","-c","submodule.recurse=false","-c","pack.threads=1","pack-objects","--stdout","--revs","--window=0","--depth=0"],{stdio:["pipe","pipe","pipe"],windowsHide:true,env:{PATH:"/usr/bin:/bin",HOME:"/nonexistent",LANG:"C",GIT_CONFIG_NOSYSTEM:"1",GIT_CONFIG_SYSTEM:"/dev/null",GIT_CONFIG_GLOBAL:"/dev/null",GIT_TERMINAL_PROMPT:"0",GIT_NO_REPLACE_OBJECTS:"1"}});
+    const chunks:Buffer[]=[];let bytes=0,failed=false;const timer=setTimeout(()=>{failed=true;child.kill("SIGKILL");},15_000);
+    child.stdout.on("data",(part:Buffer)=>{bytes+=part.length;if(bytes>22_000_000){failed=true;child.kill("SIGKILL");}else chunks.push(part);});
+    child.stderr.on("data",(part:Buffer)=>{if(part.length>65_536){failed=true;child.kill("SIGKILL");}});
+    child.stdin.on("error",()=>{ /* close result is authoritative; no retry */ });
+    child.once("error",()=>{clearTimeout(timer);reject(new MissionConflictError("Admitted Git source could not be read safely"));});
+    child.once("close",code=>{clearTimeout(timer);if(failed||code!==0||bytes<32)reject(new MissionConflictError("Admitted candidate pack failed or exceeded bounds"));else resolve(Buffer.concat(chunks));});
+    child.stdin.end(`${candidateSha}\n^${baseSha}\n`);
+  });
+}
+async function indexIntoTarget(repository:string,pack:Buffer):Promise<void>{
+  if(process.platform!=="linux"||pack.length>22_000_000)throw new MissionConflictError("Certified candidate pack exceeds the local import boundary");
+  await new Promise<void>((resolve,reject)=>{
+    const child=spawn("/usr/bin/prlimit",["--as=536870912","--cpu=10","--fsize=33554432","--","/usr/bin/git","--git-dir",repository,"-c","core.hooksPath=/dev/null","-c","core.attributesFile=/dev/null","-c","core.fsmonitor=false","-c","protocol.allow=never","index-pack","--stdin","--max-input-size=22000000","--threads=1"],{stdio:["pipe","ignore","pipe"],windowsHide:true,env:{PATH:"/usr/bin:/bin",HOME:"/nonexistent",LANG:"C",GIT_CONFIG_NOSYSTEM:"1",GIT_CONFIG_SYSTEM:"/dev/null",GIT_CONFIG_GLOBAL:"/dev/null",GIT_TERMINAL_PROMPT:"0",GIT_NO_REPLACE_OBJECTS:"1"}});
+    let failed=false;const timer=setTimeout(()=>{failed=true;child.kill("SIGKILL");},15_000);
+    child.stderr.on("data",(part:Buffer)=>{if(part.length>65_536){failed=true;child.kill("SIGKILL");}});
+    child.stdin.on("error",()=>{ /* close result is authoritative; no retry */ });
+    child.once("error",()=>{clearTimeout(timer);reject(new MissionConflictError("Target Git object import failed"));});
+    child.once("close",code=>{clearTimeout(timer);if(failed||code!==0)reject(new MissionConflictError("Target Git object import failed or exceeded bounds"));else resolve();});
+    child.stdin.end(pack);
+  });
+}
 
 /** Fixed-ref plumbing-only integration over a complete bare object store. It never checks out or executes candidate code. */
 export class BareGitFastForwardIntegrator implements LocalIntegrator {
@@ -50,6 +77,30 @@ export class BareGitFastForwardIntegrator implements LocalIntegrator {
     const hooks=join(this.repository,"hooks");try{const hs=await lstat(hooks);if(hs.isSymbolicLink()||!hs.isDirectory())throw new MissionConflictError("Unsafe Git hooks directory");const active=(await readdir(hooks)).filter(x=>!x.endsWith(".sample"));if(active.length)throw new MissionConflictError("Active Git hooks are not accepted for local integration");}catch(error){if(error instanceof MissionConflictError)throw error;if((error as NodeJS.ErrnoException).code!=="ENOENT")throw new MissionConflictError("Git hooks could not be safely checked");}
   }
   async readRef(){const value=(await this.git(["rev-parse","--verify",this.ref])).trim();if(!sha1.test(value))throw new MissionConflictError("Integration ref is unavailable or malformed");return value;}
+  /** Import only the exact object delta from a private CandidateAdmission result. This never writes a ref. */
+  async importAdmittedCandidate(source:{objectStore:string;approvedRef:string},candidateSha:string,baseSha:string,scopes:string[]):Promise<LocalIntegrationResult>{
+    if(!sha1.test(candidateSha)||!sha1.test(baseSha)||source.approvedRef!=="refs/heads/admitted-candidate")throw new MissionConflictError("Certified candidate source binding is invalid");
+    await this.assertCompleteStore();
+    const requested=resolve(source.objectStore),info=await lstat(requested);
+    if(info.isSymbolicLink()||!info.isDirectory()||(info.mode&0o077)!==0||(typeof process.getuid==="function"&&info.uid!==process.getuid())||await realpath(requested)!==requested)throw new MissionConflictError("Admitted source must be a private owned real directory");
+    for(const relative of ["objects","objects/info","refs","refs/heads"]){const child=await lstat(join(requested,relative));if(child.isSymbolicLink()||!child.isDirectory()||(child.mode&0o022)!==0||(typeof process.getuid==="function"&&child.uid!==process.getuid()))throw new MissionConflictError("Admitted source Git directories are unsafe");}
+    const sourceConfig=join(requested,"config"),configInfo=await lstat(sourceConfig);
+    if(configInfo.isSymbolicLink()||!configInfo.isFile()||(configInfo.mode&0o022)!==0||(typeof process.getuid==="function"&&configInfo.uid!==process.getuid())||configInfo.size>1_048_576)throw new MissionConflictError("Admitted source configuration is unsafe");
+    const rawSourceConfig=await readFile(sourceConfig,"utf8");
+    if(/^\s*\[\s*include(?:if)?\b/im.test(rawSourceConfig))throw new MissionConflictError("Admitted source configuration includes are not accepted");
+    const sourceConfigRows=rawSourceConfig.split(/\r?\n/).map(line=>line.trim()).filter(line=>line&&!line.startsWith("#")&&!line.startsWith(";"));
+    const sourceAllowed=new Set(["[core]","repositoryformatversion = 0","filemode = true","filemode = false","bare = true","logallrefupdates = true","logallrefupdates = false","ignorecase = true","ignorecase = false","symlinks = true","symlinks = false","precomposeunicode = true","precomposeunicode = false"]);
+    if(sourceConfigRows.some(line=>!sourceAllowed.has(line.toLowerCase()))||!sourceConfigRows.includes("[core]")||!sourceConfigRows.some(line=>line.toLowerCase()==="bare = true"))throw new MissionConflictError("Admitted source has unsupported Git configuration");
+    for(const relative of ["objects/info/alternates","info/grafts","shallow"]){try{await lstat(join(requested,relative));throw new MissionConflictError("Admitted source has an external or shallow object boundary");}catch(error){if(error instanceof MissionConflictError)throw error;if((error as NodeJS.ErrnoException).code!=="ENOENT")throw new MissionConflictError("Admitted source object boundary could not be checked");}}
+    const sourceRef=join(requested,"refs","heads","admitted-candidate"),refInfo=await lstat(sourceRef);
+    if(refInfo.isSymbolicLink()||!refInfo.isFile()||(refInfo.mode&0o022)!==0||(typeof process.getuid==="function"&&refInfo.uid!==process.getuid()))throw new MissionConflictError("Admitted candidate ref is unsafe");
+    const refText=(await readFile(sourceRef,"utf8")).trim();if(refText!==candidateSha)throw new MissionConflictError("Admitted source ref does not name the exact candidate");
+    if(await this.readRef()!==baseSha)throw new MissionConflictError("Integration object store is not at the expected complete base");
+    const pack=await packFromAdmittedSource(requested,candidateSha,baseSha);
+    // index-pack stores objects only; it does not update refs, FETCH_HEAD, or tags.
+    await indexIntoTarget(this.repository,pack);
+    return this.inspect({expectedRefSha:baseSha,candidateSha,scopes});
+  }
   async uploadRef(request:RemoteUploadRequest):Promise<void>{
     try{
       if(typeof request.token!=="string"||!request.token||request.token.length>4096||/[\r\n\x00]/.test(request.token)||!sha1.test(request.candidateSha)||!/^orloom\/delivery\/[0-9a-f-]{36}\/[a-f0-9]{12}$/.test(request.branch)||request.protectedRefs.some(ref=>ref===request.branch||ref===`refs/heads/${request.branch}`)||request.branch==="orloom/delivery/main")throw new Error();

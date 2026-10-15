@@ -1,0 +1,7 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/approved-target-claim.test.ts(7,10): error TS2305: Module '"../packages/governor/src/governor.js"' has no exported member 'Governor'.
+tests/approved-target-claim.test.ts(48,91): error TS2554: Expected 3-6 arguments, but got 7.
+tests/approved-worker-startup.test.ts(7,76): error TS2307: Cannot find module '../apps/worker/src/approved-startup.js' or its corresponding type declarations.

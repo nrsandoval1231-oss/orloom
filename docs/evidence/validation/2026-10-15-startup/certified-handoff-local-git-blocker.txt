@@ -1,0 +1,2 @@
+Command: node --test dist/tests/candidate-admission.test.js
+Result: BLOCKED by the Windows sandbox environment before the fixtures reach admission: Git for Windows could not create its msys BaseNamedObjects object (NtCreateDirectoryObject 0xC0000022) during local bare clone. Initial attempt using os.tmpdir() also resolved beneath a sandbox app-package directory and failed writing Git config. The integration source-import test is retained for execution on the supported Linux verifier host.

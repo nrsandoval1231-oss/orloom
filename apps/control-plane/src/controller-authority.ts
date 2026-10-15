@@ -118,6 +118,12 @@ function readPrivateFileSync(file: string, limit: number): Buffer | null {
   } catch { return null; }
 }
 
+/** Read a bounded operator policy file with the same ownership and no-follow checks as controller policies. */
+export function readPrivatePolicyFile(file: string, limit: number): Buffer | null {
+  if (!path.isAbsolute(file) || path.resolve(file) !== file) return null;
+  return readPrivateFileSync(file, limit);
+}
+
 function parseDeliveryPolicy(bytes: Buffer, config: Config, checkPolicy: CheckPolicy, appId: number): DeliveryPolicy {
   let value: unknown;
   try { value = JSON.parse(bytes.toString("utf8")); } catch { throw new Error("ORLOOM_DELIVERY_POLICY_FILE is not valid JSON"); }

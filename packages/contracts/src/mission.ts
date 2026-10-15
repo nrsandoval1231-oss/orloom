@@ -47,6 +47,7 @@ export interface RecoveryPolicyLease { planDigest: string; trustedCheckPolicyDig
 export interface VerificationAttemptBinding { request: TrustedCheckRequestV1; capabilityHash: string; capabilityExpiresAt: string; leasePolicyDigest:string; headObservedAt: string; headObservationDigest: string; purpose?:"final"|"recovery"; recoveryOrdinal?:number; targetCheckId?:string; strategyId?:string; }
 export interface RecoveryAttemptBinding extends Omit<VerificationAttemptBinding,"purpose"|"recoveryOrdinal"|"targetCheckId"|"strategyId"> { purpose:"recovery"; recoveryOrdinal:number; targetCheckId:string; strategyId:string; recoveryPolicyDigest:string; }
 export interface LeaseGrant { mission: Mission; slice: MissionSlice; epoch: number; leaseToken: string; capabilityToken: string; leaseExpiresAt: string; capacitySlot: number; trustedCheckPolicyDigest: string; planDigest: string; }
+export interface ApprovedClaimTarget { missionId: string; sliceId: string; repository: string; baseSha: string; planDigest: string; maxBudgetCents: number; }
 export interface SchedulingLessonHint { id: string; version: number; challengeDigest: string; checkId: string; strategyId: string; policyDigest: string; }
 export interface SchedulingChoice { missionId: string; sliceId: string; repository: string; planDigest: string; dependencies: string[]; scopes: string[]; budgetCents: number; missionBudgetCents: number; reservedBudgetCents: number; downstreamDepth: number; scopeRisk: number; lessons: SchedulingLessonHint[]; }
 export interface SchedulingSnapshot { capturedAt: string; freeCapacity: number; choices: SchedulingChoice[]; snapshotDigest: string; }
@@ -69,7 +70,7 @@ export interface MissionStore {
   approvePlan(missionId: string): Promise<Mission>;
   getMission(missionId: string): Promise<{ mission: Mission; plan: MissionPlan | null; slices: MissionSlice[] } | null>;
   events(missionId: string, after: number): Promise<MissionEvent[]>;
-  claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks: readonly string[], now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice): Promise<LeaseGrant | null>;
+  claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks: readonly string[], now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice, target?: ApprovedClaimTarget): Promise<LeaseGrant | null>;
   schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, allowedPlanChecks: readonly string[], now?: Date): Promise<SchedulingSnapshot>;
   recordSchedulingDecision?(missionId: string, decision: SchedulingDecisionRecord): Promise<void>;
   heartbeat(missionId: string, sliceId: string, epoch: number, leaseToken: string, capabilityToken: string, leaseSeconds: number): Promise<MissionSlice>;

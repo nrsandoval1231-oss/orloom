@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { ApprovedClaimTarget, ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CandidateAdmissionTransientError, CandidateAdmissionBindingV1, CheckCertificateV1, parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { scopeCohort } from "../../learning/src/lesson-policy.js";
@@ -160,6 +160,13 @@ function exactKeys(value: unknown, expected: readonly string[]): boolean {
   const keys = Object.keys(value);
   return keys.length === expected.length && expected.every((key) => Object.hasOwn(value, key));
 }
+/** Shared strict validator for the independently retained review bound to an exact candidate tree and scope. */
+export function integrationReviewMatches(raw:Buffer|null,request:IntegrationRequestV1,slice:MissionSlice,treeSha:string):boolean {
+  if(!raw||createHash("sha256").update(raw).digest("hex")!==request.reviewArtifactDigest)return false;
+  let review:unknown;try{review=JSON.parse(raw.toString("utf8"));}catch{return false;}
+  const value=review as Record<string,unknown>,keys=["version","verdict","candidateSha","treeSha","reviewer","builder","scopes"];
+  return Boolean(value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&Object.keys(value).every(key=>keys.includes(key))&&value.version==="orloom.independent-review.v1"&&value.verdict==="PASS"&&value.candidateSha===request.candidateSha&&value.treeSha===treeSha&&value.builder===slice.owner&&value.reviewer!==value.builder&&typeof value.reviewer==="string"&&value.reviewer.length>0&&Array.isArray(value.scopes)&&value.scopes.every(scope=>typeof scope==="string")&&canonicalJson([...(value.scopes as string[])].sort())===canonicalJson([...slice.scopes].sort()));
+}
 export function validateGovernorConfig(config: GovernorConfig) {
   if (!Number.isInteger(config.maxLanes) || config.maxLanes < 1 || config.maxLanes > 6 || !Number.isInteger(config.capacitySlots) || config.capacitySlots < 0 || config.capacitySlots > config.maxLanes || !Number.isInteger(config.leaseSeconds) || config.leaseSeconds < 30 || config.leaseSeconds > 3600) throw new Error("Invalid governor lane or lease configuration");
   return config;
@@ -184,10 +191,7 @@ export class MissionGovernor {
   }
   deliverIntegratedCommit(input:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority){return deliverIntegratedCommit(input,policy,authority,this.store);}
   private integrationReviewMatches(raw:Buffer|null,request:IntegrationRequestV1,slice:MissionSlice,treeSha:string){
-    if(!raw||createHash("sha256").update(raw).digest("hex")!==request.reviewArtifactDigest)return false;
-    let review:unknown;try{review=JSON.parse(raw.toString("utf8"));}catch{return false;}
-    const value=review as Record<string,unknown>,keys=["version","verdict","candidateSha","treeSha","reviewer","builder","scopes"];
-    return Boolean(value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&Object.keys(value).every(key=>keys.includes(key))&&value.version==="orloom.independent-review.v1"&&value.verdict==="PASS"&&value.candidateSha===request.candidateSha&&value.treeSha===treeSha&&value.builder===slice.owner&&value.reviewer!==value.builder&&typeof value.reviewer==="string"&&value.reviewer.length>0&&Array.isArray(value.scopes)&&value.scopes.every(scope=>typeof scope==="string")&&canonicalJson([...(value.scopes as string[])].sort())===canonicalJson([...slice.scopes].sort()));
+    return integrationReviewMatches(raw,request,slice,treeSha);
   }
   private integrationBindingMatches(trustedChecks:TrustedCheckCoordinator,request:IntegrationRequestV1){
     const binding=trustedChecks.integrationBinding();
@@ -291,6 +295,12 @@ export class MissionGovernor {
     const grant=await this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,allowedPlanChecks,undefined,recoveryPolicyDigest,advice);
     if(!grant&&decision)await this.store.recordSchedulingDecision?.(decision.missionId,decision.record);
     return grant;
+  }
+  async claimApproved(target:ApprovedClaimTarget):Promise<import("../../contracts/src/mission.js").LeaseGrant|null>{
+    if(!this.config.capacitySlots||!this.config.trustedCheckPolicyDigest||!this.config.executionConfigured)return null;
+    if(!target||typeof target.missionId!=="string"||!target.missionId||typeof target.sliceId!=="string"||!target.sliceId||typeof target.repository!=="string"||typeof target.baseSha!=="string"||!/^[0-9a-f]{40}$/i.test(target.baseSha)||!/^[a-f0-9]{64}$/.test(target.planDigest)||!Number.isSafeInteger(target.maxBudgetCents)||target.maxBudgetCents<0)return null;
+    const strategies=this.config.trustedStrategies??{},allowedPlanChecks=Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]);
+    return this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,allowedPlanChecks,undefined,this.config.recoveryPolicyDigest??"",undefined,target);
   }
   heartbeat(missionId:string,id: string, epoch: number, token: string, capability: string) { return this.store.heartbeat(missionId,id, epoch, token, capability, this.config.leaseSeconds); }
   complete(missionId:string,id: string, epoch: number, token: string, capability: string, candidateSha: string, evidenceRefs: string[]) {

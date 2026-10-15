@@ -4,9 +4,10 @@ import { deflateSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 const exec=promisify(execFile),hash=(value:Uint8Array|string)=>createHash("sha256").update(value).digest("hex");
 async function git(root:string,...args:string[]) {return (await exec("git",["-C",root,"-c","user.name=Admission Fixture","-c","user.email=fixture@example.invalid",...args],{encoding:"utf8"})).stdout.trim();}
 async function fixture() {
@@ -95,6 +96,24 @@ test("admission cancellation aborts an outstanding artifact read and releases ca
   const cancellation=new AbortController();const pending=admission.admit(f.binding,cancellation.signal);await ready;cancellation.abort();
   await assert.rejects(pending,/abort|deadline/);assert.equal(observed?.aborted,true);
   const good=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});assert.equal((await good.admit(f.binding)).receipt.candidateSha,f.binding.candidateSha);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+test("fixed integration store imports only admitted objects and leaves its authority ref unchanged",async()=>{
+ const f=await fixture();try {
+  const api=await import("../packages/verification/src/candidate-admission.js");
+  const admission=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});
+  const admitted=await admission.admit(f.binding);
+  assert.equal((await stat(admitted.repository.objectStore)).mode&0o077,0,"admitted bare object store remains private for certified import");
+  const target=path.join(f.root,"integration.git"),template=path.join(f.root,"empty-template");await mkdir(template);
+  await exec("git",["clone","--bare",`--template=${template}`,f.trusted,target]);await git(target,"update-ref","refs/heads/orloom-integration",f.binding.baseSha);
+  const integrator=await BareGitFastForwardIntegrator.open(target,"owner/repo");
+  const result=await integrator.importAdmittedCandidate(admitted.repository,f.binding.candidateSha,f.binding.baseSha,["src"]);
+  assert.equal(result.candidateSha,f.binding.candidateSha);assert.equal(result.previousSha,f.binding.baseSha);assert.deepEqual(result.changedPaths,["src/a.js"]);
+  assert.equal(await integrator.readRef(),f.binding.baseSha,"object import must not promote the integration ref");
+  const ref=path.join(admitted.repository.objectStore,"refs","heads","admitted-candidate");await writeFile(ref,`${f.binding.baseSha}\n`);
+  await assert.rejects(integrator.importAdmittedCandidate(admitted.repository,f.binding.candidateSha,f.binding.baseSha,["src"]),/exact candidate|source ref/);
+  assert.equal(await integrator.readRef(),f.binding.baseSha,"substitution rejection cannot advance the integration ref");
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
 

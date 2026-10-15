@@ -25,12 +25,13 @@ export class TrustedRuntimeJournalBridge implements RuntimeJournal {
   unresolved(): Promise<RuntimeJournalEntry[]> { return this.journal.unresolved(); }
 
   /** Replay settlement from the journal's retained evidence, including terminal ABSENT rows. */
-  async reconcileRetained(controllerRunId?: string): Promise<Array<"settled" | "quarantined" | "ignored">> {
+  async reconcileRetained(controllerRunId?: string, target?: { missionId: string; sliceId: string }): Promise<Array<"settled" | "quarantined" | "ignored">> {
     if (!this.journal.entries) throw new Error("Runtime journal does not expose retained entries for settlement replay");
     const entries = await this.journal.entries();
     const results: Array<"settled" | "quarantined" | "ignored"> = [];
     for (const entry of entries) {
       if (controllerRunId && entry.identity.controllerRunId !== controllerRunId) continue;
+      if (target && (entry.identity.missionId !== target.missionId || entry.identity.sliceId !== target.sliceId)) continue;
       if (entry.state === "intent") continue;
       // The journal write can succeed while the SQL container bind transiently fails.
       // Replay the exact recorded ID before attempting terminal settlement.

@@ -1,0 +1,1 @@
+{"result":"FAIL","compiledEntries":115,"mismatches":1,"reason":"LF-only source normalization emits identical executed artifacts"}

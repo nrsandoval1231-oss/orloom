@@ -39,3 +39,7 @@ Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDAT
 | Approved composition successor (2026-10-15) | Active bounded source packet: protected admission startup, exact approved single Docker lane API, trusted cancellation settlement/replay. Final candidate validation/review pending; normal worker main disabled; no live provider/PR or deployment claim. See [ledger](../docs/validation/2026-10-15-approved-composition.md). |
 
 Final source gates for approved composition: build/typecheck/validate PASS; Linux 285/287 with zero failures and two existing skips; actual PostgreSQL two-pool proof PASS; independent bounded source review PASS. Operational gates remain open; exact commit/PR recorded at publication.
+
+## Explicit approved startup successor (2026-10-15)
+
+PR25 repair head `27b786b140a2f0f73141aa60175b939b8f6ba605` remains frozen for external re-review. The separate stacked branch adds normal explicit-config one-task startup, atomic targeted claim, scoped trusted restart reconciliation, shutdown propagation and certified integration/draft-delivery composition. Defaults stay disabled. Exact final gates and bounded acceptance are recorded in [startup ledger](../docs/validation/2026-10-15-explicit-approved-startup.md). Live provider/runsc/remote delivery, deployment, scheduling and learning gates remain OPEN. Do not merge or activate either PR without its separate authority.

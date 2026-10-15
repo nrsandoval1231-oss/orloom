@@ -5,6 +5,7 @@ import { canonicalJson } from "../../judgment/src/canonical.js";
 import { CandidateAdmission } from "./candidate-admission.js";
 import type { InputBundle } from "./repository.js";
 import { TrustedVerificationRunner, type TrustedVerificationRunnerOptions } from "./runner.js";
+import type { AdmittedCandidate } from "./candidate-admission.js";
 
 /** One shared verifier retains its original concurrency/policy/artifact boundary.
  * Per-candidate facades carry immutable source identity; they cannot retarget it. */
@@ -15,6 +16,8 @@ export class AdmittingVerificationRunner implements TrustedCheckRunner {
   async observeHead(_repository:string):Promise<{sha:string;observedAt:string;digest:string}>{throw new Error("Controller candidate admission is required before head observation");}
   async run(_request:TrustedCheckRequestV1,_bundle:InputBundle):Promise<TrustedCheckReceiptV1>{throw new Error("Controller candidate admission is required before verification execution");}
   verifyArtifacts(receipt:TrustedCheckReceiptV1){return this.verifier.verifyArtifacts(receipt);}
+  /** Controller-only access to the source admitted by the trusted verifier seam. */
+  async admitForController(binding:CandidateAdmissionBindingV1):Promise<AdmittedCandidate>{return this.admission.admit(structuredClone(binding));}
   async forCandidate(value:CandidateAdmissionBindingV1):Promise<TrustedCheckRunner>{
     const binding=structuredClone(value),admitted=await this.admission.admit(binding);
     const reread=async()=>{const current=await this.admission.admit(binding);if(current.receipt.admissionDigest!==admitted.receipt.admissionDigest||current.input.digest!==admitted.input.digest)throw new Error("Candidate admission source binding changed");return current;};

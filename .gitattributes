@@ -19,3 +19,6 @@ docs/evidence/remote-upload/prior-http-failure.log whitespace=-blank-at-eol,blan
 # Preserve the executed composition transcripts and unchanged state archives.
 docs/validation/2026-10-15-composition/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
 .agent/archive/2026-10-15-before-approved-composition-* whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Keep explicit-startup regression and gate transcripts byte-for-byte.
+docs/evidence/validation/2026-10-15-startup/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
