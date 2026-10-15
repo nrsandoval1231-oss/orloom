@@ -1,0 +1,8 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/verification-capacity-lifecycle.test.ts(60,40): error TS2379: Argument of type '{ repositories: {}; artifacts: DurableArtifactStore; launcher: { launch: (checkPolicy: typeof policy, inputBundle: InputBundle) => Promise<SandboxResult>; }; verifierId: string; image: string; imageDigest: string; now: (() => Date) | undefined; }' is not assignable to parameter of type 'TrustedVerificationRunnerOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'now' are incompatible.
+    Type '(() => Date) | undefined' is not assignable to type '() => Date'.
+      Type 'undefined' is not assignable to type '() => Date'.

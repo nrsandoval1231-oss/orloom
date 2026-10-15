@@ -47,12 +47,17 @@ export class TrustedVerificationRunner {
     const startedAt = timestamp(this.now());
     let result: SandboxResult | undefined;
     if (Date.parse(startedAt) < Date.parse(request.expiresAt) && this.active < policy.maxConcurrent) {
-      // The trusted controller owns this fence. A stopped lifecycle must not
-      // dispatch a new sandbox after request validation/preflight has completed.
-      await guard?.();
+      // Reserve synchronously before the first await so competing requests see
+      // this execution even while its lifecycle checkpoint is still pending.
       this.active++;
-      try { result = await this.options.launcher.launch(policy, bundle); } catch { /* inability to establish execution is UNKNOWN */ }
-      finally { this.active--; }
+      try {
+        // The trusted controller owns this fence. A stopped lifecycle must not
+        // dispatch a new sandbox after request validation/preflight has completed.
+        await guard?.();
+        if (Date.parse(timestamp(this.now())) < Date.parse(request.expiresAt)) {
+          try { result = await this.options.launcher.launch(policy, bundle); } catch { /* inability to establish execution is UNKNOWN */ }
+        }
+      } finally { this.active--; }
     }
     const finishedAt = timestamp(this.now());
     const unknown = !result || result.exitCode === null || !!result.signal || !!result.timedOut || !!result.truncated || (result !== undefined && (result.stdout.length > policy.maxLogBytes || result.stderr.length > policy.maxLogBytes)) || Date.parse(finishedAt) > Date.parse(request.expiresAt);

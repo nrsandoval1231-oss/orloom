@@ -1,0 +1,36 @@
+✔ controller admits exact worker bundle into a private verifier source without moving trusted HEAD (273.256834ms)
+✔ admission rejects forged artifacts, identity, scopes and malformed bundles before publishing (257.340534ms)
+✔ admission serializes concurrent imports, cancels queued work, and rejects private-root symlinks (226.479892ms)
+✔ admission cancellation aborts an outstanding artifact read and releases capacity (168.292196ms)
+✔ fixed integration store imports only admitted objects and leaves its authority ref unchanged (219.502344ms)
+✔ candidate runner binds exact source and shares its independent verifier without trusting builder success (326.487847ms)
+✔ correctly hashed hostile bundle envelopes and packs are rejected inside admission (292.568532ms)
+✔ cached commit-object substitution is refused despite matching tree and manifest (194.75381ms)
+✔ distinct concurrent candidates retain independent admission identities and private heads (322.21296ms)
+✔ bounded admission queue saturation stays transient and cancelled waiters never read artifacts (185.213852ms)
+✔ persisted coordinator retries transient admission and binds certificate readback to private candidate head (3449.479638ms)
+✔ same-binding callers have independent cancellation while admission cache stays reusable (378.351735ms)
+✔ admission cache has a hard retained-entry cap without invalidating reusable candidates (616.65927ms)
+✔ candidate facades share verifier capacity and cannot retarget a prepared source (1046.773628ms)
+✔ candidate facade rechecks lifecycle after reread before verifier dispatch (382.502453ms)
+✔ trusted verifier checks lifecycle at the actual sandbox dispatch boundary (767.474824ms)
+✔ concurrent absent lifecycle checks never exceed one sandbox and release capacity (3.225683ms)
+✔ concurrent delayed lifecycle checks never exceed one sandbox and release capacity (0.827368ms)
+✔ a stopped or rejecting lifecycle guard produces no receipt or sandbox and leaves capacity usable (0.59846ms)
+✔ aborting lifecycle after dispatch retains capacity until the admitted launcher settles (0.488321ms)
+✔ launcher throws and unknown or failed results release the slot for a later request (0.62547ms)
+✔ a request that expires while its lifecycle guard is awaited is not launched (0.90955ms)
+✔ artifact persistence failure after execution does not retain execution capacity (0.29934ms)
+✔ trusted coordinator fences attempt creation when preparation is interrupted (0.936866ms)
+✔ trusted coordinator fences certificate submission when receipt verification is interrupted (1.219397ms)
+✔ trusted verification stops at the prepare boundary before another dispatch (1.107299ms)
+✔ trusted verification stops at the run boundary before another dispatch (0.130908ms)
+✔ trusted verification stops at the submit boundary before another dispatch (0.118768ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9536.248911

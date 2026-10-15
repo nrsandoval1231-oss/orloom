@@ -1,0 +1,68 @@
+✖ concurrent absent lifecycle checks never exceed one sandbox and release capacity (3.462909ms)
+✖ concurrent delayed lifecycle checks never exceed one sandbox and release capacity (1.062052ms)
+✔ a stopped or rejecting lifecycle guard produces no receipt or sandbox and leaves capacity usable (0.897044ms)
+✔ aborting lifecycle after dispatch retains capacity until the admitted launcher settles (0.784719ms)
+✔ launcher throws and unknown or failed results release the slot for a later request (0.79583ms)
+✖ a request that expires while its lifecycle guard is awaited is not launched (1.731703ms)
+✔ artifact persistence failure after execution does not retain execution capacity (0.463117ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 4
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 125.629326
+
+✖ failing tests:
+
+test at dist/tests/verification-capacity-lifecycle.test.js:63:5
+✖ concurrent absent lifecycle checks never exceed one sandbox and release capacity (3.462909ms)
+  AssertionError [ERR_ASSERTION]: maxConcurrent=1 must bound actual launcher overlap
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/verification-capacity-lifecycle.test.js:94:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/tests/verification-capacity-lifecycle.test.js:63:5
+✖ concurrent delayed lifecycle checks never exceed one sandbox and release capacity (1.062052ms)
+  AssertionError [ERR_ASSERTION]: maxConcurrent=1 must bound actual launcher overlap
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/verification-capacity-lifecycle.test.js:94:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/tests/verification-capacity-lifecycle.test.js:159:1
+✖ a request that expires while its lifecycle guard is awaited is not launched (1.731703ms)
+  AssertionError [ERR_ASSERTION]: expiration during the guard must be rechecked before dispatch
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/verification-capacity-lifecycle.test.js:169:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
