@@ -30,4 +30,8 @@ E's post-commit integrity check passed: source 5/5; Slice 0 11/11; Slice 1a 9/9;
 
 ## Acceptance boundary
 
-This is bounded exact-source Linux build and test evidence, not production runtime evidence. It does not establish runsc isolation, deployment-host journal permissions, actual PostgreSQL, live provider calls, cancellation propagation in an active worker, deployment, or product completion. Those Finish Contract gates remain open. Independent Sol review of exact R is pending; no review verdict or merge is claimed here.
+This is bounded exact-source Linux build and test evidence, not production runtime evidence. It does not establish runsc isolation, deployment-host journal permissions, actual PostgreSQL, live provider calls, cancellation propagation in an active worker, deployment, or product completion. Those Finish Contract gates remain open. Sol's review of R returned `FIX` for the README wording described below; independent review of exact R2 is pending. No acceptance verdict or merge is claimed here.
+
+## Documentation review overlay
+
+Independent review of R found that the README overview incorrectly said owner cancellation was unimplemented, despite Slice 1b implementing the authenticated owner request and durable store fencing. The overlay candidate R2 corrects that sentence: request/fencing are implemented, while propagation to a running worker, exact absence/reconciliation, and operational acceptance remain open. The S and E commits, their Linux results, historical Windows logs, and prior receipt R remain unchanged; R2 is a docs-and-handoff overlay only. Its receipt manifest binds the complete changed repair file set since the original base, except the manifest itself. This overlay is not an independent acceptance verdict.

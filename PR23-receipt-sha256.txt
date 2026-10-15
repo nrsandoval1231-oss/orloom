@@ -2,9 +2,12 @@
 6f80712ec50a20ffbe23b8ec40ca5b8aec75fd2469f6590e74405da67268203f  .agent/PR23-REPAIR-001-COMPLETION.json
 464bf734e1b6dc8cb1cc58e784ca0e8e12044e9f4c9b5b1219d7743673e98ca3  .agent/PR23-REPAIR-001-EPISODE.json
 ec8c01efe1617868b9642c6a1aa6275e9048ab309de16810374692b98a015703  .agent/PR23-REPAIR-001.md
+51793ae2e1237e2af8fda4f6f183b0ddf08b9ef21629f2999460236c967a442c  .agent/PR23-REPAIR-002-EPISODE.json
+54b4c6a6b6bea14e6ff09da770be0e04e00f010a00cd4b43ae103724797cff91  .agent/PR23-REPAIR-002.md
 dbcba75a9c6920ea5ad2dcaf65da241ce0d6398b4af4e99e5d57c14c16c3af21  .agent/WORK_GRAPH.md
 d3795ba9c72c6b87e3fb38e436ca503adea32067ebe15d69558de0ded75c6e4b  PR23-source-sha256.txt
-16a408df6931adfd607c8bfcddb9a07ec3abf95aa64219524424dfaa34b68aef  docs/validation/2026-10-14-pr23-verifier-receipt.md
+c1686195dd473db080af2220d6a2901301bfe2a7155c133df55e63926ec4410f  README.md
+48b148f3b27baa7b2d9a5510593a26b4cef841111de290c14ee6eeba43815054  docs/validation/2026-10-14-pr23-verifier-receipt.md
 57bffdc352880ff4fef8e182fdf32737f2b034a26a11041129203f1278ed2b02  docs/validation/2026-10-14-pr23-verifier-repair.md
 651abfba979a283881f582993b2f8282b4670b59405b83ed1b8200422f653882  docs/validation/pr23-evidence-attempt1-20261014/01-npm-ci.log
 cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe  docs/validation/pr23-evidence-attempt1-20261014/02-npm-run.log

@@ -1,0 +1,13 @@
+{
+  "node_id": "PR23-REPAIR-002",
+  "base_sha": "7c5cafe61f81f9314df8a3a9008c6a0cf875acb6",
+  "review_finding": "README-CANCELLATION-STATE",
+  "status": "IMPLEMENTED_CANDIDATE",
+  "state": "README overview corrected; exact R2 receipt verification and independent review pending",
+  "decision": "Describe owner cancellation request and durable fencing as implemented while preserving live worker and operational gates as open",
+  "action": "Update the overview sentence and bind documentation overlay in a new final receipt manifest",
+  "outcome": "Pending committed-blob and source-equivalence checks",
+  "repair_attempt": 1,
+  "validation_scope": "Docs-only overlay; no application or test source changed; no full suite rerun",
+  "authority": "No push, merge, runtime activation, credentials, services, provider calls, or deployment"
+}
