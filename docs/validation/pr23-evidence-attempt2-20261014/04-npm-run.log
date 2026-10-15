@@ -1,0 +1,5 @@
+
+> orloom-foundation@0.1.0 validate
+> node scripts/validate.mjs
+
+Foundation structure validation passed.

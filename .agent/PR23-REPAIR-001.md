@@ -1,0 +1,14 @@
+# PR23 verifier repair packet
+
+- Node: PR23-REPAIR-001; state: READY; repair attempt: 1 of 2.
+- Repository: `nrsandoval1231-oss/orloom`, branch `slice/01c-review-findings`.
+- Base: `e1ace83b814c38fb9c8b1f6eb26982c05d205ebf`.
+- Objective: make Slice 1c verification fail closed and execute only from an isolated native-Linux checkout of an explicitly named immutable commit; retain truthful two-commit source/evidence and receipt provenance.
+- Allowed scope: `docs/validation/slice1c-review-findings/verify-1c.mjs`, its matching `artifact-sha256.txt` entry, focused verifier regression coverage outside the historical evidence directory, a new PR23 validation record/receipt, `.agent` graph/episode/completion records. Preserve historical Windows logs and all other prior validation ledgers/manifests unchanged.
+- Exclusions: frozen PR2, runtime activation, credentials, services, deploy/push/merge, GitHub Actions, edits to prior evidence except the single old verifier blob hash noted above, changes to canonical product intent.
+- Dependencies: inspect current Slice 1c evidence and relevant journal tests; use Node >=24 and a fresh native-Linux user-local checkout. Windows Node/npm outputs are not Linux proof.
+- Acceptance: required source commit resolves exactly; clone/checkout it in native Linux temp storage; locked install, typecheck, build, validate, full suite and focused runtime-journal/intent/cancellation/migration/id checks run there; integrity checks reject missing/malformed manifests, missing blobs and hash mismatches; behavioral checks execute built code from that checkout; capture each command, exit code, duration and output hashes. Retain prior Windows logs untouched and clearly supersede the stale 10-entry receipt claim.
+- Evidence model: source commit S contains implementation, regression coverage, explanation and source manifest. Verify S from its committed source in native Linux and retain the raw run artifacts as evidence commit E. Receipt commit R names S and E and records post-commit blob checks; R does not claim to verify its own receipt bytes.
+- Validation: exact-candidate Linux command ledger and committed-blob SHA-256 readback; focused regressions during development, full final gates once per frozen S.
+- Authority/risk: local reversible source/evidence only; no external side effects. UNKNOWN remains for any unavailable gate; source tests do not close product/runtime gates.
+- Checkpoint/handoff: commit S, run isolated verification of S, commit E with exact run artifacts/manifests, verify E's committed blobs, then commit R with receipt/provenance. First Linux run on S `2ae17930290c1f2ce0e45b20a16d34c689728bd0` failed 2 existing verifier-config tests because `/tmp` is deliberately refused for persistent artifacts; retain that run and retry from a user-local persistent checkout. Return exact SHAs, commands/results, durations, artifact hashes, limits, and changed paths. Do not merge or push.

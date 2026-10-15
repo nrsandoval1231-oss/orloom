@@ -1,0 +1,11 @@
+# SHA-256 over committed evidence blobs; this manifest is explicitly self-excluded.
+4b9cea22c4095681cca1a3ec16d44d9f52d24a4a3dc5a56dc4a49dd0d45a4b8d  01-npm-ci.log
+cdde4281a6314bb5ef20ab89eb195b5e1d49ae1165aa33c3fa8a8b32b8bfeffe  02-npm-run.log
+0a0094152b2c787e8f893aa9a450b5e17992131e06df800162107099bb018eef  03-npm-run.log
+43b1fff7014f60d7b15ea7ea7967e196f31ed102fa87e661c206fdc6161219a1  04-npm-run.log
+19b216a893aefbf0ac7156b531160a6e5f07d808a51af06d0ec8661df72fcdb3  05-node---test.log
+1e455a18b097f919ac05c195fe73a75f5599b11dae8dc6f7c1eb74645872d7c6  06-node---test.log
+eb7240dffd0e6eb47e5f983a4b2d0841563d295791ff9068e36a8723451ed15c  07-npm-test.log
+93d6f5c3bb122c04c3e463400408b642b4805caf65df9f3a2fd530783156dd63  run-environment.txt
+9cbdd93806ec54a2115f397669bca4e0a47e40dc3b7df28829fac948d9b7220a  run-summary.txt
+b90b51a40540024cd5ea5473c06e0acac8606b4ab256a6bdd10f41f1e686843a  source-verification.json

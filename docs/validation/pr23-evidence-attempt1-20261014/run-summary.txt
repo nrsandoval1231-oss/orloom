@@ -1,0 +1,6 @@
+Attempt 1 source commit: 2ae17930290c1f2ce0e45b20a16d34c689728bd0
+Locked install, typecheck, build, validate, verifier regression, and focused suite exited 0. Full npm test exited 1: 248 tests, 245 pass, 2 fail, 1 skipped, 0 cancelled; duration 43492.46 ms.
+Failure 1: `factory stays disabled without explicit configuration and builds a valid runner` in tests/verification-config.test.ts. The path guard rejected the test's persistent-artifact path because its parent checkout was under /tmp.
+Failure 2: `rejects temporary paths, overlap in either direction, and malformed maps` in the same file. Its first temporary-path assertion passed, then an expected `/object stores/` rejection instead hit the earlier artifact-root guard because the entire checkout parent was under /tmp.
+One test was skipped: `operational journal opening is Linux-only and cannot silently use portable validation` in tests/runtime-journal.test.ts. The test explicitly skips on Linux because ownership and mode checks require the deployment-host acceptance lane.
+Both failures are caused by the test harness location; the retry moved the isolated checkout to a user-local persistent Linux path. Logs and source-verification-failure.json retain the full output and exit codes.

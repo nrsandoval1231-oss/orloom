@@ -1,0 +1,6 @@
+Attempt 2 source commit: 7396750c540eeac538b98c7f05c0293bad98cd6a
+Isolated checkout: /home/nrsan/.cache/orloom-verification/orloom-1c-gE6CBA/source (removed by verifier after completion)
+Locked install, typecheck, build, validate, verifier regression, focused suite, and full suite all exited 0. Per-command durations and log SHA-256 values are in source-verification.json.
+Focused suite: 66 tests, 65 pass, 0 fail, 1 skipped. Full suite: 248 tests, 247 pass, 0 fail, 1 skipped, 0 cancelled; npm test duration 38507.47 ms.
+The single skipped test is `operational journal opening is Linux-only and cannot silently use portable validation` in tests/runtime-journal.test.ts. It explicitly skips on Linux because ownership and mode checks require the deployment-host acceptance lane.
+The test suite uses PGlite for migration behavior. No actual PostgreSQL, Docker/runsc isolation, live provider, deployment, or product activation was exercised.

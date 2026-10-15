@@ -1,0 +1,41 @@
+{
+  "packet": ".agent/PR23-REPAIR-001.md",
+  "node_id": "PR23-REPAIR-001",
+  "base_sha": "e1ace83b814c38fb9c8b1f6eb26982c05d205ebf",
+  "source_candidate_sha": "7396750c540eeac538b98c7f05c0293bad98cd6a",
+  "evidence_candidate_sha": "81067c0be674b3c1e1821144b69cc5b3eb736858",
+  "status": "IMPLEMENTED_CANDIDATE",
+  "independent_review": "PENDING",
+  "source_validation": {
+    "platform": "Ubuntu WSL2 Linux x86_64",
+    "node": "v24.11.1",
+    "npm": "11.6.2",
+    "locked_install": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "validate": "PASS",
+    "verifier_regressions": "2 passed, 0 failed",
+    "focused_suite": "65 passed, 0 failed, 1 deployment-host test skipped; 66 total",
+    "full_suite": "247 passed, 0 failed, 1 deployment-host ownership/mode test skipped; 248 total"
+  },
+  "evidence": "docs/validation/2026-10-14-pr23-verifier-receipt.md",
+  "receipt_manifest": "PR23-receipt-sha256.txt",
+  "manifest_coverage": {
+    "source": "5 artifacts, manifest self-excluded",
+    "slice0": "11/11",
+    "slice1a": "9/9",
+    "slice1b": "9/9",
+    "slice1c": "11/11",
+    "attempt1": "10 artifacts, manifest self-excluded",
+    "attempt2": "10 artifacts, manifest self-excluded",
+    "final_receipt": "all changed repair artifacts since base; receipt manifest self-excluded"
+  },
+  "product_complete": false,
+  "open_boundaries": [
+    "Independent review of exact receipt candidate",
+    "Deployment-host Linux ownership/mode acceptance",
+    "runsc isolation and actual PostgreSQL validation",
+    "live providers, operational activation, deployment and full product finish contract"
+  ],
+  "authority": "Local candidate and evidence only; not pushed or merged"
+}

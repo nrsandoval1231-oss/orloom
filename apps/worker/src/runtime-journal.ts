@@ -6,6 +6,19 @@ import path from "node:path";
 const journalVersion = "orloom.runtime-journal.v2" as const;
 const maxJournalBytes = 64 * 1024;
 const maxJournalFiles = 10_000;
+/** The longest legal durable history: intent > created > unknown > absent. The
+ * record cap below must cover every state in `legalJournalHistories`. */
+const maxJournalHistory = 4;
+const legalJournalHistories = new Set([
+  "intent",
+  "intent>created",
+  "intent>unknown",
+  "intent>absent",
+  "intent>created>unknown",
+  "intent>created>absent",
+  "intent>unknown>absent",
+  "intent>created>unknown>absent",
+]);
 const recordNamePattern = /^[a-f0-9]{64}\.json$/;
 const digestPattern = /^[a-f0-9]{64}$/;
 const imageRefPattern = /^(?:ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:|sha256:)[a-f0-9]{64}$/i;
@@ -139,12 +152,12 @@ function parseEntry(bytes: Buffer, fileName: string): RuntimeJournalEntry {
   let value: unknown;
   try { value = JSON.parse(bytes.toString("utf8")); } catch { quarantine("record JSON is malformed"); }
   if (!object(value) || !exactKeys(value, ["containerId", "history", "identity", "imageRef", "labelsDigest", "name", "reconciliation", "state", "updatedAt", "version"])) quarantine("record schema is malformed");
-  if (value.version !== journalVersion || !validIdentity(value.identity) || typeof value.name !== "string" || !dockerNamePattern.test(value.name) || typeof value.imageRef !== "string" || !imageRefPattern.test(value.imageRef) || typeof value.labelsDigest !== "string" || !digestPattern.test(value.labelsDigest) || (value.containerId !== null && (typeof value.containerId !== "string" || !digestPattern.test(value.containerId))) || !validTimestamp(value.updatedAt) || !Array.isArray(value.history) || value.history.length < 1 || value.history.length > 3 || value.history.some(row => !validTransition(row))) quarantine("record fields are invalid");
+  if (value.version !== journalVersion || !validIdentity(value.identity) || typeof value.name !== "string" || !dockerNamePattern.test(value.name) || typeof value.imageRef !== "string" || !imageRefPattern.test(value.imageRef) || typeof value.labelsDigest !== "string" || !digestPattern.test(value.labelsDigest) || (value.containerId !== null && (typeof value.containerId !== "string" || !digestPattern.test(value.containerId))) || !validTimestamp(value.updatedAt) || !Array.isArray(value.history) || value.history.length < 1 || value.history.length > maxJournalHistory || value.history.some(row => !validTransition(row))) quarantine("record fields are invalid");
   if (`${identityDigest(value.identity)}.json` !== fileName) quarantine("record filename is not bound to its identity");
   const history = value.history as RuntimeJournalTransition[];
   if (history[0]?.state !== "intent" || history.at(-1)?.state !== value.state || history.at(-1)?.at !== value.updatedAt) quarantine("record transition history is inconsistent");
   const states = history.map(row => row.state).join(">");
-  if (!["intent", "intent>created", "intent>unknown", "intent>absent", "intent>created>unknown", "intent>created>absent", "intent>unknown>absent"].includes(states)) quarantine("record transition is illegal");
+  if (!legalJournalHistories.has(states)) quarantine("record transition is illegal");
   if (value.state === "intent" && (value.containerId !== null || value.reconciliation !== null)) quarantine("intent binding is inconsistent");
   if (value.state === "created" && (typeof value.containerId !== "string" || value.reconciliation !== null)) quarantine("created binding is inconsistent");
   if ((value.state === "unknown" || value.state === "absent") && (!validObservation(value.reconciliation) || value.reconciliation.outcome !== value.state)) quarantine("reconciliation binding is inconsistent");
@@ -305,6 +318,10 @@ export class FileRuntimeJournal implements RuntimeJournal {
       if (!validIdentity(input.identity) || !dockerNamePattern.test(input.name) || !imageRefPattern.test(input.imageRef) || !digestPattern.test(input.labelsDigest)) rejected("Runtime journal intent is invalid");
       const rows = await this.readAllLocked(), fileName = `${identityDigest(input.identity)}.json`;
       if (rows.has(fileName)) rejected("Runtime journal identity already exists and cannot be reused");
+      // Refuse before writing. The read path quarantines as soon as the root
+      // holds more records than the cap, so admitting one more record here
+      // would brick the entire journal at the advertised boundary.
+      if (rows.size >= maxJournalFiles) rejected("Runtime journal record capacity is reached");
       const now = new Date().toISOString();
       await this.create({ ...input, version: journalVersion, containerId: null, state: "intent", updatedAt: now, reconciliation: null, history: [{ state: "intent", at: now }] });
     });
