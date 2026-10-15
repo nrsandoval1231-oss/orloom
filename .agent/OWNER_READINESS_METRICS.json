@@ -45,5 +45,24 @@
     "historicalUiCommit": "c6a6b264a84a374b82b198ff3129216c25092e09",
     "currentCombinedAcceptance": "HOLD: fresh validation and independent review required",
     "published": false
+  },
+  "currentValidation": {
+    "base": "a92e6a8c9de77828dcdf0f9367cc0434cc7b7f77",
+    "finishedAtUtc": "2026-10-15T19:52:36.8997029Z",
+    "sourceEntries": 192,
+    "compiledEntries": 127,
+    "sourceManifestSha256": "3783065542466a036d0046cc341430816f294f8958771f19930e845483aab99e",
+    "fullLinuxTotal": 380,
+    "fullLinuxPass": 378,
+    "fullLinuxFail": 0,
+    "fullLinuxSkipped": 2,
+    "fullLinuxDurationMs": 147595.901476,
+    "browser": "PASS synthetic",
+    "actualPostgres": "PASS isolated",
+    "boundedSourceReview": "PASS",
+    "publicationStatusAtCapture": "awaiting exact-SHA PR creation",
+    "externalReview": "OPEN",
+    "liveExecution": "OPEN",
+    "tokens": "UNKNOWN"
   }
 }

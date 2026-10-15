@@ -1,3 +1,5 @@
+CURRENT OVERRIDE: validate and publish the UI successor atop corrected PR26 a92e6a8c9de77828dcdf0f9367cc0434cc7b7f77. Current ledger: docs/validation/2026-10-15-owner-readiness-capacity-base.md. Earlier base acceptance and holds are historical; external exact-head review remains OPEN. Preserve canonical UI and all no-execution/read-only authority boundaries. Root owns final gates and publication.
+
 CURRENT OVERRIDE: owner delegates fresh combined validation/publication of UI427535e atop PR26 2dc187651b2616f8274eba31b07862ffaffafbc6 on 2026-10-15. PR26 reviewer owns its merge; external review pending. Prior base acceptance statements below are historical. No UI product changes are planned; preserve canonical design, source authority and default-off execution. New combined ledger: docs/validation/2026-10-15-owner-readiness-combined.md.
 
 # Owner readiness and recovery

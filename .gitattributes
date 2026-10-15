@@ -40,3 +40,6 @@ docs/evidence/validation/2026-10-15-owner-readiness/** -text whitespace=-blank-a
 
 # Preserve combined owner-readiness revalidation bytes.
 docs/evidence/validation/2026-10-15-owner-readiness-combined/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve final corrected-base UI validation bytes.
+docs/evidence/validation/2026-10-15-owner-readiness-capacity-base/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
