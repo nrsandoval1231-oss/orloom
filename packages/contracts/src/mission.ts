@@ -1,6 +1,7 @@
 /** Logical scope owner. Execution capacity is represented only by attested slots. */
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import type { CheckCertificateV1, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "./verification.js";
+import type { CancellationRuntimeBinding, CancellationRuntimeEntry, CancellationRuntimeIdentity } from "./cancellation-settlement.js";
 export type Lane = string;
 export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown" | "cancelling" | "cancelled";
 export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown" | "cancel_requested" | "cancelled";
@@ -109,6 +110,11 @@ export interface MissionStore {
   requestCancel?(missionId:string,ownerRequestId:string,reason:string):Promise<void>;
   /** Re-derives cancellation state from the durable lease binding; false for any stale epoch or token. */
   cancellationStatus?(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string):Promise<boolean>;
+  /** Controller-private runtime binding/settlement seam. Never expose these over worker HTTP. */
+  registerCancellationRuntimeBinding?(identity:CancellationRuntimeIdentity,binding:CancellationRuntimeBinding):Promise<void>;
+  bindCancellationRuntimeContainer?(identity:CancellationRuntimeIdentity,containerId:string):Promise<void>;
+  reconcileCancellationRuntime?(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">;
+  settleCancellationBeforeRuntime?(identity:CancellationRuntimeIdentity):Promise<"settled"|"quarantined"|"ignored">;
   expire(now?: Date, limit?: number): Promise<number>;
 }
 

@@ -15,3 +15,7 @@ docs/evidence/controller-policy-postgres/helpers/scenario.mjs whitespace=blank-a
 
 # Preserve whitespace in the exact retained rejected-test transcript.
 docs/evidence/remote-upload/prior-http-failure.log whitespace=-blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve the executed composition transcripts and unchanged state archives.
+docs/validation/2026-10-15-composition/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+.agent/archive/2026-10-15-before-approved-composition-* whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

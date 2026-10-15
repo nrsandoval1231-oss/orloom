@@ -7,6 +7,7 @@ import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { downstreamDepths, rankSchedulingChoices, schedulingSnapshotDigest, validateSchedulingDecision } from "./scheduling.js";
 import { CheckCertificateV1, parseCheckCertificateV1, parseTrustedCheckReceiptV1, parseTrustedCheckRequestV1, trustedCheckRequestDigestV1, TrustedCheckReceiptV1 } from "./verification.js";
+import { CancellationRuntimeBinding, CancellationRuntimeEntry, CancellationRuntimeIdentity, validateCancellationSettlementEvidence } from "./cancellation-settlement.js";
 export interface TransactionalSql extends SqlExecutor { transaction<T>(work: (tx: SqlExecutor) => Promise<T>): Promise<T>; }
 const digest=(s:string)=>createHash("sha256").update(s).digest("hex");
 const newSecret=()=>randomBytes(32).toString("base64url");
@@ -484,6 +485,70 @@ export class SqlMissionStore implements MissionStore {
       if(uncertain.rows.length)await tx.query("UPDATE missions SET status='cancelling' WHERE id=$1 AND status<>'cancelled'",[missionId]);
       else{await tx.query("UPDATE missions SET status='cancelled' WHERE id=$1",[missionId]);await tx.query("UPDATE mission_cancellations SET completed_at=now() WHERE mission_id=$1",[missionId]);}
       await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'mission.cancellation_requested',$2::jsonb)",[missionId,canonicalJson({ownerRequestId,reason})]);
+    });
+  }
+  async registerCancellationRuntimeBinding(identity:CancellationRuntimeIdentity,binding:CancellationRuntimeBinding):Promise<void>{
+    await this.db.transaction(async tx=>{
+      await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
+      const q=await tx.query("SELECT status,lease_epoch,controller_run_id FROM mission_slices WHERE mission_id=$1 AND id=$2 FOR UPDATE",[identity.missionId,identity.sliceId]);
+      const r=q.rows[0];if(!r||Number(r.lease_epoch)!==identity.leaseEpoch||r.controller_run_id&&String(r.controller_run_id)!==identity.controllerRunId)throw new MissionConflictError("Runtime binding no longer matches the active lease");
+      const prior=await tx.query("SELECT controller_run_id,runtime_name,image_ref,labels_digest FROM cancellation_runtime_bindings WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 FOR UPDATE",[identity.missionId,identity.sliceId,identity.leaseEpoch]);
+      if(prior.rows[0]){const p=prior.rows[0];if(String(p.controller_run_id)!==identity.controllerRunId||String(p.runtime_name)!==binding.name||String(p.image_ref)!==binding.imageRef||String(p.labels_digest)!==binding.labelsDigest)throw new MissionConflictError("Runtime binding is immutable for this lease");return;}
+      if(String(r.status)!=="running")throw new MissionConflictError("A new runtime cannot be bound after cancellation starts");
+      await tx.query("UPDATE mission_slices SET controller_run_id=$3,runtime_required=true WHERE mission_id=$1 AND id=$2",[identity.missionId,identity.sliceId,identity.controllerRunId]);
+      await tx.query("INSERT INTO cancellation_runtime_bindings(mission_id,slice_id,lease_epoch,controller_run_id,runtime_name,image_ref,labels_digest) VALUES($1,$2,$3,$4,$5,$6,$7)",[identity.missionId,identity.sliceId,identity.leaseEpoch,identity.controllerRunId,binding.name,binding.imageRef,binding.labelsDigest]);
+    });
+  }
+  async settleCancellationBeforeRuntime(identity:CancellationRuntimeIdentity):Promise<"settled"|"quarantined"|"ignored">{
+    if(!identity?.missionId||!identity.sliceId||!Number.isSafeInteger(identity.leaseEpoch)||identity.leaseEpoch<1||!/^[a-f0-9]{64}$/.test(identity.controllerRunId))return "ignored";
+    return this.db.transaction(async tx=>{
+      await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
+      const q=await tx.query("SELECT s.status,s.lease_epoch,s.controller_run_id,s.runtime_required,m.status AS mission_status FROM mission_slices s JOIN missions m ON m.id=s.mission_id WHERE s.mission_id=$1 AND s.id=$2 FOR UPDATE OF s,m",[identity.missionId,identity.sliceId]);
+      const r=q.rows[0];if(!r||Number(r.lease_epoch)!==identity.leaseEpoch)return "ignored";
+      const binding=await tx.query("SELECT 1 FROM cancellation_runtime_bindings WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3",[identity.missionId,identity.sliceId,identity.leaseEpoch]);
+      if(binding.rows.length||r.runtime_required===true)return "quarantined";
+      if(String(r.status)==="cancelled"&&String(r.mission_status)==="cancelled")return "settled";
+      if(String(r.mission_status)!=="cancelling"||!['cancel_requested','unknown'].includes(String(r.status)))return "ignored";
+      const changed=await tx.query("UPDATE mission_slices SET status='cancelled',lease_token_hash=NULL,capability_hash=NULL,lease_expires_at=NULL WHERE mission_id=$1 AND id=$2 AND lease_epoch=$3 AND status IN ('cancel_requested','unknown') RETURNING id",[identity.missionId,identity.sliceId,identity.leaseEpoch]);
+      if(!changed.rows.length)return "ignored";
+      const unresolved=await tx.query("SELECT 1 FROM mission_slices WHERE mission_id=$1 AND status IN ('running','cancel_requested','awaiting_verification','unknown') LIMIT 1",[identity.missionId]);
+      if(!unresolved.rows.length){await tx.query("UPDATE missions SET status='cancelled' WHERE id=$1 AND status='cancelling'",[identity.missionId]);await tx.query("UPDATE mission_cancellations SET completed_at=COALESCE(completed_at,now()) WHERE mission_id=$1",[identity.missionId]);}
+      await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'slice.cancellation_settled_before_runtime',$2::jsonb)",[identity.missionId,canonicalJson({sliceId:identity.sliceId,leaseEpoch:identity.leaseEpoch,controllerRunId:identity.controllerRunId})]);
+      return "settled";
+    });
+  }
+  async bindCancellationRuntimeContainer(identity:CancellationRuntimeIdentity,containerId:string):Promise<void>{
+    if(!/^[a-f0-9]{64}$/.test(containerId))throw new MissionValidationError("Runtime container id is invalid");
+    await this.db.transaction(async tx=>{
+      await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
+      const q=await tx.query("UPDATE cancellation_runtime_bindings SET container_id=COALESCE(container_id,$5),updated_at=now() WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3 AND controller_run_id=$4 AND (container_id IS NULL OR container_id=$5) RETURNING container_id",[identity.missionId,identity.sliceId,identity.leaseEpoch,identity.controllerRunId,containerId]);
+      if(!q.rows[0]||String(q.rows[0].container_id)!==containerId)throw new MissionConflictError("Container binding is stale or changed");
+    });
+  }
+  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">{
+    const identity=entry?.identity;
+    if(!identity?.missionId||!identity.sliceId||!Number.isSafeInteger(identity.leaseEpoch)||identity.leaseEpoch<1||!/^[a-f0-9]{64}$/.test(identity.controllerRunId))return "ignored";
+    return this.db.transaction(async tx=>{
+      await tx.query("SELECT lock_id FROM mission_governor_lock WHERE lock_id=1 FOR UPDATE");
+      const q=await tx.query("SELECT b.*,s.status AS slice_status,s.lease_epoch AS current_epoch,s.controller_run_id AS current_run,m.status AS mission_status FROM cancellation_runtime_bindings b JOIN mission_slices s ON s.mission_id=b.mission_id AND s.id=b.slice_id JOIN missions m ON m.id=b.mission_id WHERE b.mission_id=$1 AND b.slice_id=$2 AND b.lease_epoch=$3 FOR UPDATE OF b,s,m",[identity.missionId,identity.sliceId,identity.leaseEpoch]);
+      const r=q.rows[0];if(!r||String(r.controller_run_id)!==identity.controllerRunId||Number(r.current_epoch)!==identity.leaseEpoch||String(r.current_run??"")!==identity.controllerRunId||!['cancel_requested','unknown','awaiting_verification','cancelled'].includes(String(r.slice_status)))return "ignored";
+      const binding={name:String(r.runtime_name),imageRef:String(r.image_ref),labelsDigest:String(r.labels_digest)};
+      const staticMatch=entry.version==="orloom.runtime-journal.v2"&&entry.identity.missionId===identity.missionId&&entry.identity.sliceId===identity.sliceId&&entry.identity.leaseEpoch===identity.leaseEpoch&&entry.identity.controllerRunId===identity.controllerRunId&&entry.name===binding.name&&entry.imageRef===binding.imageRef&&entry.labelsDigest===binding.labelsDigest&&(!r.container_id||entry.containerId===String(r.container_id));
+      const observation=entry.reconciliation;
+      if(!observation||typeof observation!=="object"||!observation.identity||typeof observation.identity!=="object")return "ignored";
+      if(!staticMatch||observation.source!=="orloom.trusted-docker-reconciler.v1"||observation.outcome!==entry.state||observation.identity.missionId!==identity.missionId||observation.identity.sliceId!==identity.sliceId||observation.identity.leaseEpoch!==identity.leaseEpoch||observation.identity.controllerRunId!==identity.controllerRunId||observation.name!==binding.name||observation.imageRef!==binding.imageRef||observation.labelsDigest!==binding.labelsDigest||observation.containerId!==entry.containerId)return "ignored";
+      if(entry.state==="unknown"){
+        if(String(r.reconciliation_state)!=="absent")await tx.query("UPDATE cancellation_runtime_bindings SET reconciliation_state='unknown',reconciliation_evidence=$4::jsonb,updated_at=now() WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3",[identity.missionId,identity.sliceId,identity.leaseEpoch,canonicalJson(entry)]);
+        return String(r.reconciliation_state)==="absent"?"settled":"quarantined";
+      }
+      if(String(r.reconciliation_state)==="absent")return canonicalJson(r.reconciliation_evidence)===canonicalJson(entry)?"settled":"ignored";
+      if(!validateCancellationSettlementEvidence(entry,binding)||!r.container_id||String(r.container_id)!==entry.containerId||String(r.mission_status)!=="cancelling")return "quarantined";
+      await tx.query("UPDATE cancellation_runtime_bindings SET reconciliation_state='absent',reconciliation_evidence=$4::jsonb,updated_at=now() WHERE mission_id=$1 AND slice_id=$2 AND lease_epoch=$3",[identity.missionId,identity.sliceId,identity.leaseEpoch,canonicalJson(entry)]);
+      await tx.query("UPDATE mission_slices SET status='cancelled',lease_token_hash=NULL,capability_hash=NULL,lease_expires_at=NULL WHERE mission_id=$1 AND id=$2 AND lease_epoch=$3 AND status IN ('cancel_requested','unknown','awaiting_verification')",[identity.missionId,identity.sliceId,identity.leaseEpoch]);
+      const unresolved=await tx.query("SELECT 1 FROM mission_slices WHERE mission_id=$1 AND status IN ('running','cancel_requested','awaiting_verification','unknown') LIMIT 1",[identity.missionId]);
+      if(!unresolved.rows.length){await tx.query("UPDATE missions SET status='cancelled' WHERE id=$1 AND status='cancelling'",[identity.missionId]);await tx.query("UPDATE mission_cancellations SET completed_at=COALESCE(completed_at,now()) WHERE mission_id=$1",[identity.missionId]);}
+      await tx.query("INSERT INTO mission_events(mission_id,type,data) VALUES($1,'slice.cancellation_settled',$2::jsonb)",[identity.missionId,canonicalJson({sliceId:identity.sliceId,leaseEpoch:identity.leaseEpoch,controllerRunId:identity.controllerRunId,containerId:entry.containerId,observedAt:observation.observedAt})]);
+      return "settled";
     });
   }
   async cancellationStatus(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string):Promise<boolean>{

@@ -1,0 +1,18 @@
+{
+  "version": "orloom.approved-composition-source.v1",
+  "baselineCommit": "eed0a9264ec2b5c64f59a247a4aa6be93e3677e4",
+  "branch": "feat/approved-worker-composition",
+  "lane": "bounded source composition, one owner-approved slice and worker lane",
+  "validationFinishedAt": "2026-10-15T16:55:06Z",
+  "models": {"controller":"UNKNOWN", "implementers":"gpt-6-luna", "independentReviewer":"gpt-6-sol"},
+  "planningMs": null,
+  "buildMs": null,
+  "auditMs": null,
+  "tokensMeasured": null,
+  "repairRounds": 1,
+  "tests": {"total":287,"pass":285,"fail":0,"cancelled":0,"skipped":2,"durationMs":125907.473057},
+  "gates": {"build":"PASS","typecheck":"PASS","validate":"PASS","actualPostgresTwoPool":"PASS","deterministicIntegration":"PASS","independentBoundedSourceReview":"PASS","sourceManifestFiles":126,"sourceManifestMismatches":0},
+  "operationalAcceptance": "OPEN",
+  "limits": ["normal worker main disabled", "no live provider or runsc acceptance", "no deployment or product-generated external PR", "SQL intent without trusted file proof remains quarantined for operator reconciliation", "spend reservation retained without refunds"],
+  "next": "authorized branch/PR publication; independent review before merge or release"
+}

@@ -1,0 +1,53 @@
+Γ£ö cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved (1286.5543ms)
+Γ£ö the cancellation migration is idempotent when re-applied to an already-migrated database (1254.1589ms)
+Γ£ö owner cancellation is idempotent for the same request id and refuses a competing one (849.862ms)
+Γ£ö cancellation fences the still-unexpired lease and retains its proof and the reservation (804.1458ms)
+Γ£ö cancellationStatus is false for a stale epoch, a superseded lease, an expired lease, or a wrong token (806.3252ms)
+Γ£ö cancellation blocks new claims for the slice and its mission and releases no capacity (807.9435ms)
+Γ£ö lease-less slices become durable tombstones and a fully settled mission completes cancellation (789.4272ms)
+Γ£ö cancellation survives a store restart against the same database (783.5259ms)
+Γ£ö no worker-supplied assertion can complete a cancelled mission or release its capacity (814.7476ms)
+Γ£ö an interleaved claim/cancel race keeps the winner fenced and never double-books or refunds (797.8129ms)
+Γ£û the owner cancellation HTTP surface authenticates, validates, and exposes no worker route (16.8664ms)
+Γ£ö the in-memory store applies the same durable-tombstone and lease-retention fence (1.7499ms)
+Γ£ö every migration is idempotent under a real startup re-execution (792.6685ms)
+Γ£ö owner cancellation refuses an already-verified mission and preserves its terminal state (769.0512ms)
+Γ£ö cancelling a blocked slice releases its capacity slot and still refunds nothing (798.6002ms)
+Γ£ö an owner request id may be reused on a different mission (791.6838ms)
+Γ£û running lease polls owner cancellation over HTTP with exact credentials; stale requests reveal no cancellation (9.9851ms)
+Γä╣ tests 17
+Γä╣ suites 0
+Γä╣ pass 15
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 11040.2313
+
+Γ£û failing tests:
+
+test at dist\tests\runtime-cancellation.test.js:374:1
+Γ£û the owner cancellation HTTP surface authenticates, validates, and exposes no worker route (16.8664ms)
+  [TypeError: fetch failed] {
+    [cause]: Error: connect EACCES 127.0.0.1:64147
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16) {
+      errno: -4092,
+      code: 'EACCES',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 64147
+    }
+  }
+
+test at dist\tests\runtime-cancellation.test.js:539:1
+Γ£û running lease polls owner cancellation over HTTP with exact credentials; stale requests reveal no cancellation (9.9851ms)
+  [TypeError: fetch failed] {
+    [cause]: Error: connect EACCES 127.0.0.1:64149
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:2021:16) {
+      errno: -4092,
+      code: 'EACCES',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 64149
+    }
+  }

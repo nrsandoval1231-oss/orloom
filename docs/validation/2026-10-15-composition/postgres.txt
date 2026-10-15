@@ -1,0 +1,1 @@
+{"result":"PASS","database":"actual isolated PostgreSQL","missionId":"29593c01-817c-42d0-9cc1-b0d48e50b847","twoPoolClaimWinners":1,"settlementReplay":["settled","settled"],"settledEvents":1,"reservedCents":100,"capacityReused":true,"liveProvider":false,"runsc":false}

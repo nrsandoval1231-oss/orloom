@@ -1,0 +1,19 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: two real pools cannot double claim
+
+0 !== 1
+
+    at file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/scripts/validate-composition-postgres.mjs:20:10
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 1,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.22.0

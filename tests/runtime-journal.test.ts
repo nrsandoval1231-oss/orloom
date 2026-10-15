@@ -15,6 +15,24 @@ const imageRef = `sha256:${"a".repeat(64)}`;
 const labelsDigest = "b".repeat(64);
 const containerId = "c".repeat(64);
 
+test("settled journal entries survive restart for controller settlement replay", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "orloom-settlement-replay-"));
+  try {
+    const journal = process.platform === "linux" ? await FileRuntimeJournal.openOperational(root) : await FileRuntimeJournal.openPortableTestRoot(root);
+    await journal.recordIntent(intent());
+    await journal.recordCreated(identity(), containerId, labelsDigest);
+    const [created] = await journal.unresolved(); assert(created);
+    await journal.recordAbsent(observation(created, "absent"));
+    assert.deepEqual(await journal.unresolved(), []);
+    const reopened = process.platform === "linux" ? await FileRuntimeJournal.openOperational(root) : await FileRuntimeJournal.openPortableTestRoot(root);
+    const entries = (reopened as unknown as { entries?: () => Promise<RuntimeJournalEntry[]> }).entries;
+    assert.equal(typeof entries, "function", "controller needs retained absent evidence after a database outage");
+    const rows = await entries!.call(reopened);
+    assert.equal(rows.length, 1); assert.equal(rows[0]!.state, "absent");
+    assert.equal(rows[0]!.containerId, containerId);
+  } finally { await rm(root, {recursive: true, force: true}); }
+});
+
 function identity(missionId = "mission/one"): RuntimeIdentity {
   return { missionId, sliceId: "slice-1", leaseEpoch: 3, controllerRunId: "run-1" };
 }

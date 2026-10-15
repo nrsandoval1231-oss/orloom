@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { eligibleLessonPair, lessonChallengeDigest, lessonEpisodeKey, lessonRule, scopeCohort } from "../../learning/src/lesson-policy.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
+import { CancellationRuntimeBinding, CancellationRuntimeEntry, CancellationRuntimeIdentity, validateCancellationSettlementEvidence } from "./cancellation-settlement.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import { canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingDecisionRecord, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
@@ -47,6 +48,44 @@ export class MemoryMissionStore implements MissionStore {
   async awaitingVerification():Promise<never[]>{return[];}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private cancellations = new Map<string,{ownerRequestId:string;reason:string;requestedAt:string;completedAt:string|null}>();
+  private cancellationRuntime = new Map<string,{identity:CancellationRuntimeIdentity;binding:CancellationRuntimeBinding;containerId:string|null;state:"pending"|"unknown"|"absent";evidence:CancellationRuntimeEntry|null}>();
+  private runtimeKey(i:CancellationRuntimeIdentity){return `${i.missionId}:${i.sliceId}:${i.leaseEpoch}`;}
+  async registerCancellationRuntimeBinding(identity:CancellationRuntimeIdentity,binding:CancellationRuntimeBinding){
+    const s=this.slices.get(`${identity.missionId}:${identity.sliceId}`),old=this.cancellationRuntime.get(this.runtimeKey(identity));
+    if(!s||s.leaseEpoch!==identity.leaseEpoch)throw new MissionConflictError("Runtime binding no longer matches the active lease");
+    if(old){if(old.identity.controllerRunId!==identity.controllerRunId||canonicalJson(old.binding)!==canonicalJson(binding))throw new MissionConflictError("Runtime binding is immutable for this lease");return;}
+    if(s.status!=="running")throw new MissionConflictError("A new runtime cannot be bound after cancellation starts");
+    this.cancellationRuntime.set(this.runtimeKey(identity),{identity:{...identity},binding:{...binding},containerId:null,state:"pending",evidence:null});
+  }
+  async bindCancellationRuntimeContainer(identity:CancellationRuntimeIdentity,containerId:string){
+    if(!/^[a-f0-9]{64}$/.test(containerId))throw new MissionValidationError("Runtime container id is invalid");
+    const value=this.cancellationRuntime.get(this.runtimeKey(identity));if(!value||value.identity.controllerRunId!==identity.controllerRunId||(value.containerId&&value.containerId!==containerId))throw new MissionConflictError("Container binding is stale or changed");value.containerId=containerId;
+  }
+  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">{
+    const i=entry?.identity,value=i&&this.cancellationRuntime.get(this.runtimeKey(i)),s=i&&this.slices.get(`${i.missionId}:${i.sliceId}`),m=i&&this.missions.get(i.missionId);
+    if(!value||!s||!m||value.identity.controllerRunId!==i.controllerRunId||s.leaseEpoch!==i.leaseEpoch||!['cancel_requested','unknown','awaiting_verification','cancelled'].includes(s.status))return "ignored";
+    const observation=entry.reconciliation;
+    if(!observation||typeof observation!=="object"||!observation.identity||typeof observation.identity!=="object")return "ignored";
+    if(entry.name!==value.binding.name||entry.imageRef!==value.binding.imageRef||entry.labelsDigest!==value.binding.labelsDigest||value.containerId&&entry.containerId!==value.containerId||observation.source!=="orloom.trusted-docker-reconciler.v1"||observation.outcome!==entry.state||observation.identity.missionId!==i.missionId||observation.identity.sliceId!==i.sliceId||observation.identity.leaseEpoch!==i.leaseEpoch||observation.identity.controllerRunId!==i.controllerRunId||observation.name!==value.binding.name||observation.imageRef!==value.binding.imageRef||observation.labelsDigest!==value.binding.labelsDigest||observation.containerId!==entry.containerId)return "ignored";
+    if(entry.state==="unknown"){if(value.state!=="absent"){value.state="unknown";value.evidence=entry;}return value.state==="absent"?"settled":"quarantined";}
+    if(value.state==="absent")return canonicalJson(value.evidence)===canonicalJson(entry)?"settled":"ignored";
+    if(!validateCancellationSettlementEvidence(entry,value.binding)||!value.containerId||m.status!=="cancelling")return "quarantined";
+    value.state="absent";value.evidence=entry;s.status="cancelled";s.leaseToken=null;s.leaseExpiresAt=null;this.occupied.delete(`${s.missionId}:${s.id}`);
+    const uncertain=[...this.slices.values()].some(x=>x.missionId===m.id&&["running","cancel_requested","awaiting_verification","unknown"].includes(x.status));
+    if(!uncertain){m.status="cancelled";const c=this.cancellations.get(m.id);if(c)c.completedAt??=new Date().toISOString();}
+    this.event(m.id,"slice.cancellation_settled",{sliceId:i.sliceId,leaseEpoch:i.leaseEpoch,controllerRunId:i.controllerRunId,containerId:entry.containerId,observedAt:entry.reconciliation.observedAt});return "settled";
+  }
+  async settleCancellationBeforeRuntime(identity:CancellationRuntimeIdentity):Promise<"settled"|"quarantined"|"ignored">{
+    const s=this.slices.get(`${identity.missionId}:${identity.sliceId}`),m=this.missions.get(identity.missionId);
+    if(!s||!m||!Number.isSafeInteger(identity.leaseEpoch)||identity.leaseEpoch<1||s.leaseEpoch!==identity.leaseEpoch)return "ignored";
+    if(this.cancellationRuntime.has(this.runtimeKey(identity)))return "quarantined";
+    if(s.status==="cancelled"&&m.status==="cancelled")return "settled";
+    if(m.status!=="cancelling"||!['cancel_requested','unknown'].includes(s.status))return "ignored";
+    s.status="cancelled";s.leaseToken=null;s.leaseExpiresAt=null;this.occupied.delete(`${s.missionId}:${s.id}`);
+    const uncertain=[...this.slices.values()].some(x=>x.missionId===m.id&&["running","cancel_requested","awaiting_verification","unknown"].includes(x.status));
+    if(!uncertain){m.status="cancelled";const c=this.cancellations.get(m.id);if(c)c.completedAt??=new Date().toISOString();}
+    this.event(m.id,"slice.cancellation_settled_before_runtime",{sliceId:identity.sliceId,leaseEpoch:identity.leaseEpoch,controllerRunId:identity.controllerRunId});return "settled";
+  }
   private slots = new Map<number, { digest: string; expires: string; enabled: boolean }>(); private occupied = new Map<string, number>();
   private progress = new Map<string, RecoveryProgress>(); private receipts = new Map<string, GovernorActionV1>(); private snapshots = new Map<string,DecisionSnapshotV1>(); private judgments = new Map<string,JudgmentV1>(); private revisions = new Map<string, number>(); private pendingJudgments = new Map<string,string>(); private leaseBindings = new Map<string,{planDigest:string;policyDigest:string}>(); private lessonRows: (LessonCandidate & { proposedBy: string; reviewer?: string })[] = [];
   async configureCapacity(count:number,digest:string|null,expires:string|null){for(let i=1;i<=6;i++){if(i<=count&&digest&&expires)this.slots.set(i,{digest,expires,enabled:true});else{const old=this.slots.get(i);if(old)this.slots.set(i,{...old,enabled:false});}}}

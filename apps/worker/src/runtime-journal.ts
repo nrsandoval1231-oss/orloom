@@ -69,6 +69,8 @@ export interface RuntimeJournal {
   recordUnknown(observation: RuntimeReconciliationObservation): Promise<void>;
   recordAbsent(observation: RuntimeReconciliationObservation): Promise<void>;
   unresolved(): Promise<RuntimeJournalEntry[]>;
+  /** Retained terminal evidence permits trusted database settlement replay. */
+  entries?(): Promise<RuntimeJournalEntry[]>;
 }
 
 export class RuntimeJournalQuarantinedError extends Error {
@@ -354,5 +356,9 @@ export class FileRuntimeJournal implements RuntimeJournal {
 
   async unresolved(): Promise<RuntimeJournalEntry[]> {
     return this.withRootLock(async () => [...(await this.readAllLocked()).values()].filter(row => row.state !== "absent").sort((left, right) => left.updatedAt.localeCompare(right.updatedAt)));
+  }
+
+  async entries(): Promise<RuntimeJournalEntry[]> {
+    return this.withRootLock(async () => [...(await this.readAllLocked()).values()].sort((left, right) => left.updatedAt.localeCompare(right.updatedAt)));
   }
 }
