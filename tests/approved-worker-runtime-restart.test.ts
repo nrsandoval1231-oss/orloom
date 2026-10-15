@@ -37,7 +37,7 @@ async function migrate(db: PGlite): Promise<void> {
   for (const name of (await readdir("db/migrations")).filter(name => name.endsWith(".sql")).sort()) await db.exec(await readFile(`db/migrations/${name}`, "utf8"));
 }
 
-async function prepareStore(store: MemoryMissionStore | SqlMissionStore, beforeRuntime = false) {
+async function prepareStore(store: MemoryMissionStore | SqlMissionStore, mode: "complete" | "pre-runtime" | "intent" = "complete") {
   await store.configureCapacity(1, policyDigest, new Date(Date.now() + 300_000).toISOString());
   const mission = await store.submit({ repository: "owner/repo", baseSha: "a".repeat(40), objective: "restart one approved worker", acceptance: ["review the exact candidate"], budgetCents: 100 });
   await store.recommendPlan(mission.id, [planSlice], "owner"); await store.approvePlan(mission.id);
@@ -48,7 +48,8 @@ async function prepareStore(store: MemoryMissionStore | SqlMissionStore, beforeR
   const root = await mkdtemp(path.join(os.tmpdir(), "orloom-approved-restart-"));
   const journal = await FileRuntimeJournal.openPortableTestRoot(root);
   const bridge = new TrustedRuntimeJournalBridge(journal, store);
-  if (!beforeRuntime) {
+  if (mode === "intent") await bridge.recordIntent({ identity, name: "orloom-worker-approved-slice", imageRef, labelsDigest });
+  if (mode === "complete") {
     await bridge.recordIntent({ identity, name: "orloom-worker-approved-slice", imageRef, labelsDigest });
     await bridge.recordCreated(identity, containerId, labelsDigest);
     const observedAt = new Date().toISOString();
@@ -106,7 +107,7 @@ test("SQL service restart replays the exact completed journal through the produc
 });
 
 test("memory service settles owner cancellation before runtime binding and replays idempotently", async () => {
-  const store = new MemoryMissionStore(); const fixture = await prepareStore(store, true);
+  const store = new MemoryMissionStore(); const fixture = await prepareStore(store, "pre-runtime");
   try {
     await store.requestCancel(fixture.missionId, "owner-pre-runtime-cancel", "cancel before runtime creation");
     assert.equal((await store.getMission(fixture.missionId))?.slices[0]?.status, "cancel_requested");
@@ -122,7 +123,7 @@ test("memory service settles owner cancellation before runtime binding and repla
 test("SQL service settles owner cancellation before runtime binding and replays idempotently", async () => {
   const db = new PGlite();
   try {
-    await migrate(db); const store = new SqlMissionStore(sql(db)); const fixture = await prepareStore(store, true);
+    await migrate(db); const store = new SqlMissionStore(sql(db)); const fixture = await prepareStore(store, "pre-runtime");
     try {
       await store.requestCancel(fixture.missionId, "owner-pre-runtime-cancel", "cancel before runtime creation");
       assert.equal((await store.getMission(fixture.missionId))?.slices[0]?.status, "cancel_requested");
@@ -131,6 +132,67 @@ test("SQL service settles owner cancellation before runtime binding and replays 
       assert.equal(await runApprovedWorkerService(fixture.options, fixture.dependencies), "cancelled", "no-runtime settlement is idempotent across restart");
       const after = await store.getMission(fixture.missionId);
       assert.equal(after?.slices[0]?.status, "cancelled"); assert.equal(after?.mission.reservedCents, reserved);
+      assert.equal(fixture.executeCalls, 0);
+    } finally { await rm(fixture.root, { recursive: true, force: true }); }
+  } finally { await db.close(); }
+});
+
+async function assertCapacityHeld(store: MemoryMissionStore | SqlMissionStore): Promise<void> {
+  const competing = await store.submit({ repository: "other/repo", baseSha: "f".repeat(40), objective: "prove held capacity", acceptance: ["no second lease"], budgetCents: 100 });
+  await store.recommendPlan(competing.id, [{ ...planSlice, id: "other-slice" }], "owner"); await store.approvePlan(competing.id);
+  assert.equal(await store.claim(300, policyDigest, checkIds), null, "unknown/cancel-pending lease retains its capacity slot");
+}
+
+for (const kind of ["memory", "sql"] as const) {
+  test(`expired no-runtime UNKNOWN settles only after owner cancellation (${kind}), idempotently`, async () => {
+    const db = kind === "sql" ? new PGlite() : null;
+    if (db) await migrate(db);
+    const store = kind === "memory" ? new MemoryMissionStore() : new SqlMissionStore(sql(db!));
+    const fixture = await prepareStore(store, "pre-runtime");
+    try {
+      assert.equal(await store.expire(new Date(Date.now() + 600_000)), 1);
+      assert.equal((await store.getMission(fixture.missionId))?.slices[0]?.status, "unknown");
+      await store.requestCancel(fixture.missionId, "owner-stop-expired-before-runtime", "cancel an expired lease with no runtime intent");
+      assert.equal((await store.getMission(fixture.missionId))?.mission.status, "cancelling");
+      const reserved = (await store.getMission(fixture.missionId))?.mission.reservedCents;
+      assert.equal(await runApprovedWorkerService(fixture.options, fixture.dependencies), "cancelled");
+      assert.equal(await runApprovedWorkerService(fixture.options, fixture.dependencies), "cancelled");
+      const after = await store.getMission(fixture.missionId);
+      assert.equal(after?.slices[0]?.status, "cancelled"); assert.equal(after?.mission.reservedCents, reserved);
+      assert.equal(fixture.executeCalls, 0);
+    } finally { await rm(fixture.root, { recursive: true, force: true }); if (db) await db.close(); }
+  });
+}
+
+for (const kind of ["memory", "sql"] as const) {
+  test(`non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (${kind})`, async () => {
+    const db = kind === "sql" ? new PGlite() : null;
+    if (db) await migrate(db);
+    const store = kind === "memory" ? new MemoryMissionStore() : new SqlMissionStore(sql(db!));
+    const fixture = await prepareStore(store, "pre-runtime");
+    try {
+      assert.equal(await store.expire(new Date(Date.now() + 600_000)), 1);
+      const reserved = (await store.getMission(fixture.missionId))?.mission.reservedCents;
+      assert.equal(await runApprovedWorkerService(fixture.options, fixture.dependencies), "unknown");
+      const after = await store.getMission(fixture.missionId);
+      assert.equal(after?.slices[0]?.status, "unknown"); assert.equal(after?.mission.reservedCents, reserved);
+      await assertCapacityHeld(store); assert.equal(fixture.executeCalls, 0);
+    } finally { await rm(fixture.root, { recursive: true, force: true }); if (db) await db.close(); }
+  });
+}
+
+test("bound file-intent UNKNOWN stays quarantined after owner cancellation", async () => {
+  const db = new PGlite();
+  try {
+    await migrate(db); const store = new SqlMissionStore(sql(db)); const fixture = await prepareStore(store, "intent");
+    try {
+      assert.equal(await store.expire(new Date(Date.now() + 600_000)), 1);
+      await store.requestCancel(fixture.missionId, "owner-stop-bound-unknown", "do not settle a lease with runtime intent");
+      const reserved = (await store.getMission(fixture.missionId))?.mission.reservedCents;
+      assert.equal(await runApprovedWorkerService(fixture.options, fixture.dependencies), "unknown");
+      const after = await store.getMission(fixture.missionId);
+      assert.equal(after?.mission.status, "cancelling"); assert.equal(after?.slices[0]?.status, "unknown");
+      assert.equal(after?.mission.reservedCents, reserved); await assertCapacityHeld(store);
       assert.equal(fixture.executeCalls, 0);
     } finally { await rm(fixture.root, { recursive: true, force: true }); }
   } finally { await db.close(); }

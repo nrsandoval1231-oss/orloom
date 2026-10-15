@@ -1,5 +1,7 @@
 # PR26 restart/recovery review repair
 
+**Follow-up:** external re-review accepted these three direct repairs but reproduced an expiry-before-owner-cancellation variant. The [expired cancellation follow-up](2026-10-15-pr26-expired-cancellation.md) is the latest acceptance record. These original hashes and transcripts remain historical.
+
 Repair of [formal independent review 5537513332](https://github.com/nrsandoval1231-oss/orloom/pull/26#pullrequestreview-5537513332) at source head `a8644549b83826f2112bb8f5ad21279c5122aa23`, tree `7111e17a7c6e086c8ef50a45ecaf03bc3451e94f`. Earlier bounded source PASS missed three production restart gaps and is historical, not acceptance of this repair. PR25 `27b786b140a2f0f73141aa60175b939b8f6ba605` passed its independent re-review and remains unchanged. No review thread was resolved.
 
 1. **P1 normal completed-work restart:** cancellation reconciliation classified valid retained ABSENT proof as quarantine for a non-cancelling mission. Stores now distinguish strictly validated `observed_absent` from cancellation `settled`; observation does not change mission/slice state or spend. The actual main callback is shared with tests, scoped to the exact deterministic controller run and rejects ignored/quarantined proof. Later owner cancellation still consumes the same proof through the atomic cancellation path. Verified-state retained replay is also covered; changed/UNKNOWN evidence remains a stop condition.

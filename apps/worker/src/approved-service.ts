@@ -137,7 +137,7 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   const slice = refreshed.slices.find(row => row.id === task.sliceId)!;
   if (!slice) throw new Error("Approved task slice is missing from the durable mission");
   if (slice.status === "verified") return integrateIfExplicit(options, deps, refreshed);
-  if (slice.status === "cancel_requested") {
+  if (slice.status === "cancel_requested" || (slice.status === "unknown" && refreshed.mission.status === "cancelling")) {
     if (slice.leaseEpoch < 1) return "unknown";
     const settlement = await deps.store.settleCancellationBeforeRuntime?.({
       missionId: task.missionId, sliceId: task.sliceId, leaseEpoch: slice.leaseEpoch,

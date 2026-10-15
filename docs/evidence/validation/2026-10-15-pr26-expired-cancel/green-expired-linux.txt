@@ -1,0 +1,13 @@
+✔ expired no-runtime UNKNOWN settles only after owner cancellation (memory), idempotently (8.682486ms)
+✔ expired no-runtime UNKNOWN settles only after owner cancellation (sql), idempotently (1521.218212ms)
+✔ non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (memory) (4.614462ms)
+✔ non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (sql) (1070.773299ms)
+✔ bound file-intent UNKNOWN stays quarantined after owner cancellation (1006.356023ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3847.947433

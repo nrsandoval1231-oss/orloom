@@ -65,6 +65,17 @@ try {
   assert.equal((await restarted.getMission(beforeRuntime.mission.id)).mission.reservedCents, 100);
   assert.equal((await restarted.events(beforeRuntime.mission.id, 0)).filter(event => event.type === "slice.cancellation_settled_before_runtime").length, 1);
 
+  const expired = await create("expired-before-runtime");
+  await store.expire(new Date(Date.now() + 600_000));
+  assert.equal((await restarted.getMission(expired.mission.id)).slices[0].status, "unknown");
+  assert.equal(await runApprovedWorkerService(expired.options, expired.deps(false)), "unknown", "expiry without owner cancellation must never infer settlement");
+  await store.requestCancel(expired.mission.id, "expired-pre-runtime-owner-stop", "owner cancels after the unregistered lease expired");
+  assert.equal((await restarted.getMission(expired.mission.id)).slices[0].status, "unknown");
+  assert.equal(await runApprovedWorkerService(expired.options, expired.deps(false)), "cancelled");
+  assert.equal(await runApprovedWorkerService(expired.options, expired.deps(false)), "cancelled");
+  assert.equal((await restarted.getMission(expired.mission.id)).mission.reservedCents, 100);
+  assert.equal((await restarted.events(expired.mission.id, 0)).filter(event => event.type === "slice.cancellation_settled_before_runtime").length, 1);
+
   const verified = await create("verified");
   await verified.bridge.recordIntent({ identity: verified.identity, ...binding });
   await verified.bridge.recordCreated(verified.identity, containerId, binding.labelsDigest);
@@ -91,10 +102,11 @@ try {
 
   const bound = await create("bound-no-file");
   await store.registerCancellationRuntimeBinding(bound.identity, binding);
+  await store.expire(new Date(Date.now() + 600_000));
   await store.requestCancel(bound.mission.id, "bound-owner-stop", "SQL intent exists but trusted file intent is unavailable");
   assert.equal(await runApprovedWorkerService(bound.options, bound.deps(false)), "unknown");
-  assert.equal((await restarted.getMission(bound.mission.id)).slices[0].status, "cancel_requested");
+  assert.equal((await restarted.getMission(bound.mission.id)).slices[0].status, "unknown");
   assert.equal((await restarted.getMission(bound.mission.id)).mission.reservedCents, 100);
   assert.equal(builderCalls, 0);
-  console.log(JSON.stringify({ result: "PASS", database: "actual isolated PostgreSQL", normalAbsentRestart: "awaiting_review", verifiedAbsentRestart: "awaiting_review", laterCancellationReplay: "cancelled", noRuntimeCancellationRestart: "cancelled", bindingWithoutFile: "unknown", unrelatedVerificationCandidates: 100, exactTargetVerificationCalls: verifierCalls, builderCalls, reservedCents: 100, liveProvider: false, runsc: false, certificateFixture: true, verifiedStateFixture: true }));
+  console.log(JSON.stringify({ result: "PASS", database: "actual isolated PostgreSQL", normalAbsentRestart: "awaiting_review", verifiedAbsentRestart: "awaiting_review", laterCancellationReplay: "cancelled", noRuntimeCancellationRestart: "cancelled", expiredNoRuntimeCancellationRestart: "cancelled", nonCancellingExpiredUnknown: "unknown", expiredBindingWithoutFile: "unknown", unrelatedVerificationCandidates: 100, exactTargetVerificationCalls: verifierCalls, builderCalls, reservedCents: 100, liveProvider: false, runsc: false, certificateFixture: true, verifiedStateFixture: true }));
 } finally { await first.close(); await second.close(); await rm(root, { recursive: true, force: true }); }
