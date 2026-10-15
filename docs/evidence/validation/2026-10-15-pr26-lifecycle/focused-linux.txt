@@ -1,0 +1,128 @@
+✔ long approved-task expiry reschedules against the absolute deadline without aborting early (0.782104ms)
+✔ expiry aborts immediately for an already-reached absolute deadline (0.103431ms)
+✔ each timer wakeup reevaluates wall-clock shifts before expiring (0.124617ms)
+✔ timer wakeup reevaluates wall clock and cleanup cancels pending reschedules (0.114896ms)
+✔ controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (7013.018053ms)
+✖ lane signal abort after reconciled mission readback fences verifier dispatch without an explicit lifecycle guard (1.919911ms)
+✔ approved worker lane refuses changed binding before executeLease and runs exact one-slice lifecycle once (5.074116ms)
+✔ abort while verification runs fences preparation and integration (1.436899ms)
+✔ durable owner cancellation during verification fences preparation and integration (0.288601ms)
+✔ manifest expiry during verification fences preparation and integration (0.211961ms)
+✔ abort during durable claim preserves reservation and never enters the lane (0.22275ms)
+✔ abort during certified preparation fences integration (0.428201ms)
+✔ abort during final certificate readback fences certified preparation (0.272061ms)
+✔ abort during integration fences delivery and cannot report delivered (3.488529ms)
+✔ abort during delivery preserves the started effect as unresolved (0.377582ms)
+✔ approved service reconciles first, claims the exact binding once, and executes once (2.279138ms)
+✔ restart verification does not claim or execute already running or awaiting work (0.336548ms)
+✔ owner cancellation without a runtime binding settles using the exact run identity (0.273856ms)
+✔ cancel_requested with a bound runtime remains quarantined and cannot claim (0.220193ms)
+✔ main retained-runtime callback accepts only settlement or validated normal ABSENT (0.399123ms)
+✔ interruption before reconciliation cannot reach claim (0.166717ms)
+✔ actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.155268ms)
+✔ settlement replay refreshes task status before any claim or execution (0.223523ms)
+✔ explicit review request integrates the awaiting candidate only after certificate preparation (0.385035ms)
+✔ certified handoff uploads only digest-matching final verifier evidence after candidate identity checks (2.126523ms)
+✔ certified handoff stops later artifact publication when lifecycle ends after the first put (0.924408ms)
+✔ certified handoff refuses artifact-store readback substitution and never promotes a Git ref (0.370813ms)
+✔ certified handoff refuses a missing final certificate before admission import or artifact publication (0.197512ms)
+✔ certified handoff applies the Governor review validator before import or artifact publication (0.350263ms)
+✔ certified handoff refuses stale persisted candidate bindings before import (0.26571ms)
+✔ already-stopped upload-token adapter does not mint credentials or dispatch (0.872537ms)
+✔ already-stopped check adapter does not mint credentials or dispatch (0.16689ms)
+✔ already-stopped pull-request adapter does not mint credentials or dispatch (0.111791ms)
+✔ GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities (1.248299ms)
+✔ branch absence is distinct from inaccessible or wrong repository readback (0.308382ms)
+✖ lifecycle fence runs after Check and PR installation tokens are acquired but before POST (0.773128ms)
+✔ serialized shared PGlite fixtures reset mutations after a failed test body (1352.121701ms)
+✔ positive delivery persists one exact Check GET readback and an open unmerged draft PR (56.253601ms)
+✔ delivery rejects duplicate, mismatched, and unknown C4 metadata before any external effect (53.72304ms)
+✔ Check-only interruption is reconciled by exact GET then proceeds to one PR without retrying Check POST (43.858998ms)
+✔ interrupted PR create is reconciled after durable Check and PR claims without retry (51.065476ms)
+✔ concurrent delivery calls cannot both claim either create effect (48.484566ms)
+✔ upload interruption is reconciled after the exact remote ref appears and is never pushed twice (42.475172ms)
+▶ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks
+  ✔ {"uploadPost":"throw_absent"} (29.76742ms)
+  ✔ {"branchRead":"wrong_sha"} (30.290547ms)
+  ✔ {"branchRead":"wrong_tree"} (31.722595ms)
+  ✔ {"baseRead":"wrong"} (28.388867ms)
+  ✔ {"baseRead":"error"} (25.737453ms)
+✔ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks (146.769672ms)
+✔ unresolved absent effect remains UNKNOWN and is never blindly retried (36.146889ms)
+✔ missing scoped upload credential capability closes delivery before creating a claim (16.925624ms)
+▶ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success
+  ✔ wrong App in Check readback (28.151138ms)
+  ✔ Check GET returns a different id (29.837182ms)
+  ✔ PR GET returns a different number (33.25204ms)
+  ✔ configured App policy mismatch (17.032987ms)
+  ✔ ambiguous Checks (27.830472ms)
+  ✔ closed draft (31.523896ms)
+  ✔ merged draft (34.544539ms)
+  ✔ non-draft PR (32.461776ms)
+✔ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success (235.677729ms)
+✔ lifecycle abort while token acquisition is delayed prevents upload, Check, and PR dispatch (1309.531538ms)
+✔ fixed bare Git ref accepts one scoped linear fast-forward and rejects scope escape and moved ref (3284.333356ms)
+✔ PostgreSQL certification binds exact candidate, stores immutable certificate and event once (1363.495247ms)
+✔ coordinator keeps capability private, runs fixture runner, and hides a certificate when local head moves (1005.108564ms)
+✔ trusted coordinator fences attempt creation when preparation is interrupted (0.960299ms)
+✔ trusted coordinator fences certificate submission when receipt verification is interrupted (1.179896ms)
+✔ trusted verification stops at the prepare boundary before another dispatch (1.071436ms)
+✔ trusted verification stops at the run boundary before another dispatch (0.131967ms)
+✔ trusted verification stops at the submit boundary before another dispatch (0.119938ms)
+ℹ tests 69
+ℹ suites 0
+ℹ pass 67
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 20114.31062
+
+✖ failing tests:
+
+test at dist/tests/approved-worker-lane-lifecycle.test.js:7:1
+✖ lane signal abort after reconciled mission readback fences verifier dispatch without an explicit lifecycle guard (1.919911ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /aborted/i. Input:
+  
+  'Error: Approved worker lane refused execution: persisted plan digest changed'
+  
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lane-lifecycle.test.js:40:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: Approved worker lane refused execution: persisted plan digest changed
+        at fail (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/apps/control-plane/src/approved-worker-lane.js:33:39)
+        at runApprovedWorkerLaneOnce (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/apps/control-plane/src/approved-worker-lane.js:55:9)
+        at async runApprovedWorkerLane (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/apps/control-plane/src/approved-worker-lane.js:15:16)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lane-lifecycle.test.js:40:5)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3),
+    expected: /aborted/i,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at dist/tests/delivery-adapter.test.js:72:1
+✖ lifecycle fence runs after Check and PR installation tokens are acquired but before POST (0.773128ms)
+  AssertionError [ERR_ASSERTION]: Check guard runs with the scoped client ready, directly before dispatch
+  + actual - expected
+  
+    [
+  -   'token',
+  -   'installation',
+      'guard'
+    ]
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/delivery-adapter.test.js:83:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'guard' ],
+    expected: [ 'token', 'installation', 'guard' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

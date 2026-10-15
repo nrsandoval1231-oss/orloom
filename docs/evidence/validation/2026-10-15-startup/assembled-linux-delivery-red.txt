@@ -1,0 +1,21 @@
+✖ controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (6167.19334ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6531.300582
+
+✖ failing tests:
+
+test at dist/tests/approved-worker-integration.test.js:31:1
+✖ controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (6167.19334ms)
+  Error [MissionConflictError]: Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution
+      at deliverIntegratedCommit (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/packages/integration/src/delivery.js:74:15)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async integrateIfExplicit (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/approved-service.js:135:9)
+      at async TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-integration.test.js:218:35)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

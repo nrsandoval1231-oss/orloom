@@ -1,0 +1,95 @@
+Γ£û memory service restart accepts exact retained ABSENT, awaits review, then settles later owner cancellation (12.4848ms)
+Γ£û SQL service restart replays the exact completed journal through the production callback without builder execution (1209.2584ms)
+Γ£ö approved service reconciles first, claims the exact binding once, and executes once (1.5775ms)
+Γ£ö restart verification does not claim or execute already running or awaiting work (0.9993ms)
+Γ£ö owner cancellation without a runtime binding settles using the exact run identity (0.2937ms)
+Γ£ö cancel_requested with a bound runtime remains quarantined and cannot claim (0.1802ms)
+Γ£ö main retained-runtime callback accepts only settlement or validated normal ABSENT (0.4456ms)
+Γ£ö interruption before reconciliation cannot reach claim (0.1556ms)
+Γ£ö actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.1251ms)
+Γ£ö settlement replay refreshes task status before any claim or execution (0.1581ms)
+Γ£ö explicit review request integrates the awaiting candidate only after certificate preparation (0.2961ms)
+Γ£ö cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved (1239.6175ms)
+Γ£ö a cancelled candidate awaiting verification settles only after exact runtime absence (834.3352ms)
+Γ£ö normal exact runtime absence is retained without settling and can settle after a later cancellation (836.4505ms)
+Γ£ö verified slice runtime ABSENT evidence remains an idempotent observation (823.1522ms)
+Γ£û exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards (824.9003ms)
+Γ£ö pre-runtime cancellation settles atomically only when no binding exists (798.3157ms)
+Γ£ö memory settlement handles a candidate already awaiting verification (1.9158ms)
+Γ£ö memory store retains normal exact ABSENT evidence until a later owner cancellation (0.3958ms)
+Γ£ö memory store keeps an exact retained ABSENT observation benign after verified state (0.3427ms)
+Γ£ö memory pre-runtime settlement is idempotent and rejects late new runtime binding (0.5204ms)
+Γ£ö trusted journal bridge replays exact container binding after a transient SQL bind failure (3.1203ms)
+Γä╣ tests 22
+Γä╣ suites 0
+Γä╣ pass 19
+Γä╣ fail 3
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 5491.9924
+
+Γ£û failing tests:
+
+test at dist\tests\approved-worker-runtime-restart.test.js:80:1
+Γ£û memory service restart accepts exact retained ABSENT, awaits review, then settles later owner cancellation (12.4848ms)
+  Error: EPERM: operation not permitted, link 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\AC\Temp\orloom-approved-restart-fcsvyz\.runtime-journal.39696.22305d67-43eb-4a33-bda5-34cbf05412bb.tmp' -> 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\AC\Temp\orloom-approved-restart-fcsvyz\42aa4a99ff395c7c02198ebad643543ba146df31efc040b21c047569ef52a710.json'
+      at async link (node:internal/fs/promises:1767:10)
+      at async FileRuntimeJournal.create (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:320:9)
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:343:13
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:235:32 {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'link',
+    path: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\\AC\\Temp\\orloom-approved-restart-fcsvyz\\.runtime-journal.39696.22305d67-43eb-4a33-bda5-34cbf05412bb.tmp',
+    dest: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\\AC\\Temp\\orloom-approved-restart-fcsvyz\\42aa4a99ff395c7c02198ebad643543ba146df31efc040b21c047569ef52a710.json'
+  }
+
+test at dist\tests\approved-worker-runtime-restart.test.js:99:1
+Γ£û SQL service restart replays the exact completed journal through the production callback without builder execution (1209.2584ms)
+  Error: EPERM: operation not permitted, link 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\AC\Temp\orloom-approved-restart-8ZgtWm\.runtime-journal.39696.04cd14c5-4bcd-4734-9d4c-23dc9a0fad20.tmp' -> 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\AC\Temp\orloom-approved-restart-8ZgtWm\a50235994de6c07f14bb3409d1f9e5ef42116f6857d8de444565ecd1cdf301a3.json'
+      at async link (node:internal/fs/promises:1767:10)
+      at async FileRuntimeJournal.create (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:320:9)
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:343:13
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:235:32 {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'link',
+    path: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\\AC\\Temp\\orloom-approved-restart-8ZgtWm\\.runtime-journal.39696.04cd14c5-4bcd-4734-9d4c-23dc9a0fad20.tmp',
+    dest: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{cc482e1b-d149-442d-8ca2-0cc0df5394bf}\\AC\\Temp\\orloom-approved-restart-8ZgtWm\\a50235994de6c07f14bb3409d1f9e5ef42116f6857d8de444565ecd1cdf301a3.json'
+  }
+
+test at dist\tests\cancellation-settlement.test.js:163:1
+Γ£û exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards (824.9003ms)
+  error: new row for relation "verification_attempts" violates check constraint "verification_attempts_capability_hash_check"
+      at pe.Ue (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:17959)
+      at pe.tt (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:15347)
+      at pe.parse (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:14021)
+      at D.Ne (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/node_modules/@electric-sql/pglite/dist/index.js:5:1763)
+      at file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/node_modules/@electric-sql/pglite/dist/index.js:5:1155
+      at wasm://wasm/0269e01e:wasm-function[10979]:0x5ad057
+      at wasm://wasm/0269e01e:wasm-function[3598]:0x281dd2
+      at wasm://wasm/0269e01e:wasm-function[3640]:0x289ccf
+      at wasm://wasm/0269e01e:wasm-function[3650]:0x289f2b
+      at wasm://wasm/0269e01e:wasm-function[9956]:0x556968 {
+    length: 824,
+    severity: 'ERROR',
+    code: '23514',
+    detail: 'Failing row contains (11111111-1111-4111-8111-111111111111, d7be90e5-2eef-406b-915d-611880316ff1, slice-100, 1, check:unit, {}, capcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapc..., 2026-10-15 12:56:14.669-06, requestrequestrequestrequestrequestrequestrequestrequestrequestr..., null, null, null, 2026-10-15 11:56:14.669-06, final, null, null, null, policypolicypolicypolicypolicypolicypolicypolicypolicypolicypoli..., null, null, null, null, 2026-10-15 11:56:14.669-06, headheadheadheadheadheadheadheadheadheadheadheadheadheadheadhead..., null, null).',
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: 'public',
+    table: 'verification_attempts',
+    column: undefined,
+    dataType: undefined,
+    constraint: 'verification_attempts_capability_hash_check',
+    file: 'execMain.c',
+    line: '2081',
+    routine: 'ExecConstraints',
+    query: "INSERT INTO verification_attempts(attempt_id,mission_id,slice_id,lease_epoch,check_id,request,capability_hash,capability_expires_at,request_digest,purpose,head_observed_at,head_observation_digest,lease_policy_digest) VALUES($1,$2,$3,1,'check:unit','{}'::jsonb,$4,now()+interval '1 hour',$5,'final',now(),$6,$7)",
+    params: [ '11111111-1111-4111-8111-111111111111', 'd7be90e5-2eef-406b-915d-611880316ff1', 'slice-100', 'capcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcapcap', 'requestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequestrequest', 'headheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadheadhead', 'policypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicypolicy' ],
+    queryOptions: undefined
+  }

@@ -1,0 +1,15 @@
+✔ lane signal abort after reconciled mission readback fences verifier dispatch without an explicit lifecycle guard (3.697533ms)
+✔ already-stopped upload-token adapter does not mint credentials or dispatch (0.772421ms)
+✔ already-stopped check adapter does not mint credentials or dispatch (0.143689ms)
+✔ already-stopped pull-request adapter does not mint credentials or dispatch (0.110369ms)
+✔ GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities (1.248607ms)
+✔ branch absence is distinct from inaccessible or wrong repository readback (0.31943ms)
+✔ lifecycle fence runs after Check and PR installation tokens are acquired but before POST (0.30001ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1147.464646

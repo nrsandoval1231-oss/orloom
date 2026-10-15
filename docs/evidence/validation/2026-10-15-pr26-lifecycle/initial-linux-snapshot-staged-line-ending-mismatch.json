@@ -1,0 +1,13 @@
+{
+  "sourceEntries": 186,
+  "executedBuildEntries": 123,
+  "sourceManifestSha256": "096699dda2418368293e5e63356c399955898a6947652fb5bd3663f854461e1e",
+  "sourceMismatches": [],
+  "buildMismatches": [],
+  "stagedMismatches": [
+    {
+      "path": ".gitattributes",
+      "sha256": "f538dea79781acb23446254d713c1a16c7bf42a6f9b57bfaad4430aaeda37216"
+    }
+  ]
+}

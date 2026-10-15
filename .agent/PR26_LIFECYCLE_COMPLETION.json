@@ -1,0 +1,34 @@
+{
+  "packet": "PR26_LIFECYCLE",
+  "lane": "full protected-boundary repair",
+  "baselineCommit": "9347c1701c8f18ea7e5b037695b88f584a747473",
+  "implementationModel": "gpt-6-luna",
+  "reviewModel": "gpt-6.1-sol",
+  "controllerModel": "inherited",
+  "startedAtUtc": null,
+  "startedAtStatus": "UNKNOWN; resumed work without a complete phase clock",
+  "planningDurationMs": null,
+  "buildDurationMs": null,
+  "validationDurationMs": null,
+  "auditDurationMs": null,
+  "tokens": null,
+  "tokensStatus": "UNKNOWN; no measured token telemetry exposed",
+  "repairGroups": [
+    "service lifecycle and safe expiry",
+    "adjacent inner dispatch/finalization and pending intent UNKNOWN"
+  ],
+  "elapsedToAcceptedMs": null,
+  "elapsedToAcceptedStatus": "OPEN until exact publication-head external acceptance; no performance improvement claimed",
+  "sourceManifestSha256": "74296e9136bc5f05a2a6426cabb4d0bb7cfa09624ab47592cf6b128045aa0e0b",
+  "sourceReview": "PASS bounded source scope; external exact-head review OPEN",
+  "liveExecution": "OPEN",
+  "finishedAtUtc": "2026-10-15T19:29:33.2195046Z",
+  "finalLinuxSuite": {
+    "total": 363,
+    "pass": 361,
+    "fail": 0,
+    "skipped": 2,
+    "durationMs": 143832.595054
+  },
+  "actualPostgres": "PASS lifecycle and restart; synthetic verification limitations explicit"
+}

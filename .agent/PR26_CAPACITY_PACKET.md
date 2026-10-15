@@ -1,0 +1,5 @@
+# PR26 verifier capacity correction
+
+READY bounded follow-up to formal independent review 5538859140 of 2dc187651b2616f8274eba31b07862ffaffafbc6. The lifecycle checkpoint awaits before active-slot increment, allowing concurrent callers to observe free capacity and both launch at maxConcurrent1. Preserve prior shutdown fences and existing architecture; correct atomic reservation/release around all awaits, cancellation, expiration and failure.
+
+Scope: packages/verification/src/runner.ts and focused deterministic concurrency tests; production changes only for demonstrated slot/deadline behavior. Root owns builds, evidence, manifests and publication. Test-first: actual behavioral RED on unchanged 2dc before product edits, then focused GREEN and full applicable Linux suite/build/typecheck/validate. Audit shared admitting facades and every path releasing or retaining execution capacity; no credential/provider/runtime activation. Independent bounded source review, exact SHA/tree and external re-review required. UI publication HOLD; ongoing UI/host work preserved. No merge.

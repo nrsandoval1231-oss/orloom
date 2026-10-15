@@ -1,0 +1,31 @@
+✖ stop after creating a new pending intent retains it UNKNOWN without finalization (1687.126768ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1945.124046
+
+✖ failing tests:
+
+test at dist/tests/integration-replay-race.test.js:392:1
+✖ stop after creating a new pending intent retains it UNKNOWN without finalization (1687.126768ms)
+  AssertionError [ERR_ASSERTION]: the committed intent is retained UNKNOWN after cancellation
+  + actual - expected
+  
+  + 'pending'
+  - 'unknown'
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/integration-replay-race.test.js:417:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'pending',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

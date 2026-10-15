@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
+import { ApprovedClaimTarget, ClaimAdvice, IntegrationRequestV1, Lane, LessonCandidate, LessonValidationChallenge, Mission, MissionConflictError, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryProgress, SchedulingDecisionRecord, SchedulingSnapshot, SchedulingTokenUsage, SliceInput, TrustedStrategyPolicy, validateMission, validatePlan } from "../../contracts/src/mission.js";
 import { CandidateAdmissionTransientError, CandidateAdmissionBindingV1, CheckCertificateV1, parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1, TrustedCheckService } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { scopeCohort } from "../../learning/src/lesson-policy.js";
@@ -8,13 +8,14 @@ import type { LearningActivation } from "../../learning/src/activation.js";
 import { challengeTrustedLesson, rejectTrustedLessonReadback, type ChallengedAttempt } from "../../learning/src/challenger.js";
 import { rankSchedulingChoices, schedulingSnapshotDigest } from "../../contracts/src/scheduling.js";
 import type { LocalIntegrator } from "../../integration/src/local.js";
+import { LifecycleStoppedError, type LifecycleGuard } from "../../contracts/src/lifecycle.js";
 import { deliverIntegratedCommit, type DeliveryAuthority, type DeliveryCommandV1, type DeliveryPolicy } from "../../integration/src/delivery.js";
 
 export interface TrustedCheckRunner {
   forCandidate?(binding:CandidateAdmissionBindingV1):Promise<TrustedCheckRunner>;
   prepareBundle(repository:string,baseSha:string,candidateSha:string):Promise<{digest:string;manifest:Buffer;files:Map<string,Buffer>}>;
   observeHead(repository:string):Promise<{sha:string;observedAt:string;digest:string}>;
-  run(request:TrustedCheckRequestV1,bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>}):Promise<TrustedCheckReceiptV1>;
+  run(request:TrustedCheckRequestV1,bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>},guard?:LifecycleGuard):Promise<TrustedCheckReceiptV1>;
   verifyArtifacts(receipt:TrustedCheckReceiptV1):Promise<{stdout:Buffer;stderr:Buffer;manifest:Buffer}>;
 }
 export interface TrustedCheckIntegrationBinding {
@@ -33,17 +34,18 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
   integrationBinding():TrustedCheckIntegrationBinding {
     return Object.freeze({allowedChecks:Object.freeze([...this.settings.allowedChecks]),policyDigest:this.settings.policyDigest,policyVersion:this.settings.policyVersion,imageDigest:this.settings.imageDigest,verifierId:this.settings.verifierId,leasePolicyDigest:this.settings.leasePolicyDigest});
   }
-  async prepare(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1>{
-    return this.prepareShared({missionId,sliceId,checkId,purpose:"final"});
+  async prepare(missionId:string,sliceId:string,checkId:string,guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
+    return this.prepareShared({missionId,sliceId,checkId,purpose:"final"},guard);
   }
-  private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string}):Promise<TrustedCheckRequestV1>{
+  private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string},guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
+    await guard?.();
     if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
     if(!this.settings.allowedChecks.includes(input.checkId))throw new MissionConflictError("Check is outside trusted operator policy");
-    const record=await this.store.getMission(input.missionId),slice=record?.slices.find(x=>x.id===input.sliceId);
+    const record=await this.store.getMission(input.missionId);await guard?.();const slice=record?.slices.find(x=>x.id===input.sliceId);
     if(!record||!slice||!record.plan?.approvedAt)throw new MissionConflictError("Mission slice is not ready for trusted verification");
     if(input.purpose==="final"&& (slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(input.checkId)))throw new MissionConflictError("Mission slice is not ready for final trusted verification");
     if(input.purpose==="recovery"&&(slice.status!=="running"||slice.leaseEpoch!==input.epoch||!slice.checks.includes(input.strategyId)||!/^[a-f0-9]{40}$/i.test(input.candidateSha)))throw new MissionConflictError("Mission slice is not ready for recovery trusted verification");
-    if(input.purpose==="recovery")await this.store.recoveryPolicyLease(input.missionId,input.sliceId,input.epoch,input.leaseToken,input.capabilityToken);
+    if(input.purpose==="recovery"){await this.store.recoveryPolicyLease(input.missionId,input.sliceId,input.epoch,input.leaseToken,input.capabilityToken);await guard?.();}
     let bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};
     const candidateSha=input.purpose==="final"?slice.candidateSha!:input.candidateSha;
     let runner=this.runner;
@@ -51,31 +53,35 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
       if(this.runner.forCandidate){
         if(input.purpose!=="final")throw new MissionConflictError("Recovery candidate checkpoint admission is not configured");
         runner=await this.runner.forCandidate(this.candidateBinding(record,slice,candidateSha));
+        await guard?.();
       }
       bundle=await runner.prepareBundle(record.mission.repository,record.mission.baseSha,candidateSha);
-    }catch(error){if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
+      await guard?.();
+    }catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
     let head:{sha:string;observedAt:string;digest:string};
-    try{head=await runner.observeHead(record.mission.repository);}catch(error){if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
+    try{head=await runner.observeHead(record.mission.repository);await guard?.();}catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
     if(head.sha!==candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
     const now=this.clock(),expires=new Date(now.getTime()+this.settings.attemptLifetimeMs),attemptId=randomUUID();
     const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId:input.missionId,sliceId:input.sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId:input.checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
     const capability=randomBytes(32).toString("base64url");
     const binding={request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest};
-    if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}
+    await guard?.();if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}await guard?.();
     this.pending.set(attemptId,{capability,bundle,runner});return request;
   }
-  async run(value:TrustedCheckRequestV1):Promise<TrustedCheckReceiptV1>{
+  async run(value:TrustedCheckRequestV1,guard?:LifecycleGuard):Promise<TrustedCheckReceiptV1>{
+    await guard?.();
     const request=parseTrustedCheckRequestV1(value),pending=this.pending.get(request.attemptId);
     if(!pending)throw new MissionConflictError("Trusted verifier attempt is unavailable after process restart");
-    try{return await pending.runner.run(request,pending.bundle);}catch{this.pending.delete(request.attemptId);throw new MissionConflictError("Trusted verifier did not produce a receipt; attempt will expire UNKNOWN");}
+    try{const receipt=await pending.runner.run(request,pending.bundle,guard);await guard?.();return receipt;}catch(error){this.pending.delete(request.attemptId);if(error instanceof LifecycleStoppedError)throw error;throw new MissionConflictError("Trusted verifier did not produce a receipt; attempt will expire UNKNOWN");}
   }
-  async submit(value:TrustedCheckReceiptV1,capability:string):Promise<CheckCertificateV1|null>{
+  async submit(value:TrustedCheckReceiptV1,capability:string,guard?:LifecycleGuard):Promise<CheckCertificateV1|null>{
+    await guard?.();
     const receipt=value,request=parseTrustedCheckRequestV1(receipt.request),pending=this.pending.get(request.attemptId);
     if(!pending||!secretMatches(pending.capability,capability))throw new MissionConflictError("Verifier capability is invalid or expired");
     try{
-      await pending.runner.verifyArtifacts(receipt);const head=await pending.runner.observeHead(request.repository);
+      await pending.runner.verifyArtifacts(receipt);await guard?.();const head=await pending.runner.observeHead(request.repository);await guard?.();
       if(receipt.verifierId!==this.settings.verifierId||request.verifierImageDigest!==this.settings.imageDigest||request.policyDigest!==this.settings.policyDigest)throw new MissionConflictError("Trusted runner identity or policy binding changed");
-      return await this.store.submitVerification!(receipt,createHash("sha256").update(capability).digest("hex"),head.sha,head.observedAt,head.digest,randomUUID());
+      await guard?.();const certificate=await this.store.submitVerification!(receipt,createHash("sha256").update(capability).digest("hex"),head.sha,head.observedAt,head.digest,randomUUID());await guard?.();return certificate;
     }finally{this.pending.delete(request.attemptId);}
   }
   async runRecoveryAttempt(input:{missionId:string;sliceId:string;epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;checkId:string;ordinal:number;recoveryPolicyDigest:string}){
@@ -112,9 +118,9 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
     const attestationDigest=await this.store.recordLessonChallenge({lessonId,lessonVersion:lesson.lessonVersion,candidateDigest:lesson.challengeDigest,challengeDigest:challenge.challengeDigest,evidenceDigest:challenge.evidenceDigest,verifierId:challenge.verifierId,algorithmVersion:challenge.algorithmVersion,decision:challenge.decision,reason:challenge.reason});
     return{...challenge,attestationDigest};
   }
-  async verifySlice(missionId:string,sliceId:string){
+  async verifySlice(missionId:string,sliceId:string,guard?:LifecycleGuard){
     const record=await this.store.getMission(missionId),slice=record?.slices.find(x=>x.id===sliceId);if(!slice)return;
-    for(const checkId of slice.checks.filter(id=>this.settings.allowedChecks.includes(id))){const request=await this.prepare(missionId,sliceId,checkId),receipt=await this.run(request),pending=this.pending.get(request.attemptId);if(!pending)throw new MissionConflictError("Trusted verifier capability was lost");await this.submit(receipt,pending.capability);}
+    for(const checkId of slice.checks.filter(id=>this.settings.allowedChecks.includes(id))){await guard?.();const request=await this.prepare(missionId,sliceId,checkId,guard);await guard?.();const receipt=await this.run(request,guard);await guard?.();const pending=this.pending.get(request.attemptId);if(!pending)throw new MissionConflictError("Trusted verifier capability was lost");await this.submit(receipt,pending.capability,guard);await guard?.();}
   }
   async reconcile(limit=10){
     if(!this.store.awaitingVerification)return 0;
@@ -160,6 +166,13 @@ function exactKeys(value: unknown, expected: readonly string[]): boolean {
   const keys = Object.keys(value);
   return keys.length === expected.length && expected.every((key) => Object.hasOwn(value, key));
 }
+/** Shared strict validator for the independently retained review bound to an exact candidate tree and scope. */
+export function integrationReviewMatches(raw:Buffer|null,request:IntegrationRequestV1,slice:MissionSlice,treeSha:string):boolean {
+  if(!raw||createHash("sha256").update(raw).digest("hex")!==request.reviewArtifactDigest)return false;
+  let review:unknown;try{review=JSON.parse(raw.toString("utf8"));}catch{return false;}
+  const value=review as Record<string,unknown>,keys=["version","verdict","candidateSha","treeSha","reviewer","builder","scopes"];
+  return Boolean(value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&Object.keys(value).every(key=>keys.includes(key))&&value.version==="orloom.independent-review.v1"&&value.verdict==="PASS"&&value.candidateSha===request.candidateSha&&value.treeSha===treeSha&&value.builder===slice.owner&&value.reviewer!==value.builder&&typeof value.reviewer==="string"&&value.reviewer.length>0&&Array.isArray(value.scopes)&&value.scopes.every(scope=>typeof scope==="string")&&canonicalJson([...(value.scopes as string[])].sort())===canonicalJson([...slice.scopes].sort()));
+}
 export function validateGovernorConfig(config: GovernorConfig) {
   if (!Number.isInteger(config.maxLanes) || config.maxLanes < 1 || config.maxLanes > 6 || !Number.isInteger(config.capacitySlots) || config.capacitySlots < 0 || config.capacitySlots > config.maxLanes || !Number.isInteger(config.leaseSeconds) || config.leaseSeconds < 30 || config.leaseSeconds > 3600) throw new Error("Invalid governor lane or lease configuration");
   return config;
@@ -182,12 +195,9 @@ export class MissionGovernor {
     if (!this.store.cancellationStatus) throw new MissionConflictError("Owner cancellation is unavailable in this store");
     return this.store.cancellationStatus(missionId, sliceId, epoch, leaseToken, capabilityToken);
   }
-  deliverIntegratedCommit(input:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority){return deliverIntegratedCommit(input,policy,authority,this.store);}
+  deliverIntegratedCommit(input:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority,guard?:LifecycleGuard){return deliverIntegratedCommit(input,policy,authority,this.store,guard);}
   private integrationReviewMatches(raw:Buffer|null,request:IntegrationRequestV1,slice:MissionSlice,treeSha:string){
-    if(!raw||createHash("sha256").update(raw).digest("hex")!==request.reviewArtifactDigest)return false;
-    let review:unknown;try{review=JSON.parse(raw.toString("utf8"));}catch{return false;}
-    const value=review as Record<string,unknown>,keys=["version","verdict","candidateSha","treeSha","reviewer","builder","scopes"];
-    return Boolean(value&&typeof value==="object"&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&Object.keys(value).every(key=>keys.includes(key))&&value.version==="orloom.independent-review.v1"&&value.verdict==="PASS"&&value.candidateSha===request.candidateSha&&value.treeSha===treeSha&&value.builder===slice.owner&&value.reviewer!==value.builder&&typeof value.reviewer==="string"&&value.reviewer.length>0&&Array.isArray(value.scopes)&&value.scopes.every(scope=>typeof scope==="string")&&canonicalJson([...(value.scopes as string[])].sort())===canonicalJson([...slice.scopes].sort()));
+    return integrationReviewMatches(raw,request,slice,treeSha);
   }
   private integrationBindingMatches(trustedChecks:TrustedCheckCoordinator,request:IntegrationRequestV1){
     const binding=trustedChecks.integrationBinding();
@@ -195,44 +205,49 @@ export class MissionGovernor {
     const expectedLeaseDigest=createHash("sha256").update(JSON.stringify(allowedChecks)).digest("hex");
     return Boolean(this.config.trustedCheckPolicyDigest&&binding.leasePolicyDigest===this.config.trustedCheckPolicyDigest&&binding.leasePolicyDigest===expectedLeaseDigest&&canonicalJson([...allowedChecks].sort())===canonicalJson([...(this.config.trustedCheckPolicy??[])].sort())&&new Set(allowedChecks).size===allowedChecks.length&&binding.allowedChecks.includes("node-repo-suite-v1")&&request.requiredCheckIds.every(check=>binding.allowedChecks.includes(check)&&this.config.trustedCheckPolicy?.includes(check))&&/^[a-f0-9]{64}$/.test(binding.policyDigest)&&/^[a-f0-9]{64}$/.test(binding.imageDigest)&&binding.policyVersion.length>0&&binding.verifierId.length>0);
   }
-  private async reconcileCompletedIntegration(request:IntegrationRequestV1,authority:LocalIntegrationAuthority,trustedChecks:TrustedCheckCoordinator):Promise<MissionSlice|null>{
+  private async reconcileCompletedIntegration(request:IntegrationRequestV1,authority:LocalIntegrationAuthority,trustedChecks:TrustedCheckCoordinator,guard?:LifecycleGuard):Promise<MissionSlice|null>{
     try{
+      await guard?.();
       if(!this.integrationBindingMatches(trustedChecks,request)||!this.store.getIntegrationIntent||!this.store.finishIntegrationIntent)return null;
       const binding=trustedChecks.integrationBinding();
-      const intent=await this.store.getIntegrationIntent(request);
+      const intent=await this.store.getIntegrationIntent(request);await guard?.();
       if(!intent||intent.state!=="integrated"||intent.observedIntegrationSha!==request.candidateSha||!/^[a-f0-9]{40}$/.test(intent.treeSha)||intent.certificateIds.length!==request.requiredCheckIds.length||intent.certificateDigests.length!==request.requiredCheckIds.length||new Set(intent.certificateIds).size!==intent.certificateIds.length||intent.certificateDigests.some(digest=>!/^[a-f0-9]{64}$/.test(digest)))return null;
-      const record=await this.store.getMission(request.missionId),slice=record?.slices.find(candidate=>candidate.id===request.sliceId),plan=record?.plan;
+      const record=await this.store.getMission(request.missionId);await guard?.();const slice=record?.slices.find(candidate=>candidate.id===request.sliceId),plan=record?.plan;
       if(!record||!slice||!plan?.approvedAt||slice.status!=="verified"||slice.missionId!==request.missionId||slice.leaseEpoch!==request.leaseEpoch||slice.candidateSha!==request.candidateSha||authority.integrator.repositoryIdentity!==record.mission.repository.toLowerCase()||canonicalJson([...slice.checks].sort())!==canonicalJson([...request.requiredCheckIds].sort())||!request.requiredCheckIds.includes("node-repo-suite-v1")||!this.config.trustedCheckPolicy?.includes("node-repo-suite-v1")||request.requiredCheckIds.some(check=>!this.config.trustedCheckPolicy?.includes(check)))return null;
       const planDigest=createHash("sha256").update(canonicalJson(plan.slices)).digest("hex");
       for(let i=0;i<request.requiredCheckIds.length;i++){
         const checkId=request.requiredCheckIds[i]!;
-        const certificate=await trustedChecks.getIntegratedCertificate(request.missionId,request.sliceId,request.leaseEpoch,checkId);
+        const certificate=await trustedChecks.getIntegratedCertificate(request.missionId,request.sliceId,request.leaseEpoch,checkId);await guard?.();
         if(!certificate||certificate.certificateId!==intent.certificateIds[i]||createHash("sha256").update(canonicalJson(certificate)).digest("hex")!==intent.certificateDigests[i]||certificate.repository!==record.mission.repository||certificate.candidateSha!==request.candidateSha||certificate.localHeadSha!==request.candidateSha||certificate.leaseEpoch!==request.leaseEpoch||certificate.planDigest!==planDigest||certificate.policyDigest!==binding.policyDigest||certificate.policyVersion!==binding.policyVersion)return null;
       }
-      const inspected=await authority.integrator.inspect({expectedRefSha:request.expectedIntegrationSha,candidateSha:request.candidateSha,scopes:slice.scopes});
+      const inspected=await authority.integrator.inspect({expectedRefSha:request.expectedIntegrationSha,candidateSha:request.candidateSha,scopes:slice.scopes});await guard?.();
       if(inspected.candidateSha!==request.candidateSha||inspected.treeSha!==intent.treeSha)return null;
-      const review=await authority.reviews.read(request.reviewArtifactId);
+      const review=await authority.reviews.read(request.reviewArtifactId);await guard?.();
       if(!this.integrationReviewMatches(review,request,slice,inspected.treeSha))return null;
-      if(await authority.integrator.readRef()!==request.candidateSha)return null;
-      const replay=await this.store.finishIntegrationIntent(request,request.candidateSha,inspected.treeSha,{planDigest,policyDigest:binding.policyDigest});
+      const finalRef=await authority.integrator.readRef();await guard?.();if(finalRef!==request.candidateSha)return null;
+      await guard?.();const replay=await this.store.finishIntegrationIntent(request,request.candidateSha,inspected.treeSha,{planDigest,policyDigest:binding.policyDigest});await guard?.();
       return replay.status==="verified"&&replay.missionId===request.missionId&&replay.id===request.sliceId&&replay.leaseEpoch===request.leaseEpoch&&replay.candidateSha===request.candidateSha?replay:null;
     }catch{return null;}
   }
-  async integrateVerifiedSlice(input:IntegrationRequestV1,trustedChecks:TrustedCheckCoordinator|null|undefined,authority:LocalIntegrationAuthority|null|undefined){
+  async integrateVerifiedSlice(input:IntegrationRequestV1,trustedChecks:TrustedCheckCoordinator|null|undefined,authority:LocalIntegrationAuthority|null|undefined,guard?:LifecycleGuard){
+    await guard?.();
     if(!authority||!trustedChecks||!this.store.createIntegrationIntent||!this.store.finishIntegrationIntent||!this.store.markIntegrationUnknown||!this.store.getTrustedAttempt||!this.store.getCertificate)throw new MissionConflictError("Local integration remains closed without controller-owned Git, review, and trusted certificate services");
     const keys=["version","missionId","sliceId","expectedIntegrationSha","candidateSha","leaseEpoch","requiredCheckIds","reviewArtifactId","reviewArtifactDigest"];
     if(!input||Object.keys(input).length!==keys.length||keys.some(k=>!Object.hasOwn(input,k))||input.version!=="orloom.integration-request.v1"||! /^[a-f0-9]{40}$/.test(input.expectedIntegrationSha)||! /^[a-f0-9]{40}$/.test(input.candidateSha)||!Number.isSafeInteger(input.leaseEpoch)||input.leaseEpoch<1||! /^[a-f0-9]{64}$/.test(input.reviewArtifactDigest)||! /^[A-Za-z0-9._:-]{1,180}$/.test(input.reviewArtifactId)||!Array.isArray(input.requiredCheckIds)||!input.requiredCheckIds.length||input.requiredCheckIds.some(x=>typeof x!=="string")||new Set(input.requiredCheckIds).size!==input.requiredCheckIds.length)throw new MissionValidationError("Invalid exact local integration request");
-    const req={...input,requiredCheckIds:[...input.requiredCheckIds].sort()};const existing=await this.store.getIntegrationIntent?.(req);
+    const req={...input,requiredCheckIds:[...input.requiredCheckIds].sort()};const existing=await this.store.getIntegrationIntent?.(req);let observed:string|null=null,pendingIntent=existing?.state==="pending";
+    const lifecycleCheckpoint=async()=>{try{await guard?.();}catch(error){if(pendingIntent&&error instanceof LifecycleStoppedError)await this.store.markIntegrationUnknown!(req,observed,"integration_stopped_while_pending");throw error;}};
+    await lifecycleCheckpoint();
     if(existing?.state==="unknown")throw new MissionConflictError("Integration intent is UNKNOWN and must not be retried");
     if(existing?.state==="integrated"){
-      const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks);
+      const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks,lifecycleCheckpoint);
       if(replay)return replay;
       throw new MissionConflictError("Completed integration no longer satisfies the exact replay fences");
     }
-    if(existing){let current:string|null;try{current=await authority.integrator.readRef();}catch{await this.store.markIntegrationUnknown(req,null,"pending_intent_ref_unavailable");throw new MissionConflictError("Pending integration ref is unavailable; intent is UNKNOWN");}if(current!==req.expectedIntegrationSha&&current!==req.candidateSha){await this.store.markIntegrationUnknown(req,current,"pending_intent_ref_moved");throw new MissionConflictError("Pending integration intent observed an unexpected ref and is now UNKNOWN");}}
-    const record=await this.store.getMission(input.missionId),slice=record?.slices.find(x=>x.id===input.sliceId),plan=record?.plan;
-    if(!record||!slice||!plan?.approvedAt||slice.status!=="awaiting_verification"||slice.leaseEpoch!==input.leaseEpoch||slice.candidateSha!==input.candidateSha||canonicalJson([...input.requiredCheckIds].sort())!==canonicalJson([...slice.checks].sort())||slice.dependencies.length&&(await Promise.all(slice.dependencies.map(async id=>(await this.store.getMission(input.missionId))?.slices.find(x=>x.id===id)?.status))).some(status=>status!=="verified")){
-      const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks);
+    if(existing){let current:string|null;try{current=await authority.integrator.readRef();observed=current;await lifecycleCheckpoint();}catch(error){if(error instanceof LifecycleStoppedError)throw error;await this.store.markIntegrationUnknown(req,null,"pending_intent_ref_unavailable");throw new MissionConflictError("Pending integration ref is unavailable; intent is UNKNOWN");}if(current!==req.expectedIntegrationSha&&current!==req.candidateSha){await this.store.markIntegrationUnknown(req,current,"pending_intent_ref_moved");throw new MissionConflictError("Pending integration intent observed an unexpected ref and is now UNKNOWN");}}
+    const record=await this.store.getMission(input.missionId);await lifecycleCheckpoint();const slice=record?.slices.find(x=>x.id===input.sliceId),plan=record?.plan;
+    const dependenciesReady=!slice?.dependencies.length||(await Promise.all(slice.dependencies.map(async id=>(await this.store.getMission(input.missionId))?.slices.find(x=>x.id===id)?.status))).every(status=>status==="verified");await lifecycleCheckpoint();
+    if(!record||!slice||!plan?.approvedAt||slice.status!=="awaiting_verification"||slice.leaseEpoch!==input.leaseEpoch||slice.candidateSha!==input.candidateSha||canonicalJson([...input.requiredCheckIds].sort())!==canonicalJson([...slice.checks].sort())||!dependenciesReady){
+      const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks,lifecycleCheckpoint);
       if(replay)return replay;
       throw new MissionConflictError("Integration does not match the approved, awaiting candidate");
     }
@@ -240,27 +255,28 @@ export class MissionGovernor {
     if(!this.config.trustedCheckPolicyDigest||!this.integrationBindingMatches(trustedChecks,req))throw new MissionConflictError("Trusted check coordinator does not match the configured lease and full-suite policy binding");
     const binding=trustedChecks.integrationBinding();
     if(!input.requiredCheckIds.includes("node-repo-suite-v1")||!this.config.trustedCheckPolicy?.includes("node-repo-suite-v1"))throw new MissionConflictError("Integration requires the mandatory trusted full repository-suite check");
-    const inspected=await authority.integrator.inspect({expectedRefSha:input.expectedIntegrationSha,candidateSha:input.candidateSha,scopes:slice.scopes});
-    const raw=await authority.reviews.read(input.reviewArtifactId);if(!this.integrationReviewMatches(raw,req,slice,inspected.treeSha))throw new MissionConflictError("Independent review does not bind this candidate, tree, reviewer, and exact scope");
+    const inspected=await authority.integrator.inspect({expectedRefSha:input.expectedIntegrationSha,candidateSha:input.candidateSha,scopes:slice.scopes});await lifecycleCheckpoint();
+    const raw=await authority.reviews.read(input.reviewArtifactId);await lifecycleCheckpoint();if(!this.integrationReviewMatches(raw,req,slice,inspected.treeSha))throw new MissionConflictError("Independent review does not bind this candidate, tree, reviewer, and exact scope");
     const planDigest=createHash("sha256").update(canonicalJson(plan.slices)).digest("hex");
     const certs=[] as CheckCertificateV1[],certDigests:string[]=[];
     for(const checkId of input.requiredCheckIds){
-      let cert:CheckCertificateV1|null=null;try{cert=await trustedChecks.getCertificate(input.missionId,input.sliceId,checkId);}catch{/* A completed replay may have won between the read and the certificate lookup. */}
-      if(!cert||cert.scope!=="local-exact-commit"||cert.candidateSha!==input.candidateSha||cert.localHeadSha!==input.candidateSha||cert.leaseEpoch!==input.leaseEpoch||cert.repository!==record.mission.repository||cert.planDigest!==planDigest||cert.policyDigest!==binding.policyDigest||cert.policyVersion!==binding.policyVersion){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks);if(replay)return replay;throw new MissionConflictError("A required final trusted certificate is missing or stale");}
-      const attempt=await this.store.getTrustedAttempt(cert.attemptId);if(!attempt||attempt.purpose!=="final"||attempt.outcome!=="pass"||attempt.leasePolicyDigest!==binding.leasePolicyDigest||!attempt.receipt||attempt.receipt.outcome!=="pass"||attempt.receipt.receiptDigest!==cert.receiptDigest||attempt.receipt.receiptDigest!==receiptDigestV1(attempt.receipt)||canonicalJson(attempt.receipt.request)!==canonicalJson(attempt.request)||attempt.receipt.verifierId!==binding.verifierId||attempt.request.missionId!==input.missionId||attempt.request.sliceId!==input.sliceId||attempt.request.repository!==record.mission.repository||attempt.request.candidateSha!==input.candidateSha||attempt.request.expectedLocalHeadSha!==input.candidateSha||attempt.request.leaseEpoch!==input.leaseEpoch||attempt.request.checkId!==checkId||attempt.request.planDigest!==planDigest||attempt.request.policyDigest!==binding.policyDigest||attempt.request.policyVersion!==binding.policyVersion||attempt.request.verifierImageDigest!==binding.imageDigest)throw new MissionConflictError("Trusted certificate lacks matching persisted final PASS receipt");
+      let cert:CheckCertificateV1|null=null;try{cert=await trustedChecks.getCertificate(input.missionId,input.sliceId,checkId);await lifecycleCheckpoint();}catch(error){if(error instanceof LifecycleStoppedError)throw error;/* A completed replay may have won between the read and the certificate lookup. */}
+      if(!cert||cert.scope!=="local-exact-commit"||cert.candidateSha!==input.candidateSha||cert.localHeadSha!==input.candidateSha||cert.leaseEpoch!==input.leaseEpoch||cert.repository!==record.mission.repository||cert.planDigest!==planDigest||cert.policyDigest!==binding.policyDigest||cert.policyVersion!==binding.policyVersion){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks,lifecycleCheckpoint);if(replay)return replay;throw new MissionConflictError("A required final trusted certificate is missing or stale");}
+      const attempt=await this.store.getTrustedAttempt(cert.attemptId);await lifecycleCheckpoint();if(!attempt||attempt.purpose!=="final"||attempt.outcome!=="pass"||attempt.leasePolicyDigest!==binding.leasePolicyDigest||!attempt.receipt||attempt.receipt.outcome!=="pass"||attempt.receipt.receiptDigest!==cert.receiptDigest||attempt.receipt.receiptDigest!==receiptDigestV1(attempt.receipt)||canonicalJson(attempt.receipt.request)!==canonicalJson(attempt.request)||attempt.receipt.verifierId!==binding.verifierId||attempt.request.missionId!==input.missionId||attempt.request.sliceId!==input.sliceId||attempt.request.repository!==record.mission.repository||attempt.request.candidateSha!==input.candidateSha||attempt.request.expectedLocalHeadSha!==input.candidateSha||attempt.request.leaseEpoch!==input.leaseEpoch||attempt.request.checkId!==checkId||attempt.request.planDigest!==planDigest||attempt.request.policyDigest!==binding.policyDigest||attempt.request.policyVersion!==binding.policyVersion||attempt.request.verifierImageDigest!==binding.imageDigest)throw new MissionConflictError("Trusted certificate lacks matching persisted final PASS receipt");
       certs.push(cert);certDigests.push(createHash("sha256").update(canonicalJson(cert)).digest("hex"));
     }
-    const intent=await this.store.createIntegrationIntent(req,inspected.treeSha,certs.map(c=>c.certificateId),certDigests,{planDigest,policyDigest:binding.policyDigest});if(intent.state==="unknown")throw new MissionConflictError("Integration intent is UNKNOWN and must not be retried");
-    let observed:string|null;try{observed=await authority.integrator.readRef();}catch{await this.store.markIntegrationUnknown(req,null,"integration_ref_unavailable");throw new MissionConflictError("Integration ref is unavailable; intent is UNKNOWN");}if(observed===req.expectedIntegrationSha){try{await authority.integrator.compareAndSwap({expectedRefSha:req.expectedIntegrationSha,candidateSha:req.candidateSha,scopes:slice.scopes});}catch{try{observed=await authority.integrator.readRef();}catch{observed=null;}if(observed!==req.candidateSha)await this.store.markIntegrationUnknown(req,observed,"compare_and_swap_ambiguous");if(observed!==req.candidateSha)throw new MissionConflictError("Integration compare-and-swap is ambiguous; intent is UNKNOWN");}}else if(observed!==req.candidateSha){await this.store.markIntegrationUnknown(req,observed,"integration_ref_moved");throw new MissionConflictError("Integration ref changed unexpectedly; intent is UNKNOWN");}
-    try{observed=await authority.integrator.readRef();}catch{await this.store.markIntegrationUnknown(req,null,"compare_and_swap_readback_unavailable");throw new MissionConflictError("Integration ref readback is unavailable; intent is UNKNOWN");}if(observed!==req.candidateSha){await this.store.markIntegrationUnknown(req,observed,"compare_and_swap_not_observed");throw new MissionConflictError("Integration ref outcome is ambiguous; intent is UNKNOWN");}
-    const finalReview=await authority.reviews.read(req.reviewArtifactId);if(!finalReview||createHash("sha256").update(finalReview).digest("hex")!==req.reviewArtifactDigest)throw new MissionConflictError("Retained review changed after Git compare-and-swap; durable intent remains pending");
+    await lifecycleCheckpoint();const intent=await this.store.createIntegrationIntent(req,inspected.treeSha,certs.map(c=>c.certificateId),certDigests,{planDigest,policyDigest:binding.policyDigest});pendingIntent=intent.state==="pending";await lifecycleCheckpoint();if(intent.state==="unknown")throw new MissionConflictError("Integration intent is UNKNOWN and must not be retried");
+    try{observed=await authority.integrator.readRef();await lifecycleCheckpoint();}catch(error){if(error instanceof LifecycleStoppedError){throw error;}await this.store.markIntegrationUnknown(req,null,"integration_ref_unavailable");throw new MissionConflictError("Integration ref is unavailable; intent is UNKNOWN");}if(observed===req.expectedIntegrationSha){try{await lifecycleCheckpoint();await authority.integrator.compareAndSwap({expectedRefSha:req.expectedIntegrationSha,candidateSha:req.candidateSha,scopes:slice.scopes},lifecycleCheckpoint);await lifecycleCheckpoint();}catch(error){try{observed=await authority.integrator.readRef();}catch{observed=null;}if(observed!==req.candidateSha||error instanceof LifecycleStoppedError)await this.store.markIntegrationUnknown(req,observed,error instanceof LifecycleStoppedError?"integration_stopped_during_compare_and_swap":"compare_and_swap_ambiguous");if(error instanceof LifecycleStoppedError)throw error;if(observed!==req.candidateSha)throw new MissionConflictError("Integration compare-and-swap is ambiguous; intent is UNKNOWN");}}else if(observed!==req.candidateSha){await this.store.markIntegrationUnknown(req,observed,"integration_ref_moved");throw new MissionConflictError("Integration ref changed unexpectedly; intent is UNKNOWN");}
+    const guardAfterIntent=lifecycleCheckpoint;
+    try{observed=await authority.integrator.readRef();await guardAfterIntent();}catch(error){if(error instanceof LifecycleStoppedError)throw error;await this.store.markIntegrationUnknown(req,null,"compare_and_swap_readback_unavailable");throw new MissionConflictError("Integration ref readback is unavailable; intent is UNKNOWN");}if(observed!==req.candidateSha){await this.store.markIntegrationUnknown(req,observed,"compare_and_swap_not_observed");throw new MissionConflictError("Integration ref outcome is ambiguous; intent is UNKNOWN");}
+    await guardAfterIntent();const finalReview=await authority.reviews.read(req.reviewArtifactId);await guardAfterIntent();if(!finalReview||createHash("sha256").update(finalReview).digest("hex")!==req.reviewArtifactDigest)throw new MissionConflictError("Retained review changed after Git compare-and-swap; durable intent remains pending");
     for(let i=0;i<req.requiredCheckIds.length;i++){
-      let cert:CheckCertificateV1|null=null;try{cert=await trustedChecks.getCertificate(req.missionId,req.sliceId,req.requiredCheckIds[i]!);}catch{/* A concurrent finalizer may have moved the slice to verified. */}
-      if(!cert||cert.certificateId!==intent.certificateIds[i]||createHash("sha256").update(canonicalJson(cert)).digest("hex")!==intent.certificateDigests[i]||cert.policyDigest!==binding.policyDigest||cert.policyVersion!==binding.policyVersion){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks);if(replay)return replay;throw new MissionConflictError("Trusted final certificate readback changed; durable intent remains pending");}
+      await guardAfterIntent();let cert:CheckCertificateV1|null=null;try{cert=await trustedChecks.getCertificate(req.missionId,req.sliceId,req.requiredCheckIds[i]!);await guardAfterIntent();}catch(error){if(error instanceof LifecycleStoppedError)throw error;/* A concurrent finalizer may have moved the slice to verified. */}
+      if(!cert||cert.certificateId!==intent.certificateIds[i]||createHash("sha256").update(canonicalJson(cert)).digest("hex")!==intent.certificateDigests[i]||cert.policyDigest!==binding.policyDigest||cert.policyVersion!==binding.policyVersion){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks,lifecycleCheckpoint);if(replay)return replay;throw new MissionConflictError("Trusted final certificate readback changed; durable intent remains pending");}
     }
-    let finalRef:string|null;try{finalRef=await authority.integrator.readRef();}catch{await this.store.markIntegrationUnknown(req,null,"final_integration_ref_unavailable");throw new MissionConflictError("Integration ref became unavailable during final readback; intent is UNKNOWN");}if(finalRef!==req.candidateSha){await this.store.markIntegrationUnknown(req,finalRef,"final_integration_ref_moved");throw new MissionConflictError("Integration ref moved during final trusted readback; intent is UNKNOWN");}
-    try{return await this.store.finishIntegrationIntent(req,observed,inspected.treeSha,{planDigest,policyDigest:binding.policyDigest});}
-    catch(error){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks);if(replay)return replay;throw error;}
+    let finalRef:string|null;try{await guardAfterIntent();finalRef=await authority.integrator.readRef();await guardAfterIntent();}catch(error){if(error instanceof LifecycleStoppedError)throw error;await this.store.markIntegrationUnknown(req,null,"final_integration_ref_unavailable");throw new MissionConflictError("Integration ref became unavailable during final readback; intent is UNKNOWN");}if(finalRef!==req.candidateSha){await this.store.markIntegrationUnknown(req,finalRef,"final_integration_ref_moved");throw new MissionConflictError("Integration ref moved during final trusted readback; intent is UNKNOWN");}
+    try{await guardAfterIntent();const result=await this.store.finishIntegrationIntent(req,observed,inspected.treeSha,{planDigest,policyDigest:binding.policyDigest});await guardAfterIntent();return result;}
+    catch(error){const replay=await this.reconcileCompletedIntegration(req,authority,trustedChecks,lifecycleCheckpoint);if(replay)return replay;throw error;}
   }
   async claim() {
     if (!this.config.capacitySlots || !this.config.trustedCheckPolicyDigest || !this.config.executionConfigured) return null;
@@ -291,6 +307,12 @@ export class MissionGovernor {
     const grant=await this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,allowedPlanChecks,undefined,recoveryPolicyDigest,advice);
     if(!grant&&decision)await this.store.recordSchedulingDecision?.(decision.missionId,decision.record);
     return grant;
+  }
+  async claimApproved(target:ApprovedClaimTarget):Promise<import("../../contracts/src/mission.js").LeaseGrant|null>{
+    if(!this.config.capacitySlots||!this.config.trustedCheckPolicyDigest||!this.config.executionConfigured)return null;
+    if(!target||typeof target.missionId!=="string"||!target.missionId||typeof target.sliceId!=="string"||!target.sliceId||typeof target.repository!=="string"||typeof target.baseSha!=="string"||!/^[0-9a-f]{40}$/i.test(target.baseSha)||!/^[a-f0-9]{64}$/.test(target.planDigest)||!Number.isSafeInteger(target.maxBudgetCents)||target.maxBudgetCents<0)return null;
+    const strategies=this.config.trustedStrategies??{},allowedPlanChecks=Object.keys(strategies).length?Object.keys(strategies):(this.config.trustedCheckPolicy??[]);
+    return this.store.claim(this.config.leaseSeconds,this.config.trustedCheckPolicyDigest,allowedPlanChecks,undefined,this.config.recoveryPolicyDigest??"",undefined,target);
   }
   heartbeat(missionId:string,id: string, epoch: number, token: string, capability: string) { return this.store.heartbeat(missionId,id, epoch, token, capability, this.config.leaseSeconds); }
   complete(missionId:string,id: string, epoch: number, token: string, capability: string, candidateSha: string, evidenceRefs: string[]) {

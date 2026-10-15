@@ -166,3 +166,24 @@ test("owner cancellation during provider execution fences a late reply and close
   assert.equal(closed, 1);
   assert.deepEqual(results.map(x => (x as { outcome: string }).outcome), ['UNKNOWN']);
 });
+
+test("service AbortSignal reaches executeLease preflight and records UNKNOWN without claiming owner cancellation", async () => {
+  const controller = new AbortController();
+  const results: unknown[] = [];
+  let entered = false, created = 0;
+  const provider = {
+    async listModels(signal?: AbortSignal) {
+      entered = true;
+      await new Promise<void>(resolve => signal?.addEventListener("abort", () => resolve(), { once: true }));
+      return [];
+    },
+    async probeTools() { throw new Error("provider probe must not run"); },
+    async complete() { throw new Error("completion must not run"); },
+  };
+  const promise = executeLease(leaseWithInputLimit(10_000), { control: { async claim() { return null; }, async heartbeat() {}, async result(_lease, result) { results.push(result); } }, provider, runtime: { async create() { created++; throw new Error("runtime must not start"); } }, evidence: { async put() { throw new Error("evidence must not be written"); }, async get() { throw new Error("evidence must not be read"); } }, progress: { async append() { throw new Error("progress must not be emitted"); } }, checks: { "check:unit": ["unit-check"] }, options, signal: controller.signal });
+  while (!entered) await new Promise(resolve => setTimeout(resolve, 1));
+  controller.abort(new Error("SIGTERM"));
+  await promise;
+  assert.equal(created, 0);
+  assert.deepEqual(results.map(x => (x as { outcome: string }).outcome), ["UNKNOWN"]);
+});

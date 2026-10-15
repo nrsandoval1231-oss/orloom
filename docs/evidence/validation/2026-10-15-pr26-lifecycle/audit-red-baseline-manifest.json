@@ -1,0 +1,49 @@
+{
+  "head": "9347c1701c8f18ea7e5b037695b88f584a747473",
+  "files": [
+    {
+      "path": "apps/control-plane/src/approved-worker-lane.ts",
+      "sha256": "a988956e8c9c3b184ebb45654f6876c9aa8a466df9e4c052fed0de454c07fd94"
+    },
+    {
+      "path": "apps/worker/src/approved-service.ts",
+      "sha256": "af8117dbb695be003d48da7695779507ea1b27cc8c14358989e4ab0fa782c007"
+    },
+    {
+      "path": "apps/worker/src/approved-startup.ts",
+      "sha256": "fc3d6514a84520ea1223f532f44c1cef956f213fd8d6779c5962ae148db4fb66"
+    },
+    {
+      "path": "apps/worker/src/certified-handoff.ts",
+      "sha256": "e477bb03a0a2981d88dbdabf152ceca571b379bbfd1e3ba325788a7ab8cedf46"
+    },
+    {
+      "path": "apps/worker/src/main.ts",
+      "sha256": "8317f5e293bd18cdb2fd9abfb8bf1e2256a83519df6061a236eb273359ad50fd"
+    },
+    {
+      "path": "packages/adapters/src/providers.ts",
+      "sha256": "8c2f51d6de80713ce7980f05e05561ec47890b5559fb7c528ef7cced76ad2b4e"
+    },
+    {
+      "path": "packages/governor/src/governor.ts",
+      "sha256": "4d9123fcb21d919d63140a633e35f1aae703219d1f5c842342facc83ccaed7da"
+    },
+    {
+      "path": "packages/integration/src/delivery.ts",
+      "sha256": "9955ca3baf530b6aa1d4cd65563cdfdafcd38d0035b1b9d903396ef5f968d912"
+    },
+    {
+      "path": "packages/integration/src/local.ts",
+      "sha256": "04c14eae4cf0fa63a7ad49c2364320473713ea6f4d1ba382d068e8a184c3f190"
+    },
+    {
+      "path": "packages/verification/src/admitting-runner.ts",
+      "sha256": "50afde8be2b38b3f3038457344fec15ee6d8bf554d42392041816e4005faa92d"
+    },
+    {
+      "path": "packages/verification/src/runner.ts",
+      "sha256": "c8c5376ffccf33e5133e8751eefc3fdd97e8299515755653cbf5edab017c6ffe"
+    }
+  ]
+}

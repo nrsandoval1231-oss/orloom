@@ -1,0 +1,46 @@
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (memory and SQL), idempotently (13.5006ms)
+Γ£ö non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (1174.5105ms)
+Γ£û bound file-intent UNKNOWN stays quarantined after owner cancellation (923.1995ms)
+Γä╣ tests 3
+Γä╣ suites 0
+Γä╣ pass 1
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 2226.6034
+
+Γ£û failing tests:
+
+test at dist\tests\approved-worker-runtime-restart.test.js:180:1
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (memory and SQL), idempotently (13.5006ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'unknown'
+  - 'cancelled'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-runtime-restart.test.js:193:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unknown',
+    expected: 'cancelled',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\approved-worker-runtime-restart.test.js:231:1
+Γ£û bound file-intent UNKNOWN stays quarantined after owner cancellation (923.1995ms)
+  Error: EPERM: operation not permitted, link 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{73dd2f5e-db42-4bb6-a48f-755df749392b}\AC\Temp\orloom-approved-restart-qgSWtK\.runtime-journal.8176.10abc9a3-6cdd-4f9b-9e8f-ce3e0409ceb1.tmp' -> 'C:\Users\nrsan\AppData\Local\Packages\sandbox.{73dd2f5e-db42-4bb6-a48f-755df749392b}\AC\Temp\orloom-approved-restart-qgSWtK\8a6a5bc5cd3f8b7b2f2273c42e317d79e44ad529c457527237684971da315044.json'
+      at async link (node:internal/fs/promises:1767:10)
+      at async FileRuntimeJournal.create (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:320:9)
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:343:13
+      at async file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/runtime-journal.js:235:32 {
+    errno: -4048,
+    code: 'EPERM',
+    syscall: 'link',
+    path: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{73dd2f5e-db42-4bb6-a48f-755df749392b}\\AC\\Temp\\orloom-approved-restart-qgSWtK\\.runtime-journal.8176.10abc9a3-6cdd-4f9b-9e8f-ce3e0409ceb1.tmp',
+    dest: 'C:\\Users\\nrsan\\AppData\\Local\\Packages\\sandbox.{73dd2f5e-db42-4bb6-a48f-755df749392b}\\AC\\Temp\\orloom-approved-restart-qgSWtK\\8a6a5bc5cd3f8b7b2f2273c42e317d79e44ad529c457527237684971da315044.json'
+  }

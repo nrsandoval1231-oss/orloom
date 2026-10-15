@@ -1,0 +1,30 @@
+Γ£û abort while verification runs fences preparation and integration (1.7754ms)
+Γä╣ tests 1
+Γä╣ suites 0
+Γä╣ pass 0
+Γä╣ fail 1
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 69.0567
+
+Γ£û failing tests:
+
+test at dist\tests\approved-worker-lifecycle.test.js:32:1
+Γ£û abort while verification runs fences preparation and integration (1.7754ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'verified'
+  - 'unknown'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lifecycle.test.js:35:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'verified',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

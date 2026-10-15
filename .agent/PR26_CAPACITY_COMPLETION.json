@@ -1,0 +1,21 @@
+{
+ "packet":"PR26_CAPACITY",
+ "baselineCommit":"2dc187651b2616f8274eba31b07862ffaffafbc6",
+ "lane":"bounded verifier reservation correction",
+ "implementationModel":"gpt-6-luna",
+ "reviewModel":"gpt-6.1-sol",
+ "startedAtUtc":null,
+ "startedAtStatus":"UNKNOWN; no complete phase clock retained",
+ "planningDurationMs":null,
+ "buildDurationMs":null,
+ "auditDurationMs":null,
+ "tokens":null,
+ "tokensStatus":"UNKNOWN; telemetry unavailable",
+ "repairCount":1,
+ "focusedTests":{"total":28,"pass":28,"fail":0,"durationMs":9536.248911},
+ "fullLinuxTests":{"total":370,"pass":368,"fail":0,"skipped":2,"durationMs":145682.771376},
+ "sourceManifestSha256":"046b011c9c09cf84e8fadfd938ca55513ca90a3acf3821d2577e02b162a9a161",
+ "sourceReview":"PASS bounded; exact-head external review OPEN",
+ "elapsedToAcceptedMs":null,
+ "productCompletion":"OPEN"
+}

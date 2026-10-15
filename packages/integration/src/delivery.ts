@@ -5,6 +5,7 @@ import { MissionConflictError } from "../../contracts/src/mission.js";
 import { receiptDigestV1, trustedCheckRequestDigestV1, type CheckCertificateV1 } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import type { LocalIntegrator } from "./local.js";
+import type { LifecycleGuard } from "../../contracts/src/lifecycle.js";
 
 const hash=(bytes:Uint8Array|string)=>createHash("sha256").update(bytes).digest("hex");
 const sha1=/^[a-f0-9]{40}$/;
@@ -15,6 +16,25 @@ export interface DeliveryReviewArtifactReader {read(artifactId:string):Promise<B
 export interface DeliveryAuthority {integrator:LocalIntegrator;reviews:DeliveryReviewArtifactReader;artifacts:ArtifactStore;github:GitHubInstallationClient;}
 
 function validateCommand(x:DeliveryCommandV1,p:DeliveryPolicy){const fields=["version","missionId","sliceId","leaseEpoch","integratedSha","treeSha","reviewArtifactId","reviewArtifactDigest","idempotencyKey"];if(!x||Object.keys(x).length!==fields.length||fields.some(k=>!Object.hasOwn(x,k))||x.version!=="orloom.delivery-command.v1"||!/^[-a-f0-9]{36}$/.test(x.missionId)||! /^[A-Za-z0-9._:-]{1,120}$/.test(x.sliceId)||!Number.isSafeInteger(x.leaseEpoch)||x.leaseEpoch<1||!sha1.test(x.integratedSha)||!sha1.test(x.treeSha)||!sha256.test(x.reviewArtifactDigest)||! /^[A-Za-z0-9._:-]{16,180}$/.test(x.idempotencyKey)||! /^[A-Za-z0-9._:-]{1,180}$/.test(x.reviewArtifactId)||! /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(p.repository)||!Number.isSafeInteger(p.appId)||p.appId<1||!Number.isSafeInteger(p.installationId)||p.installationId<1||!p.baseRef||!sha1.test(p.baseSha)||!p.policyVersion||!sha256.test(p.policyDigest)||!sha256.test(p.imageDigest)||!p.checkIds.includes("node-repo-suite-v1")||new Set(p.checkIds).size!==p.checkIds.length||!p.checkName||!Array.isArray(p.protectedRefs))throw new MissionConflictError("Delivery request or immutable controller delivery policy is invalid");}
+
+const workerEvidenceLabels=new Set(["candidate-bundle","candidate-diff","evidence-index","provider-usage","sandbox-policy"]);
+/** Validate retained delivery references without broadening the accepted namespace. */
+export async function validateDeliveryEvidenceReferences(references:readonly string[],integrationMarker:string,reviewMarker:string,artifacts:ArtifactStore):Promise<void>{
+  const seenMarkers=new Set<string>(),seenWorkerEvidence=new Set<string>();
+  for(const reference of references){
+    const raw=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
+    if(raw){const bytes=await artifacts.get(`sha256/${raw[1]}`);if(hash(bytes)!==raw[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");continue;}
+    const named=/^([a-z][a-z0-9-]*):sha256\/([a-f0-9]{64})$/.exec(reference);
+    if(named&&workerEvidenceLabels.has(named[1]!)){
+      if(seenWorkerEvidence.has(named[1]!))throw new MissionConflictError("Integrated slice contains duplicate named worker evidence");
+      const bytes=await artifacts.get(`sha256/${named[2]}`);if(hash(bytes)!==named[2])throw new MissionConflictError("Named worker evidence did not match its content digest");
+      seenWorkerEvidence.add(named[1]!);continue;
+    }
+    if(reference===integrationMarker||reference===reviewMarker){if(seenMarkers.has(reference))throw new MissionConflictError("Integrated slice contains duplicate C4 attribution metadata");seenMarkers.add(reference);continue;}
+    throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution");
+  }
+  if(!seenMarkers.has(integrationMarker)||!seenMarkers.has(reviewMarker))throw new MissionConflictError("Integrated slice lacks exact durable C4 attribution markers");
+}
 const checkIdFor=(missionId:string,sliceId:string,epoch:number,sha:string)=>`${missionId}:${sliceId}:${epoch}:${sha}`;
 const branchFor=(missionId:string,sliceId:string)=>`orloom/delivery/${missionId}/${hash(sliceId).slice(0,12)}`;
 function assertRemote(remote:{sha:string;treeSha:string}|null,sha:string,tree:string){if(!remote||remote.sha!==sha||remote.treeSha!==tree)throw new MissionConflictError("Remote delivery branch does not match the integrated commit and tree");}
@@ -36,40 +56,26 @@ function deliveryRequest(command:DeliveryCommandV1,policy:DeliveryPolicy,branch:
 }
 
 /** Upload the verified integration commit, then publish retained evidence after exact remote readback and durable effect claims. */
-export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority,store:MissionStore):Promise<DeliveryIntentV1>{
+export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:DeliveryPolicy,authority:DeliveryAuthority,store:MissionStore,guard?:LifecycleGuard):Promise<DeliveryIntentV1>{
+  await guard?.();
   validateCommand(command,policy);
   if(!authority?.integrator?.uploadRef||!authority.reviews||!authority.artifacts||!authority.github?.withContentsWriteToken||!store.getIntegratedIntent||!store.getIntegratedCertificate||!store.createDeliveryIntent||!store.updateDeliveryIntent||!store.getDeliveryIntent||!store.claimDeliveryEffect||!store.observeDeliveryEffect||!store.getTrustedAttempt)throw new MissionConflictError("Delivery is closed without controller-owned upload, retained evidence, PostgreSQL, review, and GitHub services");
   if(authority.github.appId!==policy.appId)throw new MissionConflictError("Configured GitHub App identity differs from the immutable delivery policy");
   const repository=policy.repository.toLowerCase();
   if(authority.integrator.repositoryIdentity!==repository)throw new MissionConflictError("Local integration repository is not the configured delivery repository");
-  const mission=await store.getMission(command.missionId);
+  const mission=await store.getMission(command.missionId);await guard?.();
   const slice=mission?.slices.find(item=>item.id===command.sliceId);
   if(!mission||!slice||!mission.plan?.approvedAt||slice.status!=="verified"||slice.leaseEpoch!==command.leaseEpoch||slice.candidateSha!==command.integratedSha||canonicalJson([...slice.checks].sort())!==canonicalJson([...policy.checkIds].sort()))throw new MissionConflictError("Delivery does not match a verified, approved integrated slice");
   const checkIds=[...policy.checkIds].sort();
-  const integration=await store.getIntegratedIntent(command.missionId,command.sliceId,command.leaseEpoch);
+  const integration=await store.getIntegratedIntent(command.missionId,command.sliceId,command.leaseEpoch);await guard?.();
   if(!integration||integration.state!=="integrated"||integration.observedIntegrationSha!==command.integratedSha||integration.candidateSha!==command.integratedSha||integration.treeSha!==command.treeSha||integration.reviewArtifactId!==command.reviewArtifactId||integration.reviewArtifactDigest!==command.reviewArtifactDigest||canonicalJson([...integration.requiredCheckIds].sort())!==canonicalJson(checkIds))throw new MissionConflictError("Integrated intent does not retain the exact commit, tree, review, and check set");
   const integrationMarker=`integration:${integration.observedIntegrationSha}`;
   const reviewMarker=`review:${integration.reviewArtifactDigest}`;
-  const seenMarkers=new Set<string>();
-  for(const reference of slice.evidenceRefs){
-    const match=/^sha256[:/]([a-f0-9]{64})$/.exec(reference);
-    if(match){
-      const bytes=await authority.artifacts.get("sha256/"+match[1]);
-      if(hash(bytes)!==match[1])throw new MissionConflictError("Integrated slice R2 evidence did not match its content digest");
-      continue;
-    }
-    if(reference===integrationMarker||reference===reviewMarker){
-      if(seenMarkers.has(reference))throw new MissionConflictError("Integrated slice contains duplicate C4 attribution metadata");
-      seenMarkers.add(reference);
-      continue;
-    }
-    throw new MissionConflictError("Integrated slice evidence is not content-addressed R2 evidence or exact C4 attribution");
-  }
-  if(!seenMarkers.has(integrationMarker)||!seenMarkers.has(reviewMarker))throw new MissionConflictError("Integrated slice lacks exact durable C4 attribution markers");
+  await validateDeliveryEvidenceReferences(slice.evidenceRefs,integrationMarker,reviewMarker,authority.artifacts);await guard?.();
   if(await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration ref moved after integration");
   const inspected=await authority.integrator.inspect({expectedRefSha:integration.expectedIntegrationSha,candidateSha:command.integratedSha,scopes:slice.scopes});
   if(inspected.candidateSha!==command.integratedSha||inspected.treeSha!==command.treeSha||await authority.integrator.readRef()!==command.integratedSha)throw new MissionConflictError("Dedicated local integration tree changed after integration");
-  const reviewBytes=await authority.reviews.read(command.reviewArtifactId);
+  const reviewBytes=await authority.reviews.read(command.reviewArtifactId);await guard?.();
   if(!reviewBytes||hash(reviewBytes)!==command.reviewArtifactDigest)throw new MissionConflictError("Retained independent review artifact is missing or changed");
   let review:unknown;try{review=JSON.parse(reviewBytes.toString("utf8"));}catch{throw new MissionConflictError("Retained independent review is malformed");}
   const reviewRecord=asRecord(review);
@@ -78,12 +84,12 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   if(policy.protectedRefs.includes(request.branch)||request.branch==="main"||request.branch==="refs/heads/main"||request.branch==="feat/worker-broker")throw new MissionConflictError("Delivery branch conflicts with a protected or reserved ref");
   const certificateBinding=deliveryRequest(command,policy,"",checkIds);
   for(const id of checkIds){
-    const certificate=await store.getIntegratedCertificate(command.missionId,command.sliceId,command.leaseEpoch,id);
+    await guard?.();const certificate=await store.getIntegratedCertificate(command.missionId,command.sliceId,command.leaseEpoch,id);await guard?.();
     if(!certificate||certificate.scope!=="local-exact-commit"||certificate.candidateSha!==command.integratedSha||certificate.localHeadSha!==command.integratedSha||!integration.certificateIds.includes(certificate.certificateId)||!integration.certificateDigests.includes(hash(canonicalJson(certificate))))throw new MissionConflictError("A mandatory final certificate is absent or stale after integration");
     await validateCert(store,authority.artifacts,certificate,certificateBinding,policy);
   }
-  let intent=await store.getDeliveryIntent(request);
-  intent??=await store.createDeliveryIntent(request);
+  await guard?.();let intent=await store.getDeliveryIntent(request);await guard?.();
+  if(!intent){await guard?.();intent=await store.createDeliveryIntent(request);await guard?.();}
   const markUnknown=async(reason:string):Promise<never>=>{
     try{await store.updateDeliveryIntent!(request,{state:"unknown"});}catch{/* Keep the original unresolved outcome. */}
     throw new MissionConflictError(reason);
@@ -93,12 +99,14 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   const remote=()=>authority.github.inspectBranch(policy.installationId,repository,request.branch);
   const base=()=>authority.github.inspectBranch(policy.installationId,repository,policy.baseRef);
   const verifyRemoteAndBase=async()=>{
-    assertRemote(await remote(),command.integratedSha,command.treeSha);
-    assertBase(await base(),policy.baseSha);
+    await guard?.();const remoteRead=await remote();await guard?.();
+    assertRemote(remoteRead,command.integratedSha,command.treeSha);
+    await guard?.();const baseRead=await base();await guard?.();
+    assertBase(baseRead,policy.baseSha);
   };
   let branchRead:{sha:string;treeSha:string}|null,baseRead:{sha:string;treeSha:string}|null;
   try{[branchRead,baseRead]=await Promise.all([remote(),base()]);assertBase(baseRead,policy.baseSha);}catch{return markUnknown("Remote branch or pinned base readback failed before upload");}
-  const uploadClaim=await store.claimDeliveryEffect(request,"upload");
+  await guard?.();const uploadClaim=await store.claimDeliveryEffect(request,"upload");
   if(branchRead){
     try{assertRemote(branchRead,command.integratedSha,command.treeSha);if(uploadClaim.externalId&&uploadClaim.externalId!==command.integratedSha)throw new MissionConflictError("Remote upload readback differs from the durable effect identity");await store.observeDeliveryEffect(request,"upload",command.integratedSha);}
     catch{return markUnknown("Existing remote branch does not pass exact upload readback");}
@@ -108,14 +116,14 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   }else{
     try{
       baseRead=await base();assertBase(baseRead,policy.baseSha);
-      await authority.github.withContentsWriteToken(policy.installationId,repository,token=>authority.integrator.uploadRef!({branch:request.branch,candidateSha:command.integratedSha,protectedRefs:policy.protectedRefs,token}));
+      await guard?.();await authority.github.withContentsWriteToken(policy.installationId,repository,async token=>{await guard?.();await authority.integrator.uploadRef!({branch:request.branch,candidateSha:command.integratedSha,protectedRefs:policy.protectedRefs,token},guard);await guard?.();},guard);await guard?.();
       branchRead=await remote();assertRemote(branchRead,command.integratedSha,command.treeSha);baseRead=await base();assertBase(baseRead,policy.baseSha);
       await store.observeDeliveryEffect(request,"upload",command.integratedSha);
     }catch{return markUnknown("Remote upload or separate SHA/tree/base readback is unresolved; write will not be repeated");}
   }
   try{await verifyRemoteAndBase();}catch{return markUnknown("Remote branch or pinned base readback drifted before delivery");}
 
-  const checkClaim=await store.claimDeliveryEffect(request,"check");
+  await guard?.();const checkClaim=await store.claimDeliveryEffect(request,"check");
   let checks:Array<{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null}>;
   try{checks=await authority.github.listCheckRuns(policy.installationId,repository,command.integratedSha,checkName,externalId);}catch{return markUnknown("GitHub Check reconciliation readback failed");}
   if(checks.length>1)return markUnknown("Multiple GitHub Checks match this delivery intent");
@@ -137,7 +145,7 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
   }else{
     try{
       await verifyRemoteAndBase();
-      const created=await authority.github.createDeliveryCheck(policy.installationId,repository,command.integratedSha,checkName,externalId,"Orloom certified repository suite","Orloom retained a final PASS certificate for "+command.integratedSha+"; independent review "+command.reviewArtifactDigest+". This Check publishes existing Orloom evidence and does not execute CI.");
+      await guard?.();const created=await authority.github.createDeliveryCheck(policy.installationId,repository,command.integratedSha,checkName,externalId,"Orloom certified repository suite","Orloom retained a final PASS certificate for "+command.integratedSha+"; independent review "+command.reviewArtifactDigest+". This Check publishes existing Orloom evidence and does not execute CI.",guard);await guard?.();
       assertCheck(created,request,checkName,externalId);
       await verifyRemoteAndBase();
       check=await authority.github.getCheckRun(policy.installationId,repository,created.id);
@@ -150,7 +158,7 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
 
   if(await authority.integrator.readRef()!==command.integratedSha)return markUnknown("Local integration ref changed after Check publication");
   try{await verifyRemoteAndBase();}catch{return markUnknown("Remote branch or pinned base drifted after Check publication");}
-  const prClaim=await store.claimDeliveryEffect(request,"pull_request");
+  await guard?.();const prClaim=await store.claimDeliveryEffect(request,"pull_request");
   let pullRequests;
   try{pullRequests=await authority.github.listPullRequests(policy.installationId,repository,request.branch,policy.baseRef);}catch{return markUnknown("Draft PR reconciliation readback failed");}
   if(pullRequests.length>1)return markUnknown("Multiple pull requests match the exact delivery head and base");
@@ -160,26 +168,32 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
       assertPr(pr,request);
       if(prClaim.externalId&&prClaim.externalId!==String(pr.number))throw new MissionConflictError("Draft PR readback differs from the durable effect identity");
       const listedNumber=pr.number;
+      await guard?.();
       await verifyRemoteAndBase();
-      pr=await authority.github.getPullRequest(policy.installationId,repository,listedNumber);
+      await guard?.();pr=await authority.github.getPullRequest(policy.installationId,repository,listedNumber);await guard?.();
       assertPr(pr,request,listedNumber);
       await verifyRemoteAndBase();
+      await guard?.();
       await store.observeDeliveryEffect!(request,"pull_request",String(pr.number));
+      await guard?.();
     }catch{return markUnknown("Existing PR did not pass exact open, unmerged draft readback");}
   }else if(!prClaim.claimed){
     return markUnknown("A prior PR write may have occurred; no exact PR is visible and create was not retried");
   }else{
     try{
       await verifyRemoteAndBase();
-      const created=await authority.github.createDraftPullRequest(policy.installationId,repository,request.branch,policy.baseRef,
+      await guard?.();const created=await authority.github.createDraftPullRequest(policy.installationId,repository,request.branch,policy.baseRef,
         "Orloom: "+mission.mission.objective.slice(0,100),
-        "Automated delivery of the independently reviewed integrated commit "+command.integratedSha+".\n\nTree: "+command.treeSha+"\nReview artifact SHA-256: "+command.reviewArtifactDigest+"\nRetained final checks: "+checkIds.join(", ")+"\n\nGitHub is publishing retained Orloom evidence; it did not execute CI.");
+        "Automated delivery of the independently reviewed integrated commit "+command.integratedSha+".\n\nTree: "+command.treeSha+"\nReview artifact SHA-256: "+command.reviewArtifactDigest+"\nRetained final checks: "+checkIds.join(", ")+"\n\nGitHub is publishing retained Orloom evidence; it did not execute CI.",guard);await guard?.();
       assertPr(created,request);
+      await guard?.();
       await verifyRemoteAndBase();
-      pr=await authority.github.getPullRequest(policy.installationId,repository,created.number);
+      await guard?.();pr=await authority.github.getPullRequest(policy.installationId,repository,created.number);await guard?.();
       assertPr(pr,request,created.number);
       await verifyRemoteAndBase();
+      await guard?.();
       await store.observeDeliveryEffect!(request,"pull_request",String(pr.number));
+      await guard?.();
     }catch{return markUnknown("Draft PR write or separate PR readback is unresolved; create will not be repeated");}
   }
   if(!check)return markUnknown("A Check was not retained after exact readback");
@@ -187,7 +201,8 @@ export async function deliverIntegratedCommit(command:DeliveryCommandV1,policy:D
     if(intent.pullRequestNumber!==pr.number||intent.checkRunId!==String(check.id))return markUnknown("Completed delivery identities differ from exact replay readback");
     return intent;
   }
-  return store.updateDeliveryIntent!(request,{state:"pr_created",checkRunId:String(check.id),pullRequestNumber:pr.number,observedRemoteSha:command.integratedSha});
+  try{await guard?.();const completed=await store.updateDeliveryIntent!(request,{state:"pr_created",checkRunId:String(check.id),pullRequestNumber:pr.number,observedRemoteSha:command.integratedSha});await guard?.();return completed;}
+  catch{return markUnknown("Lifecycle stopped during final draft PR intent readback; delivery remains UNKNOWN and will not be retried");}
 }
 
 function canonical(value:unknown):string{return canonicalJson(value);}

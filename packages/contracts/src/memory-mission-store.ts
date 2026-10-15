@@ -4,7 +4,7 @@ import { canonicalJson } from "../../judgment/src/canonical.js";
 import { CancellationRuntimeBinding, CancellationRuntimeEntry, CancellationRuntimeIdentity, validateCancellationSettlementEvidence } from "./cancellation-settlement.js";
 import { deterministicRecovery } from "../../stuck-resolver/src/recovery.js";
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
-import { canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingDecisionRecord, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
+import { ApprovedClaimTarget, canonicalRepository, ClaimAdvice, GovernorActionV1, Lane, LeaseGrant, LessonCandidate, Mission, MissionConflictError, MissionEvent, MissionInput, MissionPlan, MissionSlice, MissionStore, MissionValidationError, ProgressReceipt, ProgressV1, RecoveryAttemptBinding, RecoveryPolicyLease, RecoveryProgress, SchedulingChoice, SchedulingDecisionRecord, SchedulingSnapshot, SliceInput, TrustedStrategyPolicy, scopesOverlap } from "./mission.js";
 import { downstreamDepths, rankSchedulingChoices, schedulingSnapshotDigest, validateSchedulingDecision } from "./scheduling.js";
 const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 const newSecret = () => randomBytes(32).toString("base64url");
@@ -46,6 +46,7 @@ export class MemoryMissionStore implements MissionStore {
   async getCertificate():Promise<null>{return null;}
   async getCertificateRequest():Promise<null>{return null;}
   async awaitingVerification():Promise<never[]>{return[];}
+  async isVerificationDispatchEligible(_missionId:string,_sliceId:string,_leaseEpoch:number,_checkIds:string[]):Promise<boolean>{return false;}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private cancellations = new Map<string,{ownerRequestId:string;reason:string;requestedAt:string;completedAt:string|null}>();
   private cancellationRuntime = new Map<string,{identity:CancellationRuntimeIdentity;binding:CancellationRuntimeBinding;containerId:string|null;state:"pending"|"unknown"|"absent";evidence:CancellationRuntimeEntry|null}>();
@@ -61,15 +62,23 @@ export class MemoryMissionStore implements MissionStore {
     if(!/^[a-f0-9]{64}$/.test(containerId))throw new MissionValidationError("Runtime container id is invalid");
     const value=this.cancellationRuntime.get(this.runtimeKey(identity));if(!value||value.identity.controllerRunId!==identity.controllerRunId||(value.containerId&&value.containerId!==containerId))throw new MissionConflictError("Container binding is stale or changed");value.containerId=containerId;
   }
-  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">{
+  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored"|"observed_absent">{
     const i=entry?.identity,value=i&&this.cancellationRuntime.get(this.runtimeKey(i)),s=i&&this.slices.get(`${i.missionId}:${i.sliceId}`),m=i&&this.missions.get(i.missionId);
-    if(!value||!s||!m||value.identity.controllerRunId!==i.controllerRunId||s.leaseEpoch!==i.leaseEpoch||!['cancel_requested','unknown','awaiting_verification','cancelled'].includes(s.status))return "ignored";
+    if(!value||!s||!m||value.identity.controllerRunId!==i.controllerRunId||s.leaseEpoch!==i.leaseEpoch||!['cancel_requested','unknown','awaiting_verification','verified','cancelled'].includes(s.status))return "ignored";
     const observation=entry.reconciliation;
     if(!observation||typeof observation!=="object"||!observation.identity||typeof observation.identity!=="object")return "ignored";
     if(entry.name!==value.binding.name||entry.imageRef!==value.binding.imageRef||entry.labelsDigest!==value.binding.labelsDigest||value.containerId&&entry.containerId!==value.containerId||observation.source!=="orloom.trusted-docker-reconciler.v1"||observation.outcome!==entry.state||observation.identity.missionId!==i.missionId||observation.identity.sliceId!==i.sliceId||observation.identity.leaseEpoch!==i.leaseEpoch||observation.identity.controllerRunId!==i.controllerRunId||observation.name!==value.binding.name||observation.imageRef!==value.binding.imageRef||observation.labelsDigest!==value.binding.labelsDigest||observation.containerId!==entry.containerId)return "ignored";
-    if(entry.state==="unknown"){if(value.state!=="absent"){value.state="unknown";value.evidence=entry;}return value.state==="absent"?"settled":"quarantined";}
-    if(value.state==="absent")return canonicalJson(value.evidence)===canonicalJson(entry)?"settled":"ignored";
-    if(!validateCancellationSettlementEvidence(entry,value.binding)||!value.containerId||m.status!=="cancelling")return "quarantined";
+    if(entry.state==="unknown"){if(value.state==="absent")return "quarantined";value.state="unknown";value.evidence=entry;return "quarantined";}
+    if(value.state==="absent"){
+      if(canonicalJson(value.evidence)!==canonicalJson(entry))return "ignored";
+      if(s.status==="cancelled"&&m.status==="cancelled")return "settled";
+      if(m.status!=="cancelling")return "observed_absent";
+    }
+    if(!validateCancellationSettlementEvidence(entry,value.binding)||!value.containerId)return "quarantined";
+    if(m.status!=="cancelling"){
+      if((s.status==="awaiting_verification"||s.status==="verified")&&m.status!=="cancelled"){value.state="absent";value.evidence=entry;return "observed_absent";}
+      return "quarantined";
+    }
     value.state="absent";value.evidence=entry;s.status="cancelled";s.leaseToken=null;s.leaseExpiresAt=null;this.occupied.delete(`${s.missionId}:${s.id}`);
     const uncertain=[...this.slices.values()].some(x=>x.missionId===m.id&&["running","cancel_requested","awaiting_verification","unknown"].includes(x.status));
     if(!uncertain){m.status="cancelled";const c=this.cancellations.get(m.id);if(c)c.completedAt??=new Date().toISOString();}
@@ -96,7 +105,7 @@ export class MemoryMissionStore implements MissionStore {
   async getMission(id: string) { const m = this.missions.get(id); if (!m) return null; return { mission: m, plan: this.plans.get(id) ?? null, slices: [...this.slices.values()].filter(s => s.missionId === id) }; }
   async events(id: string, after: number) { return this.eventsLog.filter(e => e.missionId === id && e.cursor > after); }
   async recordSchedulingDecision(missionId:string,decision:SchedulingDecisionRecord){validateSchedulingDecision(decision);this.mustMission(missionId);this.event(missionId,"scheduling.decision",{...decision});}
-  private eligibleSchedulingChoices(policyDigest: string, recoveryPolicyDigest: string, now: Date, allowedPlanChecks?: readonly string[]): { choices: SchedulingChoice[]; freeCapacity: number } {
+  private eligibleSchedulingChoices(policyDigest: string, recoveryPolicyDigest: string, now: Date, allowedPlanChecks?: readonly string[], target?:ApprovedClaimTarget): { choices: SchedulingChoice[]; freeCapacity: number } {
     const free=[...this.slots.entries()].filter(([slot,x])=>x.enabled&&Date.parse(x.expires)>now.getTime()&&![...this.occupied.values()].includes(slot)).length;
     const choices:SchedulingChoice[]=[];
     for(const s of this.slices.values()){
@@ -108,17 +117,18 @@ export class MemoryMissionStore implements MissionStore {
       const cohort=scopeCohort(s.scopes),lessons=this.lessonRows.filter(l=>l.status==="promoted"&&l.repository===mission.repository&&l.policyDigest===recoveryPolicyDigest&&l.cohort===cohort&&s.checks.includes(l.fromCheckId)).map(l=>({id:l.id,version:l.lessonVersion,challengeDigest:l.challengeDigest,checkId:l.fromCheckId,strategyId:l.strategyId,policyDigest:l.policyDigest})).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,8);
       choices.push({missionId:s.missionId,sliceId:s.id,repository:mission.repository,planDigest:hash(canonicalJson(plan.slices)),dependencies:[...s.dependencies],scopes:[...s.scopes],budgetCents:s.budgetCents,missionBudgetCents:mission.budgetCents,reservedBudgetCents:mission.reservedCents,downstreamDepth:downstreamDepths(plan.slices).get(s.id)??0,scopeRisk:s.scopes.reduce((n,x)=>n+(/[?*[{]/.test(x)?100:Math.max(0,4-x.split("/").length)),0),lessons});
     }
-    return{choices:rankSchedulingChoices(choices).slice(0,32),freeCapacity:free};
+    const selected=target?choices.filter(choice=>choice.missionId===target.missionId&&choice.sliceId===target.sliceId):choices;
+    return{choices:rankSchedulingChoices(selected).slice(0,32),freeCapacity:free};
   }
   async schedulingSnapshot(_policyDigest:string,recoveryPolicyDigest:string,allowedPlanChecks:readonly string[],now=new Date()):Promise<SchedulingSnapshot>{const value=this.eligibleSchedulingChoices(_policyDigest,recoveryPolicyDigest,now,allowedPlanChecks),base={freeCapacity:value.freeCapacity,choices:value.choices};return{capturedAt:now.toISOString(),...base,snapshotDigest:schedulingSnapshotDigest(base)};}
-  async claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks:readonly string[], now = new Date(), recoveryPolicyDigest="", advice?:ClaimAdvice): Promise<LeaseGrant | null> {
+  async claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks:readonly string[], now = new Date(), recoveryPolicyDigest="", advice?:ClaimAdvice, target?:ApprovedClaimTarget): Promise<LeaseGrant | null> {
     await this.expire(now);
-    const fresh=this.eligibleSchedulingChoices(policyDigest,recoveryPolicyDigest,now,allowedPlanChecks),unchanged=Boolean(advice?.snapshotDigest&&advice.snapshotDigest===schedulingSnapshotDigest({freeCapacity:fresh.freeCapacity,choices:fresh.choices}));
+    const fresh=this.eligibleSchedulingChoices(policyDigest,recoveryPolicyDigest,now,allowedPlanChecks,target),unchanged=Boolean(advice?.snapshotDigest&&advice.snapshotDigest===schedulingSnapshotDigest({freeCapacity:fresh.freeCapacity,choices:fresh.choices}));
     const preferred=unchanged&&advice?.status==="selected"?advice.preferredCandidateId:null;
     const candidates=rankSchedulingChoices(fresh.choices).map(choice=>this.slices.get(`${choice.missionId}:${choice.sliceId}`)!).filter(Boolean);
     if(preferred){const index=candidates.findIndex(x=>`${x.missionId}:${x.id}`===preferred);if(index>0)candidates.unshift(...candidates.splice(index,1));}
     for (const s of candidates) {
-      const p = this.plans.get(s.missionId)!; if (!p.approvedAt || p.slices.some(d => s.dependencies.includes(d.id) && this.slices.get(`${s.missionId}:${d.id}`)?.status !== "verified")) continue;
+      const p = this.plans.get(s.missionId)!; if (!p.approvedAt || (target&&(p.slices.length!==1||s.missionId!==target.missionId||s.id!==target.sliceId||this.missions.get(s.missionId)?.repository!==target.repository||this.missions.get(s.missionId)?.baseSha!==target.baseSha||hash(canonicalJson(p.slices))!==target.planDigest||!Number.isSafeInteger(target.maxBudgetCents)||target.maxBudgetCents<0||s.budgetCents>target.maxBudgetCents)) || p.slices.some(d => s.dependencies.includes(d.id) && this.slices.get(`${s.missionId}:${d.id}`)?.status !== "verified")) continue;
       const repository=this.missions.get(s.missionId)!.repository;const running = [...this.slices.values()].filter(x => ["running","cancel_requested","awaiting_verification","unknown","blocked"].includes(x.status) && this.missions.get(x.missionId)?.repository===repository);
       if (running.some(x => x.scopes.some(a => s.scopes.some(b => scopesOverlap(a,b))))) continue;
       const slot = [...this.slots.entries()].find(([n,x])=>x.enabled&&new Date(x.expires)>now&&![...this.occupied.values()].includes(n)); if(!slot||!policyDigest) continue;

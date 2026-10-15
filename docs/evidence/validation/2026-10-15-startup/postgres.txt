@@ -1,0 +1,1 @@
+{"result":"PASS","database":"actual isolated PostgreSQL","unrelatedReadyMissions":35,"unrelatedReservations":0,"targetedClaimWinners":1,"schedulingCalls":0,"preRuntimeSettlementReplay":"settled","reservedCents":100,"liveProvider":false,"runsc":false}

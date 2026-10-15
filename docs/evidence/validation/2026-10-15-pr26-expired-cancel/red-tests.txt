@@ -1,0 +1,53 @@
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (memory), idempotently (12.509ms)
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (sql), idempotently (1186.85ms)
+Γ£ö non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (memory) (8.7955ms)
+Γ£ö non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (sql) (890.2169ms)
+Γ£ö bound file-intent UNKNOWN stays quarantined after owner cancellation (857.0752ms)
+Γä╣ tests 5
+Γä╣ suites 0
+Γä╣ pass 3
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 3065.3554
+
+Γ£û failing tests:
+
+test at dist\tests\approved-worker-runtime-restart.test.js:181:5
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (memory), idempotently (12.509ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'unknown'
+  - 'cancelled'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-runtime-restart.test.js:193:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unknown',
+    expected: 'cancelled',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\approved-worker-runtime-restart.test.js:181:5
+Γ£û expired no-runtime UNKNOWN settles only after owner cancellation (sql), idempotently (1186.85ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'unknown'
+  - 'cancelled'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-runtime-restart.test.js:193:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unknown',
+    expected: 'cancelled',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

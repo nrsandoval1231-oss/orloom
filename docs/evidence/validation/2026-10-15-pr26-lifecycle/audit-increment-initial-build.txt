@@ -1,0 +1,5 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+packages/governor/src/governor.ts(270,161): error TS2722: Cannot invoke an object which is possibly 'undefined'.

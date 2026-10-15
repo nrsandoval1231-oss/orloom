@@ -4,9 +4,10 @@ import { deflateSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 const exec=promisify(execFile),hash=(value:Uint8Array|string)=>createHash("sha256").update(value).digest("hex");
 async function git(root:string,...args:string[]) {return (await exec("git",["-C",root,"-c","user.name=Admission Fixture","-c","user.email=fixture@example.invalid",...args],{encoding:"utf8"})).stdout.trim();}
 async function fixture() {
@@ -95,6 +96,24 @@ test("admission cancellation aborts an outstanding artifact read and releases ca
   const cancellation=new AbortController();const pending=admission.admit(f.binding,cancellation.signal);await ready;cancellation.abort();
   await assert.rejects(pending,/abort|deadline/);assert.equal(observed?.aborted,true);
   const good=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});assert.equal((await good.admit(f.binding)).receipt.candidateSha,f.binding.candidateSha);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+test("fixed integration store imports only admitted objects and leaves its authority ref unchanged",async()=>{
+ const f=await fixture();try {
+  const api=await import("../packages/verification/src/candidate-admission.js");
+  const admission=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});
+  const admitted=await admission.admit(f.binding);
+  assert.equal((await stat(admitted.repository.objectStore)).mode&0o077,0,"admitted bare object store remains private for certified import");
+  const target=path.join(f.root,"integration.git"),template=path.join(f.root,"empty-template");await mkdir(template);
+  await exec("git",["clone","--bare",`--template=${template}`,f.trusted,target]);await git(target,"update-ref","refs/heads/orloom-integration",f.binding.baseSha);
+  const integrator=await BareGitFastForwardIntegrator.open(target,"owner/repo");
+  const result=await integrator.importAdmittedCandidate(admitted.repository,f.binding.candidateSha,f.binding.baseSha,["src"]);
+  assert.equal(result.candidateSha,f.binding.candidateSha);assert.equal(result.previousSha,f.binding.baseSha);assert.deepEqual(result.changedPaths,["src/a.js"]);
+  assert.equal(await integrator.readRef(),f.binding.baseSha,"object import must not promote the integration ref");
+  const ref=path.join(admitted.repository.objectStore,"refs","heads","admitted-candidate");await writeFile(ref,`${f.binding.baseSha}\n`);
+  await assert.rejects(integrator.importAdmittedCandidate(admitted.repository,f.binding.candidateSha,f.binding.baseSha,["src"]),/exact candidate|source ref/);
+  assert.equal(await integrator.readRef(),f.binding.baseSha,"substitution rejection cannot advance the integration ref");
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
 
@@ -251,5 +270,48 @@ test("candidate facades share verifier capacity and cannot retarget a prepared s
   let second:import("../packages/contracts/src/verification.js").TrustedCheckReceiptV1;
   try{second=await b.run({...request,attemptId:"22222222-2222-4222-8222-222222222222"},input);}finally{release();}
   assert.equal(second.outcome,"unknown");assert.equal((await first).outcome,"pass");assert.equal(launches,1);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+test("candidate facade rechecks lifecycle after reread before verifier dispatch",async()=>{
+ const f=await fixture();try{
+  const {CandidateAdmission}=await import("../packages/verification/src/candidate-admission.js");
+  const {AdmittingVerificationRunner}=await import("../packages/verification/src/admitting-runner.js");
+  const {DurableArtifactStore}=await import("../packages/verification/src/artifact-store.js");
+  const {getCheckPolicy}=await import("../packages/verification/src/policy.js");
+  const {LifecycleStoppedError}=await import("../packages/contracts/src/lifecycle.js");
+  let admissionReads=0,launches=0;const controller=new AbortController();
+  const realAdmission=new CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts});
+  const admitted=await realAdmission.admit(f.binding);
+  const racedAdmission={async admit(){admissionReads++;if(admissionReads===3)controller.abort();return admitted;}} as unknown as InstanceType<typeof CandidateAdmission>;
+  const imageDigest="a".repeat(64),image=`sha256:${imageDigest}`,policy=getCheckPolicy("node-validate-syntax",image,imageDigest);
+  const facade=await new AdmittingVerificationRunner({repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:new DurableArtifactStore(path.join(f.root,"lifecycle-verification")),verifierId:"controlled-fixture",image,imageDigest,launcher:{async launch(){launches++;return{sandboxId:"fixture",exitCode:0,stdout:Buffer.alloc(0),stderr:Buffer.alloc(0)};}}},racedAdmission).forCandidate(f.binding);
+  const input=await facade.prepareBundle(f.binding.repository,f.binding.baseSha,f.binding.candidateSha);
+  const request:import("../packages/contracts/src/verification.js").TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId:"33333333-3333-4333-8333-333333333333",missionId:f.binding.missionId,sliceId:f.binding.sliceId,leaseEpoch:f.binding.leaseEpoch,repository:f.binding.repository,candidateSha:f.binding.candidateSha,expectedLocalHeadSha:f.binding.candidateSha,planDigest:f.binding.planDigest,checkId:policy.id,policyVersion:policy.version,policyDigest:policy.digest,verifierImageDigest:imageDigest,inputBundleDigest:input.digest,requestedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60_000).toISOString()};
+  const guard=async()=>{if(controller.signal.aborted)throw new LifecycleStoppedError();};
+  const run=facade.run as unknown as (req:typeof request,bundle:typeof input,guard?:()=>Promise<void>)=>Promise<unknown>;
+  await assert.rejects(run(request,input,guard),LifecycleStoppedError);
+  assert.equal(admissionReads,3,"the abort occurs during the awaited request-time candidate reread");
+  assert.equal(launches,0,"the trusted verifier is never dispatched after the reread observes interruption");
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+test("trusted verifier checks lifecycle at the actual sandbox dispatch boundary",async()=>{
+ const f=await fixture();try{
+  const {CandidateAdmission}=await import("../packages/verification/src/candidate-admission.js");
+  const {AdmittingVerificationRunner}=await import("../packages/verification/src/admitting-runner.js");
+  const {DurableArtifactStore}=await import("../packages/verification/src/artifact-store.js");
+  const {getCheckPolicy}=await import("../packages/verification/src/policy.js");
+  const {LifecycleStoppedError}=await import("../packages/contracts/src/lifecycle.js");
+  let launches=0,guardCalls=0;
+  const imageDigest="a".repeat(64),image=`sha256:${imageDigest}`,policy=getCheckPolicy("node-validate-syntax",image,imageDigest);
+  const facade=await new AdmittingVerificationRunner({repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:new DurableArtifactStore(path.join(f.root,"dispatch-boundary-verification")),verifierId:"controlled-fixture",image,imageDigest,launcher:{async launch(){launches++;return{sandboxId:"fixture",exitCode:0,stdout:Buffer.alloc(0),stderr:Buffer.alloc(0)};}}},new CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}},artifacts:f.artifacts})).forCandidate(f.binding);
+  const input=await facade.prepareBundle(f.binding.repository,f.binding.baseSha,f.binding.candidateSha);
+  const request:import("../packages/contracts/src/verification.js").TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId:"44444444-4444-4444-8444-444444444444",missionId:f.binding.missionId,sliceId:f.binding.sliceId,leaseEpoch:f.binding.leaseEpoch,repository:f.binding.repository,candidateSha:f.binding.candidateSha,expectedLocalHeadSha:f.binding.candidateSha,planDigest:f.binding.planDigest,checkId:policy.id,policyVersion:policy.version,policyDigest:policy.digest,verifierImageDigest:imageDigest,inputBundleDigest:input.digest,requestedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+60_000).toISOString()};
+  const guard=async()=>{guardCalls++;if(guardCalls===3)throw new LifecycleStoppedError("stopped immediately before sandbox dispatch");};
+  const run=facade.run as unknown as (req:typeof request,bundle:typeof input,guard?:()=>Promise<void>)=>Promise<unknown>;
+  await assert.rejects(run(request,input,guard),LifecycleStoppedError);
+  assert.equal(guardCalls,3,"candidate reread and facade validation complete before the runner's dispatch fence");
+  assert.equal(launches,0,"no sandbox starts after the final lifecycle checkpoint stops");
  }finally{await rm(f.root,{recursive:true,force:true});}
 });

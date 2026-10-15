@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { lstat, mkdtemp, opendir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, opendir, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { CandidateAdmissionTransientError, CandidateArtifactInvalidError, type CandidateAdmissionBindingV1 } from "../../contracts/src/verification.js";
 import { canonicalJson } from "../../judgment/src/canonical.js";
@@ -145,6 +145,9 @@ export class CandidateAdmission {
     const staging=await mkdtemp(path.join(this.options.root,"pending-"));
     try {
       const objects=path.join(staging,"objects.git");
+      // Git preserves the mode of a pre-created bare repository directory;
+      // mkdtemp's private parent alone does not make objects.git private.
+      await mkdir(objects,{mode:0o700});
       await boundedGit(objects,["init","--bare","--template="],65536,undefined,deadline,signal);
       const basePack=await boundedGit(trusted.objectStore,["pack-objects","--stdout","--revs","--window=0","--depth=0"],CANDIDATE_ADMISSION_LIMITS.bundleBytes,Buffer.from(`${binding.baseSha}\n`),deadline,signal);
       await boundedGit(objects,["index-pack","--stdin","--max-input-size=20000000","--threads=1"],65536,basePack,deadline,signal);
@@ -152,6 +155,10 @@ export class CandidateAdmission {
       const parents=(await run(objects,["rev-list","--parents","-n","1",binding.candidateSha],1024)).toString("ascii").trim();
       if(parents!==`${binding.candidateSha} ${binding.baseSha}`)throw failure("candidate must be one direct child of the approved base");
       await run(objects,["update-ref",approvedRef,binding.candidateSha,"0000000000000000000000000000000000000000"],65536);
+      // Git follows the process umask for these files. The enclosing admission
+      // root is private, and these persisted identities must also remain private.
+      await chmod(path.join(objects,"config"),0o600);
+      await chmod(path.join(objects,"refs","heads","admitted-candidate"),0o600);
       await run(objects,["fsck","--strict","--full","--no-reflogs","--no-dangling"],65536);
       const config={objectStore:objects,approvedRef},input=await this.inspect(config,binding,run);
       const treeSha=(await run(objects,["rev-parse",`${binding.candidateSha}^{tree}`],1024)).toString("ascii").trim();if(!sha1(treeSha))throw failure("invalid candidate tree");

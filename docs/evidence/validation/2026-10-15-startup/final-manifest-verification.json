@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "sourceEntries": 136,
+  "workingSourceMismatches": 0,
+  "stagedBlobMismatches": 0,
+  "executedBuildEntries": 115,
+  "executedBuildMismatches": 0
+}

@@ -1,0 +1,96 @@
+Γ£ö approved service reconciles first, claims the exact binding once, and executes once (1.4515ms)
+Γ£û restart verification does not claim or execute already running or awaiting work (0.9162ms)
+Γ£û owner cancellation without a runtime binding settles using the exact run identity (0.6683ms)
+Γ£û cancel_requested with a bound runtime remains quarantined and cannot claim (0.2522ms)
+Γ£ö interruption before reconciliation cannot reach claim (0.3245ms)
+Γ£ö actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.1563ms)
+Γ£ö settlement replay refreshes task status before any claim or execution (0.1486ms)
+Γ£ö explicit review request integrates the awaiting candidate only after certificate preparation (0.2399ms)
+Γ£ö cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved (1173.9382ms)
+Γ£ö a cancelled candidate awaiting verification settles only after exact runtime absence (896.37ms)
+Γ£û normal exact runtime absence is retained without settling and can settle after a later cancellation (831.8559ms)
+Γ£û exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards (813.4174ms)
+Γ£ö pre-runtime cancellation settles atomically only when no binding exists (798.0865ms)
+Γ£ö memory settlement handles a candidate already awaiting verification (1.9268ms)
+Γ£ö memory pre-runtime settlement is idempotent and rejects late new runtime binding (0.5329ms)
+Γä╣ tests 15
+Γä╣ suites 0
+Γä╣ pass 10
+Γä╣ fail 5
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 4640.9712
+
+Γ£û failing tests:
+
+test at dist\tests\approved-worker-service.test.js:33:1
+Γ£û restart verification does not claim or execute already running or awaiting work (0.9162ms)
+  Error: approved service must not scan the global verifier backlog
+      at Object.awaitingVerification (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-service.test.js:17:391)
+      at runApprovedWorkerService (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/apps/worker/src/approved-service.js:74:65)
+      at async TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-service.test.js:38:18)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at dist\tests\approved-worker-service.test.js:41:1
+Γ£û owner cancellation without a runtime binding settles using the exact run identity (0.6683ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'idle'
+  - 'cancelled'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-service.test.js:50:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'idle',
+    expected: 'cancelled',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\approved-worker-service.test.js:54:1
+Γ£û cancel_requested with a bound runtime remains quarantined and cannot claim (0.2522ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'idle' !== 'unknown'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/approved-worker-service.test.js:63:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'idle',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\cancellation-settlement.test.js:101:1
+Γ£û normal exact runtime absence is retained without settling and can settle after a later cancellation (831.8559ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'quarantined'
+  - 'ignored'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/cancellation-settlement.test.js:118:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'quarantined',
+    expected: 'ignored',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\cancellation-settlement.test.js:131:1
+Γ£û exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards (813.4174ms)
+  TypeError: store.isVerificationDispatchEligible is not a function
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/cancellation-settlement.test.js:144:34)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

@@ -3,6 +3,7 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3
 import { App } from "@octokit/app";
 import type { CodexOptions } from "@openai/codex-sdk";
 import { validCodexHome } from "../../config/src/config.js";
+import type { LifecycleGuard } from "../../contracts/src/lifecycle.js";
 
 export function verifyWebhookSignature(rawBody: Buffer, signature: string | undefined, secret: string): boolean {
   if (!signature || !/^sha256=[0-9a-f]{64}$/i.test(signature) || !secret) return false;
@@ -66,14 +67,14 @@ export class LocalArtifactStore implements ArtifactStore {
 export interface GitHubInstallationClient {
   readonly appId: number;
   createInstallationToken(installationId: number, repositories: string[]): Promise<string>;
-  withContentsWriteToken<T>(installationId:number,repository:string,action:(token:string)=>Promise<T>):Promise<T>;
+  withContentsWriteToken<T>(installationId:number,repository:string,action:(token:string)=>Promise<T>,guard?:LifecycleGuard):Promise<T>;
   createCheckRun(installationId: number, repository: string, headSha: string, name: string, conclusion: "success" | "failure"): Promise<void>;
   inspectBranch(installationId:number,repository:string,branch:string):Promise<{sha:string;treeSha:string}|null>;
   listCheckRuns(installationId:number,repository:string,headSha:string,name:string,externalId:string):Promise<Array<{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null}>>;
   getCheckRun(installationId:number,repository:string,id:number):Promise<{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null}>;
-  createDeliveryCheck(installationId:number,repository:string,headSha:string,name:string,externalId:string,title:string,summary:string):Promise<{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null}>;
+  createDeliveryCheck(installationId:number,repository:string,headSha:string,name:string,externalId:string,title:string,summary:string,guard?:LifecycleGuard):Promise<{id:number;headSha:string;name:string;externalId:string|null;conclusion:string|null;appId:number|null}>;
   listPullRequests(installationId:number,repository:string,head:string,base:string):Promise<Array<{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string}>>;
-  createDraftPullRequest(installationId:number,repository:string,head:string,base:string,title:string,body:string):Promise<{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string}>;
+  createDraftPullRequest(installationId:number,repository:string,head:string,base:string,title:string,body:string,guard?:LifecycleGuard):Promise<{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string}>;
   getPullRequest(installationId:number,repository:string,number:number):Promise<{number:number;draft:boolean;state:string;merged:boolean;headRepository:string|null;headRef:string;headSha:string;baseRepository:string|null;baseRef:string;baseSha:string}>;
 }
 
@@ -96,10 +97,12 @@ export function createGitHubAppAdapter(config: { appId: number; privateKey: stri
   const listPages=async(client:GitHubRequestClient,route:string,parameters:Record<string,unknown>,arrayField?:string)=>{const rows:Record<string,unknown>[]=[];for(let page=1;page<=10;page++){const value=(await client.request(route,{...parameters,page,per_page:100})).data;const pageRows=Array.isArray(value)?value:arrayField&&value&&typeof value==="object"?(value as Record<string,unknown>)[arrayField]:null;if(!Array.isArray(pageRows))throw new Error("GitHub list response is malformed");rows.push(...pageRows as Record<string,unknown>[]);if(pageRows.length<100)return rows;}throw new Error("GitHub result exceeds bounded delivery reconciliation limit");};
   return {
     appId: config.appId,
-    async withContentsWriteToken(installationId,repository,action){
+    async withContentsWriteToken(installationId,repository,action,guard){
       const [owner,name]=repository.split("/");if(!owner||!name||!Number.isSafeInteger(installationId)||installationId<1||typeof action!=="function")throw new Error("Installation and repository scope are required");
+      await guard?.();
       const minted=await appRequests.request("POST /app/installations/{installation_id}/access_tokens",{installation_id:installationId,repositories:[name],permissions:{contents:"write"}});
       const token=(minted.data as Record<string,unknown>|null)?.token;if(typeof token!=="string"||!token)throw new Error("GitHub did not return a scoped upload token");
+      await guard?.();
       return action(token);
     },
     async createInstallationToken(installationId, repositories) {
@@ -139,9 +142,9 @@ export function createGitHubAppAdapter(config: { appId: number; privateKey: stri
     },
     async listCheckRuns(installationId,repository,headSha,name,externalId){const [owner,repo]=repository.split("/");if(!owner||!repo||! /^[a-f0-9]{40}$/.test(headSha))throw new Error("Repository and full commit SHA are required");const client=await scopedInstallation(installationId,repository,{checks:"read"});const data=await listPages(client,"GET /repos/{owner}/{repo}/commits/{ref}/check-runs",{owner,repo,ref:headSha},"check_runs");return data.filter(x=>x.name===name||x.external_id===externalId).map(checkRun);},
     async getCheckRun(installationId,repository,id){const [owner,repo]=repository.split("/");if(!owner||!repo||!Number.isSafeInteger(id)||id<1)throw new Error("Repository and Check identity are required");const client=await scopedInstallation(installationId,repository,{checks:"read"});return checkRun((await client.request("GET /repos/{owner}/{repo}/check-runs/{check_run_id}",{owner,repo,check_run_id:id})).data as Record<string,unknown>);},
-    async createDeliveryCheck(installationId,repository,headSha,name,externalId,title,summary){const [owner,repo]=repository.split("/");if(!owner||!repo||! /^[a-f0-9]{40}$/.test(headSha))throw new Error("Repository and full commit SHA are required");const client=await scopedInstallation(installationId,repository,{checks:"write"});const data=(await client.request("POST /repos/{owner}/{repo}/check-runs",{owner,repo,head_sha:headSha,name,external_id:externalId,status:"completed",conclusion:"success",output:{title,summary}})).data as Record<string,unknown>;return checkRun(data);},
+    async createDeliveryCheck(installationId,repository,headSha,name,externalId,title,summary,guard){await guard?.();const [owner,repo]=repository.split("/");if(!owner||!repo||! /^[a-f0-9]{40}$/.test(headSha))throw new Error("Repository and full commit SHA are required");const client=await scopedInstallation(installationId,repository,{checks:"write"});await guard?.();const data=(await client.request("POST /repos/{owner}/{repo}/check-runs",{owner,repo,head_sha:headSha,name,external_id:externalId,status:"completed",conclusion:"success",output:{title,summary}})).data as Record<string,unknown>;return checkRun(data);},
     async listPullRequests(installationId,repository,head,base){const [owner,repo]=repository.split("/");if(!owner||!repo)throw new Error("Repository is required");const client=await scopedInstallation(installationId,repository,{pull_requests:"read"});const data=await listPages(client,"GET /repos/{owner}/{repo}/pulls",{owner,repo,state:"all",head:`${owner}:${head}`,base});return data.map(pullRequest);},
-    async createDraftPullRequest(installationId,repository,head,base,title,body){const [owner,repo]=repository.split("/");if(!owner||!repo)throw new Error("Repository is required");const client=await scopedInstallation(installationId,repository,{pull_requests:"write"});const x=(await client.request("POST /repos/{owner}/{repo}/pulls",{owner,repo,head,base,title,body,draft:true})).data as Record<string,unknown>;return pullRequest(x);},
+    async createDraftPullRequest(installationId,repository,head,base,title,body,guard){await guard?.();const [owner,repo]=repository.split("/");if(!owner||!repo)throw new Error("Repository is required");const client=await scopedInstallation(installationId,repository,{pull_requests:"write"});await guard?.();const x=(await client.request("POST /repos/{owner}/{repo}/pulls",{owner,repo,head,base,title,body,draft:true})).data as Record<string,unknown>;return pullRequest(x);},
     async getPullRequest(installationId,repository,number){const [owner,repo]=repository.split("/");if(!owner||!repo||!Number.isSafeInteger(number)||number<1)throw new Error("Repository and PR identity are required");const client=await scopedInstallation(installationId,repository,{pull_requests:"read"});const x=(await client.request("GET /repos/{owner}/{repo}/pulls/{pull_number}",{owner,repo,pull_number:number})).data as Record<string,unknown>;return pullRequest(x);}
   };
 }

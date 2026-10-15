@@ -19,3 +19,18 @@ docs/evidence/remote-upload/prior-http-failure.log whitespace=-blank-at-eol,blan
 # Preserve the executed composition transcripts and unchanged state archives.
 docs/validation/2026-10-15-composition/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
 .agent/archive/2026-10-15-before-approved-composition-* whitespace=blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Keep explicit-startup regression and gate transcripts byte-for-byte.
+docs/evidence/validation/2026-10-15-startup/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve exact PR26 fail-before and final gate transcripts.
+docs/evidence/validation/2026-10-15-pr26-repair/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve the expired-lease cancellation regression and final gate transcripts.
+docs/evidence/validation/2026-10-15-pr26-expired-cancel/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve exact lifecycle repair gate transcripts.
+docs/evidence/validation/2026-10-15-pr26-lifecycle/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve exact verifier-capacity correction evidence.
+docs/evidence/validation/2026-10-15-pr26-verifier-capacity/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

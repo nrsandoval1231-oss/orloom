@@ -1,0 +1,144 @@
+✔ long approved-task expiry reschedules against the absolute deadline without aborting early (1.00549ms)
+✔ expiry aborts immediately for an already-reached absolute deadline (0.109369ms)
+✔ each timer wakeup reevaluates wall-clock shifts before expiring (0.173294ms)
+✔ timer wakeup reevaluates wall clock and cleanup cancels pending reschedules (0.118447ms)
+✔ controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (7401.087794ms)
+✔ approved worker lane refuses changed binding before executeLease and runs exact one-slice lifecycle once (4.859093ms)
+✔ abort while verification runs fences preparation and integration (1.470451ms)
+✔ durable owner cancellation during verification fences preparation and integration (0.869803ms)
+✔ manifest expiry during verification fences preparation and integration (0.233292ms)
+✖ abort during certified preparation fences integration (0.84469ms)
+✖ abort during integration fences delivery and cannot report delivered (0.4077ms)
+✖ abort during delivery preserves the started effect as unresolved (0.348259ms)
+✔ approved service reconciles first, claims the exact binding once, and executes once (2.281932ms)
+✔ restart verification does not claim or execute already running or awaiting work (0.355581ms)
+✔ owner cancellation without a runtime binding settles using the exact run identity (0.272808ms)
+✔ cancel_requested with a bound runtime remains quarantined and cannot claim (0.207851ms)
+✔ main retained-runtime callback accepts only settlement or validated normal ABSENT (0.428563ms)
+✔ interruption before reconciliation cannot reach claim (0.154647ms)
+✔ actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.132919ms)
+✔ settlement replay refreshes task status before any claim or execution (0.344006ms)
+✔ explicit review request integrates the awaiting candidate only after certificate preparation (0.441302ms)
+✔ GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities (1.835816ms)
+✔ branch absence is distinct from inaccessible or wrong repository readback (0.514734ms)
+✔ serialized shared PGlite fixtures reset mutations after a failed test body (1349.995763ms)
+✔ positive delivery persists one exact Check GET readback and an open unmerged draft PR (84.822357ms)
+✔ delivery rejects duplicate, mismatched, and unknown C4 metadata before any external effect (61.653992ms)
+✔ Check-only interruption is reconciled by exact GET then proceeds to one PR without retrying Check POST (44.718315ms)
+✔ interrupted PR create is reconciled after durable Check and PR claims without retry (51.37815ms)
+✔ concurrent delivery calls cannot both claim either create effect (49.513154ms)
+✔ upload interruption is reconciled after the exact remote ref appears and is never pushed twice (42.739762ms)
+▶ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks
+  ✔ {"uploadPost":"throw_absent"} (31.24458ms)
+  ✔ {"branchRead":"wrong_sha"} (30.967634ms)
+  ✔ {"branchRead":"wrong_tree"} (32.083254ms)
+  ✔ {"baseRead":"wrong"} (29.689767ms)
+  ✔ {"baseRead":"error"} (26.77618ms)
+✔ a prior claimed upload with an absent branch, wrong branch or moved base stays UNKNOWN without Checks (151.62778ms)
+✔ unresolved absent effect remains UNKNOWN and is never blindly retried (37.010453ms)
+✔ missing scoped upload credential capability closes delivery before creating a claim (17.131593ms)
+▶ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success
+  ✔ wrong App in Check readback (29.345483ms)
+  ✔ Check GET returns a different id (30.901121ms)
+  ✔ PR GET returns a different number (33.97584ms)
+  ✔ configured App policy mismatch (17.522118ms)
+  ✔ ambiguous Checks (27.566405ms)
+  ✔ closed draft (32.385915ms)
+  ✔ merged draft (34.165614ms)
+  ✔ non-draft PR (35.132934ms)
+✔ wrong App identity, mismatched GET IDs, duplicate Checks, and closed or merged PRs remain non-success (242.020821ms)
+✖ lifecycle abort while token acquisition is delayed prevents upload, Check, and PR dispatch (1319.24403ms)
+✔ fixed bare Git ref accepts one scoped linear fast-forward and rejects scope escape and moved ref (3412.302354ms)
+✔ PostgreSQL certification binds exact candidate, stores immutable certificate and event once (1357.418488ms)
+✔ coordinator keeps capability private, runs fixture runner, and hides a certificate when local head moves (1014.563893ms)
+ℹ tests 51
+ℹ suites 0
+ℹ pass 47
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21409.594959
+
+✖ failing tests:
+
+test at dist/tests/approved-worker-lifecycle.test.js:57:1
+✖ abort during certified preparation fences integration (0.84469ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'verified'
+  - 'unknown'
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lifecycle.test.js:63:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'verified',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/tests/approved-worker-lifecycle.test.js:66:1
+✖ abort during integration fences delivery and cannot report delivered (0.4077ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'delivered'
+  - 'unknown'
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lifecycle.test.js:78:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'delivered',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/tests/approved-worker-lifecycle.test.js:81:1
+✖ abort during delivery preserves the started effect as unresolved (0.348259ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'delivered'
+  - 'unknown'
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/approved-worker-lifecycle.test.js:93:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'delivered',
+    expected: 'unknown',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/tests/delivery-lifecycle.test.js:165:1
+✖ lifecycle abort while token acquisition is delayed prevents upload, Check, and PR dispatch (1319.24403ms)
+  AssertionError [ERR_ASSERTION]: the lifecycle fence fires before claiming an upload effect
+  + actual - expected
+  
+  + [
+  +   {
+  +     effect: 'upload',
+  +     state: 'claimed'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///mnt/c/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom-pr26-lifecycle/dist/tests/delivery-lifecycle.test.js:183:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { effect: 'upload', state: 'claimed' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

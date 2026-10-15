@@ -1,0 +1,9 @@
+PR26 expiry baseline RED evidence
+UTC date: 2026-10-15
+Checkout: orloom-pr26-lifecycle
+Branch: feat/explicit-approved-worker-startup
+HEAD: 9347c1701c8f18ea7e5b037695b88f584a747473
+Production source SHA256 before edits: 8317f5e293bd18cdb2fd9abfb8bf1e2256a83519df6061a236eb273359ad50fd
+Reproduction source: repro-overflow.mjs uses the same deadline calculation and setTimeout statement as apps/worker/src/main.ts:268.
+Observed actual Node result: TimeoutOverflowWarning for 2592000000ms, timer coerced to 1ms, callback fired after 3ms against a 2592000000ms requested deadline.
+Runtime line: see expiry-red.actual.txt. Synthetic reproduction only; no worker, provider, database, or external effect was started.

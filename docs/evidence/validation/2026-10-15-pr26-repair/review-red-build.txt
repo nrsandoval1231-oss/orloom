@@ -1,0 +1,7 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/cancellation-settlement.test.ts(104,30): error TS2339: Property 'isVerificationDispatchEligible' does not exist on type 'SqlMissionStore'.
+tests/cancellation-settlement.test.ts(106,30): error TS2339: Property 'isVerificationDispatchEligible' does not exist on type 'SqlMissionStore'.
+tests/cancellation-settlement.test.ts(107,30): error TS2339: Property 'isVerificationDispatchEligible' does not exist on type 'SqlMissionStore'.

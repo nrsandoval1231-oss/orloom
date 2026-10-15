@@ -273,23 +273,24 @@ function sanitized(text: string): string {
   return text.replace(/(bearer\s+)[^\s"']+/gi, "$1[redacted]").replace(/(api[_-]?key|token|secret|password)(\s*[:=]\s*)[^\s"']+/gi, "$1$2[redacted]").slice(0, maxText);
 }
 
-export async function executeLease(leaseInput: unknown, deps: { control: ControlPlane; provider: DeepSeekClient; runtime: WorkerRuntime; evidence: WorkerEvidence; progress: WorkerProgressSink; checks: Record<string, readonly string[]>; options: WorkerOptions; now?: () => number }): Promise<void> {
+export async function executeLease(leaseInput: unknown, deps: { control: ControlPlane; provider: DeepSeekClient; runtime: WorkerRuntime; evidence: WorkerEvidence; progress: WorkerProgressSink; checks: Record<string, readonly string[]>; options: WorkerOptions; now?: () => number; signal?: AbortSignal }): Promise<void> {
   const lease = validateLease(leaseInput, (deps.now ?? Date.now)());
   try {
     await executeValidatedLease(lease, deps);
   } catch {
-    // Preflight failures occur before an uncertain provider operation; report a durable BLOCKED result.
-    try { await deps.control.result(lease, { outcome: "BLOCKED", reasonCode: "other", evidenceRefs: [] }); } catch { /* unresolved control-plane failure remains UNKNOWN */ }
+    // An OS interruption is never represented as an owner cancellation or a safe preflight block.
+    try { await deps.control.result(lease, { outcome: deps.signal?.aborted ? "UNKNOWN" : "BLOCKED", reasonCode: deps.signal?.aborted ? "provider_unavailable" : "other", evidenceRefs: [] }); } catch { /* unresolved control-plane failure remains UNKNOWN */ }
   }
 }
 
-async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { control: ControlPlane; provider: DeepSeekClient; runtime: WorkerRuntime; evidence: WorkerEvidence; progress: WorkerProgressSink; checks: Record<string, readonly string[]>; options: WorkerOptions; now?: () => number }): Promise<void> {
+async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { control: ControlPlane; provider: DeepSeekClient; runtime: WorkerRuntime; evidence: WorkerEvidence; progress: WorkerProgressSink; checks: Record<string, readonly string[]>; options: WorkerOptions; now?: () => number; signal?: AbortSignal }): Promise<void> {
   const now = deps.now ?? Date.now;
   const lease = leaseInput;
   const limits: WorkerExecutionLimits = lease.executionLimits;
   const started = now();
   const deadline = Math.min(Date.parse(lease.leaseExpiresAt), started + limits.maxWallSeconds * 1000);
-  const preflightSignal = AbortSignal.timeout(Math.max(1, deadline - now()));
+  const timeoutSignal = AbortSignal.timeout(Math.max(1, deadline - now()));
+  const preflightSignal = deps.signal ? AbortSignal.any([deps.signal, timeoutSignal]) : timeoutSignal;
   const policyDigest = createHash("sha256").update(JSON.stringify(deps.options.trustedChecks)).digest("hex");
   if (policyDigest !== lease.trustedCheckPolicyDigest || policyDigest !== deps.options.trustedCheckPolicyDigest) throw new WorkerProtocolError("Trusted check policy digest does not match the lease");
   if (Object.keys(deps.options.trustedCheckCommands).sort().join("\n") !== [...deps.options.trustedChecks].sort().join("\n")) throw new WorkerProtocolError("Trusted check command snapshot does not match the leased check IDs");
@@ -299,6 +300,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
   if (!Number.isSafeInteger(deps.options.maxToolCalls) || deps.options.maxToolCalls < 1) throw new WorkerProtocolError("Local tool call cap is not enabled");
   if (!deps.options.allowedProviders.includes("deepseek") || !limits.allowedProviders.includes("deepseek")) throw new WorkerProtocolError("DeepSeek provider is not enabled by both operator and lease policy");
   if (!deps.options.allowedModels.length || !deps.options.allowedModels.some(model => limits.allowedModels.includes(model))) throw new WorkerProtocolError("No exact model is enabled by both operator and lease policy");
+  if (deps.signal?.aborted) throw new WorkerProtocolError("Worker service was interrupted before provider preflight");
   const providerModels = await deps.provider.listModels(preflightSignal);
   const model = deps.options.allowedModels.find(x => limits.allowedModels.includes(x) && providerModels.includes(x));
   if (!model) throw new WorkerProtocolError("No configured exact model was returned by DeepSeek /models");
@@ -312,6 +314,9 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (now() >= expiresAt || now() >= deadline) throw new WorkerProtocolError("Pricing snapshot or lease expired before the next billable provider call");
   };
   const controller = new AbortController();
+  const abortFromParent = () => controller.abort(deps.signal?.reason);
+  if (deps.signal?.aborted) abortFromParent();
+  else deps.signal?.addEventListener("abort", abortFromParent, { once: true });
   const timer = setTimeout(() => controller.abort(), Math.max(1, deadline - now()));
   let workspace: WorkerWorkspace | undefined;
   const evidenceEntries: Array<{ name: string; key: string; sha256: string; reference: string }> = [];
@@ -451,6 +456,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     }
   } finally {
     clearTimeout(timer);
+    deps.signal?.removeEventListener("abort", abortFromParent);
     clearInterval(heartbeatTimer);
     await cancellation.stop();
     if (workspace) { const closing = workspace; workspace = undefined; await closing.close(); }

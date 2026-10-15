@@ -1,0 +1,6 @@
+RED (before implementation)
+Command: npm run build
+Expected type failures prove the target API and optional store seam are not implemented:
+- Governor is exported as MissionGovernor, not Governor (test fixture corrected after this red run).
+- ApprovedClaimTarget is not exported.
+- MissionStore.claim accepts at most six arguments; targeted seventh argument is absent.

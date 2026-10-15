@@ -1,0 +1,25 @@
+∩╣ú controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events (0.4019ms) # SKIP
+Γ£ö approved service reconciles first, claims the exact binding once, and executes once (1.4818ms)
+Γ£ö restart verification does not claim or execute already running or awaiting work (0.9591ms)
+Γ£ö interruption before reconciliation cannot reach claim (0.3409ms)
+Γ£ö actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.1565ms)
+Γ£ö settlement replay refreshes task status before any claim or execution (0.261ms)
+Γ£ö explicit review request integrates the awaiting candidate only after certificate preparation (0.2663ms)
+Γ£ö default and incomplete explicit startup stay disabled without requiring credentials (0.6643ms)
+Γ£ö manifest reader accepts exact private bounded manifest and rejects unknown or unsafe fields (15.329ms)
+Γ£ö pricing validation uses cumulative token caps and the same conservative cost and freshness gate (0.3489ms)
+Γ£ö actual worker entrypoint preserves safe disabled default and rejects partial config without reading secrets (443.0427ms)
+Γ£ö actual check-config validates all nonsecret policy files without opening secret files or connecting (461.4328ms)
+Γ£ö retained runtime settlement only replays the approved mission and slice (0.4141ms)
+Γ£ö certified handoff uploads only digest-matching final verifier evidence after candidate identity checks (3.476ms)
+Γ£ö certified handoff refuses artifact-store readback substitution and never promotes a Git ref (0.5537ms)
+Γ£ö certified handoff refuses a missing final certificate before admission import or artifact publication (0.2252ms)
+Γ£ö certified handoff refuses stale persisted candidate bindings before import (0.2031ms)
+Γä╣ tests 17
+Γä╣ suites 0
+Γä╣ pass 16
+Γä╣ fail 0
+Γä╣ cancelled 0
+Γä╣ skipped 1
+Γä╣ todo 0
+Γä╣ duration_ms 1123.8841

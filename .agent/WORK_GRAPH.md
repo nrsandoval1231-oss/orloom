@@ -1,3 +1,6 @@
+LATEST OVERRIDE: review 5538859140 supersedes acceptance of 2dc1876 for the verifier capacity race. Current READY packet: PR26_CAPACITY_PACKET.md. Atomic reservation before await, finally release and deadline recheck pass focused 28/28, build/typecheck/validate and independent source review. Full suite and publication-head external review remain pending. UI publication is HOLD; host preparation has separate private evidence. Statements below are historical acceptance.
+
+LATEST OVERRIDE — PR26 lifecycle correction (2026-10-15): external review 5538203597 supersedes prior acceptance of 9347c17. PR25 is now merged on main e7e5119865144c525132b6ab04fa8aa2c371e14c; PR26 targets main and remains unmerged. Lifecycle/expiry repair and adjacent inner dispatch/finalization/UNKNOWN fences pass final build/typecheck/validate, Linux 363 total/361 pass/zero failures/two existing skips, actual PostgreSQL lifecycle/restart and bounded independent source review. Exact-head external review remains OPEN. See docs/validation/2026-10-15-pr26-lifecycle.md. Earlier PASS statements below are historical and do not accept this candidate. Host preparation is paused; saved UI successor is held. No live provider/verifier/GitHub delivery proof, deployment or host mutation is claimed.
 # Orloom work graph
 
 Updated 2026-10-14. Canonical: [CANONICAL_HARNESS](../docs/architecture/CANONICAL_HARNESS.md). Product completion remains OPEN. Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. Worker PR #19 is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; see [worker validation](../docs/validation/2026-10-14-worker-composition.md).
@@ -39,3 +42,15 @@ Foundation progression: [acceptance checklist and next-step map](../docs/FOUNDAT
 | Approved composition successor (2026-10-15) | Active bounded source packet: protected admission startup, exact approved single Docker lane API, trusted cancellation settlement/replay. Final candidate validation/review pending; normal worker main disabled; no live provider/PR or deployment claim. See [ledger](../docs/validation/2026-10-15-approved-composition.md). |
 
 Final source gates for approved composition: build/typecheck/validate PASS; Linux 285/287 with zero failures and two existing skips; actual PostgreSQL two-pool proof PASS; independent bounded source review PASS. Operational gates remain open; exact commit/PR recorded at publication.
+
+## Explicit approved startup successor (2026-10-15)
+
+PR25 repair head `27b786b140a2f0f73141aa60175b939b8f6ba605` remains frozen for external re-review. The separate stacked branch adds normal explicit-config one-task startup, atomic targeted claim, scoped trusted restart reconciliation, shutdown propagation and certified integration/draft-delivery composition. Defaults stay disabled. Exact final gates and bounded acceptance are recorded in [startup ledger](../docs/validation/2026-10-15-explicit-approved-startup.md). Live provider/runsc/remote delivery, deployment, scheduling and learning gates remain OPEN. Do not merge or activate either PR without its separate authority.
+
+## PR26 restart repair (2026-10-15)
+
+PR25 repaired head `27b786b140a2f0f73141aa60175b939b8f6ba605` passed external re-review and remains unchanged. PR26 review of `a8644549b83826f2112bb8f5ad21279c5122aa23` found three reproduced restart defects missed by the earlier bounded review. [Repair ledger](../docs/validation/2026-10-15-pr26-restart-repair.md) supersedes startup acceptance: distinct validated normal absence, atomic no-runtime owner cancellation and exact-target verification eligibility. Real journal/store callback regressions, focused Linux and actual PostgreSQL passed; final full suite and repaired-head publication/re-review are tracked there. No live activation, merge, deployment or live-site changes.
+
+## PR26 expired cancellation follow-up
+
+External review 5537793590 accepted the prior three direct fixes but reproduced claim→expiry→owner cancellation leaving a no-runtime UNKNOWN slice unsettled. The one-predicate [follow-up](../docs/validation/2026-10-15-pr26-expired-cancellation.md) uses the same atomic settlement fence only for cancelling UNKNOWN, preserving all ordinary/bound UNKNOWN quarantine and spend. RED memory/SQL cases and passing controls are retained; focused Linux, actual PostgreSQL and narrow independent source review pass. No further product branch or runtime activation is authorized while review is pending.

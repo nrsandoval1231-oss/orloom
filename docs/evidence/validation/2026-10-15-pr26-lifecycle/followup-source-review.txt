@@ -1,0 +1,7 @@
+Follow-up independent read-only review: previous verifier-dispatch and final integration/delivery readback gaps corrected. Remaining narrow concern found before final freeze: pre-existing pending integration could retain pending after a stop during lookup/inspection/review. Mark UNKNOWN only for LifecycleStoppedError; preserve completed replay. No additional new-effect dispatch gap identified. No build/test performed.
+
+Reviewed SHA256:
+governor.ts 2e1b6cdcb19f0b82d642e9a122872d75b33daf73389968d3a898aa2e928ffbca
+delivery.ts 6e446b120fa0ee1cabf5c7629c05579758fb439f9bab8fc52a5bf4732e9898bf
+admitting-runner.ts c654827313a8ef14ef29ee4e9a0b59d2ad45cf68e5b5c505009c724f63d57159
+runner.ts 0ba352c0f4c635a5e5a01c03a7c7f54748be33fa6aea0545f7ef3e46af5bccc9
