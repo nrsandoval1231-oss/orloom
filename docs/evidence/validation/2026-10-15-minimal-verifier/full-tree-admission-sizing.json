@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-15T21:42:53.404Z",
+  "head": "6c242f030a0e5adf70d9132b3a51a81f2b2f4b9f",
+  "files": 1771,
+  "blobBytes": 17156078,
+  "inputCapBytes": 16777216,
+  "blobOnlyExcessBytes": 378862,
+  "manifestOverheadExcluded": true,
+  "scope": "read-only full-tree admission sizing; local 201-file check snapshot is not full Git admission",
+  "largest": [
+    {
+      "bytes": 430228,
+      "path": "docs/evidence/c3-runtime/retained-combined.tar.gz"
+    },
+    {
+      "bytes": 265746,
+      "path": "docs/validation/slice1b-owner-cancellation/slice1b.diff"
+    },
+    {
+      "bytes": 226089,
+      "path": "docs/evidence/c5-source-browser/browser/2026-10-13T22-49-02-392Z/desktop.png"
+    }
+  ]
+}

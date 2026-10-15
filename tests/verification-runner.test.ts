@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
 import { test } from "node:test";
@@ -70,18 +70,20 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v6");
+  assert.equal(suite.version, "orloom.node-repo-suite.v8");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
   assert.equal(suite.timeoutMs, 405_000);
   assert.equal(suite.maxConcurrent, 1);
-  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1");
+  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.memoryBytes, 2 * 1024 * 1024 * 1024);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
-  assert.equal(suite.digest, "a55910cf21d81f4810e403f4bfd47aa893c7ccdd5ed019a599a9f1e4937e4811");
+  assert.equal(suite.digest, "9d6d53f336b2719712ed6ba836b090198538ceb790c1f542b5930069353e1417");
   assert.notEqual(suite.digest, "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8", "suite deadline changes must invalidate the previous policy digest");
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
   assert.equal(NODE_REPO_SUITE_BINDING.resources.pids, 128);
+  assert.equal(NODE_REPO_SUITE_BINDING.tools.stageEnvironment.HOME, "/nonexistent");
+  assert.equal(NODE_REPO_SUITE_BINDING.tools.stageEnvironment.TMPDIR, "/work");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.workTmpfsBytes, 512 * 1024 * 1024);
   assert.deepEqual(NODE_REPO_SUITE_BINDING.timeouts, { suiteExecutionMs: 360_000, dockerAttachMs: 390_000, hostLauncherMs: 405_000, attemptLifetimeMs: 420_000 });
   assert.ok(NODE_REPO_SUITE_BINDING.timeouts.suiteExecutionMs < NODE_REPO_SUITE_BINDING.timeouts.dockerAttachMs);
@@ -115,6 +117,7 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   for (const bound of ["echo 128", "echo 64", "echo 256m", "echo 1", "echo 0.5", "echo 512m", "--runtime=runsc", "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL", "--security-opt=no-new-privileges:true", "size=16m"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
   assert.match(isolation, /echo 390s \|\| echo 60s/);
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
+  assert.match(suiteRunner, /HOME: '\/nonexistent', TMPDIR: '\/work'/);
   assert.match(suiteRunner, /const limit = 360_000/);
   assert.match(suiteRunner, /runSerialTestFiles\(tests/);
   assert.match(suiteRunner, /copy-git-askpass\.js/);
@@ -124,9 +127,43 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.match(trustedCopy, /includes\(13\)/);
   assert.match(trustedCopy, /chmod\(target, 0o755\)/);
   const dockerfile = await readFile("infra/verifier-isolation/Dockerfile", "utf8");
-  assert(dockerfile.includes("/root/.nvm/versions/node/v24.15.0/lib/node_modules/npm"));
+  assert(dockerfile.includes("/usr/local/lib/node_modules/npm"));
   assert.match(dockerfile, /npm-cli\.js ci --include=dev --ignore-scripts/);
   assert.match(dockerfile, /copy-git-askpass\.js/);
+  assert.match(dockerfile, /^FROM node@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d$/m);
+  assert(dockerfile.includes("/usr/local/lib/node_modules/npm"));
+  assert.match(dockerfile, /emit-result\.js/);
+});
+
+test("trusted result marker survives a slow pipe reader beyond OS pipe capacity", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const [syntaxRunner, suiteRunner] = await Promise.all([
+    readFile("infra/verifier-isolation/run-check.js", "utf8"),
+    readFile("infra/verifier-isolation/run-repo-suite.js", "utf8"),
+  ]);
+  assert.match(syntaxRunner, /await writeResultMarker\(result\)/);
+  assert.match(suiteRunner, /await writeResultMarker\(/);
+  const writer = pathToFileURL(path.resolve("infra/verifier-isolation/emit-result.js")).href;
+  const childSource = `import { writeResultMarker } from ${JSON.stringify(writer)}; const stdout=Buffer.alloc(65536,120).toString('base64'); const stderr=Buffer.alloc(65536,121).toString('base64'); await writeResultMarker({exitCode:0,truncated:false,stdoutBytes:65536,stderrBytes:65536,stdout,stderr}); process.exit(0);`;
+  const child = spawn(process.execPath, ["--input-type=module", "-e", childSource], { stdio: ["ignore", "pipe", "pipe"] });
+  const chunks: Buffer[] = [], errors: Buffer[] = [];
+  child.stdout.on("data", (chunk: Buffer) => { chunks.push(Buffer.from(chunk)); child.stdout.pause(); setTimeout(() => child.stdout.resume(), 10); });
+  child.stderr.on("data", (chunk: Buffer) => errors.push(Buffer.from(chunk)));
+  const status = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+    const timer = setTimeout(() => { child.kill(); reject(new Error("result marker pipe did not close")); }, 15_000);
+    child.once("error", error => { clearTimeout(timer); reject(error); });
+    child.once("close", (code, signal) => { clearTimeout(timer); resolve({ code, signal }); });
+  });
+  assert.deepEqual(status, { code: 0, signal: null }, Buffer.concat(errors).toString());
+  const output = Buffer.concat(chunks).toString("utf8");
+  assert.match(output, /^ORLOOM-RESULT:[A-Za-z0-9+/=]+\n$/);
+  const result = JSON.parse(Buffer.from(output.slice("ORLOOM-RESULT:".length).trim(), "base64").toString("utf8"));
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.truncated, false);
+  assert.equal(result.stdoutBytes, 65536);
+  assert.equal(result.stderrBytes, 65536);
+  assert.equal(result.stdout, Buffer.alloc(65536, 120).toString("base64"));
+  assert.equal(result.stderr, Buffer.alloc(65536, 121).toString("base64"));
 });
 
 test("repository suite runs every discovered test file serially and binds the new policy digest", async () => {

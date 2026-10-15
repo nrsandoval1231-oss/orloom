@@ -1,0 +1,74 @@
+[
+  {
+    "path": "final-review.md",
+    "sha256": "00f14b534ef434bb129d5cbc14fe2f980fe618935d48823ef625dc72adf5ea10"
+  },
+  {
+    "path": "full-tree-admission-sizing.json",
+    "sha256": "480b747b60d609c51de28f2b1629b174cc0a82d42a9ebd1931dcb7b1da5d717b"
+  },
+  {
+    "path": "image-build.txt",
+    "sha256": "fd0b5903d40434dac623f6ba9f44da56f9a785ee076c900a99922efe63bbd7cb"
+  },
+  {
+    "path": "image-identity.txt",
+    "sha256": "1e5c376caf4df73f52e6ce9bb337e776efc5dea39e6f248f691eac2ad97b1dac"
+  },
+  {
+    "path": "input-manifest.json",
+    "sha256": "d82ee73941cd4a66d99dd41aace557402962bdcae7a40ff044058054bccac596"
+  },
+  {
+    "path": "input-receipt.json",
+    "sha256": "b1556f11620c8172b22297ac12e13df34a10e85949f0bbb765934ffd97f3dc67"
+  },
+  {
+    "path": "red-home-result.json",
+    "sha256": "71409dc4e0d985ceb138cdbb86110950c9b2eb083b5b07aed6c8ab705df76d46"
+  },
+  {
+    "path": "red-marker-stdout.txt",
+    "sha256": "660a7fa746d62ea378ac4e5a62dac7463740c051b047ccbd55a367877f04f3f9"
+  },
+  {
+    "path": "red-noexec-result.json",
+    "sha256": "4a044ab4207313336356edad1907c0f4f1a0f256d81786359427b02b00f4ceab"
+  },
+  {
+    "path": "red-readonly-copy-result.json",
+    "sha256": "248922749b16d371954ea375518a2b69f9058bb25e424b224a7d9d010789202c"
+  },
+  {
+    "path": "source-manifest.json",
+    "sha256": "38fd1be1bb4789044d6f00c7b3d6286e5b8dc49ea249f91f9ffb564336db02fc"
+  },
+  {
+    "path": "source-review-initial.md",
+    "sha256": "584a00585d564a8d6235398031c93fe4cb41547fa738828f10f09d7b828a4340"
+  },
+  {
+    "path": "source-review-r1.md",
+    "sha256": "06e19b79d13949afbfe643e222f8bf3fd53e91605eb66b323b0ea58a283fe1b3"
+  },
+  {
+    "path": "source-review-r2.md",
+    "sha256": "644a8233d73e435bf13305979ceff17575a6af2734356e93d16d44b6c69f5834"
+  },
+  {
+    "path": "suite-result.json",
+    "sha256": "dc8976a6b4b8643aa1532294153b18a9866867d5affba8001d2a291e046af931"
+  },
+  {
+    "path": "suite-stdout.txt",
+    "sha256": "a652b3e48f9cc98f64fe00b02d178b54df71e66336d9ba6a6837964b69f3b1f7"
+  },
+  {
+    "path": "suite-summary.json",
+    "sha256": "6a904499ece4f676002ce48cbd132146da5da106fc7996d27693f32ae77e5ae0"
+  },
+  {
+    "path": "syntax-result.json",
+    "sha256": "6efeaad1e2ebc259cc5fe5908c3e18a19e37e45690d9f4b47291e4fd07bad0d9"
+  }
+]

@@ -53,9 +53,9 @@ test("actual worker entrypoint preserves safe disabled default and rejects parti
 });
 
 test("actual check-config validates all nonsecret policy files without opening secret files or connecting", async () => {
-  // Private-policy readers reject DrvFS chmod semantics. Use a real home-filesystem
-  // directory on Linux; on Windows the repository parent is already private enough.
-  const fixtureParent = process.platform === "linux" ? os.homedir() : path.dirname(process.cwd());
+  // Private-policy readers reject DrvFS chmod semantics. Use the trusted writable
+  // temp mount on Linux; it is outside /work/source and supports real POSIX modes.
+  const fixtureParent = process.platform === "linux" ? (process.env.TMPDIR ?? path.dirname(process.cwd())) : path.dirname(process.cwd());
   const root = await mkdtemp(path.join(fixtureParent, "orloom-preflight-proof-"));
   try {
     const runtime = path.join(root, "runtime"); await (await import("node:fs/promises")).mkdir(runtime); await chmod(runtime, 0o700);
@@ -75,7 +75,7 @@ test("actual check-config validates all nonsecret policy files without opening s
       ORLOOM_WORKER_SANDBOX_IMAGE_REF: manifest.workerImageRef, ORLOOM_WORKER_CHECK_COMMANDS_FILE: commands, ORLOOM_WORKER_PRICING_SNAPSHOT_FILE: pricing,
       ORLOOM_WORKER_RUNTIME_JOURNAL_ROOT: runtime, ORLOOM_WORKER_SERVICE_LOCK_FILE: lock, ORLOOM_VERIFIER_IMAGE: manifest.verifierImageRef, ORLOOM_VERIFIER_ID: "verifier-1",
       ORLOOM_VERIFIER_ARTIFACT_ROOT: path.join(root, "artifacts"), ORLOOM_CANDIDATE_ADMISSION_ROOT: path.join(root, "admission"), ORLOOM_VERIFIER_REPOSITORIES: JSON.stringify(repositories),
-      ORLOOM_VERIFICATION_POLICY_VERSION: "orloom.node-repo-suite.v6", ORLOOM_VERIFIER_CHECK_ID: "node-repo-suite-v1", ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["node-repo-suite-v1"]),
+      ORLOOM_VERIFICATION_POLICY_VERSION: "orloom.node-repo-suite.v8", ORLOOM_VERIFIER_CHECK_ID: "node-repo-suite-v1", ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["node-repo-suite-v1"]),
       ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON: JSON.stringify(["deepseek"]), ORLOOM_WORKER_ALLOWED_MODELS_JSON: JSON.stringify(["deepseek-chat"]), ORLOOM_WORKER_MAX_PROVIDER_CALLS: "4",
       ORLOOM_WORKER_MAX_INPUT_TOKENS: "10000", ORLOOM_WORKER_MAX_OUTPUT_TOKENS: "10000", ORLOOM_WORKER_MAX_WALL_SECONDS: "60", ORLOOM_WORKER_MAX_TOOL_CALLS: "8",
       ORLOOM_MAX_LANES: "1", ORLOOM_CAPACITY_SLOTS: "1", ORLOOM_CAPACITY_EVIDENCE_VERIFIED: "true", ORLOOM_CAPACITY_EVIDENCE_SHA256: sha("f"),

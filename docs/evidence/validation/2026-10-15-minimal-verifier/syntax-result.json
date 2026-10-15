@@ -1,0 +1,22 @@
+{
+  "policy": "node-validate-syntax",
+  "variant": "",
+  "image": "sha256:0f068249a489b8a74a4ff3ad513b02ae5319a3531256f1b0c132dc7ffb6882cf",
+  "container": "069a90eee8af83a3a9466a197bedc3055630e35842b322a971204f3f90f1fc0a",
+  "runtime": "runc",
+  "purpose": "local image compatibility only; not runsc or trusted certification",
+  "exitCode": 0,
+  "timedOut": false,
+  "elapsedMs": 555,
+  "stdoutBytes": 135,
+  "stderrBytes": 0,
+  "result": {
+    "exitCode": 0,
+    "truncated": false,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "parseError": null
+}
