@@ -1,0 +1,5 @@
+node-v24.22.0-linux-x64.tar.xz: OK
+waiting for server to start.... done
+server started
+v24.22.0
+Validation root: /home/nrsan/.local/state/orloom-validation/runtime-FjPEqq

@@ -1,3 +1,5 @@
+CURRENT OVERRIDE: owner delegates fresh combined validation/publication of UI427535e atop PR26 2dc187651b2616f8274eba31b07862ffaffafbc6 on 2026-10-15. PR26 reviewer owns its merge; external review pending. Prior base acceptance statements below are historical. No UI product changes are planned; preserve canonical design, source authority and default-off execution. New combined ledger: docs/validation/2026-10-15-owner-readiness-combined.md.
+
 # Owner readiness and recovery
 
 READY bounded source successor, authorized 2026-10-15 by parent delegation. Base PR26 `9347c1701c8f18ea7e5b037695b88f584a747473` independently accepted; PR25 also accepted. Both remain frozen. Branch `feat/owner-readiness-recovery` stacks on PR26.

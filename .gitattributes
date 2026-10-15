@@ -37,3 +37,6 @@ docs/evidence/validation/2026-10-15-pr26-verifier-capacity/** -text whitespace=-
 
 # Preserve owner-readiness validation transcripts exactly.
 docs/evidence/validation/2026-10-15-owner-readiness/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve combined owner-readiness revalidation bytes.
+docs/evidence/validation/2026-10-15-owner-readiness-combined/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
