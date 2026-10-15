@@ -1,6 +1,6 @@
 import type { Mission, MissionEvent, MissionPlan, MissionSlice } from "../../../packages/contracts/src/mission.js";
 
-export interface LoomEventRow { cursor: number; time: string; type: string; label: string; sliceId: string | null; checkId: string | null; references: Array<{ kind: "candidate" | "certificate" | "integration" | "recovery" | "lesson" | "decision"; id: string; digest?: string }>; }
+export interface LoomEventRow { cursor: number; time: string; type: string; label: string; sliceId: string | null; checkId: string | null; references: Array<{ kind: "candidate" | "certificate" | "integration" | "delivery" | "recovery" | "lesson" | "decision"; id: string; digest?: string }>; }
 export interface LoomProjection {
   mission: { id: string; repository: string; objective: string; status: string } | null;
   slices: Array<{ id: string; objective: string; owner: string; dependencies: string[]; status: string; checks: string[]; candidateSha: string | null; leaseEpoch: number }>;
@@ -21,7 +21,11 @@ const labels: Record<string, string> = {
   "check.recovery_pass": "Recovery check passed", "check.recovery_fail": "Recovery check failed", "check.recovery_unknown": "Recovery check unknown",
   "slice.progress": "Governor decision recorded", "slice.candidate": "Candidate recorded", "slice.failed": "Slice failed",
   "scheduling.decision": "Scheduling decision recorded", "sol.replan_requested": "Replan requested",
-  "lesson.candidate": "Lesson candidate recorded", "lesson.promoted": "Lesson promoted", "lesson.withdrawn": "Lesson withdrawn"
+  "lesson.candidate": "Lesson candidate recorded", "lesson.promoted": "Lesson promoted", "lesson.withdrawn": "Lesson withdrawn",
+  "mission.cancellation_requested": "Owner cancellation requested", "slice.cancellation_settled_before_runtime": "Cancelled before runtime start",
+  "slice.cancellation_settled": "Cancellation settled after runtime absence was confirmed",
+  "delivery.pending": "Delivery intent recorded", "delivery.check_observed": "Delivery check confirmed",
+  "delivery.pull_request_observed": "Pull request delivery confirmed", "delivery.unknown": "Delivery outcome unknown"
 };
 const record = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 const str = (value: unknown): string | null => typeof value === "string" && value.length > 0 ? value : null;
@@ -40,11 +44,20 @@ export function projectLoom(mission: Mission | null, plan: MissionPlan | null, s
     lastCursor = event.cursor;
     const d = record(event.data), sid = str(d.sliceId), refs: LoomEventRow["references"] = [];
     const candidate = str(d.candidateSha); if (candidate) refs.push({ kind: "candidate", id: candidate });
+    if (event.type.startsWith("delivery.")) {
+      const pr = d.pullRequestNumber;
+      if (typeof pr === "number" && Number.isSafeInteger(pr) && pr > 0) refs.push({ kind: "delivery", id: `pull-request:${pr}` });
+      const checkRun = str(d.checkRunId); if (checkRun) refs.push({ kind: "delivery", id: checkRun });
+      const integrated = str(d.integratedSha); if (integrated) refs.push({ kind: "integration", id: integrated });
+    }
+    const controllerRunId = str(d.controllerRunId);
+    if (event.type.startsWith("slice.cancellation_settled") && controllerRunId) refs.push({ kind: "recovery", id: controllerRunId });
     const attempt = str(d.attemptId); if (attempt && event.type.startsWith("check.recovery_")) refs.push({ kind:"recovery", id:attempt });
     const lesson = str(d.lessonId); if (lesson && event.type.startsWith("lesson.")) refs.push({ kind:"lesson", id:lesson });
     const decision = str(d.decisionId); if (decision && event.type === "scheduling.decision") refs.push({ kind:"decision", id:decision });
     const strategy = str(d.strategyId); if (strategy && (event.type.startsWith("check.recovery_") || event.type === "slice.progress" || event.type.startsWith("lesson."))) refs.push({ kind:"recovery", id:strategy });
     const check = str(d.checkId) ?? str(d.targetCheckId); if (check && (event.type.startsWith("check.") || event.type === "slice.progress")) refs.push({ kind:"recovery", id:check });
+    const eventId = str(d.eventId); if (eventId && event.type === "slice.progress") refs.push({ kind: "recovery", id: eventId });
     const challengeDigest = str(d.challengeDigest); if (challengeDigest && event.type.startsWith("lesson.")) refs.push({ kind:"lesson", id:challengeDigest, digest:challengeDigest });
     if (event.type === "check.certified") {
       const id = str(d.certificateId), check = str(d.checkId), digest = str(d.certificateDigest); if (sid && id && check) { const set = certs.get(sid) ?? new Map<string,{id:string;digest:string|null;candidate:string|null;epoch:number|null;cursor:number}>(); set.set(check,{id,digest,candidate,epoch:Number.isSafeInteger(d.leaseEpoch)?Number(d.leaseEpoch):null,cursor:event.cursor}); certs.set(sid,set); refs.push({ kind: "certificate", id, ...(digest ? { digest } : {}) }); }

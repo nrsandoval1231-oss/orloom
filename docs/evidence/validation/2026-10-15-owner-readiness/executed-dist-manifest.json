@@ -1,0 +1,466 @@
+[
+  {
+    "path": "dist/apps/control-plane/src/approved-worker-lane.js",
+    "sha256": "48b49d1f74b45e511185e5b7a3aea94f58f3554a171691b8bdbd16ff3ed501ef"
+  },
+  {
+    "path": "dist/apps/control-plane/src/controller-authority.js",
+    "sha256": "c4cc47fc786d033ef38de5968331e278d73ded42dfd35022b662fe2ebf8af8b9"
+  },
+  {
+    "path": "dist/apps/control-plane/src/loom-page.js",
+    "sha256": "3c09c452d736d068e27882093cf75b4d0cade12507770f3231882c215c595eb0"
+  },
+  {
+    "path": "dist/apps/control-plane/src/loom-projection.js",
+    "sha256": "71bb5c4e4ab312a5d2ef8f0c2da0a7d7a60316b9c2cbe29136071ce3f41823af"
+  },
+  {
+    "path": "dist/apps/control-plane/src/main.js",
+    "sha256": "74f0d2446d3843ba1047f1a834e58f462a6c63cbb9c994026f632765f4c15b36"
+  },
+  {
+    "path": "dist/apps/control-plane/src/owner-readiness.js",
+    "sha256": "7219036c4d92f44133f75a33bfbf607c9d15e4246c5275fd4b458f221b9b8492"
+  },
+  {
+    "path": "dist/apps/control-plane/src/server.js",
+    "sha256": "0e17a16a28d5820b2a0b063f8931171ee83708dd0217eef667dc024de59bce71"
+  },
+  {
+    "path": "dist/apps/control-plane/src/trusted-runtime-journal-bridge.js",
+    "sha256": "866e606eba038031625308c8133916d0bf9548b956c806dbe677db23edd6faa1"
+  },
+  {
+    "path": "dist/apps/verifier/src/index.js",
+    "sha256": "ef3ab0d3761955821ef29de9c66ccab1ae78964fdceba67f6c5004e52077cb60"
+  },
+  {
+    "path": "dist/apps/worker/src/approved-service.js",
+    "sha256": "9a703332012af0138343fb972e40fdcc5a218cea90a8682ae709487faed37067"
+  },
+  {
+    "path": "dist/apps/worker/src/approved-startup.js",
+    "sha256": "d7a050cf6bd38aee3abe80f4761fc65307f8ea5e537e70e42c7278e924f1864a"
+  },
+  {
+    "path": "dist/apps/worker/src/broker-main.js",
+    "sha256": "f8fc93c5037775e8eb80ee3cd5b03c112693cdba4c563d3e48d61ea3cfe4a2fd"
+  },
+  {
+    "path": "dist/apps/worker/src/certified-handoff.js",
+    "sha256": "0e4b3a055d0630213ae23f9040ec8320f47f3cbedb7d42a11846d1cf15df9eb2"
+  },
+  {
+    "path": "dist/apps/worker/src/docker-runtime.js",
+    "sha256": "6dbdc05ca79be271cb73313df457b4deaeb8e09c292ddb01eea0c704f53b34da"
+  },
+  {
+    "path": "dist/apps/worker/src/main.js",
+    "sha256": "1dcbf328c8af391894f0c41f9c1f79b2f5189a6564e90c93a7d54d2d00209b44"
+  },
+  {
+    "path": "dist/apps/worker/src/poll-pool.js",
+    "sha256": "d1c99129f40e49a0e35aac8dcb3fe5d2baf38e4987b404c60c2dc43d741b4d43"
+  },
+  {
+    "path": "dist/apps/worker/src/runtime-journal.js",
+    "sha256": "4cc87b48cbb509a3e3dc66e5f92e8c84ebb55cc576c05c7bfda7b688f8ccae1a"
+  },
+  {
+    "path": "dist/apps/worker/src/sandbox-entry.js",
+    "sha256": "6d12437a6907fdbfbe61dc18a8cf1adc3ffdc5d36948f2f5f94b42371d873759"
+  },
+  {
+    "path": "dist/apps/worker/src/service-lock.js",
+    "sha256": "a68b1256214c4f51c18e1b6e932c153a39d2c60e63d06813b29757a31cb814d4"
+  },
+  {
+    "path": "dist/packages/adapters/src/candidate-artifacts.js",
+    "sha256": "455c18b7ef0686a78d0c9b98664bbf44603b19c2c9f695a0d63d146a3c4f398d"
+  },
+  {
+    "path": "dist/packages/adapters/src/codex-sdk.js",
+    "sha256": "c21859c2389b4d4e05969c494563f5f2bddcbbd9a3ab236685851072e81b9a8a"
+  },
+  {
+    "path": "dist/packages/adapters/src/providers.js",
+    "sha256": "5725a2c67a2f68be52a4bc6760ae2c5321b17ba9e3bdaabf77f8d9963dc1741e"
+  },
+  {
+    "path": "dist/packages/agents/src/github-checkout.js",
+    "sha256": "ca8d258a9d8388adcef59f5db8838024b9b0bb3437e3fcfaf1638a8b47886361"
+  },
+  {
+    "path": "dist/packages/agents/src/recovery-control.js",
+    "sha256": "20b203843fb3d7924bcb549c3853af2f183f650baa5c88f2022a539ef71d4e09"
+  },
+  {
+    "path": "dist/packages/agents/src/worker.js",
+    "sha256": "a04274ec4f06a6ae5d87130ceec10b3f17a1e6f970dc009cee0828a20074ed03"
+  },
+  {
+    "path": "dist/packages/config/src/config.js",
+    "sha256": "27a595152c127c5e4657e4bed4c5393fd7422a542b035cf1854e94257069498f"
+  },
+  {
+    "path": "dist/packages/contracts/src/cancellation-settlement.js",
+    "sha256": "4d74d04d3624745c789bd2b237f5ba86bb1809e39559d81cdf6e38aa31be7c28"
+  },
+  {
+    "path": "dist/packages/contracts/src/job.js",
+    "sha256": "85af7cbbb641d02164da7c3583a6bc541b2a0a2097f463a98ad1570ad424fdbf"
+  },
+  {
+    "path": "dist/packages/contracts/src/memory-mission-store.js",
+    "sha256": "717656ddbc2e4fb77cf99b331366d7ae867f9acf0c01abf4e1293ee8f37b3c0c"
+  },
+  {
+    "path": "dist/packages/contracts/src/memory-store.js",
+    "sha256": "4c586c253c6eafc27d5860285001d89be1930eb7fdeeb42cf01359dc07dc72fc"
+  },
+  {
+    "path": "dist/packages/contracts/src/mission.js",
+    "sha256": "418343ef997fbc234afcafd095d98d3517578c7a70d3e5f46c46965449b5cc8d"
+  },
+  {
+    "path": "dist/packages/contracts/src/postgres-store.js",
+    "sha256": "7bd50e5e2e0aa64579ae935d3800c130d4479bfe77d7c698e84b68857a1d8b5e"
+  },
+  {
+    "path": "dist/packages/contracts/src/scheduling.js",
+    "sha256": "5ccb0927e3f30e8046135bbd8d7329857aa65860c4e4f400e76f5af601be2242"
+  },
+  {
+    "path": "dist/packages/contracts/src/sql-mission-store.js",
+    "sha256": "88980827fcd0048ba528b91634a674a836adc24290675efbc474c14fdc2adf2d"
+  },
+  {
+    "path": "dist/packages/contracts/src/sql-store.js",
+    "sha256": "7704ba0d19540e5d56afe64fdc9434fbc565883e6182ca3f3122a9af3d7c0f98"
+  },
+  {
+    "path": "dist/packages/contracts/src/verification.js",
+    "sha256": "b4f882d041102f99065c96ff6a9051212afc01738639b4e33ec66eb02d3d0297"
+  },
+  {
+    "path": "dist/packages/contracts/src/worker-protocol.js",
+    "sha256": "bebf28ab8ba152083edc1850126920e52486d0fda73a8a42c7e8a19963abdcd8"
+  },
+  {
+    "path": "dist/packages/governor/src/governor.js",
+    "sha256": "8233efc65747985d2791c28b7f167226a427fa552eebe30b543538a9f32ae519"
+  },
+  {
+    "path": "dist/packages/governor/src/lease-reconciler.js",
+    "sha256": "dca861b477e754d88063fea47eba1636c9a0de8ce1bfcaa451b41c8ad53fe809"
+  },
+  {
+    "path": "dist/packages/integration/src/delivery.js",
+    "sha256": "846746e52eb0c44bd0e010c8d5982fce67f3dd248edb844b181de574aaa095f1"
+  },
+  {
+    "path": "dist/packages/integration/src/local.js",
+    "sha256": "b15f573eb4ae2d438d9239d81b8be2504ae3766b74169d621b22a28db1779d8f"
+  },
+  {
+    "path": "dist/packages/judgment/src/canonical.js",
+    "sha256": "174d21a0ac3fa18800c1ddd8b53fcc065bd1b2262390263113ad2110980e650b"
+  },
+  {
+    "path": "dist/packages/judgment/src/jev-adapter.js",
+    "sha256": "3d8fa9ea31a55e0aa29d95d9869d3b036c906c1e09a34e456ffc7022b7a4be7c"
+  },
+  {
+    "path": "dist/packages/judgment/src/jev-client.js",
+    "sha256": "d11c9601bf17db4e9dc7fc8ee47866480ed81c9b49a53f1f9a6d8d659aa72ee1"
+  },
+  {
+    "path": "dist/packages/judgment/src/types.js",
+    "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+  },
+  {
+    "path": "dist/packages/learning/src/activation.js",
+    "sha256": "50176d2c3504a38f47fdeccfb4cf8b1df0ea2cc2af3e6e9b80fb1cba5ce301b0"
+  },
+  {
+    "path": "dist/packages/learning/src/challenger.js",
+    "sha256": "66fbfbe975b6d3a440f9551a769a484e2b8cbe4a5cad206ff071a54f28648e5a"
+  },
+  {
+    "path": "dist/packages/learning/src/lesson-policy.js",
+    "sha256": "5bef2a1e7251d982a288b5f319fd735470d30a14d001acbfa033c8d96c38e281"
+  },
+  {
+    "path": "dist/packages/stuck-resolver/src/recovery.js",
+    "sha256": "ea3efd21485b9f0c31463cc704f24139b77d282895df33b173d02626b0f5211a"
+  },
+  {
+    "path": "dist/packages/verification/src/admitting-runner.js",
+    "sha256": "ff23512d9c0029f2a5e6a71457eb064f06802dd5d1d26eadc25f5871b11c6380"
+  },
+  {
+    "path": "dist/packages/verification/src/artifact-store.js",
+    "sha256": "5000afa0ec6038be3a25f21fdc474854671ab6b818b112c65502bd9f923c772b"
+  },
+  {
+    "path": "dist/packages/verification/src/candidate-admission.js",
+    "sha256": "fe52ad7999884a2d4c45b4071072976d419a6d2b6e714b2b262da7cd4f200e76"
+  },
+  {
+    "path": "dist/packages/verification/src/index.js",
+    "sha256": "661a1c470d05e69eb1784516ae777cdf44d012e8833322f3312edb6f7f7aa915"
+  },
+  {
+    "path": "dist/packages/verification/src/policy.js",
+    "sha256": "5b630c70225e0321f510b964b724c72e7cdc9732af7a5af18fd482de647e7b69"
+  },
+  {
+    "path": "dist/packages/verification/src/repository.js",
+    "sha256": "6c03a65e55601aacb6f6c43297699911c055281808f93a66a4295ce74d250f1a"
+  },
+  {
+    "path": "dist/packages/verification/src/runner.js",
+    "sha256": "cba7ab4dc7461d458873d05af8f0af027a1d910f7a636e07e642d05858cb355c"
+  },
+  {
+    "path": "dist/packages/verification/src/runsc-launcher.js",
+    "sha256": "1c087a812579049d3697f42bc6fa555bd7cadb6d71198d6561af4bce7d65256f"
+  },
+  {
+    "path": "dist/tests/active-worker-cancellation.test.js",
+    "sha256": "b2ff43d9c5e61d01380bcb40115e44eb993e9690c394e741182699cdbe4d6fb5"
+  },
+  {
+    "path": "dist/tests/approved-target-claim.test.js",
+    "sha256": "9ca0f4535ad815b4e2312970206302df118817629a8e294095b0ff4a4de0d2ea"
+  },
+  {
+    "path": "dist/tests/approved-worker-integration.test.js",
+    "sha256": "020594dc365db1f386c6e0f14fa5446d1daecf795beb4231f2cfd8a2071dac94"
+  },
+  {
+    "path": "dist/tests/approved-worker-lane.test.js",
+    "sha256": "4af18f424c92e7991b6b6be3c4d6237b777e338f13b4cb13bbf7d4314643da20"
+  },
+  {
+    "path": "dist/tests/approved-worker-runtime-restart.test.js",
+    "sha256": "124af90f809d39e09f87f7b70d1bde53c538130f30270cb2432f102d75e0934e"
+  },
+  {
+    "path": "dist/tests/approved-worker-service.test.js",
+    "sha256": "f8ee54a7497ebe50074aa40b60169af731e6a824abc43b5468bfc3d337f0cc79"
+  },
+  {
+    "path": "dist/tests/approved-worker-startup.test.js",
+    "sha256": "ff91fb75b0fbc5f9bab924b23618a0f9694887712548926b24da5cfb1b8a4615"
+  },
+  {
+    "path": "dist/tests/cancellation-settlement.test.js",
+    "sha256": "bee5f65b6b7e686eff2c22d915ee8f54cd3886d8104e7fcd94218d5ec89c610a"
+  },
+  {
+    "path": "dist/tests/candidate-admission.test.js",
+    "sha256": "a6f2113868153438fc38fd4150dfad9c7ea67d750bd1821587a9970d42c41bdc"
+  },
+  {
+    "path": "dist/tests/candidate-artifact-reader.test.js",
+    "sha256": "9f6427217b23974159bc90897c7c4616c33f52ccd190e0464d281aa1b11ad69f"
+  },
+  {
+    "path": "dist/tests/canonical-json.test.js",
+    "sha256": "2deabbcf66b9475f783b4c8ed8fc8f65dd35089057a24457e6ae0bf4e4f51930"
+  },
+  {
+    "path": "dist/tests/certified-handoff.test.js",
+    "sha256": "4ebc02f2ff6b31432b2d051f4aca3bb245181aa69adcae39d42667616adce9b6"
+  },
+  {
+    "path": "dist/tests/config-adapters.test.js",
+    "sha256": "eb1b3c54f0833b807a2a83fb56fcfeb3da7ea41ba2a09438bb7b8e74fd8e608a"
+  },
+  {
+    "path": "dist/tests/controller-authority.test.js",
+    "sha256": "677516e15ecee5b717f1885d51f22d55c5ee6a214d87a5a9f7b99b1337571616"
+  },
+  {
+    "path": "dist/tests/delivery-adapter.test.js",
+    "sha256": "5f8b1f47c6a47f8cfa992c9b0f731af66ae73a6261c98d83e15645425e0e21bd"
+  },
+  {
+    "path": "dist/tests/delivery-boundary.test.js",
+    "sha256": "980cc738639cf873e29c0209da9e85a1f932632abd1e30b05f39026c5b9c2ad1"
+  },
+  {
+    "path": "dist/tests/delivery-c4-flow.test.js",
+    "sha256": "10d1bc6704184693bff56d05011a62c04af46cc67d8e4ed27b9f3379d7f807b6"
+  },
+  {
+    "path": "dist/tests/delivery-effects.test.js",
+    "sha256": "ddd94c187da8f44212b6a280e3230e9798fb6b7c695e542274457814b7d7ce01"
+  },
+  {
+    "path": "dist/tests/delivery-evidence.test.js",
+    "sha256": "a6f9ea92bc951e395d82bb5b95a296b747ab31b3dea9d969963e1a7fc4aa2d45"
+  },
+  {
+    "path": "dist/tests/delivery-http.test.js",
+    "sha256": "339de7449f2f08994f2a0d89cd6611222a5775ce14a9edacc8374f46dd4fd734"
+  },
+  {
+    "path": "dist/tests/delivery-upload-transport.test.js",
+    "sha256": "d85f62ab9bd182069f9f99aa2182009532d501422a0a89e0098c710a93c2a85d"
+  },
+  {
+    "path": "dist/tests/docker-packaging.test.js",
+    "sha256": "78aec022b9965aa8dfa6b910768d3257ad5448a1943e65bc4cafe317b986f740"
+  },
+  {
+    "path": "dist/tests/github-checkout-token.test.js",
+    "sha256": "f14161bec89d4b1a5331aa5ef56b72b5d346f25cf189c508cf8b4fce6ec7778b"
+  },
+  {
+    "path": "dist/tests/http.test.js",
+    "sha256": "09a09b3975c2c4fe42e4bc2780308040c1d72e4ce6c77e099bc31d7e261277c3"
+  },
+  {
+    "path": "dist/tests/integration-replay-race.test.js",
+    "sha256": "ff0845ad7fe3c30dcc4cd914d3b7c8b342a51218c782c63e028bae69a474814a"
+  },
+  {
+    "path": "dist/tests/jev-adapter.test.js",
+    "sha256": "13bdc8ba35ecc1ab08d48dcbeb64ccc7dda82a40003f5708a2105c6cfc0c702f"
+  },
+  {
+    "path": "dist/tests/jev-client.test.js",
+    "sha256": "b3a99566801c95bb9ab8210a0ad29212e7d82cac69495cb49d5c5a76e942ae0f"
+  },
+  {
+    "path": "dist/tests/jobs.test.js",
+    "sha256": "5d73aed5bca3272f8f0c592e0555b6dee40d7edd28092af86830fff243f778ea"
+  },
+  {
+    "path": "dist/tests/learning-activation.test.js",
+    "sha256": "95b8a1cfc549969aa7bbedc6c4817e8af38621a8b40fa477d91899b6b7ac3cf6"
+  },
+  {
+    "path": "dist/tests/local-integration.test.js",
+    "sha256": "a1e3be77b36711c172fcc29def0a93b4cc6d54619da9b6a949f0955b00ee9165"
+  },
+  {
+    "path": "dist/tests/local-template-startup.test.js",
+    "sha256": "51ef2b454b3ff99126e140ff4d19e6ec36183392ae406aefb62750cb8e1b5347"
+  },
+  {
+    "path": "dist/tests/loom-http.test.js",
+    "sha256": "71f69dbf6ea4c321e2d75aae4c7a68801fabbb8904d434b7d9f5b72ab6e9713e"
+  },
+  {
+    "path": "dist/tests/loom-page.test.js",
+    "sha256": "b5fd55d1c151483851a92a1fae56b29487f31f6f4a3af40c0c6523ad7f626064"
+  },
+  {
+    "path": "dist/tests/loom-projection.test.js",
+    "sha256": "8875a5ea3158bc692a5a5d8ebda10ef98085ec0903eef5708495dedf1546b375"
+  },
+  {
+    "path": "dist/tests/mission-http.test.js",
+    "sha256": "e8c83ea139d50e4f9a83323489dd52a048f8049c0740143cefb66284e9f447c9"
+  },
+  {
+    "path": "dist/tests/missions.test.js",
+    "sha256": "ba0ae718b829bffaa6544a6702651f2825d2e81026e1249cbb7fb23942ea9835"
+  },
+  {
+    "path": "dist/tests/owner-readiness-http.test.js",
+    "sha256": "33e96f08bacb100a714df45a18e98c25a6148454107df239a5eb7cd30ab80890"
+  },
+  {
+    "path": "dist/tests/owner-readiness.test.js",
+    "sha256": "be18206666e242056dcbc9c16daa9d5a27d279086c0f3c41148d03a5fdf9cbc6"
+  },
+  {
+    "path": "dist/tests/recovery-learning.test.js",
+    "sha256": "f1615f90e194434928fb6a800b4915c67786f0d4a5f570452b63f007d10f05db"
+  },
+  {
+    "path": "dist/tests/runtime-cancellation.test.js",
+    "sha256": "426812110abc7a390833e4170c9c95e4fb1371ebb0c2868cdbe0b7c80f8ac734"
+  },
+  {
+    "path": "dist/tests/runtime-claim-regressions.test.js",
+    "sha256": "486d390907bbe6a7e3fbf3fa8633eea5c2ca01f3794e5889704d6c73bc666933"
+  },
+  {
+    "path": "dist/tests/runtime-intent-persistence.test.js",
+    "sha256": "bea0fd14ed757babaaa0a35186ff8ba5dd3431c20beedeafa53af951357cb366"
+  },
+  {
+    "path": "dist/tests/runtime-journal-review-findings.test.js",
+    "sha256": "b3ab6f6d469d49b93617b4f82a0494c415e51e0b9de9a690f3884b8b093bf29e"
+  },
+  {
+    "path": "dist/tests/runtime-journal.test.js",
+    "sha256": "71f803ccffc1db66e18fdd873e2159aaefdf753e50aedb289945a27b39bd6c11"
+  },
+  {
+    "path": "dist/tests/scheduling.test.js",
+    "sha256": "c420fc29252e4de42c675391219dfcdbe55d6bc65e1e740bc55934a6d0e5e3d9"
+  },
+  {
+    "path": "dist/tests/startup-policy-flow.test.js",
+    "sha256": "e709546a64e3735880328d5a173e47685db8b0562adb73257b64fa4cf8974cd0"
+  },
+  {
+    "path": "dist/tests/startup.test.js",
+    "sha256": "b4a0c39f0c56e304f2c8590f1811105abd176ef46d245e42bb1e825a120a3652"
+  },
+  {
+    "path": "dist/tests/trusted-runtime-journal-bridge.test.js",
+    "sha256": "3ce77a6ef9b69d7cab44cd2fc5186aad163c216d2dc1323400dff611c5df7c9b"
+  },
+  {
+    "path": "dist/tests/verification-certification.test.js",
+    "sha256": "bb83145b4edc50daf7a6f287492ded10fd3d058dfaf6ce805f7ccedef0fc7ce9"
+  },
+  {
+    "path": "dist/tests/verification-config.test.js",
+    "sha256": "355832913882476d2d34ec255f26258ae147d276c503b2d03627b6b82e257566"
+  },
+  {
+    "path": "dist/tests/verification-contract.test.js",
+    "sha256": "94e095dd0bc449efce1e1cf5798551db4c2dff8e6fd4fc75f9f20ddc53bb2a7c"
+  },
+  {
+    "path": "dist/tests/verification-runner.test.js",
+    "sha256": "fc23ec2520915e12fed21cbd73e9a28ad8f1815e9d2cc256c7a9dfaf1561c109"
+  },
+  {
+    "path": "dist/tests/worker-broker.test.js",
+    "sha256": "ae78281a34cca403ec3716ac093ba1e3471fb4f374da537a1f926b343bdd02b8"
+  },
+  {
+    "path": "dist/tests/worker-candidate-bundle.test.js",
+    "sha256": "4ab5d14091ddd2c712bfceda47e341f8d6e06f59c76bfe39c0dd1c26d79b455e"
+  },
+  {
+    "path": "dist/tests/worker-cleanup-identity.test.js",
+    "sha256": "8340697739e0f1b3c5ace83e11c01ad0b4326f8f4e0d2302a0d987f4ade225dc"
+  },
+  {
+    "path": "dist/tests/worker-composition.test.js",
+    "sha256": "48cd54740e7de995a8646f753c405da88c1345175b8803ef1465091b7963b75c"
+  },
+  {
+    "path": "dist/tests/worker-git-checkout.test.js",
+    "sha256": "77223345d3c9ea58dc3f6f5816d4ad3936c158649ecde04469bacefbb6da039b"
+  },
+  {
+    "path": "dist/tests/worker-pool.test.js",
+    "sha256": "4585293419c570ef0e6fd4b010d610a3569eb4d0890175c7caef970441550bd2"
+  },
+  {
+    "path": "dist/tests/worker-service-lock.test.js",
+    "sha256": "f51f1b4647d5481375daef2c5954a937e5c104dd4b7fb024ac3d891a2429268e"
+  }
+]

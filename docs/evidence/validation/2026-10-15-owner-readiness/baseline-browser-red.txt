@@ -1,0 +1,15 @@
+{"status":"FAIL","evidence":"C:\\Users\\nrsan\\Documents\\Codex\\2026-10-15\\task-4\\orloom\\work\\owner-readiness-browser-baseline-red"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.innerText: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#readiness-state')
+
+    at C:\Users\nrsan\Documents\Codex\2026-10-15\task-4\orloom\scripts\validate-owner-readiness-browser.mjs:67:55 {
+  log: [ "  - waiting for locator('#readiness-state')" ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.21.0

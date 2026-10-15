@@ -1,0 +1,32 @@
+✔ /loom uses a restrictive same-origin CSP and keeps mission reads owner-authenticated (31.69768ms)
+✔ Loom pages durable history after its SQL window, resumes from cursor, and distinguishes exact boundary from overflow (44.407795ms)
+✔ readiness is bounded to configuration evidence and becomes unavailable for stale views (1.564928ms)
+✔ cancellation summary reports durable states by exact lease epoch (0.15314ms)
+✔ certificate links exist only while the matching current slice is awaiting verification (0.115747ms)
+✔ Loom renders its tested certificate rule and keeps explicit fallback and bounded polling controls (0.890222ms)
+✔ Loom projection preserves ownership and dependencies without inventing progress (1.82773ms)
+✔ durable verified, certified, and integrated evidence closes every planned slice (0.55756ms)
+✔ contradictions, unknown state, duplicate and out-of-order cursors fail closed (0.377097ms)
+✔ candidate, lease, certificate, tree and review bindings must remain exact (0.25858ms)
+✔ durable scheduling, recovery and learning events receive named safe inspector labels (0.186402ms)
+✔ empty, missing, hostile labels and mismatched mission records remain unavailable and text only (0.119249ms)
+✔ approved plan membership and exact proof causality are required for closure (0.221807ms)
+✔ pending certificate IDs bind to certified checks independent of check order (0.156845ms)
+✔ certificate digest contradictions and missing certification digests cannot close Loom (0.955349ms)
+✔ certificate digests bind to their IDs rather than array membership (0.208826ms)
+✔ owner Loom read requires owner session and is side-effect free with memory-store reconstruction (27.959817ms)
+✔ owner Loom projection survives SQL store reload and keeps exact durable cancellation evidence (1623.058081ms)
+✔ inconsistent durable history makes owner readiness unavailable without adding events (4.417206ms)
+✔ owner readiness is bounded, allowlisted, and validates expiring capacity and approved plan (1.167646ms)
+✔ owner cancellation recognizes only exact current-epoch durable settlement events (0.946176ms)
+✔ cancelled or uncertain missions cannot report execution prerequisites ready (0.291956ms)
+✔ cancellation displays direct unleased tombstones and rejects duplicate current proof (0.118674ms)
+✔ recovery and delivery timeline retains recorded identity without inferring completion (0.976005ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2422.012378

@@ -54,3 +54,9 @@ PR25 repaired head `27b786b140a2f0f73141aa60175b939b8f6ba605` passed external re
 ## PR26 expired cancellation follow-up
 
 External review 5537793590 accepted the prior three direct fixes but reproduced claim→expiry→owner cancellation leaving a no-runtime UNKNOWN slice unsettled. The one-predicate [follow-up](../docs/validation/2026-10-15-pr26-expired-cancellation.md) uses the same atomic settlement fence only for cancelling UNKNOWN, preserving all ordinary/bound UNKNOWN quarantine and spend. RED memory/SQL cases and passing controls are retained; focused Linux, actual PostgreSQL and narrow independent source review pass. No further product branch or runtime activation is authorized while review is pending.
+
+## Owner readiness and recovery successor
+
+PR25 and PR26 exact heads above passed independent review and remain frozen/unmerged. Owner authorized READY packet OWNER_READINESS_PACKET.md on feat/owner-readiness-recovery, stacked on accepted PR26 9347c170. Existing canonical inspector gains truthful configuration prerequisites, cancellation state and durable recovery references. Final evidence/review/publication tracked in docs/validation/2026-10-15-owner-readiness.md. No live host/runtime/provider/deployment authority.
+
+Rebase override (2026-10-15): the UI successor is locally rebased onto repaired PR26 `2dc187651b2616f8274eba31b07862ffaffafbc6`. Historical UI gates/manifests below apply to pre-rebase `c6a6b264a84a374b82b198ff3129216c25092e09` only. Current combined candidate remains HOLD for fresh source/build/browser/PostgreSQL/full-suite verification and independent review. No UI branch push or PR publication occurred. PR26 exact-head external review remains OPEN.

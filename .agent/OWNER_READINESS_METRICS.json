@@ -1,0 +1,49 @@
+{
+  "task_id": "owner-readiness-recovery-2026-10-15",
+  "started_utc": null,
+  "first_observed_clock_utc": "2026-10-15T18:27:05.908Z",
+  "finished_utc": null,
+  "lane": "focused",
+  "model": "controller inherited; bounded implementers gpt-6-luna; reviewer gpt-6.1-sol",
+  "config_identity": "agent-harness; explicit owner-approved source packet; base 9347c1701c8f18ea7e5b037695b88f584a747473",
+  "planning_seconds": null,
+  "build_seconds": null,
+  "validation_seconds": null,
+  "audit_seconds": null,
+  "elapsed_to_accepted_seconds": null,
+  "repair_count": 2,
+  "scope_risk_match": "UNKNOWN; no matched performance comparison",
+  "audit_findings_count": 0,
+  "regressions_found": 2,
+  "roles": {
+    "backend": "gpt-6-luna",
+    "ui": "gpt-6-luna",
+    "browser_validation": "gpt-6-luna",
+    "independent_source_review": "gpt-6.1-sol"
+  },
+  "tokens": {
+    "input_measured": null,
+    "output_measured": null,
+    "input_unknown": true,
+    "output_unknown": true
+  },
+  "attempts": [
+    {
+      "kind": "initial browser integration",
+      "result": "FAIL",
+      "cause": "Exported presentation helper was not embedded into the page script; fixed before final checks."
+    }
+  ],
+  "acceptance": {
+    "status": "UNKNOWN",
+    "accepted_at_utc": null,
+    "independent_review": "PASS for frozen manifest 1bee384d39ef0ec8aad3df3b42a24060557b9b2046ebb801252128a3ffdcae15; external exact-head review pending"
+  },
+  "notes": "Exact start and phase durations were not instrumented. Tests were written first, but the initial missing-module build and edited-page failure are not behavioral baseline RED proof; retained baseline checks are distinguished separately. No speedup or live acceptance claim.",
+  "rebaseOverride": {
+    "base": "2dc187651b2616f8274eba31b07862ffaffafbc6",
+    "historicalUiCommit": "c6a6b264a84a374b82b198ff3129216c25092e09",
+    "currentCombinedAcceptance": "HOLD: fresh validation and independent review required",
+    "published": false
+  }
+}

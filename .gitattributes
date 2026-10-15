@@ -34,3 +34,6 @@ docs/evidence/validation/2026-10-15-pr26-lifecycle/** -text whitespace=-blank-at
 
 # Preserve exact verifier-capacity correction evidence.
 docs/evidence/validation/2026-10-15-pr26-verifier-capacity/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve owner-readiness validation transcripts exactly.
+docs/evidence/validation/2026-10-15-owner-readiness/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

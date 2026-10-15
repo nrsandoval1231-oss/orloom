@@ -1,0 +1,38 @@
+{
+  "fixture": "synthetic-memory-store",
+  "workerExecutions": 0,
+  "providerCalls": 0,
+  "runtimeStarts": 0,
+  "certificates": 0,
+  "errors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/66a9055d-5eed-4c03-807f-2dc0c60aeba0/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/66a9055d-5eed-4c03-807f-2dc0c60aeba0/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/66a9055d-5eed-4c03-807f-2dc0c60aeba0/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/66a9055d-5eed-4c03-807f-2dc0c60aeba0/loom"
+    }
+  ],
+  "status": "FAIL",
+  "error": "locator.innerText: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#readiness-state')\u001b[22m\n",
+  "finishedUtc": "2026-10-15T18:35:08.343Z",
+  "limitations": [
+    "MemoryMissionStore is process-local; reload reconstruction is not a PostgreSQL durability proof",
+    "Capacity digest and runtime binding/container identity are explicit synthetic fixtures; no worker, provider, runtime, certificate, integration, or delivery activity occurred",
+    "READY records configured prerequisites only; no live worker/provider success is asserted"
+  ]
+}
