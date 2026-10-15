@@ -1,0 +1,21 @@
+{"status":"FAIL","evidence":"C:\\Users\\nrsan\\Documents\\Codex\\2026-10-15\\task-4\\orloom\\work\\owner-readiness-browser-accepted"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'unverified'
+- 'ready'
+
+    at file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/scripts/validate-owner-readiness-browser.mjs:182:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'unverified',
+  expected: 'ready',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

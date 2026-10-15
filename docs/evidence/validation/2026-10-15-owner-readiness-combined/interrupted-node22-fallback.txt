@@ -1,0 +1,661 @@
+TAP version 13
+# Subtest: trusted cancellation reconciler exists
+ok 1 - trusted cancellation reconciler exists
+  ---
+  duration_ms: 1.072632
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: removed
+ok 2 - restart reconciliation: removed
+  ---
+  duration_ms: 28.346706
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: daemon-down
+ok 3 - restart reconciliation: daemon-down
+  ---
+  duration_ms: 16.035742
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: wrong-label
+ok 4 - restart reconciliation: wrong-label
+  ---
+  duration_ms: 13.11486
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: wrong-image
+ok 5 - restart reconciliation: wrong-image
+  ---
+  duration_ms: 11.722377
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: wrong-name
+ok 6 - restart reconciliation: wrong-name
+  ---
+  duration_ms: 13.946604
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: still-present
+ok 7 - restart reconciliation: still-present
+  ---
+  duration_ms: 11.578101
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: remove-error-but-absent
+ok 8 - restart reconciliation: remove-error-but-absent
+  ---
+  duration_ms: 10.578558
+  type: 'test'
+  ...
+# Subtest: restart reconciliation: unbound-intent
+ok 9 - restart reconciliation: unbound-intent
+  ---
+  duration_ms: 9.863637
+  type: 'test'
+  ...
+# Subtest: HTTP worker cancellation poll binds both credentials and exact epoch
+ok 10 - HTTP worker cancellation poll binds both credentials and exact epoch
+  ---
+  duration_ms: 28.166701
+  type: 'test'
+  ...
+# Subtest: running cancellation monitor aborts on cancel and does not resume
+ok 11 - running cancellation monitor aborts on cancel and does not resume
+  ---
+  duration_ms: 5.871626
+  type: 'test'
+  ...
+# Subtest: running cancellation monitor aborts on unavailable and does not resume
+ok 12 - running cancellation monitor aborts on unavailable and does not resume
+  ---
+  duration_ms: 0.141005
+  type: 'test'
+  ...
+# Subtest: cancellation during durable create binding never starts the sandbox subprocess (simulated Docker CLI)
+ok 13 - cancellation during durable create binding never starts the sandbox subprocess (simulated Docker CLI)
+  ---
+  duration_ms: 496.837704
+  type: 'test'
+  ...
+# Subtest: approved target claim selects exact binding ahead of unrelated ready work and MissionGovernor skips scheduler
+ok 14 - approved target claim selects exact binding ahead of unrelated ready work and MissionGovernor skips scheduler
+  ---
+  duration_ms: 3.999829
+  type: 'test'
+  ...
+# Subtest: approved target claim rejects changed bindings and missions without reserving anything
+ok 15 - approved target claim rejects changed bindings and missions without reserving anything
+  ---
+  duration_ms: 0.65003
+  type: 'test'
+  ...
+# Subtest: SQL approved target claim filters in the locked query and claims only its exact approved slice
+ok 16 - SQL approved target claim filters in the locked query and claims only its exact approved slice
+  ---
+  duration_ms: 1859.146395
+  type: 'test'
+  ...
+# Subtest: long approved-task expiry reschedules against the absolute deadline without aborting early
+ok 17 - long approved-task expiry reschedules against the absolute deadline without aborting early
+  ---
+  duration_ms: 1.406053
+  type: 'test'
+  ...
+# Subtest: expiry aborts immediately for an already-reached absolute deadline
+ok 18 - expiry aborts immediately for an already-reached absolute deadline
+  ---
+  duration_ms: 0.150522
+  type: 'test'
+  ...
+# Subtest: each timer wakeup reevaluates wall-clock shifts before expiring
+ok 19 - each timer wakeup reevaluates wall-clock shifts before expiring
+  ---
+  duration_ms: 0.181926
+  type: 'test'
+  ...
+# Subtest: timer wakeup reevaluates wall clock and cleanup cancels pending reschedules
+ok 20 - timer wakeup reevaluates wall clock and cleanup cancels pending reschedules
+  ---
+  duration_ms: 0.117114
+  type: 'test'
+  ...
+# Subtest: controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events
+ok 21 - controlled approved worker lane submits over HTTP, admits its real Git bundle, certifies the exact SHA, and projects durable Loom events
+  ---
+  duration_ms: 8256.796913
+  type: 'test'
+  ...
+# Subtest: lane signal abort after reconciled mission readback fences verifier dispatch without an explicit lifecycle guard
+ok 22 - lane signal abort after reconciled mission readback fences verifier dispatch without an explicit lifecycle guard
+  ---
+  duration_ms: 6.44972
+  type: 'test'
+  ...
+# Subtest: approved worker lane refuses changed binding before executeLease and runs exact one-slice lifecycle once
+ok 23 - approved worker lane refuses changed binding before executeLease and runs exact one-slice lifecycle once
+  ---
+  duration_ms: 8.84664
+  type: 'test'
+  ...
+# Subtest: abort while verification runs fences preparation and integration
+ok 24 - abort while verification runs fences preparation and integration
+  ---
+  duration_ms: 3.17344
+  type: 'test'
+  ...
+# Subtest: durable owner cancellation during verification fences preparation and integration
+ok 25 - durable owner cancellation during verification fences preparation and integration
+  ---
+  duration_ms: 0.42347
+  type: 'test'
+  ...
+# Subtest: manifest expiry during verification fences preparation and integration
+ok 26 - manifest expiry during verification fences preparation and integration
+  ---
+  duration_ms: 0.343403
+  type: 'test'
+  ...
+# Subtest: abort during durable claim preserves reservation and never enters the lane
+ok 27 - abort during durable claim preserves reservation and never enters the lane
+  ---
+  duration_ms: 0.345587
+  type: 'test'
+  ...
+# Subtest: abort during certified preparation fences integration
+ok 28 - abort during certified preparation fences integration
+  ---
+  duration_ms: 0.775891
+  type: 'test'
+  ...
+# Subtest: abort during final certificate readback fences certified preparation
+ok 29 - abort during final certificate readback fences certified preparation
+  ---
+  duration_ms: 0.460924
+  type: 'test'
+  ...
+# Subtest: abort during integration fences delivery and cannot report delivered
+ok 30 - abort during integration fences delivery and cannot report delivered
+  ---
+  duration_ms: 0.584142
+  type: 'test'
+  ...
+# Subtest: abort during delivery preserves the started effect as unresolved
+ok 31 - abort during delivery preserves the started effect as unresolved
+  ---
+  duration_ms: 0.401656
+  type: 'test'
+  ...
+# Subtest: memory service restart accepts exact retained ABSENT, awaits review, then settles later owner cancellation
+ok 32 - memory service restart accepts exact retained ABSENT, awaits review, then settles later owner cancellation
+  ---
+  duration_ms: 24.352615
+  type: 'test'
+  ...
+# Subtest: SQL service restart replays the exact completed journal through the production callback without builder execution
+ok 33 - SQL service restart replays the exact completed journal through the production callback without builder execution
+  ---
+  duration_ms: 1545.736446
+  type: 'test'
+  ...
+# Subtest: memory service settles owner cancellation before runtime binding and replays idempotently
+ok 34 - memory service settles owner cancellation before runtime binding and replays idempotently
+  ---
+  duration_ms: 6.207001
+  type: 'test'
+  ...
+# Subtest: SQL service settles owner cancellation before runtime binding and replays idempotently
+ok 35 - SQL service settles owner cancellation before runtime binding and replays idempotently
+  ---
+  duration_ms: 1082.242751
+  type: 'test'
+  ...
+# Subtest: expired no-runtime UNKNOWN settles only after owner cancellation (memory), idempotently
+ok 36 - expired no-runtime UNKNOWN settles only after owner cancellation (memory), idempotently
+  ---
+  duration_ms: 5.578793
+  type: 'test'
+  ...
+# Subtest: expired no-runtime UNKNOWN settles only after owner cancellation (sql), idempotently
+ok 37 - expired no-runtime UNKNOWN settles only after owner cancellation (sql), idempotently
+  ---
+  duration_ms: 1077.638711
+  type: 'test'
+  ...
+# Subtest: non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (memory)
+ok 38 - non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (memory)
+  ---
+  duration_ms: 3.763482
+  type: 'test'
+  ...
+# Subtest: non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (sql)
+ok 39 - non-cancelling expired UNKNOWN remains fenced and retains capacity/spend (sql)
+  ---
+  duration_ms: 1044.335296
+  type: 'test'
+  ...
+# Subtest: bound file-intent UNKNOWN stays quarantined after owner cancellation
+ok 40 - bound file-intent UNKNOWN stays quarantined after owner cancellation
+  ---
+  duration_ms: 1068.936199
+  type: 'test'
+  ...
+# Subtest: approved service reconciles first, claims the exact binding once, and executes once
+ok 41 - approved service reconciles first, claims the exact binding once, and executes once
+  ---
+  duration_ms: 2.886919
+  type: 'test'
+  ...
+# Subtest: restart verification does not claim or execute already running or awaiting work
+ok 42 - restart verification does not claim or execute already running or awaiting work
+  ---
+  duration_ms: 0.526125
+  type: 'test'
+  ...
+# Subtest: owner cancellation without a runtime binding settles using the exact run identity
+ok 43 - owner cancellation without a runtime binding settles using the exact run identity
+  ---
+  duration_ms: 0.407553
+  type: 'test'
+  ...
+# Subtest: cancel_requested with a bound runtime remains quarantined and cannot claim
+ok 44 - cancel_requested with a bound runtime remains quarantined and cannot claim
+  ---
+  duration_ms: 0.283445
+  type: 'test'
+  ...
+# Subtest: main retained-runtime callback accepts only settlement or validated normal ABSENT
+ok 45 - main retained-runtime callback accepts only settlement or validated normal ABSENT
+  ---
+  duration_ms: 0.504121
+  type: 'test'
+  ...
+# Subtest: interruption before reconciliation cannot reach claim
+ok 46 - interruption before reconciliation cannot reach claim
+  ---
+  duration_ms: 0.282843
+  type: 'test'
+  ...
+# Subtest: actual approved reservation must cover precomputed worst-case cost before reconciliation or claim
+ok 47 - actual approved reservation must cover precomputed worst-case cost before reconciliation or claim
+  ---
+  duration_ms: 0.231183
+  type: 'test'
+  ...
+# Subtest: settlement replay refreshes task status before any claim or execution
+ok 48 - settlement replay refreshes task status before any claim or execution
+  ---
+  duration_ms: 0.266008
+  type: 'test'
+  ...
+# Subtest: explicit review request integrates the awaiting candidate only after certificate preparation
+ok 49 - explicit review request integrates the awaiting candidate only after certificate preparation
+  ---
+  duration_ms: 0.543381
+  type: 'test'
+  ...
+# Subtest: default and incomplete explicit startup stay disabled without requiring credentials
+ok 50 - default and incomplete explicit startup stay disabled without requiring credentials
+  ---
+  duration_ms: 1.218987
+  type: 'test'
+  ...
+# Subtest: manifest reader accepts exact private bounded manifest and rejects unknown or unsafe fields
+ok 51 - manifest reader accepts exact private bounded manifest and rejects unknown or unsafe fields
+  ---
+  duration_ms: 10.815438
+  type: 'test'
+  ...
+# Subtest: pricing validation uses cumulative token caps and the same conservative cost and freshness gate
+ok 52 - pricing validation uses cumulative token caps and the same conservative cost and freshness gate
+  ---
+  duration_ms: 0.407698
+  type: 'test'
+  ...
+# Subtest: actual worker entrypoint preserves safe disabled default and rejects partial config without reading secrets
+ok 53 - actual worker entrypoint preserves safe disabled default and rejects partial config without reading secrets
+  ---
+  duration_ms: 4677.394763
+  type: 'test'
+  ...
+# Subtest: actual check-config validates all nonsecret policy files without opening secret files or connecting
+ok 54 - actual check-config validates all nonsecret policy files without opening secret files or connecting
+  ---
+  duration_ms: 4426.283032
+  type: 'test'
+  ...
+# Subtest: retained runtime settlement only replays the approved mission and slice
+ok 55 - retained runtime settlement only replays the approved mission and slice
+  ---
+  duration_ms: 0.697292
+  type: 'test'
+  ...
+# Subtest: cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved
+ok 56 - cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved
+  ---
+  duration_ms: 1555.366405
+  type: 'test'
+  ...
+# Subtest: a cancelled candidate awaiting verification settles only after exact runtime absence
+ok 57 - a cancelled candidate awaiting verification settles only after exact runtime absence
+  ---
+  duration_ms: 1059.423969
+  type: 'test'
+  ...
+# Subtest: normal exact runtime absence is retained without settling and can settle after a later cancellation
+ok 58 - normal exact runtime absence is retained without settling and can settle after a later cancellation
+  ---
+  duration_ms: 1044.568704
+  type: 'test'
+  ...
+# Subtest: verified slice runtime ABSENT evidence remains an idempotent observation
+ok 59 - verified slice runtime ABSENT evidence remains an idempotent observation
+  ---
+  duration_ms: 1048.706798
+  type: 'test'
+  ...
+# Subtest: exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards
+ok 60 - exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards
+  ---
+  duration_ms: 1050.460035
+  type: 'test'
+  ...
+# Subtest: pre-runtime cancellation settles atomically only when no binding exists
+ok 61 - pre-runtime cancellation settles atomically only when no binding exists
+  ---
+  duration_ms: 1054.19319
+  type: 'test'
+  ...
+# Subtest: memory settlement handles a candidate already awaiting verification
+ok 62 - memory settlement handles a candidate already awaiting verification
+  ---
+  duration_ms: 2.690913
+  type: 'test'
+  ...
+# Subtest: memory store retains normal exact ABSENT evidence until a later owner cancellation
+ok 63 - memory store retains normal exact ABSENT evidence until a later owner cancellation
+  ---
+  duration_ms: 0.513007
+  type: 'test'
+  ...
+# Subtest: memory store keeps an exact retained ABSENT observation benign after verified state
+ok 64 - memory store keeps an exact retained ABSENT observation benign after verified state
+  ---
+  duration_ms: 0.427793
+  type: 'test'
+  ...
+# Subtest: memory pre-runtime settlement is idempotent and rejects late new runtime binding
+ok 65 - memory pre-runtime settlement is idempotent and rejects late new runtime binding
+  ---
+  duration_ms: 0.917126
+  type: 'test'
+  ...
+# Subtest: controller admits exact worker bundle into a private verifier source without moving trusted HEAD
+ok 66 - controller admits exact worker bundle into a private verifier source without moving trusted HEAD
+  ---
+  duration_ms: 219.551578
+  type: 'test'
+  ...
+# Subtest: admission rejects forged artifacts, identity, scopes and malformed bundles before publishing
+ok 67 - admission rejects forged artifacts, identity, scopes and malformed bundles before publishing
+  ---
+  duration_ms: 213.731323
+  type: 'test'
+  ...
+# Subtest: admission serializes concurrent imports, cancels queued work, and rejects private-root symlinks
+ok 68 - admission serializes concurrent imports, cancels queued work, and rejects private-root symlinks
+  ---
+  duration_ms: 202.88203
+  type: 'test'
+  ...
+# Subtest: admission cancellation aborts an outstanding artifact read and releases capacity
+ok 69 - admission cancellation aborts an outstanding artifact read and releases capacity
+  ---
+  duration_ms: 140.817993
+  type: 'test'
+  ...
+# Subtest: fixed integration store imports only admitted objects and leaves its authority ref unchanged
+ok 70 - fixed integration store imports only admitted objects and leaves its authority ref unchanged
+  ---
+  duration_ms: 195.812705
+  type: 'test'
+  ...
+# Subtest: candidate runner binds exact source and shares its independent verifier without trusting builder success
+ok 71 - candidate runner binds exact source and shares its independent verifier without trusting builder success
+  ---
+  duration_ms: 253.933249
+  type: 'test'
+  ...
+# Subtest: correctly hashed hostile bundle envelopes and packs are rejected inside admission
+ok 72 - correctly hashed hostile bundle envelopes and packs are rejected inside admission
+  ---
+  duration_ms: 269.524557
+  type: 'test'
+  ...
+# Subtest: cached commit-object substitution is refused despite matching tree and manifest
+ok 73 - cached commit-object substitution is refused despite matching tree and manifest
+  ---
+  duration_ms: 170.042632
+  type: 'test'
+  ...
+# Subtest: distinct concurrent candidates retain independent admission identities and private heads
+ok 74 - distinct concurrent candidates retain independent admission identities and private heads
+  ---
+  duration_ms: 281.326241
+  type: 'test'
+  ...
+# Subtest: bounded admission queue saturation stays transient and cancelled waiters never read artifacts
+ok 75 - bounded admission queue saturation stays transient and cancelled waiters never read artifacts
+  ---
+  duration_ms: 134.180447
+  type: 'test'
+  ...
+# Subtest: persisted coordinator retries transient admission and binds certificate readback to private candidate head
+ok 76 - persisted coordinator retries transient admission and binds certificate readback to private candidate head
+  ---
+  duration_ms: 3634.302886
+  type: 'test'
+  ...
+# Subtest: same-binding callers have independent cancellation while admission cache stays reusable
+ok 77 - same-binding callers have independent cancellation while admission cache stays reusable
+  ---
+  duration_ms: 451.252712
+  type: 'test'
+  ...
+# Subtest: admission cache has a hard retained-entry cap without invalidating reusable candidates
+ok 78 - admission cache has a hard retained-entry cap without invalidating reusable candidates
+  ---
+  duration_ms: 715.846416
+  type: 'test'
+  ...
+# Subtest: candidate facades share verifier capacity and cannot retarget a prepared source
+ok 79 - candidate facades share verifier capacity and cannot retarget a prepared source
+  ---
+  duration_ms: 1259.751649
+  type: 'test'
+  ...
+# Subtest: candidate facade rechecks lifecycle after reread before verifier dispatch
+ok 80 - candidate facade rechecks lifecycle after reread before verifier dispatch
+  ---
+  duration_ms: 443.932455
+  type: 'test'
+  ...
+# Subtest: trusted verifier checks lifecycle at the actual sandbox dispatch boundary
+ok 81 - trusted verifier checks lifecycle at the actual sandbox dispatch boundary
+  ---
+  duration_ms: 844.839962
+  type: 'test'
+  ...
+# Subtest: bounded candidate reader rejects oversized and tampered bodies and aborts stalled streams
+ok 82 - bounded candidate reader rejects oversized and tampered bodies and aborts stalled streams
+  ---
+  duration_ms: 1202.584485
+  type: 'test'
+  ...
+# Subtest: canonical JSON makes key-order permutations hash-identical, including nested JSONB values
+ok 83 - canonical JSON makes key-order permutations hash-identical, including nested JSONB values
+  ---
+  duration_ms: 1.880526
+  type: 'test'
+  ...
+# Subtest: certified handoff uploads only digest-matching final verifier evidence after candidate identity checks
+ok 84 - certified handoff uploads only digest-matching final verifier evidence after candidate identity checks
+  ---
+  duration_ms: 3.314096
+  type: 'test'
+  ...
+# Subtest: certified handoff stops later artifact publication when lifecycle ends after the first put
+ok 85 - certified handoff stops later artifact publication when lifecycle ends after the first put
+  ---
+  duration_ms: 1.669574
+  type: 'test'
+  ...
+# Subtest: certified handoff refuses artifact-store readback substitution and never promotes a Git ref
+ok 86 - certified handoff refuses artifact-store readback substitution and never promotes a Git ref
+  ---
+  duration_ms: 1.193957
+  type: 'test'
+  ...
+# Subtest: certified handoff refuses a missing final certificate before admission import or artifact publication
+ok 87 - certified handoff refuses a missing final certificate before admission import or artifact publication
+  ---
+  duration_ms: 0.294945
+  type: 'test'
+  ...
+# Subtest: certified handoff applies the Governor review validator before import or artifact publication
+ok 88 - certified handoff applies the Governor review validator before import or artifact publication
+  ---
+  duration_ms: 0.409657
+  type: 'test'
+  ...
+# Subtest: certified handoff refuses stale persisted candidate bindings before import
+ok 89 - certified handoff refuses stale persisted candidate bindings before import
+  ---
+  duration_ms: 0.215862
+  type: 'test'
+  ...
+# Subtest: configuration validates roles and does not reveal configured values in errors
+ok 90 - configuration validates roles and does not reveal configured values in errors
+  ---
+  duration_ms: 4.323005
+  type: 'test'
+  ...
+# Subtest: webhook signature is constant-time compared after strict digest length check
+ok 91 - webhook signature is constant-time compared after strict digest length check
+  ---
+  duration_ms: 0.680276
+  type: 'test'
+  ...
+# Subtest: artifact adapter uses content SHA-256 addressing and copies bytes
+ok 92 - artifact adapter uses content SHA-256 addressing and copies bytes
+  ---
+  duration_ms: 0.297406
+  type: 'test'
+  ...
+# Subtest: R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary
+ok 93 - R2 adapter sends immutable digest-addressed PUT and verifies GET bytes through its request boundary
+  ---
+  duration_ms: 5.874326
+  type: 'test'
+  ...
+# Subtest: GitHub App token request uses app client and explicit repository and permission scope
+ok 94 - GitHub App token request uses app client and explicit repository and permission scope
+  ---
+  duration_ms: 0.736037
+  type: 'test'
+  ...
+# Subtest: Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration
+ok 95 - Codex subscription adapter passes explicit isolated environment and ChatGPT-only SDK configuration
+  ---
+  duration_ms: 0.707272
+  type: 'test'
+  ...
+# Subtest: cloud mode fails closed without explicit database URL, host, token, and HTTPS origin
+ok 96 - cloud mode fails closed without explicit database URL, host, token, and HTTPS origin
+  ---
+  duration_ms: 0.183556
+  type: 'test'
+  ...
+# Subtest: PostgreSQL job store refuses readiness when the database is unreachable
+ok 97 - PostgreSQL job store refuses readiness when the database is unreachable
+  ---
+  duration_ms: 361.46185
+  type: 'test'
+  ...
+# Subtest: controller capabilities remain closed by default, including with stray Jev configuration
+ok 98 - controller capabilities remain closed by default, including with stray Jev configuration
+  ---
+  duration_ms: 1.911208
+  type: 'test'
+  ...
+# Subtest: explicit integration and delivery composition binds one repository and full-suite policy without startup calls
+ok 99 - explicit integration and delivery composition binds one repository and full-suite policy without startup calls
+  ---
+  duration_ms: 68.750498
+  type: 'test'
+  ...
+# Subtest: review reader accepts only private bounded files beneath its fixed root
+ok 100 - review reader accepts only private bounded files beneath its fixed root
+  ---
+  duration_ms: 4.885775
+  type: 'test'
+  ...
+# Subtest: enabled configuration rejects partial or unsafe settings without echoing credential values
+ok 101 - enabled configuration rejects partial or unsafe settings without echoing credential values
+  ---
+  duration_ms: 0.362661
+  type: 'test'
+  ...
+# Subtest: already-stopped upload-token adapter does not mint credentials or dispatch
+ok 102 - already-stopped upload-token adapter does not mint credentials or dispatch
+  ---
+  duration_ms: 1.487468
+  type: 'test'
+  ...
+# Subtest: already-stopped check adapter does not mint credentials or dispatch
+ok 103 - already-stopped check adapter does not mint credentials or dispatch
+  ---
+  duration_ms: 0.163543
+  type: 'test'
+  ...
+# Subtest: already-stopped pull-request adapter does not mint credentials or dispatch
+ok 104 - already-stopped pull-request adapter does not mint credentials or dispatch
+  ---
+  duration_ms: 0.132053
+  type: 'test'
+  ...
+# Subtest: GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities
+ok 105 - GitHub delivery adapter scopes short-lived installation tokens and reads exact branch, Check, and draft PR identities
+  ---
+  duration_ms: 2.055066
+  type: 'test'
+  ...
+# Subtest: branch absence is distinct from inaccessible or wrong repository readback
+ok 106 - branch absence is distinct from inaccessible or wrong repository readback
+  ---
+  duration_ms: 0.442391
+  type: 'test'
+  ...
+# Subtest: lifecycle fence runs after Check and PR installation tokens are acquired but before POST
+ok 107 - lifecycle fence runs after Check and PR installation tokens are acquired but before POST
+  ---
+  duration_ms: 0.285784
+  type: 'test'
+  ...
+# Subtest: delivery rejects public repo/ref overrides and stays closed when R2 or GitHub App authority is absent
+ok 108 - delivery rejects public repo/ref overrides and stays closed when R2 or GitHub App authority is absent
+  ---
+  duration_ms: 1.796881
+  type: 'test'
+  ...
+# Subtest: delivery migration adds a durable upload effect without changing existing intent columns
+ok 109 - delivery migration adds a durable upload effect without changing existing intent columns
+  ---
+  duration_ms: 1428.062141
+  type: 'test'
+  ...
+# Subtest: approved trusted C4 integration attribution reaches controlled delivery effects
+ok 110 - approved trusted C4 integration attribution reaches controlled delivery effects
+  ---
+  duration_ms: 3525.241806
+  type: 'test'
+  ...

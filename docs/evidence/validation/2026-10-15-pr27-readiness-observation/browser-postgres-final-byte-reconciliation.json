@@ -1,0 +1,8 @@
+{
+  "sourceChangesSinceBrowserPostgres": [
+    "tests/owner-readiness.test.ts"
+  ],
+  "compiledChangesSinceBrowserPostgres": [
+    "dist/tests/owner-readiness.test.js"
+  ]
+}

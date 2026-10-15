@@ -1,0 +1,48 @@
+{
+  "fixture": "synthetic-memory-store",
+  "workerExecutions": 0,
+  "providerCalls": 0,
+  "runtimeStarts": 0,
+  "certificates": 0,
+  "errors": [
+    "readinessSummary is not defined",
+    "readinessSummary is not defined",
+    "readinessSummary is not defined"
+  ],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/354fffc0-c55e-4d6d-8efd-7c655017794a/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/354fffc0-c55e-4d6d-8efd-7c655017794a/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/354fffc0-c55e-4d6d-8efd-7c655017794a/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/354fffc0-c55e-4d6d-8efd-7c655017794a/loom"
+    }
+  ],
+  "unauthenticated": "owner session required; readiness unavailable",
+  "status": "INTEGRATION_FAILURE",
+  "error": "page.waitForFunction: Timeout 4000ms exceeded.",
+  "finishedUtc": "2026-10-15T18:28:40.729Z",
+  "limitations": [
+    "MemoryMissionStore is process-local; reload reconstruction is not a PostgreSQL durability proof",
+    "Capacity digest is a controlled fixture; no provider, worker, runtime, certificate, integration, or delivery activity occurred",
+    "UNKNOWN runtime binding branch is not represented by this pre-runtime settlement fixture"
+  ],
+  "classification": "Edited working tree had readinessSummary undefined in emitted browser script; this did not establish pre-change feature absence."
+}

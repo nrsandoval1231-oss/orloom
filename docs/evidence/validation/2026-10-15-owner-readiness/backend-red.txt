@@ -1,0 +1,5 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/owner-readiness.test.ts(3,67): error TS2307: Cannot find module '../apps/control-plane/src/owner-readiness.js' or its corresponding type declarations.

@@ -1,0 +1,19 @@
+{"status":"FAIL","evidence":"C:\\Users\\nrsan\\Documents\\Codex\\2026-10-15\\task-4\\orloom\\work\\owner-readiness-browser-final"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Disconnected/. Input:
+
+'DISCONNECTED ┬╖ HISTORICAL'
+
+    at file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/scripts/validate-owner-readiness-browser.mjs:154:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'DISCONNECTED ┬╖ HISTORICAL',
+  expected: /Disconnected/,
+  operator: 'match',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

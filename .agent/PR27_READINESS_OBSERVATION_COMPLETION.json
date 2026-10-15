@@ -1,0 +1,27 @@
+{
+  "packet": "PR27_READINESS_OBSERVATION_PACKET.md",
+  "base": "dd589b81ff1445178ef9d11a27eea04dad39b849",
+  "status": "LOCAL_GATES_PASS_EXTERNAL_EXACT_HEAD_REVIEW_OPEN",
+  "regressions": {
+    "actual_red": "Parent recorded focused run after tests-only stage: build passed; owner-readiness tests 6 total, 4 passed, 2 failed for unsupported coordinator check and missing observedRemoteSha reference.",
+    "focused_green": "PASS24/24 final controller-owned local HTTP/direct run",
+    "full_gates": "PASS final build/typecheck/validate; full Linux382total380pass0fail2existing skips154265.753814ms; browser and actual PostgreSQL PASS with unchanged product byte reconciliation;192source127compiled raw/build/staged hash matches",
+    "independent_review": "PASS source manifest8de135882a6396b60aa8283801b431cd797f20a11498813e4d4673425461a96d;192 source hashes verified"
+  },
+  "files": [
+    "apps/control-plane/src/owner-readiness.ts",
+    "apps/control-plane/src/server.ts",
+    "apps/control-plane/src/loom-projection.ts",
+    "tests/owner-readiness.test.ts",
+    "tests/owner-readiness-http.test.ts",
+    "scripts/validate-owner-readiness-browser.mjs"
+  ],
+  "scope": "Read-only readiness now checks one immutable coordinator binding snapshot, exact configured verifier identity/image/version and lease-policy mapping, and check support for every planned check. Delivery projection retains only valid observed remote commit SHAs. Browser readiness fixture uses a synthetic coordinator binding without invoking verification.",
+  "authority_boundary": "No schema, provider, credential, runtime, host, deployment, merge, or live execution changes. Canonical UI remains unchanged.",
+  "metrics": {
+    "durations": "UNKNOWN; not instrumented",
+    "tokens": "UNKNOWN",
+    "repair_count": 1,
+    "acceptance_or_certification": "NOT CLAIMED"
+  }
+}

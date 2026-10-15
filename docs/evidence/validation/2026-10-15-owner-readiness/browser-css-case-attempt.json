@@ -1,0 +1,110 @@
+{
+  "fixture": "synthetic-memory-store",
+  "workerExecutions": 0,
+  "providerCalls": 0,
+  "runtimeStarts": 0,
+  "certificates": 0,
+  "errors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/19ff6e06-8a9e-484b-90ca-bfdc28adecfc/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/19ff6e06-8a9e-484b-90ca-bfdc28adecfc/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/19ff6e06-8a9e-484b-90ca-bfdc28adecfc/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/19ff6e06-8a9e-484b-90ca-bfdc28adecfc/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/19ff6e06-8a9e-484b-90ca-bfdc28adecfc/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/75b06dd1-c9d8-42c7-adf3-e5c01ce26604/loom"
+    },
+    {
+      "method": "GET",
+      "path": "/api/missions/75b06dd1-c9d8-42c7-adf3-e5c01ce26604/loom"
+    }
+  ],
+  "unauthenticated": "owner session required; readiness unavailable",
+  "readiness": {
+    "state": "unverified",
+    "meaning": "Control-plane prerequisites only; no live worker, runtime, provider, or image attestation.",
+    "liveExecution": "unverified",
+    "reasons": [
+      "Worker policy or capacity evidence is missing, incomplete, or expired; worker credentials and startup remain unverified.",
+      "Trusted verification policy, pinned verifier identity, or verification authority is incomplete."
+    ],
+    "configuration": {
+      "mode": "local",
+      "workerPolicyConfigured": false,
+      "verificationConfigured": false,
+      "integrationConfigured": false,
+      "deliveryConfigured": false,
+      "capacityEvidenceDigest": "2f53a1f16354e3c8a46c965fd247ecc62abdd9c539fbfa7b25136e7566a6bac4",
+      "capacityEvidenceExpiresAt": "2026-10-15T18:42:57.880Z",
+      "baseSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "planDigest": "8044955b6159b0756c997810001338c7e9833fe87162adae464dbf2614f030dc",
+      "checkPolicyDigest": "bea5dd8244bcb2ad317237d7ffeb50ef35446819595be3041d3226a693d8ec3c"
+    }
+  },
+  "cancellation": {
+    "state": "pre-runtime-settled",
+    "slices": [
+      {
+        "sliceId": "fixture-slice",
+        "leaseEpoch": 1,
+        "state": "pre-runtime-settled",
+        "reasons": []
+      }
+    ],
+    "reasons": []
+  },
+  "recoveryEvent": "slice.cancellation_settled_before_runtime",
+  "boundUnknown": {
+    "state": "quarantined-unknown",
+    "sliceId": "unknown-slice",
+    "leaseEpoch": 1,
+    "settlementEvent": false,
+    "fixture": "synthetic-memory-store-binding; no runtime process or container was started"
+  },
+  "mobileOverflow": false,
+  "offlineReadiness": "Readiness unavailable",
+  "status": "FAIL",
+  "error": "The input did not match the regular expression /Disconnected/. Input:\n\n'DISCONNECTED · HISTORICAL'\n",
+  "finishedUtc": "2026-10-15T18:37:59.298Z",
+  "limitations": [
+    "MemoryMissionStore is process-local; reload reconstruction is not a PostgreSQL durability proof",
+    "Capacity digest and runtime binding/container identity are explicit synthetic fixtures; no worker, provider, runtime, certificate, integration, or delivery activity occurred",
+    "READY records configured prerequisites only; no live worker/provider success is asserted"
+  ]
+}

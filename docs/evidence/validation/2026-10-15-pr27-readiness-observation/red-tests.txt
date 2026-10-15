@@ -1,0 +1,57 @@
+Γ£ö owner readiness is bounded, allowlisted, and validates expiring capacity and approved plan (1.7789ms)
+Γ£ö owner cancellation recognizes only exact current-epoch durable settlement events (0.3056ms)
+Γ£ö cancelled or uncertain missions cannot report execution prerequisites ready (0.7677ms)
+Γ£û readiness requires the coordinator's immutable binding to match configured verifier and planned checks (0.7202ms)
+Γ£ö cancellation displays direct unleased tombstones and rejects duplicate current proof (0.133ms)
+Γ£û recovery and delivery timeline retains recorded identity without inferring completion (0.5982ms)
+Γä╣ tests 6
+Γä╣ suites 0
+Γä╣ pass 4
+Γä╣ fail 2
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 69.8691
+
+Γ£û failing tests:
+
+test at dist\tests\owner-readiness.test.js:52:1
+Γ£û readiness requires the coordinator's immutable binding to match configured verifier and planned checks (0.7202ms)
+  AssertionError [ERR_ASSERTION]: broad configured allowlist cannot substitute for coordinator support of each approved check
+  + actual - expected
+  
+  + 'ready'
+  - 'unverified'
+  
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/owner-readiness.test.js:57:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'ready',
+    expected: 'unverified',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist\tests\owner-readiness.test.js:76:1
+Γ£û recovery and delivery timeline retains recorded identity without inferring completion (0.5982ms)
+  AssertionError [ERR_ASSERTION]: check observation must retain the remote revision that was read back
+      at TestContext.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/owner-readiness.test.js:85:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

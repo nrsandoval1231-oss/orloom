@@ -1,0 +1,28 @@
+✔ factory stays disabled without explicit configuration and builds a valid runner (3.883847ms)
+✔ blank sample environment plus owner session token and R2-only settings do not activate verification (0.22709ms)
+✔ R2 file secret settings are resolved securely and invalid files override raw values (1.389114ms)
+✔ partial or malformed admission configuration fails closed (0.292954ms)
+✔ rejects artifact roots equal to or below source root and relative roots (0.211675ms)
+✔ rejects temporary paths, overlap in either direction, and malformed maps (0.352986ms)
+✔ durable artifacts are content-addressed and reject tampering and symlinks (10.264563ms)
+✔ extractor only accepts reachable commit regular files and rejects symlink entries (69.294463ms)
+✔ check policy is finite and worker text cannot select commands (0.703652ms)
+✔ repository suite is a separate trusted policy bound to the reviewed lock and fixed profile (3.125672ms)
+✔ repository suite runs every discovered test file serially and binds the new policy digest (0.721445ms)
+✔ production serial test runner executes trusted files in order and stops fail-closed (1.901691ms)
+✔ verifier image installs with two isolated npm config files (0.615989ms)
+﹣ local npm accepts distinct sanitized config paths (0.099291ms) # SKIP
+✔ repository suite admission accepts the exact dependency pair and rejects stale locks and overrides (447.45624ms)
+✔ repository suite requires discovered tests and treats failures, timeouts and truncation distinctly (124.018165ms)
+✔ launcher process-result fixtures reject infrastructure ambiguity and accept only matching check markers (1.345894ms)
+✔ UNKNOWN retains only bounded complete diagnostics from the trusted stage and file emitters (22.515964ms)
+✔ stage diagnostics never classify a partial, forged, malformed, or excessive result (1.124767ms)
+✔ trusted staged archive layout matches launcher extraction, manifest reader, and policy cwd (0.61088ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1819.580925

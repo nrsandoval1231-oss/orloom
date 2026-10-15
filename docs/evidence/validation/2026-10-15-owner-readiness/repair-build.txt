@@ -1,0 +1,6 @@
+
+> orloom-foundation@0.1.0 build
+> tsc && node scripts/copy-git-askpass.mjs
+
+tests/loom-page.test.ts(4,10): error TS2305: Module '"../apps/control-plane/src/loom-page.js"' has no exported member 'cancellationSummary'.
+tests/loom-page.test.ts(4,71): error TS2305: Module '"../apps/control-plane/src/loom-page.js"' has no exported member 'readinessSummary'.

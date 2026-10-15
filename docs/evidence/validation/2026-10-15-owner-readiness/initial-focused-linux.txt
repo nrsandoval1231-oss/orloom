@@ -1,0 +1,16 @@
+✔ readiness is bounded to configuration evidence and becomes unavailable for stale views (4.559565ms)
+✔ cancellation summary reports durable states by exact lease epoch (0.147946ms)
+✔ certificate links exist only while the matching current slice is awaiting verification (0.122844ms)
+✔ Loom renders its tested certificate rule and keeps explicit fallback and bounded polling controls (0.932893ms)
+✔ owner Loom read requires owner session and is side-effect free with memory-store reconstruction (28.486099ms)
+✔ owner Loom projection survives SQL store reload and keeps exact durable cancellation evidence (1556.104118ms)
+✔ owner readiness is bounded, allowlisted, and validates expiring capacity and approved plan (1.160422ms)
+✔ owner cancellation recognizes only exact current-epoch durable settlement events (0.338283ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1990.667487

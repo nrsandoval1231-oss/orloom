@@ -1,0 +1,2 @@
+{"elapsedMs":2193,"stdout":"Orloom local control plane listening on 127.0.0.1:34701\n"}
+{"elapsedMs":2204,"code":0,"signal":null}
