@@ -1,0 +1,7 @@
+branch=slice/01-runtime-identity-cancellation
+parent=df5d9db (Slice 0 baseline)
+accepted_full_suite=tests 229 / pass 215 / fail 13 / skipped 1 / cancelled 0 / 66503.18 ms
+accepted_full_suite_exit=1
+failures=the 13 are exactly tests/candidate-admission.test.ts under the documented Linux/POSIX private-root guard, unchanged from the baseline
+host=Windows, node v24.18.0
+retained_runs=4 full-suite runs; integration-replay-race, verification-runner and mission-http each failed once and pass in isolation

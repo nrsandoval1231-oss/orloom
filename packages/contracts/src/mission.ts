@@ -2,8 +2,8 @@
 import type { DecisionSnapshotV1, JudgmentV1 } from "../../judgment/src/types.js";
 import type { CheckCertificateV1, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "./verification.js";
 export type Lane = string;
-export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown";
-export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown";
+export type MissionStatus = "planning" | "ready" | "running" | "awaiting_verification" | "verified" | "blocked" | "unknown" | "cancelling" | "cancelled";
+export type SliceStatus = "waiting_dependency" | "blocked" | "ready" | "running" | "awaiting_verification" | "verified" | "failed" | "unknown" | "cancel_requested" | "cancelled";
 
 export interface MissionInput { repository: string; baseSha: string; objective: string; acceptance: string[]; budgetCents: number; }
 export interface SliceInput { id: string; objective: string; dependencies: string[]; owner: Lane; scopes: string[]; checks: string[]; budgetCents: number; }
@@ -105,6 +105,10 @@ export interface MissionStore {
   expireVerificationAttempts?(now?:Date,limit?:number):Promise<number>;
   awaitingVerification?(checkIds:string[],limit?:number):Promise<Array<{missionId:string;sliceId:string}>>;
   recordVerificationUnavailable?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string,reason:"candidate_unavailable"|"local_head_unavailable"):Promise<void>;
+  /** Owner-authenticated durable cancellation request. Never refunds reserved spend or releases capacity. */
+  requestCancel?(missionId:string,ownerRequestId:string,reason:string):Promise<void>;
+  /** Re-derives cancellation state from the durable lease binding; false for any stale epoch or token. */
+  cancellationStatus?(missionId:string,sliceId:string,epoch:number,leaseToken:string,capabilityToken:string):Promise<boolean>;
   expire(now?: Date, limit?: number): Promise<number>;
 }
 

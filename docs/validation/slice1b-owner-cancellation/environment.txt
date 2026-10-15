@@ -1,0 +1,8 @@
+repo=orloom
+branch=slice/01-runtime-identity-cancellation
+parent=9bd81ac (Slice 1a)
+base=86a972300708f9bc05f557c5c09efd1c0f7e2ba6
+host=Windows
+node=v24.18.0
+npm=11.16.0
+recorded_at=2026-10-14T11:10:12.0394450-05:00
