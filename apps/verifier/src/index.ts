@@ -7,13 +7,16 @@ import { AdmittingVerificationRunner, CandidateAdmission, DurableArtifactStore, 
 import { createR2CandidateArtifacts } from "../../../packages/adapters/src/candidate-artifacts.js";
 import type { TrustedCheckRunner } from "../../../packages/governor/src/governor.js";
 import type { RepositoryConfig } from "../../../packages/verification/src/index.js";
+import { readSecret } from "../../control-plane/src/controller-authority.js";
 
 /** Build a runner only from explicit operator configuration; absent config keeps certification disabled. */
 export async function createTrustedVerificationRunner(env: NodeJS.ProcessEnv = process.env): Promise<TrustedCheckRunner | null> {
-  const required = ["ORLOOM_VERIFIER_IMAGE", "ORLOOM_VERIFIER_ID", "ORLOOM_VERIFIER_ARTIFACT_ROOT", "ORLOOM_VERIFIER_REPOSITORIES", "ORLOOM_CANDIDATE_ADMISSION_ROOT", "ORLOOM_R2_ACCOUNT_ID", "ORLOOM_R2_ACCESS_KEY_ID", "ORLOOM_R2_SECRET_ACCESS_KEY", "ORLOOM_R2_BUCKET"] as const;
-  const configured = required.filter((key) => env[key] !== undefined);
+  const activationKeys = ["ORLOOM_VERIFIER_IMAGE", "ORLOOM_VERIFIER_ID", "ORLOOM_VERIFIER_ARTIFACT_ROOT", "ORLOOM_VERIFIER_REPOSITORIES", "ORLOOM_CANDIDATE_ADMISSION_ROOT", "ORLOOM_VERIFIER_LAUNCHER", "ORLOOM_VERIFICATION_POLICY_VERSION", "ORLOOM_VERIFIER_CHECK_ID"] as const;
+  const configured = activationKeys.filter((key) => !!env[key]?.trim());
   if (configured.length === 0) return null;
-  if (configured.length !== required.length || required.some((key) => !env[key]?.trim())) throw new Error("trusted verification and candidate-admission configuration must be complete");
+  const required = ["ORLOOM_VERIFIER_IMAGE", "ORLOOM_VERIFIER_ID", "ORLOOM_VERIFIER_ARTIFACT_ROOT", "ORLOOM_VERIFIER_REPOSITORIES", "ORLOOM_CANDIDATE_ADMISSION_ROOT", "ORLOOM_R2_ACCOUNT_ID", "ORLOOM_R2_BUCKET"] as const;
+  const accessKeyId = readSecret(env, "ORLOOM_R2_ACCESS_KEY_ID"), secretAccessKey = readSecret(env, "ORLOOM_R2_SECRET_ACCESS_KEY");
+  if (required.some((key) => !env[key]?.trim()) || !accessKeyId || !secretAccessKey) throw new Error("trusted verification and candidate-admission configuration must be complete");
   const image = env.ORLOOM_VERIFIER_IMAGE!, match = /^(?:sha256:|.+@sha256:)([a-f0-9]{64})$/.exec(image);
   if (!match) throw new Error("ORLOOM_VERIFIER_IMAGE must be digest pinned");
   const verifierId = env.ORLOOM_VERIFIER_ID!;
@@ -47,6 +50,6 @@ export async function createTrustedVerificationRunner(env: NodeJS.ProcessEnv = p
     repositories, artifacts: new DurableArtifactStore(artifactRoot), image, imageDigest: match[1]!, verifierId,
     launcher: new LocalRunscLauncher({ image, launcherScript: path.resolve(env.ORLOOM_VERIFIER_LAUNCHER ?? "/opt/orloom/infra/verifier-isolation/launch-verifier.sh") }),
   };
-  const admission = new CandidateAdmission({root: admissionRoot, repositories, artifacts: createR2CandidateArtifacts({accountId:env.ORLOOM_R2_ACCOUNT_ID!,accessKeyId:env.ORLOOM_R2_ACCESS_KEY_ID!,secretAccessKey:env.ORLOOM_R2_SECRET_ACCESS_KEY!,bucket:env.ORLOOM_R2_BUCKET!})});
+  const admission = new CandidateAdmission({root: admissionRoot, repositories, artifacts: createR2CandidateArtifacts({accountId:env.ORLOOM_R2_ACCOUNT_ID!,accessKeyId,secretAccessKey,bucket:env.ORLOOM_R2_BUCKET!})});
   return new AdmittingVerificationRunner(verifierOptions, admission);
 }

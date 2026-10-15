@@ -14,3 +14,5 @@ Next action: publish the focused branch and review PR, then obtain independent p
 
 Remaining product gates: operational startup/restart ownership; secure provider/App/R2 configuration and bounded spending; owner target task/base/scopes/checks; Sol planning; multiple isolated productive lanes; bounded checkpoint recovery; lesson activation and measured fresh-task benefits; exact-candidate runsc final checks; real UI execution/recovery controls; operational delivery and release authority. Existing deployed UI/version is unchanged and unknown. Fixtures are not live evidence.
 
+
+PR25 exact-head review repair: blank-template/R2-only activation and R2 private secret-file regressions reproduced and fixed. [Repair ledger](../docs/validation/2026-10-15-pr25-startup-repair.md): build/typecheck/validate PASS, Linux 288/290 with zero failures/two existing skips, real PostgreSQL PASS, 127 source entries unchanged. Earlier independent source PASS applies to its historical scope; repaired head requires fresh review. Next authorized source work is explicit-config operational startup on a separate stacked branch; no live-provider/host/release authority granted.

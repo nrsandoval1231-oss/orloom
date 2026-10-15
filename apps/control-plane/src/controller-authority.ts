@@ -77,7 +77,7 @@ export async function createReviewArtifactReader(configuredRoot: string) {
   };
 }
 
-function readSecret(env: NodeJS.ProcessEnv, name: string, maxBytes = 8192): string | undefined {
+export function readSecret(env: NodeJS.ProcessEnv, name: string, maxBytes = 8192): string | undefined {
   const file = env[`${name}_FILE`]?.trim();
   if (file) {
     if (!path.isAbsolute(file)) throw new Error(`${name}_FILE must be an absolute private file path`);

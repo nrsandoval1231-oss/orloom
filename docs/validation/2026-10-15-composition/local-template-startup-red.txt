@@ -1,0 +1,20 @@
+Γ£û documented blank environment template starts the local owner UI with verification disabled (184.9556ms)
+Γä╣ tests 1
+Γä╣ suites 0
+Γä╣ pass 0
+Γä╣ fail 1
+Γä╣ cancelled 0
+Γä╣ skipped 0
+Γä╣ todo 0
+Γä╣ duration_ms 239.3836
+
+Γ£û failing tests:
+
+test at dist\tests\local-template-startup.test.js:7:1
+Γ£û documented blank environment template starts the local owner UI with verification disabled (184.9556ms)
+  Error: Local template startup exited 1: Orloom trusted verifier configuration failed closed.
+  
+      at ChildProcess.<anonymous> (file:///C:/Users/nrsan/Documents/Codex/2026-10-15/task-4/orloom/dist/tests/local-template-startup.test.js:29:47)
+      at ChildProcess.wrapper (node:events:639:12)
+      at ChildProcess.emit (node:events:526:24)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)

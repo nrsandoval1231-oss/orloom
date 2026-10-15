@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
+import { parseEnv } from "node:util";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createTrustedVerificationRunner } from "../apps/verifier/src/index.js";
 
@@ -16,6 +20,32 @@ test("factory stays disabled without explicit configuration and builds a valid r
   assert.equal(await createTrustedVerificationRunner({}), null);
   const runner = await createTrustedVerificationRunner(env(path.join(parent, "persistent-artifacts"), path.join(parent, "object-store.git")));
   assert.equal(runner?.constructor.name, "AdmittingVerificationRunner");
+});
+
+test("blank sample environment plus owner session token and R2-only settings do not activate verification", async () => {
+  const sample = parseEnv(readFileSync(path.join(process.cwd(), ".env.example"), "utf8"));
+  assert.equal(await createTrustedVerificationRunner({ ...sample, ORLOOM_SESSION_TOKEN: "fixture-owner-token" }), null);
+  assert.equal(await createTrustedVerificationRunner({ ORLOOM_R2_ACCOUNT_ID: "a".repeat(32), ORLOOM_R2_ACCESS_KEY_ID: "fixture-access-key", ORLOOM_R2_SECRET_ACCESS_KEY: "fixture-secret-key", ORLOOM_R2_BUCKET: "orloom-candidates" }), null);
+});
+
+test("R2 file secret settings are resolved securely and invalid files override raw values", async () => {
+  const directory = mkdtempSync(path.join(tmpdir(), "orloom-verifier-secrets-"));
+  try {
+    const accessFile = path.join(directory, "access-key"), secretFile = path.join(directory, "secret-key");
+    writeFileSync(accessFile, "fixture-access-from-file\n", { mode: 0o600 });
+    writeFileSync(secretFile, "fixture-secret-from-file\n", { mode: 0o600 });
+    const valid = env(path.join(parent, "persistent-artifacts"), path.join(parent, "object-store.git"));
+    delete valid.ORLOOM_R2_ACCESS_KEY_ID; delete valid.ORLOOM_R2_SECRET_ACCESS_KEY;
+    valid.ORLOOM_R2_ACCESS_KEY_ID_FILE = accessFile; valid.ORLOOM_R2_SECRET_ACCESS_KEY_FILE = secretFile;
+    assert.equal((await createTrustedVerificationRunner(valid))?.constructor.name, "AdmittingVerificationRunner");
+    const invalidFile = { ...valid, ORLOOM_R2_ACCESS_KEY_ID: "fixture-raw-fallback", ORLOOM_R2_ACCESS_KEY_ID_FILE: path.join(directory, "missing-secret") };
+    await assert.rejects(createTrustedVerificationRunner(invalidFile), error => {
+      assert.match((error as Error).message, /ORLOOM_R2_ACCESS_KEY_ID_FILE/);
+      assert.doesNotMatch((error as Error).message, new RegExp(directory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      assert.doesNotMatch((error as Error).message, /fixture-raw-fallback|fixture-secret/);
+      return true;
+    });
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
 test("partial or malformed admission configuration fails closed", async () => {
