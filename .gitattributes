@@ -22,3 +22,6 @@ docs/validation/2026-10-15-composition/** -text whitespace=-blank-at-eol,-blank-
 
 # Keep explicit-startup regression and gate transcripts byte-for-byte.
 docs/evidence/validation/2026-10-15-startup/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol
+
+# Preserve exact PR26 fail-before and final gate transcripts.
+docs/evidence/validation/2026-10-15-pr26-repair/** -text whitespace=-blank-at-eol,-blank-at-eof,space-before-tab,cr-at-eol

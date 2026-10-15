@@ -39,7 +39,7 @@ export interface ApprovedWorkerServiceDependencies {
   /** Reconcile only this task's owned runtime records; implementations must reject UNKNOWN. */
   readonly reconcileInterrupted: (target: ApprovedClaimTarget) => Promise<void>;
   /** Replay only retained settlement evidence for this exact task. */
-  readonly reconcileRetained: (target: ApprovedClaimTarget) => Promise<void>;
+  readonly reconcileRetained: (target: ApprovedClaimTarget, leaseEpoch: number) => Promise<void>;
   /** Production composition supplies runApprovedDockerWorkerLane here. */
   readonly executeLane: (lease: WorkerLeaseContract, binding: ApprovedWorkerTaskBinding, signal: AbortSignal) => Promise<ApprovedWorkerLaneResult>;
   readonly integrationAuthority?: LocalIntegrationAuthority;
@@ -56,6 +56,24 @@ export interface ApprovedClaimTarget {
   baseSha: string;
   planDigest: string;
   maxBudgetCents: number;
+}
+
+export interface ApprovedRetainedRuntimeBridge {
+  reconcileRetained(controllerRunId?: string, target?: { missionId: string; sliceId: string }): Promise<Array<"settled" | "observed_absent" | "quarantined" | "ignored">>;
+}
+
+/** Same identity derivation as docker-runtime.controllerRunIdFor, from durable binding facts. */
+export function controllerRunIdForApprovedTask(task: ApprovedWorkerTaskBinding, leaseEpoch: number): string {
+  return createHash("sha256").update(JSON.stringify([
+    "orloom.worker-lease.v1", task.missionId, task.sliceId, leaseEpoch, task.planDigest, task.trustedCheckPolicyDigest,
+  ])).digest("hex");
+}
+
+/** Replay only this task's retained runtime proofs. `ignored` is not trusted here:
+ * only the store's distinct observed_absent result means validated normal completion. */
+export async function reconcileApprovedWorkerRetained(bridge: ApprovedRetainedRuntimeBridge, target: ApprovedClaimTarget, controllerRunId: string): Promise<void> {
+  const outcomes = await bridge.reconcileRetained(controllerRunId, { missionId: target.missionId, sliceId: target.sliceId });
+  if (outcomes.some(outcome => outcome === "quarantined" || outcome === "ignored")) throw new Error("Retained runtime settlement is malformed, stale, or quarantined");
 }
 
 type PersistedMission = NonNullable<Awaited<ReturnType<MissionStore["getMission"]>>>;
@@ -111,7 +129,7 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   if (persistedSlice.budgetCents > task.maxBudgetCents || persistedSlice.budgetCents < options.minimumSliceBudgetCents) throw new Error("Approved slice reservation does not cover the precomputed worst-case provider cost or exceeds the task ceiling");
 
   await deps.reconcileInterrupted(target);
-  await deps.reconcileRetained(target);
+  await deps.reconcileRetained(target, persistedSlice.leaseEpoch);
   if (signal.aborted) throw new Error("Approved worker service was interrupted before claim");
   if (Date.parse(task.expiresAt) <= now()) throw new Error("Approved task manifest expired during reconciliation");
 
@@ -119,11 +137,25 @@ export async function runApprovedWorkerService(options: ApprovedWorkerServiceOpt
   const slice = refreshed.slices.find(row => row.id === task.sliceId)!;
   if (!slice) throw new Error("Approved task slice is missing from the durable mission");
   if (slice.status === "verified") return integrateIfExplicit(options, deps, refreshed);
+  if (slice.status === "cancel_requested") {
+    if (slice.leaseEpoch < 1) return "unknown";
+    const settlement = await deps.store.settleCancellationBeforeRuntime?.({
+      missionId: task.missionId, sliceId: task.sliceId, leaseEpoch: slice.leaseEpoch,
+      controllerRunId: controllerRunIdForApprovedTask(task, slice.leaseEpoch),
+    });
+    if (settlement === "quarantined") return "unknown";
+    const afterSettlement = assertDurableTaskBinding(await deps.store.getMission(task.missionId), task);
+    const settledSlice = afterSettlement.slices.find(row => row.id === task.sliceId)!;
+    if (settledSlice.status === "cancelled") return "cancelled";
+    if (settledSlice.status === "unknown") return "unknown";
+    if (settledSlice.status === "cancel_requested") return "idle";
+    return settledSlice.status === "failed" ? "failed" : "idle";
+  }
   if (slice.status === "awaiting_verification") {
     const existingCerts = await Promise.all(slice.checks.map(checkId => deps.trustedChecks.getCertificate(task.missionId, task.sliceId, checkId)));
     if (existingCerts.every(Boolean)) return integrateIfExplicit(options, deps, refreshed);
-    const eligible = await deps.store.awaitingVerification?.(slice.checks, 10_000);
-    if (!eligible?.some(item => item.missionId === task.missionId && item.sliceId === task.sliceId)) return "unknown";
+    const eligible = await deps.store.isVerificationDispatchEligible?.(task.missionId, task.sliceId, slice.leaseEpoch, slice.checks);
+    if (!eligible) return "unknown";
     await deps.trustedChecks.verifySlice(task.missionId, task.sliceId);
     const reconciled = await deps.store.getMission(task.missionId);
     const result = reconciled?.slices.find(row => row.id === task.sliceId);

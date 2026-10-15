@@ -106,6 +106,8 @@ export interface MissionStore {
   getCertificateRequest?(missionId:string,sliceId:string,checkId:string):Promise<TrustedCheckRequestV1|null>;
   expireVerificationAttempts?(now?:Date,limit?:number):Promise<number>;
   awaitingVerification?(checkIds:string[],limit?:number):Promise<Array<{missionId:string;sliceId:string}>>;
+  /** Exact candidate eligibility; preserves the dispatch-failure and final-attempt terminal guards. */
+  isVerificationDispatchEligible?(missionId:string,sliceId:string,leaseEpoch:number,checkIds:string[]):Promise<boolean>;
   recordVerificationUnavailable?(missionId:string,sliceId:string,leaseEpoch:number,checkId:string,reason:"candidate_unavailable"|"local_head_unavailable"):Promise<void>;
   /** Owner-authenticated durable cancellation request. Never refunds reserved spend or releases capacity. */
   requestCancel?(missionId:string,ownerRequestId:string,reason:string):Promise<void>;
@@ -114,7 +116,7 @@ export interface MissionStore {
   /** Controller-private runtime binding/settlement seam. Never expose these over worker HTTP. */
   registerCancellationRuntimeBinding?(identity:CancellationRuntimeIdentity,binding:CancellationRuntimeBinding):Promise<void>;
   bindCancellationRuntimeContainer?(identity:CancellationRuntimeIdentity,containerId:string):Promise<void>;
-  reconcileCancellationRuntime?(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">;
+  reconcileCancellationRuntime?(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored"|"observed_absent">;
   settleCancellationBeforeRuntime?(identity:CancellationRuntimeIdentity):Promise<"settled"|"quarantined"|"ignored">;
   expire(now?: Date, limit?: number): Promise<number>;
 }

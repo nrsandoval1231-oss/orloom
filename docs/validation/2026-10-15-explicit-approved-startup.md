@@ -1,5 +1,7 @@
 # Explicit approved-worker startup acceptance ledger
 
+**Historical checkpoint:** external exact-head review subsequently reproduced three restart/recovery defects missed by the bounded source acceptance below. The [PR26 restart repair ledger](2026-10-15-pr26-restart-repair.md) is the current acceptance record. These original transcripts and hashes remain unchanged as historical evidence.
+
 Stacked source base: PR #25 head `27b786b140a2f0f73141aa60175b939b8f6ba605`, tree `2bbc1d31b72067c903b7da64bb0258d4499d7509`. Branch `feat/explicit-approved-worker-startup` targets `feat/approved-worker-composition`. Neither PR is authorized to merge or deploy. [Packet](../../.agent/EXPLICIT_STARTUP_PACKET.md), [operator configuration](../operations/approved-worker-startup.md).
 
 The normal worker entrypoint now supports an explicit private exact-task manifest. It validates policies and worst-case cost before secrets, acquires the existing service lock, composes concrete Docker execution with trusted runtime reconciliation and independent candidate admission, and attempts only the named approved slice. Blank configuration remains disabled. `--check-config` succeeds with synthetic nonsecret policy files without opening credential files or contacting services. Targeted claims never select unrelated queued work or invoke scheduling advice.

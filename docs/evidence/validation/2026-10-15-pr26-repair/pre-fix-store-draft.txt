@@ -1,0 +1,1 @@
+This is the implementation draft saved before the required test-only RED run. The authoritative RED evidence is in review-red-build.txt and review-red-tests.txt. This patch is retained for audit and is not the final implementation artifact.

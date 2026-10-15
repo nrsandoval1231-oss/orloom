@@ -43,3 +43,7 @@ Final source gates for approved composition: build/typecheck/validate PASS; Linu
 ## Explicit approved startup successor (2026-10-15)
 
 PR25 repair head `27b786b140a2f0f73141aa60175b939b8f6ba605` remains frozen for external re-review. The separate stacked branch adds normal explicit-config one-task startup, atomic targeted claim, scoped trusted restart reconciliation, shutdown propagation and certified integration/draft-delivery composition. Defaults stay disabled. Exact final gates and bounded acceptance are recorded in [startup ledger](../docs/validation/2026-10-15-explicit-approved-startup.md). Live provider/runsc/remote delivery, deployment, scheduling and learning gates remain OPEN. Do not merge or activate either PR without its separate authority.
+
+## PR26 restart repair (2026-10-15)
+
+PR25 repaired head `27b786b140a2f0f73141aa60175b939b8f6ba605` passed external re-review and remains unchanged. PR26 review of `a8644549b83826f2112bb8f5ad21279c5122aa23` found three reproduced restart defects missed by the earlier bounded review. [Repair ledger](../docs/validation/2026-10-15-pr26-restart-repair.md) supersedes startup acceptance: distinct validated normal absence, atomic no-runtime owner cancellation and exact-target verification eligibility. Real journal/store callback regressions, focused Linux and actual PostgreSQL passed; final full suite and repaired-head publication/re-review are tracked there. No live activation, merge, deployment or live-site changes.

@@ -20,7 +20,7 @@ import type { DeliveryCommandV1 } from "../../../packages/integration/src/delive
 import type { AdmittingVerificationRunner } from "../../../packages/verification/src/admitting-runner.js";
 import { TrustedRuntimeJournalBridge } from "../../control-plane/src/trusted-runtime-journal-bridge.js";
 import { runApprovedDockerWorkerLane } from "../../control-plane/src/approved-worker-lane.js";
-import { runApprovedWorkerService } from "./approved-service.js";
+import { controllerRunIdForApprovedTask, reconcileApprovedWorkerRetained, runApprovedWorkerService } from "./approved-service.js";
 import { DockerWorkerRuntime } from "./docker-runtime.js";
 import { FileRuntimeJournal } from "./runtime-journal.js";
 import { acquireWorkerServiceLock } from "./service-lock.js";
@@ -231,10 +231,7 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
     const serviceResult = await runApprovedWorkerService({ task, executionLimits: limits, minimumSliceBudgetCents, leaseSeconds: 300, signal, ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) }, {
       governor, store, trustedChecks,
       reconcileInterrupted: async target => runtime.reconcileInterrupted(target),
-      reconcileRetained: async target => {
-        const reconciled = await runtimeBridge.reconcileRetained(undefined, target);
-        if (reconciled.includes("quarantined")) throw new Error("Retained runtime settlement remains quarantined");
-      },
+      reconcileRetained: async (target, leaseEpoch) => reconcileApprovedWorkerRetained(runtimeBridge, target, controllerRunIdForApprovedTask(task, leaseEpoch)),
       ...(integrationAuthority ? { integrationAuthority } : {}), ...(prepareCertifiedIntegration ? { prepareCertifiedIntegration } : {}),
       ...(deliveryController ? { deliveryPolicy: deliveryController.policy, deliveryAuthority: deliveryController.authority } : {}),
       executeLane: async (lease, _binding, laneSignal) => runApprovedDockerWorkerLane(lease, {

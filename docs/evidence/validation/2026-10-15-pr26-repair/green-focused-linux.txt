@@ -1,0 +1,32 @@
+✔ memory service restart accepts exact retained ABSENT, awaits review, then settles later owner cancellation (18.904338ms)
+✔ SQL service restart replays the exact completed journal through the production callback without builder execution (1493.517048ms)
+✔ memory service settles owner cancellation before runtime binding and replays idempotently (7.605779ms)
+✔ SQL service settles owner cancellation before runtime binding and replays idempotently (1015.054631ms)
+✔ approved service reconciles first, claims the exact binding once, and executes once (1.617232ms)
+✔ restart verification does not claim or execute already running or awaiting work (1.074546ms)
+✔ owner cancellation without a runtime binding settles using the exact run identity (0.378977ms)
+✔ cancel_requested with a bound runtime remains quarantined and cannot claim (0.185638ms)
+✔ main retained-runtime callback accepts only settlement or validated normal ABSENT (0.458531ms)
+✔ interruption before reconciliation cannot reach claim (0.268169ms)
+✔ actual approved reservation must cover precomputed worst-case cost before reconciliation or claim (0.164449ms)
+✔ settlement replay refreshes task status before any claim or execution (0.166858ms)
+✔ explicit review request integrates the awaiting candidate only after certificate preparation (0.263526ms)
+✔ cancellation settlement requires exact bound absent runtime evidence and keeps spend reserved (1524.801971ms)
+✔ a cancelled candidate awaiting verification settles only after exact runtime absence (1073.229223ms)
+✔ normal exact runtime absence is retained without settling and can settle after a later cancellation (1013.775016ms)
+✔ verified slice runtime ABSENT evidence remains an idempotent observation (1005.495375ms)
+✔ exact verification eligibility reaches candidates beyond the global scanner cap and honors terminal guards (1005.217383ms)
+✔ pre-runtime cancellation settles atomically only when no binding exists (1027.952114ms)
+✔ memory settlement handles a candidate already awaiting verification (2.010696ms)
+✔ memory store retains normal exact ABSENT evidence until a later owner cancellation (0.451398ms)
+✔ memory store keeps an exact retained ABSENT observation benign after verified state (0.316807ms)
+✔ memory pre-runtime settlement is idempotent and rejects late new runtime binding (0.504422ms)
+✔ trusted journal bridge replays exact container binding after a transient SQL bind failure (2.430213ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9843.368087

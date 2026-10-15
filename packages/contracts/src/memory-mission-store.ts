@@ -46,6 +46,7 @@ export class MemoryMissionStore implements MissionStore {
   async getCertificate():Promise<null>{return null;}
   async getCertificateRequest():Promise<null>{return null;}
   async awaitingVerification():Promise<never[]>{return[];}
+  async isVerificationDispatchEligible(_missionId:string,_sliceId:string,_leaseEpoch:number,_checkIds:string[]):Promise<boolean>{return false;}
   private missions = new Map<string, Mission>(); private plans = new Map<string, MissionPlan>(); private slices = new Map<string, MissionSlice>(); private eventsLog: MissionEvent[] = []; private cursor = 0;
   private cancellations = new Map<string,{ownerRequestId:string;reason:string;requestedAt:string;completedAt:string|null}>();
   private cancellationRuntime = new Map<string,{identity:CancellationRuntimeIdentity;binding:CancellationRuntimeBinding;containerId:string|null;state:"pending"|"unknown"|"absent";evidence:CancellationRuntimeEntry|null}>();
@@ -61,15 +62,23 @@ export class MemoryMissionStore implements MissionStore {
     if(!/^[a-f0-9]{64}$/.test(containerId))throw new MissionValidationError("Runtime container id is invalid");
     const value=this.cancellationRuntime.get(this.runtimeKey(identity));if(!value||value.identity.controllerRunId!==identity.controllerRunId||(value.containerId&&value.containerId!==containerId))throw new MissionConflictError("Container binding is stale or changed");value.containerId=containerId;
   }
-  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored">{
+  async reconcileCancellationRuntime(entry:CancellationRuntimeEntry):Promise<"settled"|"quarantined"|"ignored"|"observed_absent">{
     const i=entry?.identity,value=i&&this.cancellationRuntime.get(this.runtimeKey(i)),s=i&&this.slices.get(`${i.missionId}:${i.sliceId}`),m=i&&this.missions.get(i.missionId);
-    if(!value||!s||!m||value.identity.controllerRunId!==i.controllerRunId||s.leaseEpoch!==i.leaseEpoch||!['cancel_requested','unknown','awaiting_verification','cancelled'].includes(s.status))return "ignored";
+    if(!value||!s||!m||value.identity.controllerRunId!==i.controllerRunId||s.leaseEpoch!==i.leaseEpoch||!['cancel_requested','unknown','awaiting_verification','verified','cancelled'].includes(s.status))return "ignored";
     const observation=entry.reconciliation;
     if(!observation||typeof observation!=="object"||!observation.identity||typeof observation.identity!=="object")return "ignored";
     if(entry.name!==value.binding.name||entry.imageRef!==value.binding.imageRef||entry.labelsDigest!==value.binding.labelsDigest||value.containerId&&entry.containerId!==value.containerId||observation.source!=="orloom.trusted-docker-reconciler.v1"||observation.outcome!==entry.state||observation.identity.missionId!==i.missionId||observation.identity.sliceId!==i.sliceId||observation.identity.leaseEpoch!==i.leaseEpoch||observation.identity.controllerRunId!==i.controllerRunId||observation.name!==value.binding.name||observation.imageRef!==value.binding.imageRef||observation.labelsDigest!==value.binding.labelsDigest||observation.containerId!==entry.containerId)return "ignored";
-    if(entry.state==="unknown"){if(value.state!=="absent"){value.state="unknown";value.evidence=entry;}return value.state==="absent"?"settled":"quarantined";}
-    if(value.state==="absent")return canonicalJson(value.evidence)===canonicalJson(entry)?"settled":"ignored";
-    if(!validateCancellationSettlementEvidence(entry,value.binding)||!value.containerId||m.status!=="cancelling")return "quarantined";
+    if(entry.state==="unknown"){if(value.state==="absent")return "quarantined";value.state="unknown";value.evidence=entry;return "quarantined";}
+    if(value.state==="absent"){
+      if(canonicalJson(value.evidence)!==canonicalJson(entry))return "ignored";
+      if(s.status==="cancelled"&&m.status==="cancelled")return "settled";
+      if(m.status!=="cancelling")return "observed_absent";
+    }
+    if(!validateCancellationSettlementEvidence(entry,value.binding)||!value.containerId)return "quarantined";
+    if(m.status!=="cancelling"){
+      if((s.status==="awaiting_verification"||s.status==="verified")&&m.status!=="cancelled"){value.state="absent";value.evidence=entry;return "observed_absent";}
+      return "quarantined";
+    }
     value.state="absent";value.evidence=entry;s.status="cancelled";s.leaseToken=null;s.leaseExpiresAt=null;this.occupied.delete(`${s.missionId}:${s.id}`);
     const uncertain=[...this.slices.values()].some(x=>x.missionId===m.id&&["running","cancel_requested","awaiting_verification","unknown"].includes(x.status));
     if(!uncertain){m.status="cancelled";const c=this.cancellations.get(m.id);if(c)c.completedAt??=new Date().toISOString();}
