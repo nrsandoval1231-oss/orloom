@@ -1,0 +1,104 @@
+{
+  "slice": "Slice 0 - establish current baseline",
+  "recorded_at_utc": "2026-10-14T15:06:18Z",
+  "recorded_at_local": "2026-10-14T10:06:18-05:00",
+  "source": {
+    "repository": "nrsandoval1231-oss/orloom",
+    "ref": "refs/heads/main",
+    "commit": "86a972300708f9bc05f557c5c09efd1c0f7e2ba6",
+    "tree": "10de087b4999e1d3264c644a752d651df04a3927",
+    "provenance": "fresh clone of origin/main; verified commit and tree equal the audit anchor before any command ran",
+    "worktree_clean_before": true,
+    "worktree_clean_after": true,
+    "open_pull_requests_at_baseline": 0,
+    "remote_branches": 21,
+    "repository_visibility": "public"
+  },
+  "host": {
+    "os": "Windows",
+    "node": "v24.18.0",
+    "npm": "11.16.0",
+    "engines_requirement": "node >=24",
+    "linux_runner_available": false,
+    "docker_available": false,
+    "wsl_available": false,
+    "note": "No local Linux, Docker or WSL runtime. Slice 6 host prerequisites are absent; the Windows result is not a substitute for Linux acceptance."
+  },
+  "gates": [
+    {
+      "command": "npm ci",
+      "exit_code": 0,
+      "detail": "locked install from package-lock.json; 99 packages added, 0 vulnerabilities"
+    },
+    { "command": "npm run typecheck", "exit_code": 0, "duration_seconds": 3.8 },
+    { "command": "npm run build", "exit_code": 0, "duration_seconds": 3.9 },
+    { "command": "npm run validate", "exit_code": 0, "duration_seconds": 0.5 },
+    {
+      "command": "npm test",
+      "exit_code": 1,
+      "detail": "npm test = npm run build && node --test dist/tests/*.test.js; build stage passed, suite stage reported failures below",
+      "duration_seconds": 78.2
+    }
+  ],
+  "suite": {
+    "tests": 202,
+    "pass": 189,
+    "fail": 13,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "suites": 0,
+    "duration_ms": 73656.6909,
+    "exit_code": 1
+  },
+  "failures": {
+    "classification": "PLATFORM_GUARD - not a defect and not a regression",
+    "count": 13,
+    "test_file": "tests/candidate-admission.test.ts",
+    "test_file_total_tests": 13,
+    "observation": "all 13 tests in candidate-admission.test.ts failed; no other file in the suite produced a failure; 189 = 202 - 13",
+    "single_observed_error": "Candidate admission refused: admission root must be a private owned real directory",
+    "source_guards": [
+      "packages/verification/src/candidate-admission.ts:73 - privateDirectory() rejects any root that is not an absolute real non-symlink directory with POSIX mode group/world bits clear (info.mode & 0o077) === 0 and st_uid equal to the process uid. Windows cannot satisfy POSIX ownership/mode semantics.",
+      "packages/verification/src/candidate-admission.ts:45 - boundedGit() throws 'bounded Linux Git importer is unavailable' whenever process.platform !== 'linux'.",
+      "packages/verification/src/candidate-admission.ts:49 - the bounded importer spawns /usr/bin/prlimit and /usr/bin/git, which do not exist on Windows."
+    ],
+    "documented_design": "docs/verification.md declares this path requires Linux /usr/bin/git and /usr/bin/prlimit, an existing owner-only real admission directory and an operator-owned repository map.",
+    "conclusion": "The 13 failures are the designed fail-closed behaviour of a Linux-only source boundary executed on Windows. They are not evidence that the candidate-admission source is broken, and they are not evidence that it works on Linux from this host. Linux execution of these 13 tests was not available locally and remains UNVERIFIED_FROM_THIS_HOST."
+  },
+  "retained_manifest_cross_check": {
+    "manifest": "docs/validation/foundation-release/source-manifest.json",
+    "manifest_sha256": "c458c72a38a6e3811a3bc8739e8c253b3621ce0a69480c0a1bead476fe9694a3",
+    "file_count": 119,
+    "verified_ok": 119,
+    "hash_mismatches": 0,
+    "missing_from_checkout": 0,
+    "listed_but_not_tracked": 0,
+    "result": "Every one of the 119 manifest entries matches this checkout byte-for-byte by size, SHA-256 and Git blob SHA-1. The retained Linux source acceptance therefore binds exactly to this source tree despite core.autocrlf=true, because .gitattributes sets '* text=auto eol=lf'.",
+    "caveat": "The manifest's declared exclusion list omits .agent/**, work/**, infra/**, deploy/**, prototypes/** and .gitattributes, which it also excludes in practice. Verified separately: no unlisted tracked path is a runtime, test, build or configuration input (no path under packages/, apps/, tests/, scripts/, db/, and not tsconfig.json, package.json, package-lock.json, .env.example or .dockerignore). The coverage claim in the manifest's prose is therefore accurate for shipped runtime source but incomplete as written."
+  },
+  "evidence_class": {
+    "source": "VERIFIED - exact commit and tree, byte-identical to the retained manifest",
+    "fixture_pglite": "VERIFIED as source behaviour only; 189 tests include PGlite-backed regressions",
+    "actual_postgresql": "NOT EXERCISED in this slice",
+    "docker_runsc": "NOT EXERCISED; no Docker or WSL on this host",
+    "live_provider": "NOT EXERCISED",
+    "publication": "NOT EXERCISED"
+  },
+  "historical_evidence_separation": {
+    "retained_result": "202/202 pass, 0 fail, 0 skipped, 0 cancelled, 88881.444016 ms, exit 0",
+    "retained_provenance": "materialized frozen release-candidate snapshot with a local-only Git index; not an actual published checkout; environment.txt records node v24.19.0, npm 11.9.0 and a timestamp only, with no OS field",
+    "retained_initial_failure": "the first materialized-snapshot run was 201/202 because git ls-files had no Git metadata; the log is retained, not discarded",
+    "relationship_to_this_run": "The retained 202/202 is source-only evidence over the same 119 files verified here. This Windows run reproduces 189/202 with the 13 failures fully explained by the documented Linux/POSIX boundary. Neither result closes any runtime gate."
+  },
+  "scope": {
+    "production_changes": "none; no file under packages/, apps/, tests/, scripts/, db/ or infra/ was modified",
+    "documentation_changes": "active documentation and this validation record only; frozen historical evidence under docs/validation/foundation-release/ and docs/evidence/ is unchanged",
+    "authorizations_used": "none; no credentials, spending, deployment, activation, publication or merge"
+  },
+  "unresolved": [
+    "Linux execution of the 13 candidate-admission tests is not reproducible from this host; it remains covered only by the retained snapshot evidence.",
+    "No PostgreSQL, Docker/runsc, live provider or publication evidence exists at this baseline.",
+    "The retained manifest's declared exclusion list understates the paths it actually excludes."
+  ]
+}
