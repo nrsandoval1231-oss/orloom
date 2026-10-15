@@ -160,7 +160,7 @@ export class CandidateAdmission {
       await chmod(path.join(objects,"config"),0o600);
       await chmod(path.join(objects,"refs","heads","admitted-candidate"),0o600);
       await run(objects,["fsck","--strict","--full","--no-reflogs","--no-dangling"],65536);
-      const config={objectStore:objects,approvedRef},input=await this.inspect(config,binding,run);
+      const config={...trusted,objectStore:objects,approvedRef},input=await this.inspect(config,binding,run);
       const treeSha=(await run(objects,["rev-parse",`${binding.candidateSha}^{tree}`],1024)).toString("ascii").trim();if(!sha1(treeSha))throw failure("invalid candidate tree");
       const receipt:AdmissionReceipt={version:"orloom.candidate-admission-receipt.v1",admissionDigest:key,binding,candidateSha:binding.candidateSha,treeSha,bundleDigest:bundleKey.slice(7),indexDigest:indexKey.slice(7),inputManifestDigest:input.digest};
       await writeFile(path.join(staging,"receipt.json"),canonicalJson(receipt),{mode:0o600,flag:"wx"});
@@ -186,7 +186,7 @@ export class CandidateAdmission {
     const receipt=JSON.parse(await readFile(file,"utf8")) as AdmissionReceipt;
     if(receipt.version!=="orloom.candidate-admission-receipt.v1"||receipt.admissionDigest!==key||canonicalJson(receipt.binding)!==canonicalJson(binding)||receipt.candidateSha!==binding.candidateSha||receipt.bundleDigest!==bundleKey.slice(7)||receipt.indexDigest!==indexKey.slice(7))throw failure("admission receipt binding changed");
     const objectStore=path.join(directory,"objects.git");if((await lstat(objectStore)).isSymbolicLink()||await realpath(objectStore)!==objectStore)throw failure("admission object store escaped confinement");
-    const repository={objectStore,approvedRef},input=await this.inspect(repository,binding,run);
+    const repository={...this.options.repositories[binding.repository]!,objectStore,approvedRef},input=await this.inspect(repository,binding,run);
     const treeSha=(await run(objectStore,["rev-parse",`${binding.candidateSha}^{tree}`],1024)).toString("ascii").trim();
     if(input.digest!==receipt.inputManifestDigest||treeSha!==receipt.treeSha)throw failure("admitted source content changed");
     return {repository,input,receipt};

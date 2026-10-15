@@ -315,3 +315,46 @@ test("trusted verifier checks lifecycle at the actual sandbox dispatch boundary"
   assert.equal(launches,0,"no sandbox starts after the final lifecycle checkpoint stops");
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
+
+test("operator execution profile admits source while preserving full historical Git objects",async()=>{
+ const f=await fixture();try {
+  await git(f.work,"reset","--hard",f.binding.baseSha);
+  await git(f.work,"mv","src","packages");
+  await mkdir(path.join(f.work,"docs/evidence"),{recursive:true});
+  for(let i=0;i<5;i++)await writeFile(path.join(f.work,`docs/evidence/${i}.log`),Buffer.alloc(3_500_000,65));
+  await git(f.work,"add",".");await git(f.work,"commit","-m","historical base");
+  f.binding.baseSha=await git(f.work,"rev-parse","HEAD");await git(f.work,"push",f.trusted,"HEAD:main");
+  await writeFile(path.join(f.work,"packages/a.js"),"export const a=3;\n");await git(f.work,"commit","-am","real candidate");
+  const candidate=await repack(f),binding=retain(f,candidate.bytes,{candidateSha:candidate.candidateSha,scopes:["packages/**"]});
+  const api=await import("../packages/verification/src/candidate-admission.js");
+  const config={objectStore:f.trusted,approvedRef:"refs/heads/main",executionInputProfile:"orloom-execution-v1" as const};
+  const admission=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":config},artifacts:f.artifacts});
+  const admitted=await admission.admit(binding);
+  assert.deepEqual([...admitted.input.files.keys()],["packages/a.js"]);
+  const manifest=JSON.parse(admitted.input.manifest.toString());
+  assert.equal(manifest.executionProfile,"orloom-execution-v1");assert.equal(manifest.treeSha,admitted.receipt.treeSha);
+  assert.equal(manifest.excludedFiles,5);assert.equal(manifest.excludedBytes,17_500_000);
+  assert.equal(await git(admitted.repository.objectStore,"cat-file","-s",`${candidate.candidateSha}:docs/evidence/0.log`),"3500000");
+  assert.equal((await admission.admit(binding)).input.digest,admitted.input.digest);
+  const full=new api.CandidateAdmission({...optionsForFull(f),artifacts:f.artifacts});
+  await assert.rejects(full.admit(binding),/input bounds|input cap/);
+  await assert.rejects(new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{...config,executionInputProfile:"unknown"} as any},artifacts:f.artifacts}).admit(binding),/unknown execution input profile/);
+  await writeFile(path.join(f.work,"docs/evidence/changed.log"),"scope violation");await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const outside=await repack(f);await assert.rejects(admission.admit(retain(f,outside.bytes,{candidateSha:outside.candidateSha})),/scope/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+  const blob=await git(f.work,"rev-parse",`${candidate.candidateSha}:packages/a.js`);
+  await git(f.work,"update-index","--add","--cacheinfo","120000",blob,"docs/evidence/link");await git(f.work,"commit","--amend","--no-edit");
+  const linked=await repack(f);await assert.rejects(admission.admit(retain(f,linked.bytes,{candidateSha:linked.candidateSha,scopes:["**"]})),/symlink|unsupported/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+  for(let i=0;i<5;i++)await writeFile(path.join(f.work,`packages/large-${i}.ts`),Buffer.alloc(3_500_000,65));
+  await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const oversized=await repack(f);await assert.rejects(admission.admit(retain(f,oversized.bytes,{candidateSha:oversized.candidateSha,scopes:["packages/**"]})),/input bounds|input cap/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+
+  await writeFile(path.join(f.work,"unclassified.ts"),"required new root");await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const unknown=await repack(f);
+  await assert.rejects(admission.admit(retain(f,unknown.bytes,{candidateSha:unknown.candidateSha,scopes:["**"]})),/unclassified/);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+function optionsForFull(f:Awaited<ReturnType<typeof fixture>>) {return {root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}}};}

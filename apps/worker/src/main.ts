@@ -99,6 +99,7 @@ async function validatePolicyFiles(env: NodeJS.ProcessEnv, task: ApprovedTaskMan
     if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(repository) || !raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
     const config = raw as Record<string, unknown>;
     if (typeof config.objectStore !== "string" || !path.isAbsolute(config.objectStore) || typeof config.approvedRef !== "string" || !/^refs\/(heads|tags)\/[A-Za-z0-9._/-]+$/.test(config.approvedRef) || config.approvedRef.includes("..")) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
+    if (config.executionInputProfile !== undefined && config.executionInputProfile !== "orloom-execution-v1") throw new Error("unknown execution input profile");
     for (const root of [artifactRoot, admissionRoot, process.cwd()]) if (isInside(root, config.objectStore) || isInside(config.objectStore, root)) throw new Error("Verifier object stores must be separate from worker source and artifact roots");
   }
   const integration = configuredBool(env, "ORLOOM_INTEGRATION_ENABLED"), delivery = configuredBool(env, "ORLOOM_DELIVERY_ENABLED");
