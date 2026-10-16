@@ -60,6 +60,32 @@ test("extractor only accepts reachable commit regular files and rejects symlink 
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test("execution profile checks forbidden paths before excluding historical evidence",async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),"orl-profile-policy-")),work=path.join(root,"work"),bare=path.join(root,"objects.git");
+  try {
+    await mkdir(work);await git(root,"init","--bare",bare);await git(work,"init","-b","main");
+    await mkdir(path.join(work,"packages"),{recursive:true});await writeFile(path.join(work,"packages/safe.ts"),"export const safe=true;\n");
+    await mkdir(path.join(work,"docs/evidence"),{recursive:true});await writeFile(path.join(work,"docs/evidence/historical.log"),"ordinary evidence");
+    await writeFile(path.join(work,"package-lock.json"),"{}\n");await git(work,"add",".");await git(work,"commit","-m","profile base");
+    const base=(await exec("git",["-C",work,"rev-parse","HEAD"],{encoding:"utf8"})).stdout.trim();
+    await writeFile(path.join(work,"packages/safe.ts"),"export const safe=false;\n");await git(work,"commit","-am","safe candidate");
+    await git(work,"remote","add","trusted",bare);await git(work,"push","trusted","HEAD:refs/heads/main");
+    const candidate=(await exec("git",["-C",work,"rev-parse","HEAD"],{encoding:"utf8"})).stdout.trim();
+    const config={objectStore:bare,approvedRef:"refs/heads/main",executionInputProfile:"orloom-execution-v1" as const};
+    const accepted=await extractCandidateBundle(config,base,candidate);
+    assert.deepEqual([...accepted.files.keys()], ["package-lock.json","packages/safe.ts"]);
+    assert.equal(JSON.parse(accepted.manifest.toString()).excludedFiles,1);
+    const rejectedPaths=[".npmrc","credentials/secret.pem",".github/workflows/hidden.yml"];
+    for(const [index,relative] of rejectedPaths.entries()){
+      await git(work,"reset","--hard",candidate);
+      const target=path.join(work,"docs/evidence",relative);await mkdir(path.dirname(target),{recursive:true});await writeFile(target,"fixture only");
+      await git(work,"add",".");await git(work,"commit","-m",`forbidden excluded ${index}`);await git(work,"push","--force","trusted","HEAD:refs/heads/main");
+      const bad=(await exec("git",["-C",work,"rev-parse","HEAD"],{encoding:"utf8"})).stdout.trim();
+      await assert.rejects(extractCandidateBundle(config,base,bad),/forbidden workflow, credential, or dependency configuration path/);
+    }
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+
 test("check policy is finite and worker text cannot select commands", () => {
   const policy = getCheckPolicy("node-validate-syntax");
   assert.deepEqual(policy.argv, ["/usr/local/bin/node", "--check", "scripts/validate.mjs"]);

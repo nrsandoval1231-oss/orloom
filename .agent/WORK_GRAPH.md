@@ -72,3 +72,7 @@ Rebase override (2026-10-15): the UI successor is locally rebased onto repaired 
 Main f69e909 contains accepted PR26 a92e6a8 tree. PR27 dd589b8 targets main. External review 5539182411 supersedes prior UI acceptance: actual verifier binding/support and observedRemoteSha projection repairs are READY in PR27_READINESS_OBSERVATION_PACKET.md. Test-first repair, final exact candidate gates and independent review precede same-PR publication. Reviewer owns merge; no activation or deployment. Historical statements above retain their original scope.
 
 PR27 corrected mapping local gates PASS: final Linux382total/380pass/zero failures/two existing skips; build/typecheck/validate, focused24/24, browser, actual PostgreSQL and independent bounded source review PASS. Manifest8de135882a6396b60aa8283801b431cd797f20a11498813e4d4673425461a96d raw/build/staged hashes match. External exact-head review and live product proof OPEN; reviewer owns merges.
+
+## PR29 policy parity successor (2026-10-16)
+
+Owner-authorized READY packet: PR29_POLICY_PARITY_PACKET.md. Preserve full-tree forbidden-path checks before projection exclusion, all input bounds and retained Git evidence. Final gates and independent exact-head acceptance precede existing-PR merge; no host cleanup/deployment/provider authority.

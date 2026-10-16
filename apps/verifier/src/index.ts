@@ -28,6 +28,7 @@ export async function createTrustedVerificationRunner(env: NodeJS.ProcessEnv = p
   if (!repositories || typeof repositories !== "object" || Array.isArray(repositories) || Object.keys(repositories).length === 0) throw new Error("trusted repository map is empty or invalid");
   for (const [name, config] of Object.entries(repositories)) {
     if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(name) || !config || typeof config.objectStore !== "string" || !path.isAbsolute(config.objectStore) || !/^refs\/(heads|tags)\/[A-Za-z0-9._/-]+$/.test(config.approvedRef) || config.approvedRef.includes("..")) throw new Error("trusted repository map entry is invalid");
+    if (config.executionInputProfile !== undefined && config.executionInputProfile !== "orloom-execution-v1") throw new Error("unknown execution input profile");
     const objectStore = path.resolve(config.objectStore);
     const relativeToArtifact = path.relative(artifactRoot, objectStore), relativeToSource = path.relative(process.cwd(), objectStore);
     const overlaps = (relative: string) => relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`));

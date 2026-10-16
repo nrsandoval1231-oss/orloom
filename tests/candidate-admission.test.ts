@@ -7,8 +7,37 @@ import { promisify } from "node:util";
 import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { pathToFileURL } from "node:url";
 import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 const exec=promisify(execFile),hash=(value:Uint8Array|string)=>createHash("sha256").update(value).digest("hex");
+
+test("profile path guard stays in parity with the baked suite admission policy",async()=>{
+ const temp=await mkdtemp(path.join(os.tmpdir(),"orloom-policy-parity-"));
+ try {
+  await writeFile(path.join(temp,"package.json"),await readFile("package.json"));
+  await writeFile(path.join(temp,"package-lock.json"),await readFile("package-lock.json"));
+  const suite=await import(pathToFileURL(path.resolve("infra/verifier-isolation/suite-policy.js")).href);
+  const {forbiddenSuitePath}=await import("../packages/verification/src/repository.js");
+  const vectors:[string,boolean][]=[
+   ["package-lock.json",false],["docs/evidence/old-run.log",false],["docs/evidence/.npmrc",true],
+   ["docs/evidence/credentials/secret.pem",true],["docs/evidence/.github/workflows/hidden.yml",true],
+   ["docs/evidence/.env.production",true],["docs/evidence/secrets/token.txt",true],
+   ["docs/evidence/package-lock.json.backup",true],["docs/evidence/yarn.lock",true],
+   ["dist/generated.js",true],["docs/evidence/STATE/result.json",true],
+   ["docs/evidence/node_modules/pkg/index.js",true],["docs/evidence/credentials.json",true],
+   ["docs/evidence/id_ed25519",true],["docs/evidence/key.pfx",true],
+   ["docs/evidence/npm-shrinkwrap.json",true],["docs/evidence/pnpm-lock.yaml",true],
+   ["docs/evidence/bun.lockb",true],["docs/evidence/.yarnrc.yml",true],
+   ["docs/evidence/.pnp.cjs",true],["Package-lock.json",true],
+   ["docs/evidence/.env.example",false],["docs/evidence/ordinary.txt",false],
+  ];
+  for(const [file,expected] of vectors){
+   assert.equal(forbiddenSuitePath(file),expected,`TypeScript policy vector ${file}`);
+   const rejected=await suite.admitSuiteInput(temp,[{path:file}]).then(()=>false,()=>true);
+   assert.equal(rejected,expected,`suite policy vector ${file}`);
+  }
+ }finally{await rm(temp,{recursive:true,force:true});}
+});
 async function git(root:string,...args:string[]) {return (await exec("git",["-C",root,"-c","user.name=Admission Fixture","-c","user.email=fixture@example.invalid",...args],{encoding:"utf8"})).stdout.trim();}
 async function fixture() {
   const root=await mkdtemp(path.join(os.tmpdir(),"orloom-admission-"));
@@ -315,3 +344,46 @@ test("trusted verifier checks lifecycle at the actual sandbox dispatch boundary"
   assert.equal(launches,0,"no sandbox starts after the final lifecycle checkpoint stops");
  }finally{await rm(f.root,{recursive:true,force:true});}
 });
+
+test("operator execution profile admits source while preserving full historical Git objects",async()=>{
+ const f=await fixture();try {
+  await git(f.work,"reset","--hard",f.binding.baseSha);
+  await git(f.work,"mv","src","packages");
+  await mkdir(path.join(f.work,"docs/evidence"),{recursive:true});
+  for(let i=0;i<5;i++)await writeFile(path.join(f.work,`docs/evidence/${i}.log`),Buffer.alloc(3_500_000,65));
+  await git(f.work,"add",".");await git(f.work,"commit","-m","historical base");
+  f.binding.baseSha=await git(f.work,"rev-parse","HEAD");await git(f.work,"push",f.trusted,"HEAD:main");
+  await writeFile(path.join(f.work,"packages/a.js"),"export const a=3;\n");await git(f.work,"commit","-am","real candidate");
+  const candidate=await repack(f),binding=retain(f,candidate.bytes,{candidateSha:candidate.candidateSha,scopes:["packages/**"]});
+  const api=await import("../packages/verification/src/candidate-admission.js");
+  const config={objectStore:f.trusted,approvedRef:"refs/heads/main",executionInputProfile:"orloom-execution-v1" as const};
+  const admission=new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":config},artifacts:f.artifacts});
+  const admitted=await admission.admit(binding);
+  assert.deepEqual([...admitted.input.files.keys()],["packages/a.js"]);
+  const manifest=JSON.parse(admitted.input.manifest.toString());
+  assert.equal(manifest.executionProfile,"orloom-execution-v1");assert.equal(manifest.treeSha,admitted.receipt.treeSha);
+  assert.equal(manifest.excludedFiles,5);assert.equal(manifest.excludedBytes,17_500_000);
+  assert.equal(await git(admitted.repository.objectStore,"cat-file","-s",`${candidate.candidateSha}:docs/evidence/0.log`),"3500000");
+  assert.equal((await admission.admit(binding)).input.digest,admitted.input.digest);
+  const full=new api.CandidateAdmission({...optionsForFull(f),artifacts:f.artifacts});
+  await assert.rejects(full.admit(binding),/input bounds|input cap/);
+  await assert.rejects(new api.CandidateAdmission({root:f.admissions,repositories:{"owner/repo":{...config,executionInputProfile:"unknown"} as any},artifacts:f.artifacts}).admit(binding),/unknown execution input profile/);
+  await writeFile(path.join(f.work,"docs/evidence/changed.log"),"scope violation");await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const outside=await repack(f);await assert.rejects(admission.admit(retain(f,outside.bytes,{candidateSha:outside.candidateSha})),/scope/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+  const blob=await git(f.work,"rev-parse",`${candidate.candidateSha}:packages/a.js`);
+  await git(f.work,"update-index","--add","--cacheinfo","120000",blob,"docs/evidence/link");await git(f.work,"commit","--amend","--no-edit");
+  const linked=await repack(f);await assert.rejects(admission.admit(retain(f,linked.bytes,{candidateSha:linked.candidateSha,scopes:["**"]})),/symlink|unsupported/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+  for(let i=0;i<5;i++)await writeFile(path.join(f.work,`packages/large-${i}.ts`),Buffer.alloc(3_500_000,65));
+  await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const oversized=await repack(f);await assert.rejects(admission.admit(retain(f,oversized.bytes,{candidateSha:oversized.candidateSha,scopes:["packages/**"]})),/input bounds|input cap/);
+  await git(f.work,"reset","--hard",candidate.candidateSha);
+
+  await writeFile(path.join(f.work,"unclassified.ts"),"required new root");await git(f.work,"add",".");await git(f.work,"commit","--amend","--no-edit");
+  const unknown=await repack(f);
+  await assert.rejects(admission.admit(retain(f,unknown.bytes,{candidateSha:unknown.candidateSha,scopes:["**"]})),/unclassified/);
+ }finally{await rm(f.root,{recursive:true,force:true});}
+});
+
+function optionsForFull(f:Awaited<ReturnType<typeof fixture>>) {return {root:f.admissions,repositories:{"owner/repo":{objectStore:f.trusted,approvedRef:"refs/heads/main"}}};}
