@@ -534,10 +534,16 @@ test("verifier archive extraction preserves writable work and read-only admitted
   const root = await mkdtemp(path.join(os.tmpdir(), "orl-verifier-archive-mode-"));
   try {
     const staged = path.join(root, "staged"), source = path.join(staged, "source"), destination = path.join(root, "work");
-    await mkdir(source, { recursive: true, mode: 0o555 });
+    // Populate the fixture while its ancestors are writable, then freeze the
+    // staged input to the same modes the production launcher presents.
+    await mkdir(staged, { mode: 0o700 });
+    await mkdir(source, { mode: 0o700 });
     await writeFile(path.join(staged, "manifest.json"), "{}\n", { mode: 0o444 });
     await writeFile(path.join(source, "input.txt"), "admitted\n", { mode: 0o444 });
     await chmod(source, 0o555); await chmod(staged, 0o555);
+    // In the root-only setpriv branch, uid 65532 must traverse this unique
+    // fixture root. Keep the permission change on this test-owned directory.
+    if (process.getuid?.() === 0) await chmod(root, 0o711);
 
     const guardStart = launcher.indexOf("input_entries=$(find "), guardEnd = launcher.indexOf("\n\nconfig=", guardStart);
     assert.ok(guardStart >= 0 && guardEnd > guardStart, "production staged-root guard is present");
@@ -549,7 +555,9 @@ test("verifier archive extraction preserves writable work and read-only admitted
     await chmod(staged, 0o555);
     const hostileRoot = checkRoot();
     assert.equal(hostileRoot.status, 69, "an unexpected symlink at the staged root is rejected before archiving");
+    await chmod(staged, 0o755);
     await rm(path.join(staged, "unexpected"));
+    await chmod(staged, 0o555);
 
     const archiveResult = spawnSync("tar", ["-C", staged, "-cf", "-", "--", ...members], { encoding: null, maxBuffer: 1024 * 1024 });
     assert.equal(archiveResult.status, 0, archiveResult.stderr.toString());
@@ -599,5 +607,12 @@ test("verifier archive extraction preserves writable work and read-only admitted
     assert.deepEqual(names.sort(), ["manifest.json", "source", "source/input.txt"], "archive contains only manifest and admitted source entries, without an archived root directory");
     assert.deepEqual(members, ["manifest.json", "source"], "launcher archive selection excludes the read-only staging root");
     assert.match(launcher, /input_entries=.*find .* -mindepth 1 -maxdepth 1 .*\[\[ \$input_entries == \$'manifest\.json\\nsource'/s, "launcher rejects unexpected staged root entries");
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally {
+    // Extraction intentionally leaves selected directories read-only; restore
+    // only this test's known fixture directories so its owner can clean up.
+    for (const directory of ["staged", "staged/source", "work", "work/source", "legacy-work", "legacy-work/source"]) {
+      await chmod(path.join(root, directory), 0o700).catch(() => {});
+    }
+    await rm(root, { recursive: true, force: true });
+  }
 });
