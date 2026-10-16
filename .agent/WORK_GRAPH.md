@@ -77,6 +77,16 @@ PR27 corrected mapping local gates PASS: final Linux382total/380pass/zero failur
 
 Owner-authorized READY packet: PR29_POLICY_PARITY_PACKET.md. Preserve full-tree forbidden-path checks before projection exclusion, all input bounds and retained Git evidence. Final gates and independent exact-head acceptance precede existing-PR merge; no host cleanup/deployment/provider authority.
 
+## First live workflow successor (2026-10-16)
+
+`FLW-1` is the next bounded live-proof node on `feat/first-live-workflow` at base `15e312d5bf7e1484514a769413e83549340cd703`: browser owner submit/approve → private exact manifest and one approved-single worker attempt → independent verifier → separate review artifact → Governor integration → read-back-verified draft PR. Owner authorizes `nrsandoval1231-oss/orloom`, at most $1 provider and one dedicated worker at most $0.10/hour/$5 total infrastructure. [Packet](FIRST_LIVE_WORKFLOW_PACKET.md). READY only after exact target, current price/credentials, host/capacity, preloaded-image/runsc and spend preflight; otherwise BLOCKED with named UNKNOWN. Deployment-shaped cancellation/interruption proof is part of FLW-1; live behavior stays unproven unless observed. `FLW-2`, automatic trusted dispatch after committed browser approval and durable independent-review request after exact certification, follows FLW-1 evidence; it is not certified by an operator-assisted run. No automatic merge, planner, learning or multiple builders are included.
+
+`FLW-V1` verifier archive-root repair and `FLW-W1` worker-input projection implementation are preserved in local commit `92b859b`; their implementation packets/completions remain linked above. Both implementation handoffs still require controller exact-candidate validation. Windows skipped the POSIX extraction-mode regression. Original verifier failure and worker input rejection remain historical failures, not certificates; fresh exact-candidate full Linux suite and genuine runsc proof are still required before any provider attempt.
+
 ## Forest & Brass Hostinger UI successor (2026-10-16)
 
-`UI-H1` READY on isolated `feat/forest-brass-hostinger` at approved PR30 head `3eda9f642e90de9179faebcd7473994f46119645`: one Luna implements the owner-approved Forest & Brass Command Center, actual owner mission lifecycle and reversible read-only Live Loom using existing APIs, with an authenticated bounded mission-list method/route only because no list currently exists. [Packet](HOSTINGER_UI_PACKET.md). No worker activation or invented readiness. Controller owns exact-source final gates, independent review, same-host backup/isolated restore, serialized integration, Hostinger cutover and remote/browser verification. Historical graph entries above do not certify this successor.
+`UI-H1` is merged from origin/main `8a910f0` during this local source reconciliation. The UI implementation and its existing packet/evidence are retained unchanged; integration adds no Hostinger operation or cutover authority.
+
+## FLW local integration (2026-10-16)
+
+`feat/first-live-workflow` now contains the current mainline UI plus the preserved FLW worker-input and verifier archive-root repairs. Local build/typecheck/validate and Windows-safe focused tests are the next bounded gates. Independent review, full Linux validation, exact-candidate genuine runsc, cancellation/interruption proof and live provider/draft PR remain OPEN. See [integration packet](FLW_INTEGRATION_PACKET.md); no push or external effect is authorized.

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat, chown } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execFile, spawn } from "node:child_process";
+import { execFile, spawn, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
 import { test } from "node:test";
@@ -96,14 +96,14 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v8");
+  assert.equal(suite.version, "orloom.node-repo-suite.v9");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
   assert.equal(suite.timeoutMs, 405_000);
   assert.equal(suite.maxConcurrent, 1);
-  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1");
+  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1.archive-members-v1");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.memoryBytes, 2 * 1024 * 1024 * 1024);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
-  assert.equal(suite.digest, "9d6d53f336b2719712ed6ba836b090198538ceb790c1f542b5930069353e1417");
+  assert.equal(suite.digest, "b5d778e884519f012c1973ae50af15de9fe5e6b0b5dc3528c1c567381172d774");
   assert.notEqual(suite.digest, "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8", "suite deadline changes must invalidate the previous policy digest");
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
@@ -516,4 +516,103 @@ test("trusted staged archive layout matches launcher extraction, manifest reader
   assert(checkScript.includes("path.join(input, 'source', item.path)"));
   assert(checkScript.includes("cwd: path.join(input, 'source')"));
   assert.equal(getCheckPolicy("node-validate-syntax").cwd, "/work/source");
+});
+
+test("verifier archive extraction preserves writable work and read-only admitted source", async (t) => {
+  const launcher = await readFile("infra/verifier-isolation/launch-verifier.sh", "utf8");
+  const tarLine = launcher.match(/tar -C "(?:\$INPUT_DIR|\/run\/orloom-verifier-input\/\$NAME)" -cf - (?:-- )?([^|\n]+)\|/);
+  assert.ok(tarLine, "launcher has a bounded staged-input archive command");
+  const members = tarLine[1]!.trim().split(/\s+/).filter(value => value !== "--");
+
+  if (process.platform === "win32") {
+    assert.deepEqual(members, ["manifest.json", "source"], "launcher must archive only the two staged entries, never the read-only staging root");
+    assert.match(launcher, /find .* -mindepth 1 -maxdepth 1 .*manifest\.json.*source/s, "launcher rejects unexpected staged root entries");
+    t.skip("POSIX tar mode and unprivileged extraction semantics require Linux");
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-verifier-archive-mode-"));
+  try {
+    const staged = path.join(root, "staged"), source = path.join(staged, "source"), destination = path.join(root, "work");
+    // Populate the fixture while its ancestors are writable, then freeze the
+    // staged input to the same modes the production launcher presents.
+    await mkdir(staged, { mode: 0o700 });
+    await mkdir(source, { mode: 0o700 });
+    await writeFile(path.join(staged, "manifest.json"), "{}\n", { mode: 0o444 });
+    await writeFile(path.join(source, "input.txt"), "admitted\n", { mode: 0o444 });
+    await chmod(source, 0o555); await chmod(staged, 0o555);
+    // In the root-only setpriv branch, uid 65532 must traverse this unique
+    // fixture root. Keep the permission change on this test-owned directory.
+    if (process.getuid?.() === 0) await chmod(root, 0o711);
+
+    const guardStart = launcher.indexOf("input_entries=$(find "), guardEnd = launcher.indexOf("\n\nconfig=", guardStart);
+    assert.ok(guardStart >= 0 && guardEnd > guardStart, "production staged-root guard is present");
+    const guard = launcher.slice(guardStart, guardEnd);
+    const checkRoot = () => spawnSync("bash", ["-c", `INPUT_DIR="$1"\n${guard}`, "--", staged], { encoding: "utf8" });
+    assert.equal(checkRoot().status, 0, "the two expected staged entries pass the production root guard");
+    await chmod(staged, 0o755);
+    await symlink("/etc", path.join(staged, "unexpected"));
+    await chmod(staged, 0o555);
+    const hostileRoot = checkRoot();
+    assert.equal(hostileRoot.status, 69, "an unexpected symlink at the staged root is rejected before archiving");
+    await chmod(staged, 0o755);
+    await rm(path.join(staged, "unexpected"));
+    await chmod(staged, 0o555);
+
+    const archiveResult = spawnSync("tar", ["-C", staged, "-cf", "-", "--", ...members], { encoding: null, maxBuffer: 1024 * 1024 });
+    assert.equal(archiveResult.status, 0, archiveResult.stderr.toString());
+    const archive = path.join(root, "input.tar");
+    await writeFile(archive, archiveResult.stdout, { mode: 0o444 });
+    const listing = spawnSync("tar", ["-tf", archive], { encoding: "utf8" });
+    assert.equal(listing.status, 0, listing.stderr);
+
+    const asVerifier = (command: string, args: string[]) => process.getuid?.() === 0
+      ? spawnSync("setpriv", ["--reuid=65532", "--regid=65532", "--clear-groups", "--", command, ...args], { encoding: "utf8" })
+      : spawnSync(command, args, { encoding: "utf8" });
+    if (process.getuid?.() === 0 && spawnSync("setpriv", ["--version"], { encoding: "utf8" }).status !== 0) {
+      t.skip("setpriv is unavailable for nonroot extraction");
+      return;
+    }
+    const legacyArchive = path.join(root, "legacy.tar");
+    const legacyTar = spawnSync("tar", ["-C", staged, "-cf", legacyArchive, "."], { encoding: "utf8" });
+    assert.equal(legacyTar.status, 0, legacyTar.stderr);
+    await chmod(legacyArchive, 0o444);
+    const legacyWork = path.join(root, "legacy-work");
+    await mkdir(legacyWork, { mode: 0o700 }); await chmod(legacyWork, 0o700);
+    if (process.getuid?.() === 0) await chown(legacyWork, 65532, 65532);
+    const legacyExtract = asVerifier("tar", ["-xf", legacyArchive, "-C", legacyWork]);
+    assert.equal(legacyExtract.status, 0, legacyExtract.stderr);
+    assert.equal((await stat(legacyWork)).mode & 0o777, 0o555, "archiving the staging root reproduces its mode on the work mount");
+    assert.notEqual(asVerifier("mkdir", [path.join(legacyWork, "probe")]).status, 0, "the root-inclusive archive blocks TMPDIR writes by the verifier identity");
+
+    await mkdir(destination, { mode: 0o700 });
+    await chmod(destination, 0o700);
+    let extraction: string[];
+    if (process.getuid?.() === 0) {
+      await chown(destination, 65532, 65532);
+      extraction = ["setpriv", "--reuid=65532", "--regid=65532", "--clear-groups", "--", "tar", "-xf", archive, "-C", destination];
+    } else {
+      extraction = ["tar", "-xf", archive, "-C", destination];
+    }
+    const extracted = spawnSync(extraction[0]!, extraction.slice(1), { encoding: "utf8" });
+    assert.equal(extracted.status, 0, extracted.stderr);
+    assert.equal((await stat(destination)).mode & 0o777, 0o700, "extracting staged source cannot replace the trusted writable work mount mode");
+    assert.equal((await stat(path.join(destination, "source"))).mode & 0o222, 0, "admitted source directories remain read-only");
+    assert.equal((await stat(path.join(destination, "source", "input.txt"))).mode & 0o222, 0, "admitted source files remain read-only");
+    const writable = spawnSync(extraction[0] === "setpriv" ? "setpriv" : "sh", extraction[0] === "setpriv"
+      ? ["--reuid=65532", "--regid=65532", "--clear-groups", "--", "sh", "-c", `mkdir "${destination}/probe"`]
+      : ["-c", `mkdir "${destination}/probe"`], { encoding: "utf8" });
+    assert.equal(writable.status, 0, writable.stderr);
+    const names = listing.stdout.split(/\r?\n/).filter(Boolean).map(value => value.replace(/\/$/, ""));
+    assert.deepEqual(names.sort(), ["manifest.json", "source", "source/input.txt"], "archive contains only manifest and admitted source entries, without an archived root directory");
+    assert.deepEqual(members, ["manifest.json", "source"], "launcher archive selection excludes the read-only staging root");
+    assert.match(launcher, /input_entries=.*find .* -mindepth 1 -maxdepth 1 .*\[\[ \$input_entries == \$'manifest\.json\\nsource'/s, "launcher rejects unexpected staged root entries");
+  } finally {
+    // Extraction intentionally leaves selected directories read-only; restore
+    // only this test's known fixture directories so its owner can clean up.
+    for (const directory of ["staged", "staged/source", "work", "work/source", "legacy-work", "legacy-work/source"]) {
+      await chmod(path.join(root, directory), 0o700).catch(() => {});
+    }
+    await rm(root, { recursive: true, force: true });
+  }
 });

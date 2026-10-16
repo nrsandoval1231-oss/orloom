@@ -1,0 +1,86 @@
+{
+  "version": "orloom.flw-worker-input-completion.v1",
+  "node": "FLW-W1",
+  "status": "IMPLEMENTATION_COMPLETE_LOCAL_GATES_PASS",
+  "repository": "C:/Users/nrsan/Nucleus/02_Projects/Orloom-live",
+  "branch": "feat/first-live-workflow",
+  "baseHead": "15e312d5bf7e1484514a769413e83549340cd703",
+  "candidateCommit": null,
+  "candidateState": "shared dirty worktree; controller must freeze exact integrated candidate",
+  "changedFilesOwned": [
+    "apps/worker/src/docker-runtime.ts",
+    "apps/worker/src/main.ts",
+    "packages/verification/src/repository.ts",
+    "tests/worker-execution-input.test.ts"
+  ],
+  "implementation": [
+    "Worker projection is enabled only through the existing operator-owned repository executionInputProfile value.",
+    "orloom-execution-v1 verifier membership and policy identity are unchanged; the worker-only selector omits only deploy/hostinger/init-secrets.sh and descendants.",
+    "All tracked Git paths are checked for forbidden paths, unsupported modes, symlinks/gitlinks, unsafe paths, case collisions, and selected byte caps before filtering; only selected bytes are read and secret-scanned.",
+    "Snapshot paths must remain inside the same worker profile and approved lease scopes; all rows validate before any host write/removal, and excluded tracked blobs remain unchanged in candidate commits."
+  ],
+  "redBaseline": {
+    "command": "node --test dist/tests/worker-execution-input.test.js",
+    "exitCode": 1,
+    "tests": 2,
+    "failures": [
+      "Original collector rejected deploy/hostinger/init-secrets.sh by filename.",
+      "Original collector exceeded the unchanged 10,000,000-byte total on twelve 900,000-byte excluded history files."
+    ]
+  },
+  "profileMeasurementAtBase": {
+    "source": "git ls-tree metadata for exact base, filtered by the worker selector",
+    "baseTreeSha": "a98a373672ed2a233692e11d46ac4363bfb743ed",
+    "fullTreeFiles": 1777,
+    "fullTreeBlobBytes": 17183370,
+    "workerProfile": "orloom-execution-v1 minus worker-only bootstrap exclusion",
+    "workerFiles": 226,
+    "workerBytes": 1965431,
+    "largestWorkerFileBytes": 122976,
+    "workerInputDigest": null,
+    "workerInputDigestReason": "runtime request digest is pending controller-owned exact Linux/runsc preflight"
+  },
+  "validation": [
+    { "command": "npm run build", "exitCode": 0 },
+    { "command": "node --test dist/tests/worker-execution-input.test.js dist/tests/worker-broker.test.js dist/tests/worker-cleanup-identity.test.js dist/tests/runtime-intent-persistence.test.js dist/tests/active-worker-cancellation.test.js", "exitCode": 0, "tests": 61, "passed": 51, "failed": 0, "skipped": 10 },
+    { "command": "npm run typecheck", "exitCode": 0 },
+    { "command": "npm run validate", "exitCode": 0 },
+    { "command": "git diff --check -- apps/worker/src/docker-runtime.ts apps/worker/src/main.ts packages/verification/src/repository.ts", "exitCode": 0 }
+  ],
+  "additionalWindowsChecks": {
+    "command": "node --test dist/tests/candidate-admission.test.js dist/tests/verification-config.test.js dist/tests/verification-runner.test.js dist/tests/approved-worker-startup.test.js",
+    "exitCode": 1,
+    "tests": 47,
+    "passed": 28,
+    "failed": 18,
+    "skipped": 1,
+    "observedCauses": [
+      "Candidate-admission private-owned-directory checks reject Windows filesystem permission semantics.",
+      "One verification fixture force-push was refused by the repository's protected-branch hook."
+    ],
+    "ownership": "No edits to the parallel verifier worker's files. Controller should run Linux exact-candidate gates."
+  },
+  "runtimeAndExternalEffects": {
+    "workerRuntimeStarted": false,
+    "providerCalls": 0,
+    "credentialsRead": false,
+    "hostEdits": false,
+    "externalWrites": false,
+    "liveRunscProof": "pending controller"
+  },
+  "repairCount": 2,
+  "timing": {
+    "startUtc": "2026-10-16T20:43:13Z",
+    "finishUtc": "2026-10-16T20:58:45Z",
+    "elapsedSeconds": 932,
+    "planningBuildValidationAuditDurations": "UNKNOWN; not separately timed",
+    "model": "UNKNOWN",
+    "configIdentity": "UNKNOWN",
+    "tokenUsage": "UNKNOWN",
+    "elapsedToIndependentAcceptance": null
+  },
+  "remainingGates": [
+    "Independent review of the exact frozen integrated candidate.",
+    "Controller-owned Linux full suite and genuine runsc zero-provider preflight against that exact candidate; record runtime absence, provider call count, full tree SHA, selected bytes/count, and runtime input digest."
+  ]
+}
