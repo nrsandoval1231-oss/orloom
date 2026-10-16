@@ -76,3 +76,7 @@ PR27 corrected mapping local gates PASS: final Linux382total/380pass/zero failur
 ## PR29 policy parity successor (2026-10-16)
 
 Owner-authorized READY packet: PR29_POLICY_PARITY_PACKET.md. Preserve full-tree forbidden-path checks before projection exclusion, all input bounds and retained Git evidence. Final gates and independent exact-head acceptance precede existing-PR merge; no host cleanup/deployment/provider authority.
+
+## Forest & Brass Hostinger UI successor (2026-10-16)
+
+`UI-H1` READY on isolated `feat/forest-brass-hostinger` at approved PR30 head `3eda9f642e90de9179faebcd7473994f46119645`: one Luna implements the owner-approved Forest & Brass Command Center, actual owner mission lifecycle and reversible read-only Live Loom using existing APIs, with an authenticated bounded mission-list method/route only because no list currently exists. [Packet](HOSTINGER_UI_PACKET.md). No worker activation or invented readiness. Controller owns exact-source final gates, independent review, same-host backup/isolated restore, serialized integration, Hostinger cutover and remote/browser verification. Historical graph entries above do not certify this successor.

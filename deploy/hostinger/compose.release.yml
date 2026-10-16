@@ -1,0 +1,12 @@
+# App-only, immutable-image release overlay. Keep the existing project and DB volume.
+# ORLOOM_RELEASE_IMAGE must be an already loaded sha256 image ID.
+services:
+  app:
+    image: ${ORLOOM_RELEASE_IMAGE:?set the reviewed immutable app image ID}
+    pull_policy: never
+    environment:
+      ORLOOM_MAX_LANES: "1"
+      ORLOOM_CAPACITY_SLOTS: "0"
+      ORLOOM_INTEGRATION_ENABLED: "false"
+      ORLOOM_DELIVERY_ENABLED: "false"
+      ORLOOM_TRUSTED_CHECK_POLICY_JSON: '["node-repo-suite-v1"]'
