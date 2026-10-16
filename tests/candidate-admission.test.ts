@@ -7,8 +7,37 @@ import { promisify } from "node:util";
 import { mkdtemp, mkdir, readFile, rm, writeFile, symlink, chmod, stat } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { pathToFileURL } from "node:url";
 import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 const exec=promisify(execFile),hash=(value:Uint8Array|string)=>createHash("sha256").update(value).digest("hex");
+
+test("profile path guard stays in parity with the baked suite admission policy",async()=>{
+ const temp=await mkdtemp(path.join(os.tmpdir(),"orloom-policy-parity-"));
+ try {
+  await writeFile(path.join(temp,"package.json"),await readFile("package.json"));
+  await writeFile(path.join(temp,"package-lock.json"),await readFile("package-lock.json"));
+  const suite=await import(pathToFileURL(path.resolve("infra/verifier-isolation/suite-policy.js")).href);
+  const {forbiddenSuitePath}=await import("../packages/verification/src/repository.js");
+  const vectors:[string,boolean][]=[
+   ["package-lock.json",false],["docs/evidence/old-run.log",false],["docs/evidence/.npmrc",true],
+   ["docs/evidence/credentials/secret.pem",true],["docs/evidence/.github/workflows/hidden.yml",true],
+   ["docs/evidence/.env.production",true],["docs/evidence/secrets/token.txt",true],
+   ["docs/evidence/package-lock.json.backup",true],["docs/evidence/yarn.lock",true],
+   ["dist/generated.js",true],["docs/evidence/STATE/result.json",true],
+   ["docs/evidence/node_modules/pkg/index.js",true],["docs/evidence/credentials.json",true],
+   ["docs/evidence/id_ed25519",true],["docs/evidence/key.pfx",true],
+   ["docs/evidence/npm-shrinkwrap.json",true],["docs/evidence/pnpm-lock.yaml",true],
+   ["docs/evidence/bun.lockb",true],["docs/evidence/.yarnrc.yml",true],
+   ["docs/evidence/.pnp.cjs",true],["Package-lock.json",true],
+   ["docs/evidence/.env.example",false],["docs/evidence/ordinary.txt",false],
+  ];
+  for(const [file,expected] of vectors){
+   assert.equal(forbiddenSuitePath(file),expected,`TypeScript policy vector ${file}`);
+   const rejected=await suite.admitSuiteInput(temp,[{path:file}]).then(()=>false,()=>true);
+   assert.equal(rejected,expected,`suite policy vector ${file}`);
+  }
+ }finally{await rm(temp,{recursive:true,force:true});}
+});
 async function git(root:string,...args:string[]) {return (await exec("git",["-C",root,"-c","user.name=Admission Fixture","-c","user.email=fixture@example.invalid",...args],{encoding:"utf8"})).stdout.trim();}
 async function fixture() {
   const root=await mkdtemp(path.join(os.tmpdir(),"orloom-admission-"));

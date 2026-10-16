@@ -61,6 +61,9 @@ export async function extractCandidateBundle(config: RepositoryConfig, baseSha: 
     const folded = name.normalize("NFC").toLocaleLowerCase("en-US");
     if (names.has(folded)) throw new Error("candidate contains case-colliding paths");
     names.add(folded);
+    // Preserve suite admission's forbidden-path invariant over the complete
+    // candidate tree, including records omitted from the execution profile.
+    if (forbiddenSuitePath(name)) throw new Error("candidate contains a forbidden workflow, credential, or dependency configuration path");
     const selected = !config.executionInputProfile || executionPath(name);
     const sizeText = (await readGit(repo, ["cat-file", "-s", blobId])).toString("ascii").trim(), size = Number(sizeText);
     if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_BYTES || (selected && total + size > MAX_INPUT)) throw new Error("candidate exceeds verifier input bounds");
@@ -94,4 +97,15 @@ function executionPath(name: string): boolean {
   if ([".agent/", "docs/evidence/", "docs/validation/", "work/", "prototypes/", "forge/"].some(prefix => name.startsWith(prefix)) || ["forge", "PR23-receipt-sha256.txt", "PR23-source-sha256.txt"].includes(name)) return false;
   if (["apps/", "packages/", "tests/", "scripts/", "db/", "deploy/", "infra/", "docs/"].some(prefix => name.startsWith(prefix)) || [".dockerignore", ".env.example", ".gitattributes", ".gitignore", "README.md", "package.json", "package-lock.json", "tsconfig.json"].includes(name)) return true;
   throw new Error(`unclassified execution input path: ${name}`);
+}
+
+/** Mirrors the unchanged hasForbiddenPath predicate in the baked suite-policy.js. */
+export function forbiddenSuitePath(file: string): boolean {
+  const parts = file.toLowerCase().split("/"), name = parts.at(-1)!;
+  if (file === "package-lock.json") return false;
+  return parts[0] === "dist" || (parts.includes(".github") && parts.includes("workflows")) || ["secrets", "credentials", "state", "node_modules"].some(part => parts.includes(part))
+    || name === ".npmrc" || name === "credentials.json" || (name !== ".env.example" && /^\.env(?:\..*)?$/.test(name))
+    || /\.(?:pem|key|p12|pfx)$/.test(name) || /^id_(?:rsa|dsa|ecdsa|ed25519)$/.test(name)
+    || /^(?:npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|package-lock\.json(?:\..*)?)$/.test(name!)
+    || /^\.yarnrc(?:\.yml)?$/.test(name!) || /^\.pnp\./.test(name!);
 }

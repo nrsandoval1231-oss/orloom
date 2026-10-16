@@ -1,5 +1,7 @@
 # Orloom current state
 
+2026-10-16 successor: main2ea986d contains merged PR28. Owner authorized PR29 validation/merge. Existing8eba291 passed real Git admission but has a reproduced excluded-path policy bypass. [READY repair packet](PR29_POLICY_PARITY_PACKET.md), [ledger](../docs/validation/2026-10-16-pr29-policy-parity.md). Whole-tree forbidden-path parity is being repaired; final gates and independent exact-head review precede merge. Baked helpers and16MiB bound stay unchanged. Live runsc/product acceptance remain OPEN. Host cleanup/diagnostic copies are separately paused. Prior state bytes are preserved unchanged at archive/2026-10-16-before-pr29-policy-parity-CURRENT_STATE.md; the dated context below is historical.
+
 Updated 2026-10-15 UTC. Authority: [canonical harness](../docs/architecture/CANONICAL_HARNESS.md), owner delegation, [work graph](WORK_GRAPH.md). Product completion remains OPEN. Replaced state bytes are preserved under `.agent/archive/2026-10-15-before-minimal-verifier-*`.
 
 Merged main `9457b1bcb10b085602f337b253580d23ad0b1d93`, tree `b8aa985ff55fffd9be658c9893ae96eded669abf`, contains reviewed PR27. Current branch `fix/minimal-verifier-qualification` is a focused successor; reviewer owns merges. [Packet](MINIMAL_VERIFIER_PACKET.md), [ledger](../docs/validation/2026-10-15-minimal-verifier.md).
