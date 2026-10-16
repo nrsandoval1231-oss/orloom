@@ -18,6 +18,7 @@ import type { Config } from "../../../packages/config/src/config.js";
 import type { IntegrationRequestV1 } from "../../../packages/contracts/src/mission.js";
 import type { DeliveryCommandV1 } from "../../../packages/integration/src/delivery.js";
 import type { AdmittingVerificationRunner } from "../../../packages/verification/src/admitting-runner.js";
+import { executionInputProfileForRepository } from "../../../packages/verification/src/repository.js";
 import { TrustedRuntimeJournalBridge } from "../../control-plane/src/trusted-runtime-journal-bridge.js";
 import { runApprovedDockerWorkerLane } from "../../control-plane/src/approved-worker-lane.js";
 import { controllerRunIdForApprovedTask, reconcileApprovedWorkerRetained, runApprovedWorkerService } from "./approved-service.js";
@@ -46,6 +47,7 @@ interface ValidatedWorkerPolicies {
   readonly checkIds: string[];
   readonly checks: Record<string, WorkerCheckCommand>;
   readonly pricing: WorkerPricingSnapshot;
+  readonly executionInputProfile?: "orloom-execution-v1";
   readonly integrationRequest?: IntegrationRequestV1;
   readonly deliveryCommand?: DeliveryCommandV1;
 }
@@ -99,9 +101,10 @@ async function validatePolicyFiles(env: NodeJS.ProcessEnv, task: ApprovedTaskMan
     if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(repository) || !raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
     const config = raw as Record<string, unknown>;
     if (typeof config.objectStore !== "string" || !path.isAbsolute(config.objectStore) || typeof config.approvedRef !== "string" || !/^refs\/(heads|tags)\/[A-Za-z0-9._/-]+$/.test(config.approvedRef) || config.approvedRef.includes("..")) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
-    if (config.executionInputProfile !== undefined && config.executionInputProfile !== "orloom-execution-v1") throw new Error("unknown execution input profile");
+    executionInputProfileForRepository(config);
     for (const root of [artifactRoot, admissionRoot, process.cwd()]) if (isInside(root, config.objectStore) || isInside(config.objectStore, root)) throw new Error("Verifier object stores must be separate from worker source and artifact roots");
   }
+  const executionInputProfile = executionInputProfileForRepository(repositories[task.repository]);
   const integration = configuredBool(env, "ORLOOM_INTEGRATION_ENABLED"), delivery = configuredBool(env, "ORLOOM_DELIVERY_ENABLED");
   const requestFile = env.ORLOOM_WORKER_INTEGRATION_REQUEST_FILE?.trim(), commandFile = env.ORLOOM_WORKER_DELIVERY_COMMAND_FILE?.trim();
   let integrationRequest: IntegrationRequestV1 | undefined, deliveryCommand: DeliveryCommandV1 | undefined;
@@ -123,7 +126,7 @@ async function validatePolicyFiles(env: NodeJS.ProcessEnv, task: ApprovedTaskMan
       if (!requestFile) throw new Error("ORLOOM_WORKER_INTEGRATION_REQUEST_FILE is required for delivery");
     }
   }
-  return { minimumSliceBudgetCents: worstCaseCost, checkIds: ids, checks, pricing, ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) };
+  return { minimumSliceBudgetCents: worstCaseCost, checkIds: ids, checks, pricing, ...(executionInputProfile ? { executionInputProfile } : {}), ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) };
 }
 function isInside(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
@@ -227,7 +230,7 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
     }
     const journal = await FileRuntimeJournal.openOperational(env.ORLOOM_WORKER_RUNTIME_JOURNAL_ROOT!);
     const runtimeBridge = new TrustedRuntimeJournalBridge(journal, store);
-    const runtime = new DockerWorkerRuntime({ imageRef: workerImageRef, installationId, checkoutTokens: github, checks, runtimeJournal: runtimeBridge });
+    const runtime = new DockerWorkerRuntime({ imageRef: workerImageRef, ...(policies.executionInputProfile ? { executionInputProfile: policies.executionInputProfile } : {}), installationId, checkoutTokens: github, checks, runtimeJournal: runtimeBridge });
     const control: ControlPlane = {
       async claim() { return null; },
       async cancellationRequested(lease) { return Boolean(await store.cancellationStatus?.(lease.mission.id, lease.slice.id, lease.leaseEpoch, lease.leaseToken, lease.capabilityToken)); },

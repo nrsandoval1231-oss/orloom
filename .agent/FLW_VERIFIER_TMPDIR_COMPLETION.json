@@ -1,0 +1,81 @@
+{
+  "version": "orloom.flw-verifier-tmpdir-completion.v1",
+  "packet": ".agent/FLW_VERIFIER_TMPDIR_PACKET.md",
+  "status": "IMPLEMENTED_CONTROLLER_VALIDATION_PENDING",
+  "repository": "C:/Users/nrsan/Nucleus/02_Projects/Orloom-live",
+  "branch": "feat/first-live-workflow",
+  "baseCommit": "15e312d5bf7e1484514a769413e83549340cd703",
+  "baseTree": "a98a373672ed2a233692e11d46ac4363bfb743ed",
+  "candidateCommit": null,
+  "candidateTree": null,
+  "startedAt": "UNKNOWN; not captured before dispatch",
+  "finishedAt": "2026-10-16T20:41:27Z",
+  "repairCount": 0,
+  "measuredTokens": "UNKNOWN",
+  "changedFiles": [
+    {
+      "path": "infra/verifier-isolation/launch-verifier.sh",
+      "sha256": "b3070a333fd11c1dee60a0da2ef324598606e4c8592e032c3a68b198a9344ea8",
+      "change": "Validates exactly manifest.json and source at the staged root, rejects unexpected entries/types and archives those two entries without the read-only root metadata."
+    },
+    {
+      "path": "packages/verification/src/policy.ts",
+      "sha256": "925e8d612f266f02eacde1d59265cc0d1d2c763bbe2a3c70cb4d3810e589a2e95",
+      "change": "Bumped repository-suite identity from v8 to v9 and added archive-members-v1 manifest identity; syntax policy is unchanged."
+    },
+    {
+      "path": "tests/verification-runner.test.ts",
+      "sha256": "3f47879bd9af8e0e650afaf5401f4d8d7a134ba5ebf71ea11796467b14238f62",
+      "change": "Added staged-root guard, archive member-list and writable-work/read-only-source behavioral regression, with a legacy root-inclusive archive negative control on Linux. Updated suite identity and digest assertions."
+    },
+    {
+      "path": "tests/approved-worker-startup.test.ts",
+      "sha256": "f7f1a80a416db4c3df0ff03a1ffb3a3cb70b254d289d0d2caf47479adc41e60b",
+      "change": "Controller-authorized mechanical fixture update for the v9 suite policy version."
+    }
+  ],
+  "policy": {
+    "suiteVersion": "orloom.node-repo-suite.v9",
+    "suiteDigest": "b5d778e884519f012c1973ae50af15de9fe5e6b0b5dc3528c1c567381172d774",
+    "syntaxPolicyChanged": false,
+    "priorSuiteCertificatesRemainApplicable": false
+  },
+  "validation": [
+    {
+      "command": "npm run build",
+      "result": "PASS",
+      "detail": "TypeScript build and Git askpass copy completed."
+    },
+    {
+      "command": "node --test --test-name-pattern='repository suite is a separate trusted policy|trusted staged archive layout|verifier archive extraction preserves writable work|actual check-config validates' dist/tests/verification-runner.test.js dist/tests/approved-worker-startup.test.js",
+      "result": "PASS_WITH_PLATFORM_SKIP",
+      "detail": "3 passed, 0 failed, 1 skipped. The POSIX tar, ownership and unprivileged extraction branch is skipped on Windows."
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "PASS"
+    },
+    {
+      "command": "npm run validate",
+      "result": "PASS",
+      "detail": "Foundation structure validation passed."
+    },
+    {
+      "command": "node --test dist/tests/verification-runner.test.js dist/tests/approved-worker-startup.test.js",
+      "result": "21_PASS_1_FAIL_1_SKIP",
+      "detail": "The skipped test is POSIX-only. One existing Windows fixture failure remains in 'execution profile checks forbidden paths before excluding historical evidence': its force-push fixture is rejected by the Windows Git hook with 'no force-push to protected branches'. Other tests passed."
+    }
+  ],
+  "redGreen": {
+    "preRepairLinuxRed": "UNKNOWN; this builder ran on Windows. An initial test-first run failed because the regression parser expected the repaired INPUT_DIR spelling, so that failure is not claimed as behavioral RED.",
+    "negativeControl": "Linux-only regression archives the staging root '.', then verifies extraction changes the work analogue to 0555 and unprivileged mkdir fails. The production selection separately requires named members, preserves 0700, permits mkdir, and preserves read-only source modes.",
+    "controllerRequired": "Run this regression on Linux, then perform the exact-candidate runsc validation and independent review specified by the packet."
+  },
+  "boundaries": {
+    "providerCalls": 0,
+    "hostChanges": 0,
+    "externalWrites": 0,
+    "imageOrHelperRecipeChanged": false,
+    "sharedDirtyStatePreserved": true
+  }
+}

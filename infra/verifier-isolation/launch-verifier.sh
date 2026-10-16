@@ -14,6 +14,7 @@ readonly NAME=${1:?trusted caller must provide an allocated sandbox name}
 readonly POLICY=${2:?trusted caller must provide a finite policy id}
 [[ ${EUID:-$(id -u)} -eq 0 ]] || { echo 'must run as host root' >&2; exit 64; }
 [[ $# -eq 2 && $NAME =~ ^orloom-verifier-[a-f0-9-]{1,40}$ && ( $POLICY == node-validate-syntax || $POLICY == node-repo-suite-v1 ) ]] || { echo 'invalid verifier invocation' >&2; exit 64; }
+readonly INPUT_DIR=/run/orloom-verifier-input/$NAME
 [[ $IMAGE =~ ^(sha256:[a-f0-9]{64}|[A-Za-z0-9._/-]+@sha256:[a-f0-9]{64})$ ]] || { echo 'image must be digest pinned' >&2; exit 64; }
 [[ -x $DOCKER && -x /usr/bin/flock && -x /usr/bin/sync ]] || { echo 'Docker, flock or sync unavailable' >&2; exit 69; }
 [[ -d /run && ! -L /run && -d /var/lib && ! -L /var/lib && -d $SHARED_STATE_PARENT && ! -L $SHARED_STATE_PARENT ]] || { echo 'trusted state parent is unsafe' >&2; exit 69; }
@@ -26,7 +27,9 @@ chmod 0700 "$LOCK_ROOT" "$STATE_ROOT"
 [[ ! -L $LOCK_ROOT/slot.lock && (! -e $LOCK_ROOT/slot.lock || -f $LOCK_ROOT/slot.lock) ]] || { echo 'lock path is unsafe' >&2; exit 69; }
 exec 9>"$LOCK_ROOT/slot.lock"
 /usr/bin/flock -n 9 || { echo 'verifier host slot is busy' >&2; exit 75; }
-[[ -d /run/orloom-verifier-input/$NAME && ! -L /run/orloom-verifier-input/$NAME ]] || { echo 'trusted staged input missing' >&2; exit 69; }
+[[ -d $INPUT_DIR && ! -L $INPUT_DIR ]] || { echo 'trusted staged input missing' >&2; exit 69; }
+input_entries=$(find "$INPUT_DIR" -mindepth 1 -maxdepth 1 -printf '%f\n' | LC_ALL=C sort) || { echo 'cannot validate staged input entries' >&2; exit 69; }
+[[ $input_entries == $'manifest.json\nsource' && -f $INPUT_DIR/manifest.json && ! -L $INPUT_DIR/manifest.json && -d $INPUT_DIR/source && ! -L $INPUT_DIR/source ]] || { echo 'trusted staged input has unexpected entries or types' >&2; exit 69; }
 
 config=$(mktemp -d /run/orloom-verifier-docker.XXXXXX)
 chmod 0700 "$config"
@@ -97,7 +100,7 @@ fi
 [[ $observed_profile == "$expected_profile" ]] || { echo 'created verifier resource profile did not match the selected fixed policy' >&2; exit 70; }
 set +e
 attach_timeout=$([[ $POLICY == node-repo-suite-v1 ]] && echo 390s || echo 60s)
-tar -C "/run/orloom-verifier-input/$NAME" -cf - . | timeout --signal=TERM --kill-after=2s "$attach_timeout" "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"
+tar -C "$INPUT_DIR" -cf - -- manifest.json source | timeout --signal=TERM --kill-after=2s "$attach_timeout" "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"
 pipeline_status=("${PIPESTATUS[@]}")
 set -e
 start_status=${pipeline_status[1]}

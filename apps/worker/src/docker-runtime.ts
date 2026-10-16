@@ -1,15 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
-import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { chmod, lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import type { WorkerLeaseContract } from "../../../packages/contracts/src/worker-protocol.js";
+import { forbiddenSuitePath, workerExecutionInputPath } from "../../../packages/verification/src/repository.js";
 import { checkoutExact, type CheckoutFetchTransport, type ReadOnlyCheckoutToken } from "../../../packages/agents/src/github-checkout.js";
 import { assertWorkerScopePath, WorkerProtocolError, type WorkerCheckCommand, type WorkerCheckExecution, type WorkerRuntime, type WorkerWorkspace } from "../../../packages/agents/src/worker.js";
 import { RUNTIME_RECONCILER_SOURCE, ownershipLabelsDigest, type RuntimeIdentity, type RuntimeJournal, type RuntimeJournalEntry, type RuntimeReconciliationObservation } from "./runtime-journal.js";
 
 export interface DockerWorkerRuntimeOptions {
   imageRef: string;
+  executionInputProfile?: "orloom-execution-v1";
   installationId: number;
   checkoutTokens: ReadOnlyCheckoutToken;
   /** In-process runtime-proof seam only; worker main never loads it from config or mission data. */
@@ -60,27 +62,134 @@ function rejectSecret(relative: string, bytes: Uint8Array) {
   if (secretBytes.test(Buffer.from(bytes).toString("utf8"))) throw new WorkerProtocolError("Secret-like material detected in worker input or candidate");
 }
 
-async function collectFiles(root: string): Promise<Array<{ path: string; bytesBase64: string; sha256: string }>> {
+export async function collectWorkerInputFiles(root: string, profile?: "orloom-execution-v1"): Promise<Array<{ path: string; bytesBase64: string; sha256: string }>> {
+  if (profile !== undefined && profile !== "orloom-execution-v1") throw new WorkerProtocolError("Unknown worker input profile");
   const rows: Array<{ path: string; bytesBase64: string; sha256: string }> = [];
   let total = 0;
-  const walk = async (directory: string, prefix = "") => {
-    for (const entry of await readdir(directory, { withFileTypes: true })) {
-      if (!prefix && entry.name === ".git") continue;
-      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-      const fullPath = safeRepoPath(root, relative);
-      const info = await lstat(fullPath);
+  const env: NodeJS.ProcessEnv = { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: root, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null", GIT_TERMINAL_PROMPT: "0" };
+  const index = await git(["-C", root, "-c", "core.hooksPath=/dev/null", "ls-files", "--stage", "-z"], root, env);
+  const tracked = index ? index.split("\0").filter(Boolean) : [];
+  if (!tracked.length) throw new WorkerProtocolError("Exact checkout is empty");
+  if (tracked.length > 5000) throw new WorkerProtocolError("Repository snapshot exceeds worker file-count limits");
+  const untracked = await git(["-C", root, "ls-files", "--others", "-z"], root, env);
+  if (untracked) throw new WorkerProtocolError("Exact checkout contains untracked files");
+
+  const names = new Set<string>();
+  for (const row of tracked) {
+    const separator = row.indexOf("\t");
+    if (separator < 0) throw new WorkerProtocolError("Exact checkout index is malformed");
+    const header = row.slice(0, separator), relative = row.slice(separator + 1);
+    const match = /^(100644|100755|120000|160000) ([a-f0-9]{40}) ([0-3])$/.exec(header);
+    if (!match || match[1] === "120000" || match[1] === "160000" || match[3] !== "0") throw new WorkerProtocolError("Repository snapshot contains a symlink, gitlink, conflict, or unsupported tree entry");
+    const fullPath = safeRepoPath(root, relative);
+    if (forbiddenSuitePath(relative)) throw new WorkerProtocolError("Repository snapshot contains a forbidden workflow, credential, or dependency path");
+    const folded = relative.normalize("NFC").toLocaleLowerCase("en-US");
+    if (names.has(folded)) throw new WorkerProtocolError("Repository snapshot contains case-colliding paths");
+    names.add(folded);
+
+    let cursor = root;
+    for (const [index, part] of relative.split("/").entries()) {
+      cursor = path.join(cursor, part);
+      const info = await lstat(cursor);
       if (info.isSymbolicLink()) throw new WorkerProtocolError("Repository snapshot contains a symlink; transfer fails closed");
-      if (info.isDirectory()) { await walk(fullPath, relative); continue; }
-      if (!info.isFile() || info.size > maxFileBytes) throw new WorkerProtocolError("Repository snapshot contains an unsupported or oversized file");
-      const bytes = await readFile(fullPath);
-      rejectSecret(relative, bytes);
-      total += bytes.byteLength;
-      if (total > maxInputBytes || rows.length >= 5000) throw new WorkerProtocolError("Repository snapshot exceeds worker transfer limits");
-      rows.push({ path: relative, bytesBase64: bytes.toString("base64"), sha256: createHash("sha256").update(bytes).digest("hex") });
+      if (index < relative.split("/").length - 1 ? !info.isDirectory() : !info.isFile()) throw new WorkerProtocolError("Repository snapshot contains an unsupported file type");
     }
-  };
-  await walk(root);
+    if (profile && !workerExecutionInputPath(relative)) continue;
+    const info = await lstat(fullPath);
+    if (info.size > maxFileBytes) throw new WorkerProtocolError("Selected worker input file exceeds transfer limits");
+    const bytes = await readFile(fullPath);
+    if (bytes.byteLength !== info.size || bytes.byteLength > maxFileBytes) throw new WorkerProtocolError("Selected worker input changed during collection");
+    rejectSecret(relative, bytes);
+    total += bytes.byteLength;
+    if (total > maxInputBytes || rows.length >= 5000) throw new WorkerProtocolError("Repository snapshot exceeds worker transfer limits");
+    rows.push({ path: relative, bytesBase64: bytes.toString("base64"), sha256: createHash("sha256").update(bytes).digest("hex") });
+  }
   return rows;
+}
+
+export interface WorkerSnapshotRow { path: string; bytesBase64: string; sha256: string; }
+export interface WorkerSnapshot { changed: WorkerSnapshotRow[]; removed: string[]; }
+
+interface ValidWorkerSnapshot { changed: Array<{ path: string; bytes: Buffer }>; removed: string[]; touched: string[]; }
+
+function validateWorkerSnapshot(root: string, snapshot: WorkerSnapshot, scopes: readonly string[], profile?: "orloom-execution-v1"): ValidWorkerSnapshot {
+  if (profile !== undefined && profile !== "orloom-execution-v1") throw new WorkerProtocolError("Unknown worker input profile");
+  if (!snapshot || !Array.isArray(snapshot.changed) || !Array.isArray(snapshot.removed)) throw new WorkerProtocolError("Sandbox snapshot is malformed");
+  const seen = new Set<string>(), foldedNames = new Set<string>(), changed: ValidWorkerSnapshot["changed"] = [], removed: string[] = [];
+  const checkPath = (relative: string): void => {
+    safeRepoPath(root, relative);
+    if (forbiddenSuitePath(relative)) throw new WorkerProtocolError("Sandbox output targets a forbidden path");
+    if (profile) {
+      let selected: boolean;
+      try { selected = workerExecutionInputPath(relative); }
+      catch { throw new WorkerProtocolError("Sandbox output is outside the finite worker input profile"); }
+      if (!selected) throw new WorkerProtocolError("Sandbox output targets an excluded worker input path");
+    }
+    assertWorkerScopePath(relative, [...scopes]);
+    if (seen.has(relative)) throw new WorkerProtocolError("Sandbox snapshot contains a duplicate path");
+    seen.add(relative);
+    const folded = relative.normalize("NFC").toLocaleLowerCase("en-US");
+    if (foldedNames.has(folded)) throw new WorkerProtocolError("Sandbox snapshot contains case-colliding paths");
+    foldedNames.add(folded);
+  };
+  for (const row of snapshot.changed) {
+    if (!row || typeof row.path !== "string" || typeof row.bytesBase64 !== "string" || typeof row.sha256 !== "string") throw new WorkerProtocolError("Sandbox output is malformed");
+    checkPath(row.path);
+    const bytes = Buffer.from(row.bytesBase64, "base64");
+    if (bytes.toString("base64") !== row.bytesBase64 || bytes.byteLength > maxFileBytes || !/^[a-f0-9]{64}$/i.test(row.sha256) || createHash("sha256").update(bytes).digest("hex") !== row.sha256.toLowerCase()) throw new WorkerProtocolError("Sandbox output is malformed or digest-mismatched");
+    rejectSecret(row.path, bytes);
+    changed.push({ path: row.path, bytes });
+  }
+  for (const file of snapshot.removed) {
+    if (typeof file !== "string") throw new WorkerProtocolError("Sandbox output is malformed");
+    checkPath(file);
+    removed.push(file);
+  }
+  const touched = [...changed.map(row => row.path), ...removed];
+  if (!touched.length) throw new WorkerProtocolError("Worker produced no candidate changes");
+  return { changed, removed, touched };
+}
+
+async function assertSafeHostTarget(root: string, relative: string, mustExist: boolean): Promise<void> {
+  let cursor = root;
+  const parts = relative.split("/");
+  for (const [index, part] of parts.entries()) {
+    cursor = path.join(cursor, part);
+    let info;
+    try { info = await lstat(cursor); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        if (mustExist) throw new WorkerProtocolError("Sandbox deletion target is absent from the exact checkout");
+        return;
+      }
+      throw error;
+    }
+    if (info.isSymbolicLink()) throw new WorkerProtocolError("Sandbox output traverses a symlink in the exact checkout");
+    const leaf = index === parts.length - 1;
+    if (leaf ? !info.isFile() : !info.isDirectory()) throw new WorkerProtocolError("Sandbox output target has an unsupported type");
+  }
+}
+
+export async function applyWorkerSnapshot(root: string, snapshot: WorkerSnapshot, scopes: readonly string[], profile?: "orloom-execution-v1"): Promise<string[]> {
+  const valid = validateWorkerSnapshot(root, snapshot, scopes, profile);
+  const index = await git(["-C", root, "ls-files", "-z"], root, { PATH: process.env.PATH ?? "/usr/bin:/bin", HOME: root, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null", GIT_TERMINAL_PROMPT: "0" });
+  const trackedNames = new Map(index.split("\0").filter(Boolean).map(name => [name.normalize("NFC").toLocaleLowerCase("en-US"), name]));
+  for (const file of valid.touched) {
+    const existing = trackedNames.get(file.normalize("NFC").toLocaleLowerCase("en-US"));
+    if (existing && existing !== file) throw new WorkerProtocolError("Sandbox output creates a case-colliding path");
+  }
+  for (const file of valid.removed) await assertSafeHostTarget(root, file, true);
+  for (const row of valid.changed) await assertSafeHostTarget(root, row.path, false);
+  for (const file of valid.removed) await rm(safeRepoPath(root, file));
+  for (const row of valid.changed) {
+    const target = safeRepoPath(root, row.path);
+    const parent = path.dirname(target);
+    await mkdir(parent, { recursive: true });
+    const realParent = await realpath(parent);
+    if (realParent !== root && !realParent.startsWith(`${root}${path.sep}`)) throw new WorkerProtocolError("Candidate output parent escaped exact checkout");
+    await writeFile(target, row.bytes, { mode: 0o600 });
+  }
+  return valid.touched;
 }
 
 interface ContainerInfo { id: string; labels: Record<string, string>; imageRef?: string; name?: string; running?: boolean; }
@@ -425,7 +534,7 @@ class DockerWorkspace implements WorkerWorkspace {
     signal?.addEventListener("abort", abort, { once: true });
     this.detachAbort = () => signal?.removeEventListener("abort", abort);
     if (signal?.aborted) { abort(); throw new WorkerProtocolError("Sandbox cancelled before initialization"); }
-    const files = await collectFiles(this.repoCheckout.directory);
+    const files = await collectWorkerInputFiles(this.repoCheckout.directory, this.options.executionInputProfile);
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
     const allowedIds = [...new Set(this.lease.slice.checks)].sort();
@@ -446,27 +555,8 @@ class DockerWorkspace implements WorkerWorkspace {
   }
   async commitCandidate(signal?: AbortSignal) {
     if (!this.repoCheckout) throw new WorkerProtocolError("Exact checkout has not been established");
-    const snapshot = await this.client.request<{ changed: Array<{ path: string; bytesBase64: string; sha256: string }>; removed: string[] }>("snapshot", {}, signal);
-    const touched = [...snapshot.changed.map(x => x.path), ...snapshot.removed];
-    if (!touched.length) throw new WorkerProtocolError("Worker produced no candidate changes");
-    for (const file of touched) assertWorkerScopePath(file, this.lease.slice.scopes);
-    for (const file of snapshot.removed) {
-      const target = safeRepoPath(this.repoCheckout.directory, file);
-      const info = await lstat(target);
-      if (info.isSymbolicLink() || !info.isFile()) throw new WorkerProtocolError("Sandbox deletion target is not a regular file");
-      await rm(target);
-    }
-    for (const row of snapshot.changed) {
-      const bytes = Buffer.from(row.bytesBase64, "base64");
-      if (bytes.toString("base64") !== row.bytesBase64 || bytes.byteLength > maxFileBytes || createHash("sha256").update(bytes).digest("hex") !== row.sha256) throw new WorkerProtocolError("Sandbox output is malformed or digest-mismatched");
-      rejectSecret(row.path, bytes);
-      const target = safeRepoPath(this.repoCheckout.directory, row.path);
-      const parent = path.dirname(target);
-      await mkdir(parent, { recursive: true });
-      const realParent = await realpath(parent);
-      if (realParent !== this.repoCheckout.directory && !realParent.startsWith(`${this.repoCheckout.directory}${path.sep}`)) throw new WorkerProtocolError("Candidate output parent escaped exact checkout");
-      await writeFile(target, bytes, { mode: 0o600 });
-    }
+    const snapshot = await this.client.request<WorkerSnapshot>("snapshot", {}, signal);
+    const touched = await applyWorkerSnapshot(this.repoCheckout.directory, snapshot, this.lease.slice.scopes, this.options.executionInputProfile);
     await git(["-C", this.repoCheckout.directory, "-c", "core.hooksPath=/dev/null", "-c", "user.name=Orloom Candidate", "-c", "user.email=worker@orloom.invalid", "diff", "--no-ext-diff", "--check"], this.repoCheckout.directory, this.gitEnv());
     await git(["-C", this.repoCheckout.directory, "-c", "core.hooksPath=/dev/null", "add", "--", ...touched.map(value => `:(literal)${value}`)], this.repoCheckout.directory, this.gitEnv());
     await git(["-C", this.repoCheckout.directory, "-c", "core.hooksPath=/dev/null", "-c", "user.name=Orloom Candidate", "-c", "user.email=worker@orloom.invalid", "commit", "--no-gpg-sign", "-m", "Orloom candidate"], this.repoCheckout.directory, this.gitEnv());

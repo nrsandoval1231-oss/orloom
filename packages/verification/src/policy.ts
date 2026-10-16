@@ -10,7 +10,7 @@ function bindPolicy(image: string, imageDigest: Sha256): CheckPolicy {
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const NODE_REPO_SUITE_BINDING = Object.freeze({
-  manifestVersion: "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1",
+  manifestVersion: "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1.archive-members-v1",
   timeouts: Object.freeze({ suiteExecutionMs: 360_000, dockerAttachMs: 390_000, hostLauncherMs: 405_000, attemptLifetimeMs: 420_000 }),
   diagnostics: Object.freeze({ protocol: "orloom.suite-diagnostics.v4", maxFrames: 64, maxBytes: 16_384, maxElapsedMs: 360_000, maxTestOrdinal: 64, maxTestFileNameBytes: 128, authority: "advisory-only" }),
   dependencies: Object.freeze({
@@ -31,7 +31,7 @@ export const NODE_REPO_SUITE_BINDING = Object.freeze({
 });
 function bindSuite(image: string, imageDigest: Sha256): CheckPolicy {
   const resources = NODE_REPO_SUITE_BINDING.resources;
-  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v8", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
+  const unsigned = { id: "node-repo-suite-v1", version: "orloom.node-repo-suite.v9", argv: ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"], cwd: "/work/source", timeoutMs: NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs, maxInputBytes: resources.maxInputBytes, maxLogBytes: resources.maxLogBytes, maxConcurrent: resources.maxConcurrent, image, imageDigest, suiteManifest: NODE_REPO_SUITE_BINDING } as const;
   return Object.freeze({ ...unsigned, digest: createHash("sha256").update(canonicalJson(unsigned)).digest("hex") });
 }
 export const CHECK_POLICIES: Readonly<Record<string, CheckPolicy>> = Object.freeze({
