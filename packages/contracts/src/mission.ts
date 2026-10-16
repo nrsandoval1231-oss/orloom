@@ -69,6 +69,7 @@ export interface MissionStore {
   recommendPlan(missionId: string, slices: SliceInput[], recommendedBy: string): Promise<MissionPlan>;
   approvePlan(missionId: string): Promise<Mission>;
   getMission(missionId: string): Promise<{ mission: Mission; plan: MissionPlan | null; slices: MissionSlice[] } | null>;
+  listMissions?(limit: number): Promise<Mission[]>;
   events(missionId: string, after: number): Promise<MissionEvent[]>;
   claim(leaseSeconds: number, policyDigest: string, allowedPlanChecks: readonly string[], now?: Date, recoveryPolicyDigest?: string, advice?: ClaimAdvice, target?: ApprovedClaimTarget): Promise<LeaseGrant | null>;
   schedulingSnapshot?(policyDigest: string, recoveryPolicyDigest: string, allowedPlanChecks: readonly string[], now?: Date): Promise<SchedulingSnapshot>;

@@ -1,0 +1,34 @@
+{
+  "artifact": "orloom.hostinger-ui-completion.v1",
+  "candidate_base_sha": "8e35410cda8d29740f180630eb6dd94893ab7401",
+  "completed_at_utc": "2026-10-16T21:07:38Z",
+  "builder": "forest_brass_ui",
+  "changed_files": [
+    "apps/control-plane/src/command-center.ts",
+    "apps/control-plane/src/loom-page.ts",
+    "apps/control-plane/src/server.ts",
+    "apps/control-plane/src/ui-theme.ts",
+    "packages/contracts/src/mission.ts",
+    "packages/contracts/src/memory-mission-store.ts",
+    "packages/contracts/src/sql-mission-store.ts",
+    "tests/mission-http.test.ts",
+    "tests/mission-listing.test.ts",
+    "docs/design/FONTS.md",
+    "docs/design/font-licenses/cormorant-garamond-OFL.txt",
+    "docs/design/font-licenses/manrope-OFL.txt"
+  ],
+  "validation": [
+    { "command": "npm run typecheck", "result": "PASS" },
+    { "command": "npm run build", "result": "PASS" },
+    { "command": "node --test dist/tests/mission-listing.test.js dist/tests/mission-http.test.js dist/tests/loom-http.test.js dist/tests/loom-page.test.js", "result": "PASS: 9 tests" },
+    { "command": "npm run validate", "result": "PASS" },
+    { "command": "git diff --check", "result": "PASS with CRLF normalization warning for loom-page.ts" },
+    { "command": "Generated Command Center and Loom inline script parse; hostile trusted-check string remains in script context", "result": "PASS" }
+  ],
+  "tracked_diff_sha256_at_handoff": "5541ac5cb64262107eb0f72e589a444d52ce85f692fd265e20b750ae86e431bb",
+  "limitations": [
+    "Controller browser review was performed before the final bounded repairs; controller must validate the repair and freeze the exact candidate.",
+    "Full Linux suite, independent review, PostgreSQL release restore, and deployment remain controller-owned and not claimed here."
+  ],
+  "deployment_performed": false
+}
