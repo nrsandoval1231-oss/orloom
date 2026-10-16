@@ -76,8 +76,10 @@ test("cloud sessions are opaque, secure, expiring, and writes require the config
     }
     const page = await fetch(`${base}/`);
     const html = await page.text();
-    assert.match(html, /Mission control plane\. No worker capacity is active/);
-    assert.match(html, /Owner session configured/);
+    assert.match(html, /Command Center/);
+    assert.match(html, /Live Loom/);
+    assert.match(html, /Workers disabled by default/);
+    assert.match(html, /Unlock owner session/);
     assert.doesNotMatch(html, /Unlock local submissions/);
     const login = await new Promise<{ status: number; cookie: string | undefined }>((resolve, reject) => {
       const req = request(`${base}/session`, { method: "POST", headers: { host: config.host, origin: config.publicOrigin, "content-type": "application/json" } }, res => {

@@ -29,7 +29,10 @@ test("documented blank environment template starts the local owner UI with verif
     });
     const response = await fetch(`http://127.0.0.1:${port}/`, {signal: AbortSignal.timeout(5000)});
     assert.equal(response.status, 200);
-    assert.match(await response.text(), /Local mission control plane\. Worker execution is disabled by default\./);
+    const html = await response.text();
+    assert.match(html, /Command Center/);
+    assert.match(html, /Local control plane/);
+    assert.match(html, /Workers disabled by default/);
     assert.equal(stderr, "");
   } finally {
     clearTimeout(deadline);
