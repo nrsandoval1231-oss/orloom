@@ -22,6 +22,13 @@ test("trusted coordinator fences attempt creation when preparation is interrupte
   assert.equal(attempts, 0, "abort after bundle preparation prevents durable verifier-attempt creation");
 });
 
+test("trusted coordinator rejects a suite configuration outside the finite v10 lifetime", () => {
+  const store = {} as MissionStore, runner = {} as never;
+  assert.throws(() => new TrustedCheckCoordinator(store, runner, {
+    ...settings, allowedChecks: ["node-repo-suite-v1"], policyVersion: "orloom.node-repo-suite.v10", attemptLifetimeMs: 1_860_001,
+  }), /finite v10 policy/);
+});
+
 test("trusted coordinator fences certificate submission when receipt verification is interrupted", async () => {
   const controller = new AbortController(); let attempts = 0, submissions = 0;
   const store = { async getMission() { return record; }, async createVerificationAttempt() { attempts++; }, async submitVerification() { submissions++; return null; } } as unknown as MissionStore;

@@ -52,7 +52,7 @@ export function retainSuiteDiagnostics(stdout: string): Buffer {
     const keys = Object.keys(frame).sort().join(",");
     const common = frame.version === "orloom.suite-diagnostics.v4"
       && typeof frame.stage === "string" && Number.isSafeInteger(frame.elapsedMs)
-      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 360_000;
+      && (frame.elapsedMs as number) >= 0 && (frame.elapsedMs as number) <= 1_800_000;
     if (!common) continue;
     const stage = frame.stage as string;
     let accepted = false;

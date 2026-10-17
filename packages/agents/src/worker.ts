@@ -98,7 +98,7 @@ export function monitorCancellation(control: Pick<ControlPlane, "cancellationReq
 export interface DeepSeekMessage { role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: DeepSeekToolCall[]; }
 export interface DeepSeekToolCall { id: string; type: "function"; function: { name: string; arguments: string }; }
 export interface DeepSeekReply { model: string; messages: DeepSeekMessage[]; inputTokens: number; outputTokens: number; calls: number; }
-export interface DeepSeekClient { listModels(signal?: AbortSignal): Promise<string[]>; probeTools(model: string, signal: AbortSignal): Promise<{ model: string; inputTokens: number; outputTokens: number }>; complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number): Promise<{ model: string; message: DeepSeekMessage; inputTokens: number; outputTokens: number }>; }
+export interface DeepSeekClient { listModels(signal?: AbortSignal): Promise<string[]>; probeTools(model: string, signal: AbortSignal): Promise<{ model: string; inputTokens: number; outputTokens: number }>; complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number, includeRunCheck?: boolean): Promise<{ model: string; message: DeepSeekMessage; inputTokens: number; outputTokens: number }>; }
 
 /** Minimal official OpenAI-compatible DeepSeek transport. Reasoning is explicitly disabled and never returned to the caller. */
 export class DeepSeekHttpClient implements DeepSeekClient {
@@ -129,8 +129,8 @@ export class DeepSeekHttpClient implements DeepSeekClient {
     return { model: reply.model, inputTokens: reply.inputTokens, outputTokens: reply.outputTokens };
   }
 
-  async complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number) {
-    return this.post(model, messages, signal, TOOL_SCHEMAS, "auto", Math.min(4096, maxOutputTokens));
+  async complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number, includeRunCheck = true) {
+    return this.post(model, messages, signal, workerToolSchemas(includeRunCheck), "auto", Math.min(4096, maxOutputTokens));
   }
 
   private async post(model: string, messages: DeepSeekMessage[], signal: AbortSignal, tools: unknown[], toolChoice: unknown, maxTokens: number) {
@@ -157,12 +157,13 @@ export class DeepSeekHttpClient implements DeepSeekClient {
   }
 }
 
-const TOOL_SCHEMAS = [
+const BASE_TOOL_SCHEMAS = [
   { type: "function", function: { name: "read_file", description: "Read a bounded UTF-8 file in the owned workspace", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
   { type: "function", function: { name: "list_files", description: "List bounded files in a workspace directory", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
-  { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } },
-  { type: "function", function: { name: "run_check", description: "Run one check ID from the operator trusted policy", parameters: { type: "object", properties: { checkId: { type: "string" } }, required: ["checkId"], additionalProperties: false } } }
+  { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } }
 ];
+const RUN_CHECK_SCHEMA = { type: "function", function: { name: "run_check", description: "Run one advisory worker-local check from the operator trusted policy; independent final verification remains mandatory", parameters: { type: "object", properties: { checkId: { type: "string" } }, required: ["checkId"], additionalProperties: false } } };
+function workerToolSchemas(includeRunCheck: boolean) { return includeRunCheck ? [...BASE_TOOL_SCHEMAS, RUN_CHECK_SCHEMA] : BASE_TOOL_SCHEMAS; }
 
 const PROBE_MESSAGES: DeepSeekMessage[] = [
   { role: "system", content: "Return the requested function call exactly. This is a bounded capability probe; do not provide prose." },
@@ -171,8 +172,8 @@ const PROBE_MESSAGES: DeepSeekMessage[] = [
 const PROBE_TOOLS = [{ type: "function", function: { name: "orloom_tool_probe", description: "Protocol capability probe; do not perform work", parameters: { type: "object", properties: { ok: { type: "boolean" } }, required: ["ok"], additionalProperties: false } } }];
 
 /** UTF-8 request bytes conservatively bound visible input tokens; include framing allowance. */
-function conservativeInputReservation(model: string, messages: DeepSeekMessage[], probe = false): number {
-  const tools = probe ? PROBE_TOOLS : TOOL_SCHEMAS;
+function conservativeInputReservation(model: string, messages: DeepSeekMessage[], probe = false, includeRunCheck = true): number {
+  const tools = probe ? PROBE_TOOLS : workerToolSchemas(includeRunCheck);
   const toolChoice = probe ? { type: "function", function: { name: "orloom_tool_probe" } } : "auto";
   const body = { model, messages, stream: false, thinking: { type: "disabled" }, tools, tool_choice: toolChoice, max_tokens: 1 };
   return Buffer.byteLength(JSON.stringify(body), "utf8") + 512;
@@ -293,9 +294,10 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
   const preflightSignal = deps.signal ? AbortSignal.any([deps.signal, timeoutSignal]) : timeoutSignal;
   const policyDigest = createHash("sha256").update(JSON.stringify(deps.options.trustedChecks)).digest("hex");
   if (policyDigest !== lease.trustedCheckPolicyDigest || policyDigest !== deps.options.trustedCheckPolicyDigest) throw new WorkerProtocolError("Trusted check policy digest does not match the lease");
-  if (Object.keys(deps.options.trustedCheckCommands).sort().join("\n") !== [...deps.options.trustedChecks].sort().join("\n")) throw new WorkerProtocolError("Trusted check command snapshot does not match the leased check IDs");
+  if (Object.keys(deps.options.trustedCheckCommands).some(id => !deps.options.trustedChecks.includes(id))) throw new WorkerProtocolError("Worker-local check commands are outside the leased trusted check IDs");
   if (!/^sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef) && !/^ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef)) throw new WorkerProtocolError("Sandbox image must be an immutable configured content ID or registry digest");
   const checkSnapshot = canonicalCheckCommands(deps.options.trustedCheckCommands);
+  const localCheckIds = Object.keys(checkSnapshot);
   const checkCommandsDigest = createHash("sha256").update(JSON.stringify(checkSnapshot)).digest("hex");
   if (!Number.isSafeInteger(deps.options.maxToolCalls) || deps.options.maxToolCalls < 1) throw new WorkerProtocolError("Local tool call cap is not enabled");
   if (!deps.options.allowedProviders.includes("deepseek") || !limits.allowedProviders.includes("deepseek")) throw new WorkerProtocolError("DeepSeek provider is not enabled by both operator and lease policy");
@@ -375,7 +377,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     await emit("provider-tool-probe", "completed");
     if (probe.model !== model || calls > limits.maxProviderCalls || inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens) throw new ProviderOutcomeUnknown("Tool protocol probe exceeded the configured model or execution limits");
     const messages: DeepSeekMessage[] = [
-      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch, and run_check. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
+      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch${localCheckIds.length ? ", and run_check for advisory worker-local checks only" : ""}. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
       { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nCheck IDs: ${lease.slice.checks.join(", ")}` }
     ];
     for (;;) {
@@ -383,12 +385,12 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
       if (calls >= limits.maxProviderCalls) throw new Error("WORKER_BUDGET_EXHAUSTED");
       const remainingOutput = limits.maxOutputTokens - outputTokens;
       if (remainingOutput <= 0) throw new Error("WORKER_BUDGET_EXHAUSTED");
-      if (conservativeInputReservation(model, messages) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Provider request does not fit the remaining input-token reservation");
+      if (conservativeInputReservation(model, messages, false, localCheckIds.length > 0) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Provider request does not fit the remaining input-token reservation");
       await recordProviderAttempt(calls + 1, "tool-loop");
       await emit("provider-completion", "started");
       if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
       assertPricingCurrent();
-      const reply = await deps.provider.complete(model, messages, controller.signal, remainingOutput);
+      const reply = await deps.provider.complete(model, messages, controller.signal, remainingOutput, localCheckIds.length > 0);
       calls++;
       inputTokens += reply.inputTokens;
       outputTokens += reply.outputTokens;
@@ -406,7 +408,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
       for (const { tool, args } of prepared) {
         if (!tool.id || callIds.has(tool.id)) throw new ProviderOutcomeUnknown("Provider returned missing or duplicate tool call IDs");
         callIds.add(tool.id);
-        validateToolCall(tool, args, lease);
+        validateToolCall(tool, args, lease, localCheckIds);
       }
       for (const { tool, args: parsedArgs } of prepared) {
         if (controller.signal.aborted) throw new Error("WORKER_DEADLINE_UNKNOWN");
@@ -416,7 +418,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
         const result = await runTool(tool, workspace, lease, deps, controller.signal, parsedArgs);
         if (tool.function.name === "run_check" && subjectId) {
           const check = result as WorkerCheckExecution;
-          await saveEvidence(`check-${subjectId}`, new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, candidateSha: null, checkId: subjectId, commandDigest: check.commandDigest, checkCommandsDigest, exitCode: check.exitCode, durationMs: check.durationMs, outputSha256: check.outputSha256, imageRef: check.imageRef, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest })), "application/json");
+          await saveEvidence(`check-${subjectId}`, new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, candidateSha: null, checkId: subjectId, authority: "advisory-worker-local", commandDigest: check.commandDigest, checkCommandsDigest, exitCode: check.exitCode, durationMs: check.durationMs, outputSha256: check.outputSha256, imageRef: check.imageRef, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest })), "application/json");
         }
         await emit(toolProgressPhase(tool.function.name), "completed", subjectId);
         messages.push({ role: "tool", tool_call_id: tool.id, content: sanitized(JSON.stringify(result)) });
@@ -471,7 +473,7 @@ function parseToolArguments(tool: DeepSeekToolCall): Record<string, unknown> {
   return args as Record<string, unknown>;
 }
 
-function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>, lease: WorkerLeaseContract): void {
+function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>, lease: WorkerLeaseContract, localCheckIds: readonly string[] = lease.slice.checks): void {
   const keys = Object.keys(args);
   if (tool.function.name === "read_file" || tool.function.name === "list_files") {
     if (keys.length !== 1 || keys[0] !== "path" || typeof args.path !== "string") throw new WorkerProtocolError("File tool arguments are invalid");
@@ -484,7 +486,7 @@ function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>,
     return;
   }
   if (tool.function.name === "run_check") {
-    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId)) throw new WorkerProtocolError("Check is not bound to the lease policy");
+    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId) || !localCheckIds.includes(args.checkId)) throw new WorkerProtocolError("Check is not configured for this worker-local advisory run");
     return;
   }
   throw new WorkerProtocolError("Unknown tool function");

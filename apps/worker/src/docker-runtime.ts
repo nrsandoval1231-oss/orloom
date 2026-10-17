@@ -538,8 +538,8 @@ class DockerWorkspace implements WorkerWorkspace {
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
     const allowedIds = [...new Set(this.lease.slice.checks)].sort();
-    if (allowedIds.some(id => !policyIds.includes(id))) throw new WorkerProtocolError("Slice requested a check without a trusted sandbox implementation");
-    const checks = Object.fromEntries(allowedIds.map(id => [id, this.options.checks[id]]));
+    if (policyIds.some(id => !allowedIds.includes(id))) throw new WorkerProtocolError("Worker sandbox check is outside the leased trusted policy");
+    const checks = Object.fromEntries(allowedIds.filter(id => policyIds.includes(id)).map(id => [id, this.options.checks[id]]));
     await launched.request("init", { files, checks }, signal);
   }
   private detachAbort?: () => void;
