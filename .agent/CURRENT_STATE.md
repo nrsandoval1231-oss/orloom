@@ -10,7 +10,7 @@ PR31 is merged at main8a910f0bf58bbe9db457cb971996a9b2bba32101. Hostinger serves
 
 Draft prerequisite sourcePR32 preserves worker input projection/archive repairs. Prior candidate6d9ded07088079da88ed0b43dbc1249e26aac2cd passed Linux398/400 with two existing skips and independent source review. Genuine runsc direct abort and SIGKILL/restart proved exact runtime absence; they do not prove live provider cancellation. Full v9 verification timed out without a certificate. Separate noncertifying diagnostics passed all files, assembled estimate1,132,996ms, not full-suite certification.
 
-Current bounded changes add local owner-HTTP cancellation coverage, truthful optional worker-local checks and the independently accepted finite timeout replan ADR0002. Combined freeze/Linux gates/exact-candidate review/rebuilt image binding/genuine full runsc proof remain pending.
+Current bounded changes add local owner-HTTP cancellation coverage, truthful optional worker-local checks and the independently accepted finite timeout replan ADR0002. Candidate8193d77 passed build/typecheck/validation but its full Linux suite failed seven outdated policy fixtures (398 pass, two skips); independent review also required leased-local command intersection. Those failures are retained and a bounded repair is underway. Re-freeze/Linux gates/exact-candidate review/rebuilt image binding/genuine full runsc proof remain pending.
 
 ## Authority and next action
 

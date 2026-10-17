@@ -8,9 +8,9 @@ Updated2026-10-16 UTC. Historical bytes: archive/2026-10-16-before-live-workflow
 | FLW-INPUT | Main | Prior6d9ded Linux/review PASS; prerequisite draftPR32. |
 | FLW-RUNTIME | Dedicatedhost | Direct abort and OS interruption runsc ABSENT; no live-provider proof. |
 | FLW-HTTP-CANCEL-1 | Existingprotocol | Local focusedPASS; combined gates pending; composed live cancellation OPEN. |
-| FLW-WORKER-CHECK-OPTIONAL | Finalverifier | FocusedPASS; local checks cannot replace mandatory certificate; combined gates pending. |
+| FLW-WORKER-CHECK-OPTIONAL | Finalverifier | CORRECT after independent8193 review: project configured commands onto the lease; mandatory final certificate unchanged. |
 | FLW-V2P | v9timeout | Noncertifying profile complete;56remaining filesPASS; assembled estimate1132996ms; no certificate. |
-| FLW-V2-CONTRACT | Profile/audit | ADR0002 planACCEPT; bounded implementation underway; final validation/review pending. |
+| FLW-V2-CONTRACT | Profile/audit | ADR0002 planACCEPT;8193 full Linux failed seven outdated fixtures; bounded fixture repair underway. |
 | FLW-QUALIFY | Frozen source | WAIT rebuilt image bindings and genuine full runsc suite. |
 | FLW-1 | Qualification/Appkey/approvedplan | WAIT one docs task/$1/onebuilder; zero paidattempts/productPRs. |
 | FLW-2 | FLW-1success | NOT READY automatic dispatch; no sixbuilders/redesign/learningclaims. |

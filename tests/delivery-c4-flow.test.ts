@@ -15,6 +15,7 @@ import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 import type { DeliveryAuthority, DeliveryCommandV1, DeliveryPolicy } from "../packages/integration/src/delivery.js";
 import { MissionGovernor, TrustedCheckCoordinator } from "../packages/governor/src/governor.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy } from "../packages/verification/src/policy.js";
 
 const exec = promisify(callbackExecFile);
 const hash = (value: Uint8Array | string) => createHash("sha256").update(value).digest("hex");
@@ -119,7 +120,8 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
         return { stdout, stderr, manifest };
       }
     };
-    const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("runner image"), verifierId: "fixture-runner", policyDigest, leasePolicyDigest, policyVersion: "fixture-policy-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
+    const suitePolicy = getCheckPolicy("node-repo-suite-v1");
+    const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("runner image"), verifierId: "fixture-runner", policyDigest, leasePolicyDigest, policyVersion: suitePolicy.version, allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: getCheckAttemptLifetimeMs("node-repo-suite-v1") });
     await coordinator.verifySlice(mission.id, "delivery");
 
     const reviewArtifactId = "independent-review-c4-delivery";
@@ -131,7 +133,7 @@ test("approved trusted C4 integration attribution reaches controlled delivery ef
     assert.equal(integrated.status, "verified");
     assert.deepEqual(integrated.evidenceRefs, [workerEvidenceRef, `integration:${candidateSha}`, `review:${reviewDigest}`]);
 
-    const deliveryPolicy: DeliveryPolicy = { repository, appId: 7, installationId: 9, baseRef: "main", baseSha, protectedRefs: ["main"], checkIds: ["node-repo-suite-v1"], policyVersion: "fixture-policy-v1", policyDigest, imageDigest: hash("runner image"), checkName: "Orloom certified suite" };
+    const deliveryPolicy: DeliveryPolicy = { repository, appId: 7, installationId: 9, baseRef: "main", baseSha, protectedRefs: ["main"], checkIds: ["node-repo-suite-v1"], policyVersion: suitePolicy.version, policyDigest, imageDigest: hash("runner image"), checkName: "Orloom certified suite" };
     const command: DeliveryCommandV1 = { version: "orloom.delivery-command.v1", missionId: mission.id, sliceId: "delivery", leaseEpoch: grant.epoch, integratedSha: candidateSha, treeSha: inspection.treeSha, reviewArtifactId, reviewArtifactDigest: reviewDigest, idempotencyKey: "delivery-c4-flow-000001" };
 
     const checks = new Map<number, { id: number; headSha: string; name: string; externalId: string | null; conclusion: string | null; appId: number | null }>();

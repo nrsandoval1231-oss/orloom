@@ -10,9 +10,13 @@ import { DeepSeekHttpClient, executeLease, type WorkerOptions, type WorkerWorksp
 import type { WorkerLeaseContract, WorkerResult } from "../packages/contracts/src/worker-protocol.js";
 
 const model = "deepseek-chat";
-const trustedChecks = ["node-repo-suite-v1"];
+const trustedChecks = ["node-repo-suite-v1", "node-validate-syntax"];
 const policyDigest = createHash("sha256").update(JSON.stringify(trustedChecks)).digest("hex");
 const imageRef = `sha256:${"d".repeat(64)}`;
+const commandMap: Record<string, WorkerOptions["trustedCheckCommands"][string]> = {
+  [trustedChecks[0]!]: { executable: "node", args: ["scripts/validate.mjs"], timeoutSeconds: 300 },
+  [trustedChecks[1]!]: { executable: "node", args: ["--check", "scripts/validate.mjs"], timeoutSeconds: 60 }
+};
 const pricing = { model, version: "fixture-v1", source: "operator test fixture", capturedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60_000).toISOString(), inputCentsPerMillion: 10, outputCentsPerMillion: 10, reasoningCentsPerMillion: 10, safetyMultiplier: 1.2 };
 const lease: WorkerLeaseContract = {
   protocol: "orloom.worker-lease.v1",
@@ -36,53 +40,60 @@ test("DeepSeek completion omits run_check when no worker-local command is config
   assert.deepEqual(toolLists[1], ["read_file", "list_files", "apply_patch", "run_check"], "configured local checks retain the existing tool set");
 });
 
-test("empty worker-local map uses the reduced request reservation and rejects a forged run_check before sandbox RPC", async () => {
-  const expectedTools = [
+test("worker advertises only configured checks leased to the slice and refuses forged unavailable checks before RPC", async () => {
+  const reducedTools = [
     { type: "function", function: { name: "read_file", description: "Read a bounded UTF-8 file in the owned workspace", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
     { type: "function", function: { name: "list_files", description: "List bounded files in a workspace directory", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
     { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } }
   ];
-  const messages = [
-    { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
-    { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nCheck IDs: ${lease.slice.checks.join(", ")}` }
+  const scenarios = [
+    { name: "proper subset", sliceChecks: [trustedChecks[0]!], configured: commandMap, forged: trustedChecks[1]!, advertised: [trustedChecks[0]!], includeRunCheck: true },
+    { name: "disjoint", sliceChecks: [trustedChecks[0]!], configured: { [trustedChecks[1]!]: commandMap[trustedChecks[1]!]! }, forged: trustedChecks[1]!, advertised: [], includeRunCheck: false }
   ];
-  const requiredReservation = Buffer.byteLength(JSON.stringify({ model, messages, stream: false, thinking: { type: "disabled" }, tools: expectedTools, tool_choice: "auto", max_tokens: 1 }), "utf8") + 512;
-  let completionCalls = 0, runCheckCalls = 0, closeCalls = 0;
-  const results: WorkerResult[] = [];
-  const provider = {
-    async listModels() { return [model]; },
-    async probeTools(id: string) { return { model: id, inputTokens: 1, outputTokens: 1 }; },
-    async complete(id: string, _messages: unknown[], _signal: AbortSignal, _maxTokens: number, includeRunCheck?: boolean) {
-      completionCalls++;
-      assert.equal(includeRunCheck, false);
-      return { model: id, inputTokens: 1, outputTokens: 1, message: { role: "assistant" as const, content: null, tool_calls: [{ id: "forged-check", type: "function" as const, function: { name: "run_check", arguments: JSON.stringify({ checkId: trustedChecks[0] }) } }] } };
-    }
-  };
-  const workspace: WorkerWorkspace = {
-    async checkout() {}, async readFile() { return ""; }, async listFiles() { return []; }, async replaceText() {},
-    async runCheck() { runCheckCalls++; throw new Error("unconfigured local check must never reach sandbox RPC"); },
-    async commitCandidate() { throw new Error("forged check must not produce a candidate"); }, async close() { closeCalls++; }
-  };
-  const blobs = new Map<string, Uint8Array>();
-  const evidence = {
-    async put(bytes: Uint8Array) { const hash = createHash("sha256").update(bytes).digest("hex"); const key = `sha256/${hash}`; blobs.set(key, new Uint8Array(bytes)); return { key, sha256: hash }; },
-    async get(key: string) { const bytes = blobs.get(key); assert(bytes); return bytes; }
-  };
-  const referenceDigest = "0".repeat(64);
-  const options: WorkerOptions = { allowedModels: [model], allowedProviders: ["deepseek"], trustedChecks, trustedCheckPolicyDigest: policyDigest, trustedCheckCommands: {}, sandboxImageRef: imageRef, maxToolCalls: 4, pricing };
-  await executeLease({ ...lease, executionLimits: { ...lease.executionLimits, maxInputTokens: requiredReservation + 1 } }, {
-    control: { async claim() { return null; }, async heartbeat() {}, async result(_lease, result) { results.push(result); } },
-    provider, runtime: { async create() { return workspace; } }, evidence,
-    progress: { async append() { return { decision: "CONTINUE", reference: `sha256/${referenceDigest}:${referenceDigest}`, digest: referenceDigest }; } },
-    checks: {}, options
-  });
-  assert.equal(completionCalls, 1, "the reduced three-tool reservation fits; reserving an unavailable run_check would block before completion");
-  assert.equal(runCheckCalls, 0, "forged run_check is refused before Docker RPC");
-  assert.equal(closeCalls, 1);
-  assert.equal(results.length, 1);
-  const result = results[0];
-  assert(result);
-  assert.equal("outcome" in result ? result.outcome : "candidate", "BLOCKED");
+  for (const scenario of scenarios) {
+    const expectedMessages = [
+      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch${scenario.includeRunCheck ? ", and run_check for advisory worker-local checks only" : ""}. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
+      { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nWorker-local advisory check IDs: ${scenario.advertised.length ? scenario.advertised.join(", ") : "none"}\nMandatory final trusted check IDs: ${scenario.sliceChecks.join(", ")}` }
+    ];
+    const requiredReservation = Buffer.byteLength(JSON.stringify({ model, messages: expectedMessages, stream: false, thinking: { type: "disabled" }, tools: reducedTools, tool_choice: "auto", max_tokens: 1 }), "utf8") + 512;
+    let completionCalls = 0, runCheckCalls = 0, closeCalls = 0, completionMessages: unknown[] = [];
+    const results: WorkerResult[] = [];
+    const provider = {
+      async listModels() { return [model]; },
+      async probeTools(id: string) { return { model: id, inputTokens: 1, outputTokens: 1 }; },
+      async complete(id: string, messages: unknown[], _signal: AbortSignal, _maxTokens: number, includeRunCheck?: boolean) {
+        completionCalls++; completionMessages = messages;
+        assert.equal(includeRunCheck, scenario.includeRunCheck, `${scenario.name}: tool schema follows the configured/leased intersection`);
+        return { model: id, inputTokens: 1, outputTokens: 1, message: { role: "assistant" as const, content: null, tool_calls: [{ id: "forged-check", type: "function" as const, function: { name: "run_check", arguments: JSON.stringify({ checkId: scenario.forged }) } }] } };
+      }
+    };
+    const workspace: WorkerWorkspace = {
+      async checkout() {}, async readFile() { return ""; }, async listFiles() { return []; }, async replaceText() {},
+      async runCheck() { runCheckCalls++; throw new Error("unavailable worker-local check must never reach sandbox RPC"); },
+      async commitCandidate() { throw new Error("forged check must not produce a candidate"); }, async close() { closeCalls++; }
+    };
+    const blobs = new Map<string, Uint8Array>();
+    const evidence = {
+      async put(bytes: Uint8Array) { const hash = createHash("sha256").update(bytes).digest("hex"); const key = `sha256/${hash}`; blobs.set(key, new Uint8Array(bytes)); return { key, sha256: hash }; },
+      async get(key: string) { const bytes = blobs.get(key); assert(bytes); return bytes; }
+    };
+    const referenceDigest = "0".repeat(64);
+    const options: WorkerOptions = { allowedModels: [model], allowedProviders: ["deepseek"], trustedChecks, trustedCheckPolicyDigest: policyDigest, trustedCheckCommands: scenario.configured, sandboxImageRef: imageRef, maxToolCalls: 4, pricing };
+    await executeLease({ ...lease, slice: { ...lease.slice, checks: scenario.sliceChecks }, executionLimits: { ...lease.executionLimits, maxInputTokens: scenario.includeRunCheck ? lease.executionLimits.maxInputTokens : requiredReservation + 1 } }, {
+      control: { async claim() { return null; }, async heartbeat() {}, async result(_lease, result) { results.push(result); } },
+      provider, runtime: { async create() { return workspace; } }, evidence,
+      progress: { async append() { return { decision: "CONTINUE", reference: `sha256/${referenceDigest}:${referenceDigest}`, digest: referenceDigest }; } },
+      checks: Object.fromEntries(Object.keys(scenario.configured).map(id => [id, ["fixture"]])), options
+    });
+    assert.equal(completionCalls, 1, `${scenario.name}: reduced exact-schema reservation permits the completion call`);
+    assert.equal(runCheckCalls, 0, `${scenario.name}: forged unavailable run_check is refused before sandbox RPC`);
+    assert.equal(closeCalls, 1);
+    const userPrompt = (completionMessages as Array<{ role: string; content: string }>).find(message => message.role === "user")?.content ?? "";
+    assert(userPrompt.includes(`Worker-local advisory check IDs: ${scenario.advertised.length ? scenario.advertised.join(", ") : "none"}`));
+    assert(userPrompt.includes(`Mandatory final trusted check IDs: ${scenario.sliceChecks.join(", ")}`));
+    assert.equal(results.length, 1);
+    assert.equal("outcome" in results[0]! ? results[0]!.outcome : "candidate", "BLOCKED");
+  }
 });
 
 test("Docker runtime initializes only configured worker-local checks, including none", { skip: process.platform !== "linux" }, async () => {
@@ -118,15 +129,19 @@ else if(op==='start') {
 }
 `, { mode: 0o700 });
     await chmod(fakeDocker, 0o700);
-    const configured = { "node-repo-suite-v1": { executable: "node", args: ["scripts/validate.mjs"], timeoutSeconds: 300 } };
-    for (const checks of [{}, configured]) {
+    const checksCases = [
+      { sliceChecks: trustedChecks, checks: {} },
+      { sliceChecks: [trustedChecks[0]!], checks: commandMap },
+      { sliceChecks: [trustedChecks[0]!], checks: { [trustedChecks[1]!]: commandMap[trustedChecks[1]!]! } }
+    ];
+    for (const { sliceChecks, checks } of checksCases) {
       const runtime = new DockerWorkerRuntime({ imageRef, installationId: 1, checkoutTokens: { async createCheckoutToken() { throw new Error("test must not request credentials"); } }, checkoutTransport: { async fetchExact(input) { await input.fetch(fixture); } }, checks, scratchRoot: scratch, dockerPath: fakeDocker });
-      const workspace = await runtime.create({ ...lease, mission: { ...lease.mission, repository: "fixture/repo", baseSha } });
+      const workspace = await runtime.create({ ...lease, slice: { ...lease.slice, checks: sliceChecks }, mission: { ...lease.mission, repository: "fixture/repo", baseSha } });
       await workspace.checkout("fixture/repo", baseSha);
       await workspace.close();
     }
     const requests = (await readFile(trace, "utf8")).split("\n").filter(Boolean).map(line => JSON.parse(line) as { type: string; request?: { op: string; checks: Record<string, unknown> } });
     const initChecks = requests.filter(row => row.type === "rpc" && row.request?.op === "init").map(row => row.request!.checks);
-    assert.deepEqual(initChecks, [{}, configured]);
+    assert.deepEqual(initChecks, [{}, { [trustedChecks[0]!]: commandMap[trustedChecks[0]!] }, {}]);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

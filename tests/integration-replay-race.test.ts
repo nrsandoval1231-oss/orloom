@@ -14,6 +14,7 @@ import { MissionGovernor, TrustedCheckCoordinator } from "../packages/governor/s
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { receiptDigestV1, type CheckCertificateV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 import { LifecycleStoppedError } from "../packages/contracts/src/lifecycle.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy } from "../packages/verification/src/policy.js";
 
 const exec = promisify(callbackExecFile);
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -106,7 +107,8 @@ async function makeFixture(db: PGlite, store: SqlMissionStore, root: string, lab
     },
     verifyArtifacts: async () => ({ stdout: Buffer.from("stdout"), stderr: Buffer.from("stderr"), manifest: Buffer.from("manifest") })
   };
-  const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("image"), verifierId: "fixture-verifier", policyDigest: policy, leasePolicyDigest, policyVersion: "fixture-v1", allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: 60_000 });
+  const suitePolicy = getCheckPolicy("node-repo-suite-v1");
+  const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest: hash("image"), verifierId: "fixture-verifier", policyDigest: policy, leasePolicyDigest, policyVersion: suitePolicy.version, allowedChecks: ["node-repo-suite-v1"], attemptLifetimeMs: getCheckAttemptLifetimeMs("node-repo-suite-v1") });
   const governor = new MissionGovernor(store, governorConfig(leasePolicyDigest));
   await coordinator.verifySlice(mission.id, "parent");
 

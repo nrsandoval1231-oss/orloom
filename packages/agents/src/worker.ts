@@ -296,7 +296,8 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
   if (policyDigest !== lease.trustedCheckPolicyDigest || policyDigest !== deps.options.trustedCheckPolicyDigest) throw new WorkerProtocolError("Trusted check policy digest does not match the lease");
   if (Object.keys(deps.options.trustedCheckCommands).some(id => !deps.options.trustedChecks.includes(id))) throw new WorkerProtocolError("Worker-local check commands are outside the leased trusted check IDs");
   if (!/^sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef) && !/^ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef)) throw new WorkerProtocolError("Sandbox image must be an immutable configured content ID or registry digest");
-  const checkSnapshot = canonicalCheckCommands(deps.options.trustedCheckCommands);
+  const configuredCheckSnapshot = canonicalCheckCommands(deps.options.trustedCheckCommands);
+  const checkSnapshot = Object.fromEntries(Object.entries(configuredCheckSnapshot).filter(([id]) => lease.slice.checks.includes(id)));
   const localCheckIds = Object.keys(checkSnapshot);
   const checkCommandsDigest = createHash("sha256").update(JSON.stringify(checkSnapshot)).digest("hex");
   if (!Number.isSafeInteger(deps.options.maxToolCalls) || deps.options.maxToolCalls < 1) throw new WorkerProtocolError("Local tool call cap is not enabled");
@@ -378,7 +379,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (probe.model !== model || calls > limits.maxProviderCalls || inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens) throw new ProviderOutcomeUnknown("Tool protocol probe exceeded the configured model or execution limits");
     const messages: DeepSeekMessage[] = [
       { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch${localCheckIds.length ? ", and run_check for advisory worker-local checks only" : ""}. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
-      { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nCheck IDs: ${lease.slice.checks.join(", ")}` }
+      { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nWorker-local advisory check IDs: ${localCheckIds.length ? localCheckIds.join(", ") : "none"}\nMandatory final trusted check IDs: ${lease.slice.checks.join(", ")}` }
     ];
     for (;;) {
       if (controller.signal.aborted || now() >= deadline) throw new Error("WORKER_DEADLINE_UNKNOWN");
