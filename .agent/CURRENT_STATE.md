@@ -1,22 +1,25 @@
 # Orloom current state
 
-Updated 2026-10-19 UTC. Owner authorizes combining the accepted profile fix with recovered v10, exact validation/review, then the next safe step toward a real verified draft PR. This unpublished successor is on feat/combined-v10-profile. Combined source review is OPEN until the final frozen candidate passes its own gates and independent review.
+Updated 2026-10-19 UTC for the owner-directed Hostinger successor. Owner selected Hostinger for the control plane, database and engineering workers. The approved Hostinger key staging is complete; worker execution remains disabled.
 
 ## Governing records
 
 - [Canonical harness](../docs/architecture/CANONICAL_HARNESS.md), [Finish Contract](../docs/FINISH_CONTRACT.md), [approved UI](../docs/design/FOREST_BRASS_UI_V1_1.md).
-- [Work Graph](WORK_GRAPH.md), [combined packet](ORL_20261019_COMBINED_V10_PACKET.md), [completion plan](../docs/superpowers/plans/2026-10-19-orloom-completion.md).
-- Last accepted profile source: a80f2e75cf1388bde232915d4d1a68c4e5b05dd4, tree988b11adda9a26f87c3b6b884bcd5a2e6a88164b; [separate evidence scope](../docs/validation/2026-10-19-approved-worker-profile.md). Its acceptance does not transfer to this combination.
-- [Combined validation/provenance](../docs/validation/2026-10-19-combined-v10.md). True pre-merge state/graph bytes are archived under archive/2026-10-19-before-combined-v10-*.
+- [Work Graph](WORK_GRAPH.md), [Hostinger source packet](H2B-SOURCE-01.md), [Hostinger preparation](../docs/operations/hostinger-worker-preparation.md).
+- Exact source `4203f3a1f379e60fb853ab48b04d389fe75e4978`, tree `cb60832ea4dd20a17613c60ddd7f407401e6fae0`, was accepted for its stated combined-source scope. Its isolated runtime qualification used DigitalOcean; that evidence does not qualify Hostinger. See the [external exact-source receipt](../../../outputs/Orloom-combined-v10/accepted-state.json) and [source review](../../../outputs/Orloom-combined-v10/SOURCE_REVIEW_PASS.json). The prior state and graph bytes are preserved in [archive/2026-10-19-hostinger-preparation](archive/2026-10-19-hostinger-preparation/).
+- Builder evidence for this docs/configuration candidate is a claim pending independent review. The controller records final frozen-candidate authority in the external [source completion receipt](../../../outputs/Orloom-Hostinger-prepared/SOURCE-COMPLETION.json); no acceptance transfers from the earlier source.
+- Hostinger key staging evidence records the expected root-owned mode `0400` file and unchanged protected containers: [post-copy metadata receipt](../../../outputs/Orloom-Hostinger-worker/POSTCOPY.json). It does not prove worker execution or production deployment.
 
-## Source frontier
+## Source and operations
 
-Merge03a57886544dee35a189fd1635b51209681ff247 retains parents a80f2e7 and recovered dfc06fd09f76eb20b163f0d7aaff1e0b91182b31. It preserves the shared frozen production runtime profile, optional leased local checks, owner-HTTP cancellation and ADR0002 finite1800/1830/1845/1860-second lifetimes with2100-second ceiling. Subsequent documentation corrections preserve rejected provenance outside Git. Earlier03a/ab9 candidates are not accepted. Final candidate identity and results belong to its exact controller receipt, never an inherited source claim.
+This documentation/configuration successor is based on the exact accepted source above. Its own frozen candidate gates and independent review are pending. No source/runtime implementation or deployment changed in this successor.
 
-Remote main8a910f0 and draft PR32 head6d9ded0 remain unchanged. No publication, merge on GitHub or activation follows from local gates.
+The Hostinger host has 2 CPUs and about 8 GiB RAM, shared with eight protected containers. Prepare a private Node `24.15.0` runtime under `/opt/orloom-worker-runtime/node-v24.15.0` with the packet-specified digest; system Node `20.20.2` does not satisfy the repository engine requirement. Build and qualify serially with one initial lane. The fixed v10 runsc suite and its resource/security policy remain unchanged. Do not infer six-lane capacity.
 
-## Operational boundary and next direction
+The private App key is staged at `/etc/orloom/credentials/github-app-private-key`; never read, copy, print or hash its contents in this source task. Database, provider, R2, policy, image and runtime qualification remain explicit activation gates. Keep `ORLOOM_WORKER_MODE` and the approved-task pointer blank, capacity zero, and integration/delivery disabled. Missing configuration must not be filled with invented values or used to claim `--check-config` passes.
 
-The read-only verified Hostinger UI/PostgreSQL remain healthy with execution disabled, capacity zero and integration/delivery false. Approved one-document mission09d349b4-7518-4548-bc6f-39486a294780 has100cents, epoch0, no candidate and no verification attempt. Worker609833278 has runsc and a DB tunnel; no engineering worker or Orloom images were loaded at preflight. Signing-key setup remains unresolved.
+## Direction and authority
 
-VALIDATE the exact combined source, then run only the separately reviewed credential-free image/runsc qualification kit. Existing infrastructure cap is5USD cumulative; actual invoice UNKNOWN. Qualification is separate from production mission certification. Provider execution, compatible Hostinger release, genuine mission certificate/review/draft PR, automatic handoffs and full Finish Contract remain OPEN. Preserve UNKNOWN quarantine, old evidence, credentials and owner merge authority.
+H2B source freeze -> H3 credential-free Hostinger image/runsc qualification and full suite -> H4 separately reviewed disabled compatible release/preparation -> H5 owner-enabled mission. H3 and H4 remain open until their own evidence and review are recorded. Backups, isolated restore and rollback evidence are required before a compatible app cutover; a compatible v10 reader must precede v10 production records.
+
+The accepted source/runtime checkpoint is not Hostinger qualification. Runtime execution, production certification, draft PR delivery, and Finish Contract acceptance remain open. Preserve UNKNOWN for unresolved effects. Owner retains activation, merge and delivery authority. The known $1 mission cap remains unused.
