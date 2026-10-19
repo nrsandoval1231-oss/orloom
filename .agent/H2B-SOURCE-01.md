@@ -1,8 +1,8 @@
 # H2B-SOURCE-01: Hostinger worker preparation successor
 
-Owner direction sets Hostinger as the target for the control plane, database and engineering workers. Worker execution remains disabled. This packet records the bounded documentation/configuration successor to exact source candidate `4203f3a1f379e60fb853ab48b04d389fe75e4978` (tree `cb60832ea4dd20a17613c60ddd7f407401e6fae0`). That source was accepted for its exact combined-source scope; its isolated runtime evidence is DigitalOcean-specific and is not Hostinger qualification. External receipts are linked from [current state](CURRENT_STATE.md).
+Owner direction sets Hostinger as the target for the control plane, database and engineering workers. Worker execution remains disabled. This packet records the bounded documentation/configuration successor to exact source candidate `4203f3a1f379e60fb853ab48b04d389fe75e4978` (tree `cb60832ea4dd20a17613c60ddd7f407401e6fae0`). That source was accepted for its exact combined-source scope; its isolated runtime evidence is DigitalOcean-specific and is not Hostinger qualification. Controller-local external receipts are outside this Git tree and are not portable GitHub links; their workspace paths and identities are recorded in [current state](CURRENT_STATE.md).
 
-The Hostinger GitHub App private key is staged at `/etc/orloom/credentials/github-app-private-key` with root-only `0400` metadata, as recorded by the external [post-copy receipt](../../../outputs/Orloom-Hostinger-worker/POSTCOPY.json). This packet neither reads nor exposes the key. The app remains healthy with execution disabled; no worker or Orloom image is active.
+The Hostinger GitHub App private key is staged at `/etc/orloom/credentials/github-app-private-key` with root-only `0400` metadata. Its controller-local external receipt is outside this Git tree and is not a portable GitHub link: `outputs/Orloom-Hostinger-worker/POSTCOPY.json`. This packet neither reads nor exposes the key. The app remains healthy with execution disabled; no worker or Orloom image is active.
 
 ## Host and preparation constraints
 
