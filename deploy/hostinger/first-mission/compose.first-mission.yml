@@ -1,0 +1,16 @@
+# Overlay for the first live mission. Exposes PostgreSQL to the host worker on
+# loopback only and aligns the control plane's trusted check with the syntax policy.
+services:
+  app:
+    environment:
+      ORLOOM_TRUSTED_CHECK_POLICY_JSON: '["node-validate-syntax"]'
+  db-host-bridge:
+    image: alpine/socat:1.8.0.3
+    restart: unless-stopped
+    command: ["TCP-LISTEN:5432,fork,reuseaddr", "TCP:db:5432"]
+    depends_on:
+      db: { condition: service_healthy }
+    networks: [database, host_bridge]
+    ports: ["127.0.0.1:5433:5432"]
+networks:
+  host_bridge: {}
