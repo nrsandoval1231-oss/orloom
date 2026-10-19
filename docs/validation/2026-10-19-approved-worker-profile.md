@@ -4,6 +4,8 @@ At base `6d9ded07088079da88ed0b43dbc1249e26aac2cd`, the validated repository exe
 
 The regression was run before the fix and failed as expected: configured profile was `undefined` instead of `orloom-execution-v1`; the absent-profile assertion passed. After the fix both tests passed.
 
+Independent review then returned FIX because the initial helper-only test did not exercise the executing lane wiring. `main.ts` now consumes `createApprovedRuntimeComposition`, which constructs the reconciliation runtime and owns the production execute-lane closure. The focused test invokes that factory with an inert lane executor and captures the options passed by the actual closure. A deliberate omission in that closure reproduced the wiring failure (2/2 failed on reference identity, with the configured lane options missing the profile); restoring the shared snapshot made both configured and absent-profile tests pass (2/2).
+
 Validation used Node `v24.15.0` from WSL and the TypeScript compiler/dependencies already present in the independent Linux inspection checkout, exposed temporarily through a symlink for module resolution. The symlink was removed afterward; that inspection checkout was not modified.
 
 - TypeScript build/typecheck: `tsc --pretty false` — PASS.
@@ -12,4 +14,4 @@ Validation used Node `v24.15.0` from WSL and the TypeScript compiler/dependencie
 - Existing `approved-worker-startup.test.js` was also attempted on the Windows-mounted checkout and its private-file fixture failed platform path/ownership validation (7/8 tests passed); this environmental failure is outside this change and the controller's Linux baseline remains authoritative.
 - `git diff --check` — PASS.
 
-No runtime activation, Docker access, secret read, provider call, external write, or spend was performed. Full Linux gates and independent review remain with the controller.
+No runtime activation, Docker access, secret read, provider call, external write, or spend was performed. The composition repair awaits independent review; full Linux gates remain with the controller.
