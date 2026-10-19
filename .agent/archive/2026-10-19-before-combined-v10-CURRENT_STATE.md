@@ -1,6 +1,5 @@
 # Orloom current state
 
-<<<<<<< HEAD
 Updated 2026-10-19 UTC from live GitHub, read-only Hostinger/worker inspection and fresh detached Linux validation. Owner objective: completion plan and authorized bounded fixes toward autonomous engineering with owner-controlled delivery. Canonical: docs/architecture/CANONICAL_HARNESS.md, docs/FINISH_CONTRACT.md and approved docs/design/FOREST_BRASS_UI_V1_1.md. Prior bytes: archive/2026-10-19-before-inspection-CURRENT_STATE.md, unchanged.
 
 ## Exact source and selected node
@@ -20,22 +19,3 @@ Current worker is 609833278 codex-keen-tide-df25, replacing the older deleted ho
 ## One next direction
 
 VALIDATE the profile repair, then integrate it with preserved v10 serially. Follow docs/superpowers/plans/2026-10-19-orloom-completion.md: qualify exact images and compatible Hostinger release, prove one assisted verified draft PR, then automate durable dispatch/review/delivery, bounded planning/scheduling/recovery and learning. Automatic handoffs and full Finish Contract remain OPEN. Keep defaults disabled, UNKNOWN quarantine, original failed evidence, credentials and owner merge authority.
-=======
-Updated 2026-10-16 UTC. Owner objective: keep the approved Forest & Brass Command Center and Live Loom on Hostinger, then deliver one real independently verified draft PR. Canonical: docs/architecture/CANONICAL_HARNESS.md, docs/design/FOREST_BRASS_UI_V1_1.md, and governing Finish Contract. Prior state/graph bytes are archived unchanged under .agent/archive/2026-10-16-before-live-workflow-final-*.
-
-## Verified deployment
-
-PR31 is merged at main8a910f0bf58bbe9db457cb971996a9b2bba32101. Hostinger serves UI sourcec2ad774198a64ff829ac2bc68ce04ce2883ac611 at https://orloom.srv1758862.hstgr.cloud/. Actual TLS, owner authentication, private PostgreSQL persistence, same-host encrypted backup/isolated restore and rollback compatibility were checked. Health returns cloud/ok/liveExecution:false. Off-host disaster recovery remains unverified. Web workers remain disabled.
-
-## Worker frontier
-
-Draft prerequisite sourcePR32 preserves worker input projection/archive repairs. Prior candidate6d9ded07088079da88ed0b43dbc1249e26aac2cd passed Linux398/400 with two existing skips and independent source review. Genuine runsc direct abort and SIGKILL/restart proved exact runtime absence; they do not prove live provider cancellation. Full v9 verification timed out without a certificate. Separate noncertifying diagnostics passed all files, assembled estimate1,132,996ms, not full-suite certification.
-
-Current bounded changes add local owner-HTTP cancellation coverage, truthful optional worker-local checks and the independently accepted finite timeout replan ADR0002. Candidate8193d77 passed build/typecheck/validation but its full Linux suite failed seven outdated policy fixtures (398 pass, two skips); independent review also required leased-local command intersection. Those failures are retained and a bounded repair is underway. Re-freeze/Linux gates/exact-candidate review/rebuilt image binding/genuine full runsc proof remain pending.
-
-## Authority and next action
-
-Owner approved one Orloom builder execution/$1 provider maximum and its saved single-document plan. Zero paid attempts and zero product-generated PRs. Worker infrastructure cap$0.10/hour/$5 cumulative; invoiceUNKNOWN. Restricted database authentication, scoped R2 readback and free model listing passed. Orloom-only GitHub App installed; signing-key file location unresolved. Never substitute another app key, reset leases, refund ambiguity or reuse old certification.
-
-Next: validate frozen source and exact images/full verifier, resolve key securely, execute approved mission once. First path is operator-assisted under FIRST_LIVE_WORKFLOW_PACKET.md; automatic dispatch is a successor. Current evidence outsideGit: ../Orloom/live-workflow-evidence/resume-20261016/.
->>>>>>> recovered/v10-dfc06fd

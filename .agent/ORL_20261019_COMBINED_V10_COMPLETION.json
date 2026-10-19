@@ -102,11 +102,7 @@
     "tests/worker-broker.test.ts",
     "tests/worker-optional-checks.test.ts",
     "docs/validation/2026-10-19-combined-v10.md",
-    ".agent/ORL_20261019_COMBINED_V10_COMPLETION.json",
-    ".agent/archive/2026-10-19-before-combined-v10-CURRENT_STATE.md",
-    ".agent/archive/2026-10-19-before-combined-v10-WORK_GRAPH.md",
-    ".agent/archive/2026-10-19-inaccurate-combined-v10-handoff/ORL_20261019_COMBINED_V10_COMPLETION.json",
-    ".agent/archive/2026-10-19-inaccurate-combined-v10-handoff/2026-10-19-combined-v10.md"
+    ".agent/ORL_20261019_COMBINED_V10_COMPLETION.json"
   ],
   "unknowns": [
     "controller frozen-candidate npm ci/typecheck/npm test/build/validate/syntax/diff gates",
@@ -119,5 +115,12 @@
     "token usage"
   ],
   "external_actions": "none",
-  "runtime_acceptance": "none; genuine runsc/image/deployment/provider gates OPEN"
+  "runtime_acceptance": "none; genuine runsc/image/deployment/provider gates OPEN",
+  "controller_provenance_correction": {
+    "recorded_at_utc": "2026-10-19T16:54:00.173571+00:00",
+    "rejected_candidate": "03a57886544dee35a189fd1635b51209681ff247",
+    "preserved_evidence": "work/evidence/combined-v10/rejected-source1-artifacts",
+    "source_code_changed": false,
+    "full_candidate_diff_check_required": true
+  }
 }
