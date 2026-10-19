@@ -15,3 +15,7 @@ Validation used Node `v24.15.0` from WSL and the TypeScript compiler/dependencie
 - `git diff --check` — PASS.
 
 No runtime activation, Docker access, secret read, provider call, external write, or spend was performed. The composition repair awaits independent review; full Linux gates remain with the controller.
+
+## Separate accepted profile source checkpoint
+
+Controller-frozen a80f2e75cf1388bde232915d4d1a68c4e5b05dd4, tree988b11adda9a26f87c3b6b884bcd5a2e6a88164b, passed fresh detached Node24.15 locked install/typecheck/test/build/validate/diff gates:402tests,401pass,0fail,1operational host-ownership skip. Independent Sol review returned PASS for that bounded source and plan. The original controller receipt/log/review are retained in the19October inspection evidence package. This historical acceptance excludes every later combined source, runtime image, deployment and provider outcome.

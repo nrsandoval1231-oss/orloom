@@ -1,15 +1,22 @@
 # Orloom current state
 
-Updated 2026-10-19 UTC. This is an unpublished combined source successor on feat/combined-v10-profile, merging accepted profile runtime wiring at a80f2e75 with recovered v10 dfc06fd. No validation or acceptance transfers to this candidate until controller exact-tree gates and independent review.
+Updated 2026-10-19 UTC. Owner authorizes combining the accepted profile fix with recovered v10, exact validation/review, then the next safe step toward a real verified draft PR. This unpublished successor is on feat/combined-v10-profile. Combined source review is OPEN until the final frozen candidate passes its own gates and independent review.
 
-## Source and pending candidate
+## Governing records
 
-Remote main remains 8a910f0; draft PR32 remains at 6d9ded0. The recovered v10 source and its prior failures are preserved as historical inputs. This combination retains ADR0002 finite 1800/1830/1845/1860-second check lifetimes and 2100-second absolute ceiling, plus shared frozen runtime composition and leased optional-check projection. Combined Linux focused validation, frozen full gates, independent review, rebuilt image binding and genuine runsc/provider proof remain pending or OPEN. No image, runtime, provider or deployment acceptance is claimed.
+- [Canonical harness](../docs/architecture/CANONICAL_HARNESS.md), [Finish Contract](../docs/FINISH_CONTRACT.md), [approved UI](../docs/design/FOREST_BRASS_UI_V1_1.md).
+- [Work Graph](WORK_GRAPH.md), [combined packet](ORL_20261019_COMBINED_V10_PACKET.md), [completion plan](../docs/superpowers/plans/2026-10-19-orloom-completion.md).
+- Last accepted profile source: a80f2e75cf1388bde232915d4d1a68c4e5b05dd4, tree988b11adda9a26f87c3b6b884bcd5a2e6a88164b; [separate evidence scope](../docs/validation/2026-10-19-approved-worker-profile.md). Its acceptance does not transfer to this combination.
+- [Combined validation/provenance](../docs/validation/2026-10-19-combined-v10.md). True pre-merge state/graph bytes are archived under archive/2026-10-19-before-combined-v10-*.
 
-## Operational boundary
+## Source frontier
 
-The previously verified Hostinger UI and PostgreSQL remain reported healthy, with live execution disabled and worker defaults disabled. Capacity, integration and delivery remain disabled. Worker infrastructure spend cap remains $5 cumulative; no new host, credential, provider call, external write, push or merge is part of this source integration. Preserve UNKNOWN quarantine and historical failures.
+Merge03a57886544dee35a189fd1635b51209681ff247 retains parents a80f2e7 and recovered dfc06fd09f76eb20b163f0d7aaff1e0b91182b31. It preserves the shared frozen production runtime profile, optional leased local checks, owner-HTTP cancellation and ADR0002 finite1800/1830/1845/1860-second lifetimes with2100-second ceiling. Subsequent documentation corrections preserve rejected provenance outside Git. Earlier03a/ab9 candidates are not accepted. Final candidate identity and results belong to its exact controller receipt, never an inherited source claim.
 
-## Next direction
+Remote main8a910f0 and draft PR32 head6d9ded0 remain unchanged. No publication, merge on GitHub or activation follows from local gates.
 
-Controller runs focused and frozen exact-candidate validation, then independent review. If accepted, continue the existing completion plan toward verified draft-PR proof. Runtime image qualification, owner key resolution, full runsc certification, live provider cancellation and Finish Contract completion remain OPEN.
+## Operational boundary and next direction
+
+The read-only verified Hostinger UI/PostgreSQL remain healthy with execution disabled, capacity zero and integration/delivery false. Approved one-document mission09d349b4-7518-4548-bc6f-39486a294780 has100cents, epoch0, no candidate and no verification attempt. Worker609833278 has runsc and a DB tunnel; no engineering worker or Orloom images were loaded at preflight. Signing-key setup remains unresolved.
+
+VALIDATE the exact combined source, then run only the separately reviewed credential-free image/runsc qualification kit. Existing infrastructure cap is5USD cumulative; actual invoice UNKNOWN. Qualification is separate from production mission certification. Provider execution, compatible Hostinger release, genuine mission certificate/review/draft PR, automatic handoffs and full Finish Contract remain OPEN. Preserve UNKNOWN quarantine, old evidence, credentials and owner merge authority.

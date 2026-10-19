@@ -1,6 +1,6 @@
 {
   "packet": "ORL_20261019_COMBINED_V10_PACKET.md",
-  "status": "READY_FOR_CONTROLLER_FREEZE",
+  "status": "HISTORICAL_BUILDER_HANDOFF_BEFORE_CONTROLLER_FREEZE",
   "branch": "feat/combined-v10-profile",
   "dispatch_start_utc": "2026-10-19T16:44:13Z",
   "finish_utc": "2026-10-19T16:51:27Z",
@@ -122,5 +122,6 @@
     "preserved_evidence": "work/evidence/combined-v10/rejected-source1-artifacts",
     "source_code_changed": false,
     "full_candidate_diff_check_required": true
-  }
+  },
+  "record_scope": "Builder observations before controller merge03a5788; not current candidate acceptance"
 }
