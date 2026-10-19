@@ -13,7 +13,7 @@ import { MissionConflictError, type IntegrationRequestV1, type SliceInput } from
 import { receiptDigestV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
-import { getCheckPolicy } from "../packages/verification/src/policy.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy } from "../packages/verification/src/policy.js";
 import { MissionGovernor, TrustedCheckCoordinator, type TrustedCheckRunner } from "../packages/governor/src/governor.js";
 
 const exec = promisify(callbackExecFile);
@@ -108,7 +108,7 @@ test("startup-shaped full-suite policy stays distinct from lease digest through 
     const coordinatorFor = (overrides: Partial<{ policyDigest: string; policyVersion: string; imageDigest: string; leasePolicyDigest: string; allowedChecks: string[] }> = {}) => new TrustedCheckCoordinator(store, runner, {
       imageDigest: overrides.imageDigest ?? config.trustedVerifierImageDigest!, verifierId: config.trustedVerifierId!, policyDigest: overrides.policyDigest ?? suite.digest,
       leasePolicyDigest: overrides.leasePolicyDigest ?? config.trustedCheckPolicyDigest!, policyVersion: overrides.policyVersion ?? suite.version,
-      allowedChecks: [...(overrides.allowedChecks ?? configuredChecks)], attemptLifetimeMs: 60_000
+      allowedChecks: [...(overrides.allowedChecks ?? configuredChecks)], attemptLifetimeMs: getCheckAttemptLifetimeMs("node-repo-suite-v1")
     });
     const coordinator = coordinatorFor();
     const binding = coordinator.integrationBinding();
@@ -158,7 +158,6 @@ test("startup-shaped full-suite policy stays distinct from lease digest through 
 
     for (const [name, changed] of [
       ["verifier policy", coordinatorFor({ policyDigest: hash("changed suite") })],
-      ["verifier version", coordinatorFor({ policyVersion: "changed-suite-version" })],
       ["verifier image", coordinatorFor({ imageDigest: hash("changed image") })],
       ["lease allowed-check digest", coordinatorFor({ leasePolicyDigest: hash("changed allowed-check list") })],
       ["lease allowed-check list", coordinatorFor({ allowedChecks: ["node-repo-suite-v1", "node-validate-syntax"], leasePolicyDigest: hash(JSON.stringify(["node-repo-suite-v1", "node-validate-syntax"])) })]
@@ -166,6 +165,7 @@ test("startup-shaped full-suite policy stays distinct from lease digest through 
       await assert.rejects(governor.integrateVerifiedSlice(request, changed, authority), MissionConflictError, `changed current ${name} fails exact replay`);
       assert.equal((await store.events(mission.id, 0)).filter(event => event.type === "slice.integrated").length, 1);
     }
+    assert.throws(() => coordinatorFor({ policyVersion: "changed-suite-version" }), /finite v10 policy/, "the coordinator refuses any non-v10 repository-suite catalog binding");
     await git(bare, ["update-ref", "refs/heads/orloom-integration", base]);
     await assert.rejects(governor.integrateVerifiedSlice(request, coordinator, authority), MissionConflictError, "moved local ref fails replay");
     await git(bare, ["update-ref", "refs/heads/orloom-integration", candidate]);

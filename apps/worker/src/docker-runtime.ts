@@ -538,8 +538,7 @@ class DockerWorkspace implements WorkerWorkspace {
     if (files.length === 0) throw new WorkerProtocolError("Exact checkout is empty");
     const policyIds = Object.keys(this.options.checks).sort();
     const allowedIds = [...new Set(this.lease.slice.checks)].sort();
-    if (allowedIds.some(id => !policyIds.includes(id))) throw new WorkerProtocolError("Slice requested a check without a trusted sandbox implementation");
-    const checks = Object.fromEntries(allowedIds.map(id => [id, this.options.checks[id]]));
+    const checks = Object.fromEntries(allowedIds.filter(id => policyIds.includes(id)).map(id => [id, this.options.checks[id]]));
     await launched.request("init", { files, checks }, signal);
   }
   private detachAbort?: () => void;
@@ -548,6 +547,7 @@ class DockerWorkspace implements WorkerWorkspace {
   async listFiles(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ files: string[] }>("list_files", { path: filePath }, signal)).files; }
   async replaceText(filePath: string, oldText: string, newText: string, signal?: AbortSignal) { await this.client.request("replace_text", { path: filePath, oldText, newText }, signal); }
   async runCheck(checkId: string, signal: AbortSignal): Promise<WorkerCheckExecution> {
+    if (!this.lease.slice.checks.includes(checkId) || !this.options.checks[checkId]) throw new WorkerProtocolError("Worker-local check is not configured for this leased slice");
     const timeout = this.options.checks[checkId]?.timeoutSeconds;
     if (!timeout || timeout < 1 || timeout > 300) throw new WorkerProtocolError("Trusted check timeout is not valid");
     const result = await this.client.request<Omit<WorkerCheckExecution, "imageRef">>("run_check", { checkId }, signal, (timeout + 3) * 1000);

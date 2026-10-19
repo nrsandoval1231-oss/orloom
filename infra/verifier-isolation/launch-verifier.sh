@@ -99,7 +99,7 @@ else
 fi
 [[ $observed_profile == "$expected_profile" ]] || { echo 'created verifier resource profile did not match the selected fixed policy' >&2; exit 70; }
 set +e
-attach_timeout=$([[ $POLICY == node-repo-suite-v1 ]] && echo 390s || echo 60s)
+attach_timeout=$([[ $POLICY == node-repo-suite-v1 ]] && echo 1830s || echo 60s)
 tar -C "$INPUT_DIR" -cf - -- manifest.json source | timeout --signal=TERM --kill-after=2s "$attach_timeout" "$DOCKER" --config "$config" --host "$SOCKET" start --attach --interactive "$container_id"
 pipeline_status=("${PIPESTATUS[@]}")
 set -e

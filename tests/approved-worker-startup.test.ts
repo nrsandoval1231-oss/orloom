@@ -75,7 +75,7 @@ test("actual check-config validates all nonsecret policy files without opening s
       ORLOOM_WORKER_SANDBOX_IMAGE_REF: manifest.workerImageRef, ORLOOM_WORKER_CHECK_COMMANDS_FILE: commands, ORLOOM_WORKER_PRICING_SNAPSHOT_FILE: pricing,
       ORLOOM_WORKER_RUNTIME_JOURNAL_ROOT: runtime, ORLOOM_WORKER_SERVICE_LOCK_FILE: lock, ORLOOM_VERIFIER_IMAGE: manifest.verifierImageRef, ORLOOM_VERIFIER_ID: "verifier-1",
       ORLOOM_VERIFIER_ARTIFACT_ROOT: path.join(root, "artifacts"), ORLOOM_CANDIDATE_ADMISSION_ROOT: path.join(root, "admission"), ORLOOM_VERIFIER_REPOSITORIES: JSON.stringify(repositories),
-      ORLOOM_VERIFICATION_POLICY_VERSION: "orloom.node-repo-suite.v9", ORLOOM_VERIFIER_CHECK_ID: "node-repo-suite-v1", ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["node-repo-suite-v1"]),
+      ORLOOM_VERIFICATION_POLICY_VERSION: "orloom.node-repo-suite.v10", ORLOOM_VERIFIER_CHECK_ID: "node-repo-suite-v1", ORLOOM_TRUSTED_CHECK_POLICY_JSON: JSON.stringify(["node-repo-suite-v1"]),
       ORLOOM_WORKER_ALLOWED_PROVIDERS_JSON: JSON.stringify(["deepseek"]), ORLOOM_WORKER_ALLOWED_MODELS_JSON: JSON.stringify(["deepseek-chat"]), ORLOOM_WORKER_MAX_PROVIDER_CALLS: "4",
       ORLOOM_WORKER_MAX_INPUT_TOKENS: "10000", ORLOOM_WORKER_MAX_OUTPUT_TOKENS: "10000", ORLOOM_WORKER_MAX_WALL_SECONDS: "60", ORLOOM_WORKER_MAX_TOOL_CALLS: "8",
       ORLOOM_MAX_LANES: "1", ORLOOM_CAPACITY_SLOTS: "1", ORLOOM_CAPACITY_EVIDENCE_VERIFIED: "true", ORLOOM_CAPACITY_EVIDENCE_SHA256: sha("f"),
@@ -84,6 +84,16 @@ test("actual check-config validates all nonsecret policy files without opening s
     const entry = path.resolve("dist/apps/worker/src/main.js");
     const valid = spawnSync(process.execPath, [entry, "--check-config"], { encoding: "utf8", env });
     assert.equal(valid.status, 0, valid.stderr); assert.match(valid.stdout, /secret contents were not read/); assert.doesNotMatch(valid.stdout + valid.stderr, /unique-secret-sentinel/);
+    await writeFile(commands, "{}"); await chmod(commands, 0o600);
+    const noLocalCheck = spawnSync(process.execPath, [entry, "--check-config"], { encoding: "utf8", env });
+    assert.equal(noLocalCheck.status, 0, noLocalCheck.stderr); assert.match(noLocalCheck.stdout, /secret contents were not read/);
+    await writeFile(commands, JSON.stringify({ "not-approved": { executable: "node", args: ["scripts/validate.mjs"], timeoutSeconds: 30 } })); await chmod(commands, 0o600);
+    const outsideSubset = spawnSync(process.execPath, [entry, "--check-config"], { encoding: "utf8", env });
+    assert.equal(outsideSubset.status, 1); assert.match(outsideSubset.stderr, /not a subset/);
+    await writeFile(commands, JSON.stringify({ "node-repo-suite-v1": { executable: "node", args: ["scripts/validate.mjs"], timeoutSeconds: 301 } })); await chmod(commands, 0o600);
+    const malformed = spawnSync(process.execPath, [entry, "--check-config"], { encoding: "utf8", env });
+    assert.equal(malformed.status, 1); assert.match(malformed.stderr, /Trusted check command entry is invalid/);
+    await writeFile(commands, JSON.stringify({ "node-repo-suite-v1": { executable: "node", args: ["scripts/validate.mjs"], timeoutSeconds: 300 } })); await chmod(commands, 0o600);
     await writeFile(pricing, JSON.stringify({ ...pricingData, inputCentsPerMillion: 0 })); await chmod(pricing, 0o600);
     const invalid = spawnSync(process.execPath, [entry, "--check-config"], { encoding: "utf8", env });
     assert.equal(invalid.status, 1); assert.match(invalid.stderr, /pricing snapshot is stale or invalid/); assert.doesNotMatch(invalid.stderr, /unique-secret-sentinel/);

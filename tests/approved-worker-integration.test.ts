@@ -20,7 +20,7 @@ import { MissionGovernor, TrustedCheckCoordinator } from "../packages/governor/s
 import { CandidateAdmission } from "../packages/verification/src/candidate-admission.js";
 import { AdmittingVerificationRunner } from "../packages/verification/src/admitting-runner.js";
 import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
-import { getCheckPolicy } from "../packages/verification/src/policy.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy } from "../packages/verification/src/policy.js";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
 import { BareGitFastForwardIntegrator } from "../packages/integration/src/local.js";
 import type { DeliveryAuthority, DeliveryCommandV1, DeliveryPolicy } from "../packages/integration/src/delivery.js";
@@ -103,7 +103,7 @@ test("controlled approved worker lane submits over HTTP, admits its real Git bun
       const policy = getCheckPolicy(checkId, image, imageDigest);
       let verifierLaunches = 0;
       const runner = new AdmittingVerificationRunner({ repositories: { "owner/repo": { objectStore: trusted, approvedRef: "refs/heads/main" } }, artifacts: new DurableArtifactStore(path.join(root, "verification-evidence")), verifierId, image, imageDigest, launcher: { async launch(_policy, input) { verifierLaunches++; assert.equal(input.files.get("src/a.js")?.toString(), "export const value = 2;\n"); return { sandboxId: "controlled-fixture-only", exitCode: 0, stdout: Buffer.from("fixture verifier passed"), stderr: Buffer.alloc(0) }; } } }, admission);
-      const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest, verifierId, policyDigest: policy.digest, leasePolicyDigest: policyDigest, policyVersion: policy.version, allowedChecks: [checkId], attemptLifetimeMs: 60_000 });
+      const coordinator = new TrustedCheckCoordinator(store, runner, { imageDigest, verifierId, policyDigest: policy.digest, leasePolicyDigest: policyDigest, policyVersion: policy.version, allowedChecks: [checkId], attemptLifetimeMs: getCheckAttemptLifetimeMs(checkId) });
       const control = new HttpControlPlane(baseUrl, workerToken);
       const runtimeJournal = new TrustedRuntimeJournalBridge(await FileRuntimeJournal.openPortableTestRoot(journalRoot), store);
       let providerCompletions = 0;

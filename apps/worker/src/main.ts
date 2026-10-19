@@ -25,6 +25,7 @@ import { createApprovedRuntimeComposition } from "./approved-runtime-options.js"
 import { FileRuntimeJournal } from "./runtime-journal.js";
 import { acquireWorkerServiceLock } from "./service-lock.js";
 import { missingApprovedConfigurationNames, parseApprovedWorkerConfiguration, readApprovedTaskManifest, scheduleApprovedTaskExpiry, validateApprovedPricing, type ApprovedTaskManifest } from "./approved-startup.js";
+import { DockerWorkerRuntime } from "./docker-runtime.js";
 
 const number = (env: NodeJS.ProcessEnv, name: string, min: number, max: number): number => {
   const raw = env[name]?.trim() ?? "", result = Number(raw);
@@ -53,7 +54,7 @@ interface ValidatedWorkerPolicies {
 function checkCommands(value: unknown, ids: string[]): Record<string, WorkerCheckCommand> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("ORLOOM_WORKER_CHECK_COMMANDS_FILE is malformed");
   const rows = value as Record<string, unknown>;
-  if (canonicalJson(Object.keys(rows).sort()) !== canonicalJson([...ids].sort())) throw new Error("Trusted check commands do not match ORLOOM_TRUSTED_CHECK_POLICY_JSON");
+  if (Object.keys(rows).some(id => !ids.includes(id))) throw new Error("Trusted check commands are not a subset of ORLOOM_TRUSTED_CHECK_POLICY_JSON");
   for (const [id, raw] of Object.entries(rows)) {
     if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(id) || !raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("Trusted check command entry is invalid");
     const command = raw as WorkerCheckCommand;
@@ -251,7 +252,7 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
       ...(deliveryController ? { deliveryPolicy: deliveryController.policy, deliveryAuthority: deliveryController.authority } : {}),
       executeLane: async (lease, _binding, laneSignal, lifecycleGuard) => runtimeComposition.executeLane(lease, {
         store, binding: { missionId: task.missionId, slice: { id: lease.slice.id, objective: lease.slice.objective, dependencies: lease.slice.dependencies, owner: lease.slice.owner, scopes: lease.slice.scopes, checks: lease.slice.checks, budgetCents: lease.executionLimits.reservedBudgetCents }, baseSha: task.baseSha, planDigest: task.planDigest, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest },
-        control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(checkIds.map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
+        control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(Object.keys(checks).map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
         signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
       })
     });

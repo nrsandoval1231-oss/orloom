@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { canonicalJson } from "../../judgment/src/canonical.js";
 import { parseTrustedCheckRequestV1, receiptDigestV1, TRUSTED_CHECK_LIMITS, type ArtifactReceiptV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../../contracts/src/verification.js";
 import { DurableArtifactStore } from "./artifact-store.js";
-import { getCheckPolicy, type CheckPolicy } from "./policy.js";
+import { getCheckAttemptLifetimeMs, getCheckPolicy, type CheckPolicy } from "./policy.js";
 import { extractCandidateBundle, readApprovedHead, type InputBundle, type RepositoryConfig } from "./repository.js";
 import type { LifecycleGuard } from "../../contracts/src/lifecycle.js";
 export interface SandboxResult { sandboxId: string; exitCode: number | null; signal?: string; timedOut?: boolean; stdout: Buffer; stderr: Buffer; truncated?: boolean; launcherExitCode?: number | null; launcherSignal?: string; launcherTimedOut?: boolean; launcherTruncated?: boolean; }
@@ -43,6 +43,7 @@ export class TrustedVerificationRunner {
   async run(requestValue: TrustedCheckRequestV1, bundle: InputBundle, guard?: LifecycleGuard): Promise<TrustedCheckReceiptV1> {
     const request = parseTrustedCheckRequestV1(requestValue), policy = getCheckPolicy(request.checkId, this.options.image, this.options.imageDigest);
     if (request.policyVersion !== policy.version || request.policyDigest !== policy.digest || request.verifierImageDigest !== this.options.imageDigest || policy.imageDigest !== this.options.imageDigest) throw new Error("request is not bound to the configured verifier image and policy");
+    if (Date.parse(request.expiresAt) - Date.parse(request.requestedAt) !== getCheckAttemptLifetimeMs(request.checkId)) throw new Error("request lifetime does not match the selected finite check policy");
     if (bundle.digest !== request.inputBundleDigest || bundle.manifest.length > TRUSTED_CHECK_LIMITS.maxManifestBytes || [...bundle.files.values()].reduce((n, b) => n + b.length, bundle.manifest.length) > policy.maxInputBytes) throw new Error("trusted input bundle does not match request or policy bounds");
     const startedAt = timestamp(this.now());
     let result: SandboxResult | undefined;

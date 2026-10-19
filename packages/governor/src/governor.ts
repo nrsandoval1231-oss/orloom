@@ -30,6 +30,7 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
   private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};runner:TrustedCheckRunner}>();
   constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[];attemptLifetimeMs:number},private readonly clock=()=>new Date()){
     if(!Number.isSafeInteger(settings.attemptLifetimeMs)||settings.attemptLifetimeMs<1||settings.attemptLifetimeMs>TRUSTED_CHECK_LIMITS.maxLifetimeMs)throw new Error("trusted check attempt lifetime is outside contract bounds");
+    if(settings.allowedChecks.includes("node-repo-suite-v1")&&(settings.policyVersion!=="orloom.node-repo-suite.v10"||settings.attemptLifetimeMs!==1_860_000))throw new Error("repository-suite attempt lifetime must match the finite v10 policy");
   }
   integrationBinding():TrustedCheckIntegrationBinding {
     return Object.freeze({allowedChecks:Object.freeze([...this.settings.allowedChecks]),policyDigest:this.settings.policyDigest,policyVersion:this.settings.policyVersion,imageDigest:this.settings.imageDigest,verifierId:this.settings.verifierId,leasePolicyDigest:this.settings.leasePolicyDigest});
@@ -39,6 +40,7 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
   }
   private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string},guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
     await guard?.();
+    if((input.checkId==="node-repo-suite-v1"&&this.settings.attemptLifetimeMs!==1_860_000)||(input.checkId==="node-validate-syntax"&&this.settings.attemptLifetimeMs!==60_000))throw new MissionConflictError("Trusted check lifetime does not match its finite catalog policy");
     if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
     if(!this.settings.allowedChecks.includes(input.checkId))throw new MissionConflictError("Check is outside trusted operator policy");
     const record=await this.store.getMission(input.missionId);await guard?.();const slice=record?.slices.find(x=>x.id===input.sliceId);
