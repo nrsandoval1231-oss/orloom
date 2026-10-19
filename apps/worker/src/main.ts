@@ -23,6 +23,7 @@ import { TrustedRuntimeJournalBridge } from "../../control-plane/src/trusted-run
 import { runApprovedDockerWorkerLane } from "../../control-plane/src/approved-worker-lane.js";
 import { controllerRunIdForApprovedTask, reconcileApprovedWorkerRetained, runApprovedWorkerService } from "./approved-service.js";
 import { DockerWorkerRuntime } from "./docker-runtime.js";
+import { approvedRuntimeOptions } from "./approved-runtime-options.js";
 import { FileRuntimeJournal } from "./runtime-journal.js";
 import { acquireWorkerServiceLock } from "./service-lock.js";
 import { missingApprovedConfigurationNames, parseApprovedWorkerConfiguration, readApprovedTaskManifest, scheduleApprovedTaskExpiry, validateApprovedPricing, type ApprovedTaskManifest } from "./approved-startup.js";
@@ -230,7 +231,8 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
     }
     const journal = await FileRuntimeJournal.openOperational(env.ORLOOM_WORKER_RUNTIME_JOURNAL_ROOT!);
     const runtimeBridge = new TrustedRuntimeJournalBridge(journal, store);
-    const runtime = new DockerWorkerRuntime({ imageRef: workerImageRef, ...(policies.executionInputProfile ? { executionInputProfile: policies.executionInputProfile } : {}), installationId, checkoutTokens: github, checks, runtimeJournal: runtimeBridge });
+    const runtimeOptions = approvedRuntimeOptions({ imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, policies.executionInputProfile);
+    const runtime = new DockerWorkerRuntime({ ...runtimeOptions, runtimeJournal: runtimeBridge });
     const control: ControlPlane = {
       async claim() { return null; },
       async cancellationRequested(lease) { return Boolean(await store.cancellationStatus?.(lease.mission.id, lease.slice.id, lease.leaseEpoch, lease.leaseToken, lease.capabilityToken)); },
@@ -252,7 +254,7 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
       executeLane: async (lease, _binding, laneSignal, lifecycleGuard) => runApprovedDockerWorkerLane(lease, {
         store, binding: { missionId: task.missionId, slice: { id: lease.slice.id, objective: lease.slice.objective, dependencies: lease.slice.dependencies, owner: lease.slice.owner, scopes: lease.slice.scopes, checks: lease.slice.checks, budgetCents: lease.executionLimits.reservedBudgetCents }, baseSha: task.baseSha, planDigest: task.planDigest, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest },
         control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(checkIds.map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
-        runtimeOptions: { imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
+        runtimeOptions, signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
       })
     });
     return serviceResult;
