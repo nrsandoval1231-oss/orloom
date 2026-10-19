@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # First live Orloom mission on the Hostinger VPS: one approved slice, one lane,
 # syntax-check verifier, stops at a certified candidate (no integration/delivery).
+# Target is private, so git reads use a short-lived GitHub App installation token.
 #
 # Usage (as root, from /opt/orloom):
 #   deploy/hostinger/first-mission/bootstrap.sh preflight
@@ -19,7 +20,7 @@ COMPOSE_DIR="$REPO_ROOT/deploy/hostinger"
 STATE=/var/lib/orloom
 WORKER="$STATE/worker"
 CONF=/etc/orloom-worker
-SANDBOX_REPO=${SANDBOX_REPO:-nrsandoval1231-oss/orloom-sandbox}
+SANDBOX_REPO=${SANDBOX_REPO:-nrsandoval1231-oss/hallam}
 CHECK_ID=node-validate-syntax
 MODEL=${ORLOOM_MODEL:-deepseek-chat}
 BUDGET_CENTS=100
@@ -110,6 +111,20 @@ control_plane() {
   curl -fsS "https://$(grep ^ORLOOM_HOST= .env | cut -d= -f2)/health"; echo
 }
 
+gh_token() { # short-lived, contents:read on the target repo only
+  # shellcheck disable=SC1091
+  . "$CONF/ids.env"
+  (cd "$REPO_ROOT" && node --input-type=module -e '
+    import { readFileSync } from "node:fs";
+    import { App } from "@octokit/app";
+    const [appId, inst, keyFile, repo] = process.argv.slice(1);
+    const app = new App({ appId: Number(appId), privateKey: readFileSync(keyFile, "utf8") });
+    const r = await app.octokit.request("POST /app/installations/{id}/access_tokens", { id: Number(inst), repositories: [repo.split("/")[1]], permissions: { contents: "read" } });
+    process.stdout.write(r.data.token);
+  ' "$GH_APP_ID" "$GH_INSTALLATION_ID" "$CONF/github_private_key.pem" "$SANDBOX_REPO")
+}
+git_auth() { local t; t=$(gh_token); git -c "http.extraHeader=Authorization: Basic $(printf 'x-access-token:%s' "$t" | base64 -w0)" "$@"; }
+
 origin() { cat "$COMPOSE_DIR/secrets/public_origin"; }
 api() { # method path [json]
   local jar="$CONF/cookies"
@@ -120,20 +135,20 @@ mission() {
   say "Creating the approved mission on $SANDBOX_REPO"
   install -d -m 0700 "$CONF"; umask 077
   local base
-  base=$(git ls-remote "https://github.com/$SANDBOX_REPO.git" refs/heads/main | cut -f1)
-  [[ $base =~ ^[0-9a-f]{40}$ ]] || die "could not read $SANDBOX_REPO main (is it public and seeded?)"
+  base=$(git_auth ls-remote "https://github.com/$SANDBOX_REPO.git" refs/heads/main | cut -f1)
+  [[ $base =~ ^[0-9a-f]{40}$ ]] || die "could not read $SANDBOX_REPO main (is the GitHub App installed on it?)"
   api POST /session "{\"token\":\"$(cat "$COMPOSE_DIR/secrets/session_token")\"}" >/dev/null
   local id
   id=$(api POST /api/missions "$(node -e '
     const [repo, base, budget] = process.argv.slice(1);
     console.log(JSON.stringify({ repository: repo, baseSha: base, budgetCents: Number(budget),
-      objective: "Add a CANCELLATION.md file describing how an owner cancels an Orloom mission, and link it from README.md",
-      acceptance: ["CANCELLATION.md exists with at least three sentences", "README.md links to CANCELLATION.md", "node scripts/validate.mjs still passes"] }));
+      objective: "Add docs/operations/orloom-trial.md: a short note recording that this file was written by an Orloom worker as its first live end-to-end trial",
+      acceptance: ["docs/operations/orloom-trial.md exists with 3-6 plain sentences", "No other file is changed", "node --check scripts/validate.mjs passes"] }));
   ' "$SANDBOX_REPO" "$base" "$BUDGET_CENTS")" | node -pe 'JSON.parse(require("fs").readFileSync(0)).id')
   api POST "/api/missions/$id/plan" "$(node -e '
     console.log(JSON.stringify({ recommendedBy: "owner-authored", slices: [{ id: "slice-1",
-      objective: "Create CANCELLATION.md (3+ sentences on owner cancellation) and add a link to it in README.md",
-      dependencies: [], owner: "core", scopes: ["CANCELLATION.md", "README.md"], checks: [process.argv[1]], budgetCents: Number(process.argv[2]) }] }));
+      objective: "Create docs/operations/orloom-trial.md with 3-6 sentences stating it was written by an Orloom worker during its first live trial; change nothing else",
+      dependencies: [], owner: "core", scopes: ["docs/operations/orloom-trial.md"], checks: [process.argv[1]], budgetCents: Number(process.argv[2]) }] }));
   ' "$CHECK_ID" "$BUDGET_CENTS")" >/dev/null
   api POST "/api/missions/$id/approve" '{}' >/dev/null
   local plan_digest policy_digest
@@ -165,9 +180,9 @@ write_env() {
   install -d -m 0755 -o root -g root "$STATE"
   install -d -m 0700 "$WORKER" "$WORKER/journal" "$WORKER/admission" "$WORKER/verifier-artifacts" "$WORKER/mirrors"
   install -d -m 0755 "$WORKER/lock"; [[ -f $WORKER/lock/service.lock ]] || install -m 0600 /dev/null "$WORKER/lock/service.lock"
-  local mirror="$WORKER/mirrors/orloom-sandbox.git"
-  [[ -d $mirror ]] || git clone --mirror "https://github.com/$SANDBOX_REPO.git" "$mirror"
-  git -C "$mirror" remote update --prune
+  local mirror="$WORKER/mirrors/${SANDBOX_REPO#*/}.git"
+  [[ -d $mirror ]] || git_auth clone --mirror "https://github.com/$SANDBOX_REPO.git" "$mirror"
+  git_auth -C "$mirror" remote update --prune
   echo '{"'"$CHECK_ID"'":{"executable":"node","args":["--check","scripts/validate.mjs"],"timeoutSeconds":60}}' > "$CONF/check-commands.json"
   # Conservative ceiling above DeepSeek list price; the worker refuses if worst case exceeds the budget.
   node -e '
