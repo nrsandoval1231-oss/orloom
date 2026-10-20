@@ -343,8 +343,17 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     const data = JSON.stringify({ kind: "provider-attempt", index, phase, model, missionId: lease.mission.id, sliceId: lease.slice.id, epoch: lease.leaseEpoch, planDigest: lease.planDigest, policyDigest: lease.trustedCheckPolicyDigest, pricingDigest, maxCalls: limits.maxProviderCalls, maxInputTokens: limits.maxInputTokens, maxOutputTokens: limits.maxOutputTokens, reservedBudgetCents: limits.reservedBudgetCents });
     await saveEvidence(`provider-attempt-${index}`, new TextEncoder().encode(data), "application/json");
   };
-  await saveEvidence("pricing-snapshot", new TextEncoder().encode(JSON.stringify({ ...pricing, digest: pricingDigest })), "application/json");
-  await saveEvidence("sandbox-policy", new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, planDigest: lease.planDigest, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest, checkCommandsDigest, checkCommands: checkSnapshot, sandboxImageRef: deps.options.sandboxImageRef })), "application/json");
+  let initialEvidenceReady = false;
+  try {
+    await saveEvidence("pricing-snapshot", new TextEncoder().encode(JSON.stringify({ ...pricing, digest: pricingDigest })), "application/json");
+    await saveEvidence("sandbox-policy", new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, planDigest: lease.planDigest, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest, checkCommandsDigest, checkCommands: checkSnapshot, sandboxImageRef: deps.options.sandboxImageRef })), "application/json");
+    initialEvidenceReady = true;
+  } finally {
+    if (!initialEvidenceReady) {
+      clearTimeout(timer);
+      deps.signal?.removeEventListener("abort", abortFromParent);
+    }
+  }
   let calls = 0, inputTokens = 0, outputTokens = 0, toolsRun = 0;
   let terminalAttempted = false;
   let progressOrdinal = 0;

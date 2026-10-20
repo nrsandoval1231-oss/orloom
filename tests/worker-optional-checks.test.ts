@@ -115,7 +115,7 @@ fs.appendFileSync(trace,JSON.stringify({type:'cli',args})+'\\n');
 if(op==='create') {
  const labels=Object.fromEntries(args.filter(x=>x.startsWith('--label=')).map(x=>{const v=x.slice(8),i=v.indexOf('=');return [v.slice(0,i),v.slice(i+1)];}));
  const name=args.find(x=>x.startsWith('--name=')).slice(7), image=args.at(-2);
- fs.writeFileSync(state,JSON.stringify({Id:id,Name:'/'+name,Config:{Image:image,Labels:labels},State:{Running:true}})); console.log(id);
+ fs.writeFileSync(state,JSON.stringify({Id:id,Image:image,Name:'/'+name,Config:{Image:image,Labels:labels},State:{Running:true}})); console.log(id);
 } else if(op==='inspect') {
  if(!fs.existsSync(state)){console.error('Error: No such object: '+args.at(-1));process.exit(1);}
  console.log(fs.readFileSync(state,'utf8'));

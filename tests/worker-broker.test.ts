@@ -63,7 +63,7 @@ test("sandbox cleanup verifies exact owner, removes by ID, and checks absence", 
   const id = "a".repeat(64);
   const labels = { "com.orloom.worker-owned": "true", "com.orloom.lease-epoch": "4", "com.orloom.instance": "lease-a" };
   const expected = { name: 'lease-a', imageRef: sandboxImageRef };
-  const identity = { name: '/lease-a', imageRef: sandboxImageRef };
+  const identity = { name: '/lease-a', imageRef: sandboxImageRef, imageId: sandboxImageRef };
   let current: { id: string; labels: Record<string, string>; name: string; imageRef: string } | null = { id, labels, ...identity };
   let removed = "";
   const control: DockerContainerControl = { async inspect(asked) { assert.equal(asked, id); return current; }, async remove(asked) { removed = asked; current = null; } };

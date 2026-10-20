@@ -192,7 +192,7 @@ export async function applyWorkerSnapshot(root: string, snapshot: WorkerSnapshot
   return valid.touched;
 }
 
-interface ContainerInfo { id: string; labels: Record<string, string>; imageRef?: string; name?: string; running?: boolean; }
+interface ContainerInfo { id: string; labels: Record<string, string>; imageRef?: string; imageId?: string; name?: string; running?: boolean; }
 export interface DockerContainerControl {
   inspect(id: string): Promise<ContainerInfo | null>;
   remove(id: string): Promise<void>;
@@ -249,9 +249,16 @@ export async function createContainerWithDurableIntent(options: DurableContainer
 
 interface ExpectedContainer { name: string; imageRef: string; }
 
+const ownershipLabelKeys = ["com.orloom.worker-owned", "com.orloom.lease-epoch", "com.orloom.instance"] as const;
+
 function matchesContainerIdentity(current: ContainerInfo, id: string, expected: ExpectedContainer, labelsDigest: string): boolean {
+  const labels: Record<string, string> = {};
+  for (const key of ownershipLabelKeys) if (typeof current.labels[key] === "string") labels[key] = current.labels[key];
+  const hasUnexpectedOrloomLabel = Object.keys(current.labels).some(key => key.startsWith("com.orloom.") && !ownershipLabelKeys.includes(key as typeof ownershipLabelKeys[number]));
+  const localImageIdMatches = !/^sha256:[a-f0-9]{64}$/i.test(expected.imageRef) || current.imageId === expected.imageRef;
   return current.id.toLowerCase() === id.toLowerCase() && current.imageRef === expected.imageRef
-    && current.name === `/${expected.name}` && ownershipLabelsDigest(current.labels) === labelsDigest;
+    && localImageIdMatches && current.name === `/${expected.name}` && !hasUnexpectedOrloomLabel
+    && ownershipLabelsDigest(labels) === labelsDigest;
 }
 
 export async function cleanupOwnedContainer(control: DockerContainerControl, id: string, expectedLabels: Record<string, string>, expected: ExpectedContainer): Promise<void> {
@@ -322,7 +329,7 @@ export async function waitForWritableDrain(stream: NodeJS.WritableStream, signal
   });
 }
 
-type InspectedDockerContainer = { Id?: unknown; Name?: unknown; Config?: { Labels?: unknown; Image?: unknown }; State?: { Running?: unknown } };
+type InspectedDockerContainer = { Id?: unknown; Image?: unknown; Name?: unknown; Config?: { Labels?: unknown; Image?: unknown }; State?: { Running?: unknown } };
 
 async function dockerCommand(docker: string, configDirectory: string, args: string[], timeoutMs = 15_000): Promise<string> {
   return await new Promise((resolve, reject) => {
@@ -354,8 +361,8 @@ function dockerControl(docker: string, configDirectory: string): DockerContainer
       let parsed: InspectedDockerContainer;
       try { parsed = JSON.parse(raw) as InspectedDockerContainer; } catch { throw new WorkerProtocolError("Docker returned malformed container inspection data"); }
       if (typeof parsed.Id !== "string" || !parsed.Config?.Labels || typeof parsed.Config.Labels !== "object" || Array.isArray(parsed.Config.Labels)) throw new WorkerProtocolError("Docker inspection omitted container identity or ownership labels");
-      if (typeof parsed.Config.Image !== "string" || typeof parsed.Name !== "string" || typeof parsed.State?.Running !== "boolean") throw new WorkerProtocolError("Docker inspection omitted runtime identity");
-      return { id: parsed.Id, labels: parsed.Config.Labels as Record<string, string>, imageRef: parsed.Config.Image, name: parsed.Name, running: parsed.State.Running };
+      if (typeof parsed.Config.Image !== "string" || typeof parsed.Image !== "string" || typeof parsed.Name !== "string" || typeof parsed.State?.Running !== "boolean") throw new WorkerProtocolError("Docker inspection omitted runtime identity");
+      return { id: parsed.Id, labels: parsed.Config.Labels as Record<string, string>, imageRef: parsed.Config.Image, imageId: parsed.Image, name: parsed.Name, running: parsed.State.Running };
     },
     async remove(id) { await dockerCommand(docker, configDirectory, dockerRemoveArgs(id), 7_000); }
   };
