@@ -21,3 +21,11 @@ Isolated code execution, limited credentials, cost/time bounds, cancellation, un
 
 ## No-go
 No more speculative architecture, duplicate governance, mandatory owner micro-approvals, agent theater or visualization-first delivery. The first priority is proving real execution, then scaling to six builders and product-level autonomy.
+
+## Zero-ceremony acceptance requirements — 2026-10-21
+- [ ] One-time GitHub connection; a returning authenticated owner can start a new project without copying tokens or reentering secrets.
+- [ ] From an empty connected repo and one generic app idea, Orloom creates all required files/folders, runs the app, tests it, refines its UX and supplies usable access.
+- [ ] Orloom autonomously creates/maintains a versioned PRD; no mandatory user sign-off for routine creative decisions.
+- [ ] Inject a mid-build failure; the harness diagnoses, consults PRD, changes strategy, resumes from durable checkpoint and ultimately completes or reports a specific genuine blocker with work preserved.
+- [ ] No silent stalls, infinite identical retries, invented test results, or declarations of completion for non-running software.
+- [ ] Sensitive exceptions (expired external authorization, exhausted spending limit, dangerous irreversible changes) request focused owner intervention instead of insecurely bypassing controls.
