@@ -1,35 +1,38 @@
-# Orloom — Canonical Minimal Architecture
-Status: **AUTHORITATIVE TARGET** (2026-10-21), superseding the prior multi-agent harness specification. Operational acceptance remains unproven until a real end-to-end mission succeeds.
+# Orloom — Canonical Autonomous Creation Harness
+**Status: AUTHORITATIVE TARGET — 2026-10-21.** Replaces the mistaken one-agent architecture reset. Do not infer runtime readiness from design documents.
 
-## One-path system
-UI / authenticated mission API → durable mission record → bounded coding worker → disposable isolated checkout → coding-agent engine → trusted checks → GitHub branch and PR → truthful result UI.
+## Execution architecture
+Owner intent → high-reasoning product architect → executable product specification and dependency-aware work graph → up to six fast builders in isolated workspaces → deterministic integration → independent high-reasoning quality director → test, preview and critique → targeted repair and refinement loops → working product, evidence and reviewable PR/deployment handoff.
 
-The model may plan and iterate *inside one coding session*. There is no requirement for separate planner, builder, reviewer or arbiter LLMs.
+## Responsibilities
+1. **Product architect:** Refine sparse instructions into an ambitious yet coherent product, explicit scope, user journeys, acceptance criteria, architecture and independently buildable interfaces. May improve the idea without inventing user authorization for irreversible actions.
+2. **Scheduler/controller:** Durable queue, dependency graph, scope ownership, bounded parallel scheduling, cost/time limits, events, cancellation and safe recovery. Prefer deterministic code. No approval committees for routine work.
+3. **Six fast builders:** Default pool target; allocate useful independent tasks; each has its own checkout, scoped inputs and resources. Avoid overlapping edits, oversubscription and costly coordination. Builder provider/model is replaceable and must be operationally verified.
+4. **Integration:** Combine actual changes, resolve conflicts, rerun affected and end-to-end checks; never treat six passing isolated tasks as a completed integrated product.
+5. **Independent quality director:** Strong model with independent context examines architecture, running UI, user journeys, accessibility, defects and design quality; creates concrete, prioritized repair tasks. Ground critique in observed behavior and evidence.
+6. **Recovery:** Diagnose failed commands, bad edits, stalls and integration errors; vary strategy and retry within finite limits, escalating when blocked.
+7. **Verified learning:** Retain concise reusable lessons with source evidence and measured outcomes; promote or retire based on repeated comparable results, not AI confidence.
+8. **Delivery:** PR with source SHA, tests, screenshots/preview when relevant, known gaps, costs and run history; production deployment only with explicit or narrowly predelegated authorization.
 
-## Keep only necessary responsibilities
-- **Web/control plane:** owner auth, create/read/cancel mission, durable state, event stream, limits, delivery status.
-- **Worker:** single mission execution, credential-safe checkout, bounded agent invocation, test/retry and PR delivery.
-- **Isolation:** disposable run container/VM separate from control plane; no control-plane secrets in checkout; limit network/credentials/resources.
-- **Evidence:** changed SHA, meaningful checks, commands/results, error excerpts and PR URL. No elaborate certification theater.
-- **GitHub:** source, branches, and owner-reviewed PRs.
-- **Data store:** one durable mission state and enough recovery data to prevent duplicate unsafe effects.
+## Simplicity rule
+Complex intelligence behind a simple UI. Remove duplicate governors, advisory agents, mandatory manual slice approvals, policy-document bureaucracy and disconnected subsystems. A single small deterministic controller may enforce safety and coordination. Keep high-value architect, builders, critic and improvement loop. Optional tools such as Jev or Athena must prove they improve delivery before becoming critical-path dependencies; names are not architecture.
 
-Use existing pieces where possible; do not create a parallel replacement stack.
+## Real safety boundaries
+Isolate untrusted code from control-plane secrets; restrict provider and GitHub credentials; use scoped tokens, finite execution limits, durable cancellation, interruption fencing and safe retries. Checks must not be rewritten by the candidate under test. Preserve truthful state and owner authority for merges, secrets, spending ceilings and deployment.
 
-## Mandatory simplification and removal order
-1. Add a true live end-to-end smoke test with a controlled target repo and acceptance report. Until then mark live coding UNVERIFIED.
-2. Identify the minimum working execution path and remove multi-agent/advisory orchestration from it: Athena, Sol, Jev, independent adversarial reviewer, learning promotion, scheduler graph and concurrent fleet are **not** dependencies.
-3. Collapse owner-facing mission setup into repository, task and optional acceptance criteria. Internal defaults replace plan-authoring, per-slice approval and policy configuration.
-4. Replace visual Loom as primary experience with simple task status, activity, diff, test output, PR link and useful failure explanation.
-5. Characterize dependencies and retire unused components, database tables, configuration, endpoints and tests in reviewable deletion batches. Do not drop persisted data until migration/export is planned.
-6. Keep isolation, credential limits, execution ceilings, cancellation, unknown-state reconciliation and no-auto-merge. Simplify their implementations without removing the protections.
-7. Remove historical agent instruction packets from active instruction discovery; retain archival records outside the runtime path.
+## Product acceptance sequence
+1. Demonstrate one real coding agent edits a controlled repository in an isolated environment, tests and opens a PR. Record live evidence.
+2. Demonstrate two concurrent builders, isolated and integrated correctly.
+3. Demonstrate six independent builders with measured throughput, contention and cost.
+4. Demonstrate the architect turns a generic prompt into a product specification and working build.
+5. Demonstrate independent quality critique finds real defects and causes observable improvements.
+6. Demonstrate bounded autonomous recovery, self-improvement across comparable runs and a complete runnable application/preview.
+7. Demonstrate full unattended mission completion within authority, budget and time limits.
 
-## Hard stop on scope
-Do not build more architecture to explain why coding is not running. No expansion of multi-agent roles, new committees, learning system, orchestrator or UI visualization until one real PR can be created and verified end to end.
+No claim of completion from fixture tests, static source inclusion, agent messages or animations. Do not skip operational acceptance to add more subsystems.
 
-## Release gate
-Run a controlled real task from UI through PR and record actual evidence. Build, typecheck and unit tests alone cannot close this gate.
+## Repository cleanup
+Keep runtime code until dependency-mapped and regression-tested. Retire obsolete documents and duplicate orchestration in reviewable batches. Preserve historical evidence where useful, but archive it outside active instructions. Never delete a capability solely because the prior simplification PR called it unnecessary.
 
-## Status distinction
-This document changes policy and design intent. It does **not** assert that worker startup, sandbox, model invocation, remediation, or PR publication are currently operational.
+## Success
+A user asks for an app and receives an unexpectedly thoughtful, polished, tested, usable product quickly, with minimal owner intervention and inspectable evidence.
