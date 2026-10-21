@@ -1,32 +1,44 @@
 # Orloom — Canonical Product Vision
-Status: proposed product direction, not implementation acceptance. Updated 2026-10-12.
+**Status: AUTHORITATIVE — 2026-10-21.** Supersedes the single-agent simplification proposal and prior implementation-specific mandates. Vision is not operational proof.
 
-## Mission
-Orloom is a **commercial, cloud-first, autonomous engineering platform** that converts an owner's idea into independently verified software. It preserves the owner's purpose, execution authority, and evidence while specialist agents design, build, test, repair, and learn. The first release is a single-operator cloud MVP.
+## The promise
+**An idea in. An exceptional finished software product out.**
 
-## Differentiator
-The **Living Loom** makes engineering state visible as an evolving 3D torus. The project begins as a luminous idea, gains structural threads as requirements and architecture form, and receives streams of work from surrounding agents. Verified strands settle only when independent acceptance evidence supports the corresponding versioned requirement. The ring closes at 100% verified coverage of the **approved mission scope**. New requirements may reopen it.
+The owner can say “Build me a note-taking app.” Orloom autonomously develops the product concept beyond the generic prompt, defines a coherent experience, architects it, builds in parallel, integrates, runs and evaluates the actual application, fixes failures, refines usability and aesthetics, and delivers a working, polished product. The owner directs intent and may intervene but does not manage builders, prompts, branches, approvals or technical process.
 
-## Key product concepts
-- Purpose Graph: versioned mission → requirements → architecture → source symbols/modules → evidence and outcomes.
-- Agent harness: architect, builder(s), validator, reviewer, recovery, orchestrator, with independent checks and bounded authority.
-- Living Loom: full-screen cinematic visual instrument, separate from a practical minimal workbench.
-- Athena: reusable decision intelligence that learns from verified outcomes and can challenge strategy without changing the owner's mission.
-- Jev: bounded active judgment, routed through host-authorized finite actions. Deterministic host code retains budget, permission, acceptance, and merge authority.
-- Engineering Loop: Intent → Plan → Implement → Verify → Learn → Update.
-- Reflection Loop: Observe → Measure → Compare → Propose → Challenge → Validate → Promote (only through approved gates).
+## Intelligence and speed
+- **One lead architect/product director** (high-reasoning model) owns intent interpretation, product quality bar, architecture, decomposition, interfaces, and priority.
+- **Six fast coding builders** are the initial target capacity, working concurrently on independently scoped work in isolated workspaces; scale useful parallelism to actual dependencies rather than forcing six busy workers.
+- **One independent quality director/critic** (high-reasoning model) inspects integrated software, user experience, architecture, functionality and evidence; can reject and request targeted improvements.
+- **One orchestrator** assigns bounded work, integrates changes, handles conflicts, retries and failures. This is deterministic software wherever possible, not another conversational manager.
+- **Self-improvement harness** records verified failures, fixes, outcomes and reusable lessons; promotes only demonstrably useful changes and withdraws harmful ones. Never equate reflection with measured improvement.
+- The system runs autonomously within owner-defined authority and spend/time boundaries, including iterative improvement and recovery. It escalates only material product decisions, unavailable credentials, exhausted limits or irreversible high-risk actions.
 
-## Commercial position
-Do not compete primarily as another code editor or coding model. The defensible value is **verified autonomous engineering**, with traceability from mission to implementation, trustworthy outcomes, and compounding engineering experience.
+## Completion
+100% means a versioned, agreed scope is delivered and independently assessed, not perfection or infinite autonomous iteration. A real runnable application, integrated code, successful relevant tests, reviewed UI/UX, documented limitations, and delivery/deployment evidence are required. The system may discover and implement high-value improvements within its budget; it must distinguish new scope from defects. No invented progress or unsupported claims.
 
-## Experience
-Dark cinematic visual canvas, elegant ivory/gold/steel/muted blue accents, luminous thin fibers, subtle organic movement, depth, density, and meaningful drift. No neon-cyberpunk redesign. Five sectors: Interface, Services, Data/Memory, Infrastructure/Integrations, Verification. Agents surround and feed the center. Selecting a sector/bundle/strand reveals code, requirement, relationships, provenance, and independent evidence.
+## User experience
+An elegant, frictionless interface: describe an idea, watch meaningful progress, preview the real product, see what improved and what remains, and receive a finished deliverable. Hide engineering hierarchy, complexity, credentials and recovery mechanics. Meaningful optional visualization is allowed but never blocks functionality or replaces a real preview.
 
-## Truth rules
-Code volume ≠ progress; activity ≠ acceptance; passing tests ≠ full requirement verification; AI confidence ≠ evidence. Differentiate observed source, inferred semantic links, curated intent, and verified acceptance. No misleading animations or fabricated percentages in live mode.
+## Guardrails
+Disposable isolated builders; least-privilege credentials; bounded time, tools and cost; durable cancellation and unknown-state recovery; trusted independent checks; no self-authorized production deployment or irreversible operations. Default delivery is a reviewable PR and runnable preview; production publication requires owner authorization or explicitly predelegated scoped authority.
 
-## Scope boundaries
-GitHub is the source of truth for repositories and PRs, **not the CI provider**. Orloom/Forge-owned isolated workers execute trusted verification. Keep source-control history and evidence. No bespoke coding runtime, no self-authorizing agents, no giant ERP/IDE, no unsafe automatic promotion. Browser and phone use must not require the owner's PC to stay on.
+## What to remove
+Duplicate governance and approvals, policy theater, redundant services, inactive historical workflows, agent paperwork, speculative frameworks, false progress dashboards and infrastructure that does not contribute to autonomous high-quality delivery. **Do not delete parallel builders, architect, independent critic, orchestration, recovery or verified learning merely to make the architecture appear simpler.**
 
-## Relationship to historical projects
-Earlier prototypes were named Forge Living Loom; Orloom is the clean-slate product name. Aura/Forge and Athena repositories provide conceptual history and potential reusable contracts, not a mandate to import legacy code or couple products. Existing Orloom ORL-001 foundation remains authoritative for implemented capabilities; this document sets future product direction.
+## Primary metrics
+Time to accepted, working product; owner interventions; quality/defect rates; integrated parallel throughput; cost per accepted feature; and measured improvement across comparable tasks. Optimize outcomes, not agent count or ceremony.
+
+## Current truth
+The repository contains components of this vision, but a verified full autonomous build-to-delivery run is not established by this document. Real acceptance remains the next engineering priority.
+
+## Owner autonomy contract — 2026-10-21
+**Orloom makes all routine creative, product, architecture, design, folder-structure, implementation, testing, quality, and recovery decisions on its own.** The owner supplies an idea, optionally chooses or connects a repository, and receives a runnable finished application. No obligatory PRD approval, implementation plan review, per-task tokens, passwords or approval loops. The product goal is: **“Link my repo. Build it. Tell me when I can use it.”**
+
+For empty repositories, Orloom creates the entire file and folder structure, initializes the application, configures tests and tooling, builds, integrates, previews and delivers. For existing repositories, it detects conventions and preserves existing work.
+
+An internally versioned canonical PRD is the durable north star: the Visionary autonomously creates and maintains it, recording intended outcomes, non-goals, acceptance criteria, and rationale for consequential decisions. Every agent retrieves relevant PRD context before work or recovery; an agent cannot quietly redefine core intent to make a task appear complete.
+
+**Low-friction access, not absent security:** one-time GitHub app/OAuth connection and persistent secure owner session; no repeated copy-pasted secret token to launch routine missions. Keep provider secrets server-side and invisible to the UI. Use least-privilege repository access, isolated execution, bounded cost and rate limits. Ask the owner only for a genuine external consent/credential requirement, high-risk irreversible action, or exceptional spend beyond delegated authority.
+
+**Forward-progress principle:** every detected blockage triggers automatic diagnosis, strategy change, retry within limits, alternate implementation path, safe replan, or independent work that remains useful. Persist checkpoint and failure causes so restarts resume safely. Never spin endlessly, fabricate success, bypass critical tests, or claim an impossible “never stuck” guarantee. If all safe paths are exhausted, explain the exact blocker and single necessary owner action while preserving all completed work. A mission cannot quietly die halfway.

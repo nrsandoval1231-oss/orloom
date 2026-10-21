@@ -1,78 +1,47 @@
-# Orloom — Canonical Engineering Harness
+# Orloom — Canonical Autonomous Creation Harness
+**Status: AUTHORITATIVE TARGET — 2026-10-21.** Replaces the mistaken one-agent architecture reset. Do not infer runtime readiness from design documents.
 
-Status: architecture decision record. This document specifies the target system; it does not assert implementation or operational readiness.
+## Execution architecture
+Owner intent → high-reasoning product architect → executable product specification and dependency-aware work graph → up to six fast builders in isolated workspaces → deterministic integration → independent high-reasoning quality director → test, preview and critique → targeted repair and refinement loops → working product, evidence and reviewable PR/deployment handoff.
 
-## Mission
-Orloom is a commercial cloud-native autonomous software engineering platform. Start with a single owner and GitHub repositories. Convert an approved engineering objective into verified, integrated code and a GitHub pull request. Speed means time to verified integrated functionality, not token volume, agent count, or commits.
+## Responsibilities
+1. **Product architect:** Refine sparse instructions into an ambitious yet coherent product, explicit scope, user journeys, acceptance criteria, architecture and independently buildable interfaces. May improve the idea without inventing user authorization for irreversible actions.
+2. **Scheduler/controller:** Durable queue, dependency graph, scope ownership, bounded parallel scheduling, cost/time limits, events, cancellation and safe recovery. Prefer deterministic code. No approval committees for routine work.
+3. **Six fast builders:** Default pool target; allocate useful independent tasks; each has its own checkout, scoped inputs and resources. Avoid overlapping edits, oversubscription and costly coordination. Builder provider/model is replaceable and must be operationally verified.
+4. **Integration:** Combine actual changes, resolve conflicts, rerun affected and end-to-end checks; never treat six passing isolated tasks as a completed integrated product.
+5. **Independent quality director:** Strong model with independent context examines architecture, running UI, user journeys, accessibility, defects and design quality; creates concrete, prioritized repair tasks. Ground critique in observed behavior and evidence.
+6. **Recovery:** Diagnose failed commands, bad edits, stalls and integration errors; vary strategy and retry within finite limits, escalating when blocked.
+7. **Verified learning:** Retain concise reusable lessons with source evidence and measured outcomes; promote or retire based on repeated comparable results, not AI confidence.
+8. **Delivery:** PR with source SHA, tests, screenshots/preview when relevant, known gaps, costs and run history; production deployment only with explicit or narrowly predelegated authorization.
 
-## Non-negotiable architecture
-- GitHub is source control, branch and PR delivery. GitHub Actions is NOT the CI executor. Orloom executes checks on its own isolated DigitalOcean workers and may publish commit-specific GitHub Checks API results.
-- Cloudflare web edge; PostgreSQL durable state and work scheduling; R2 evidence and artifact storage.
-- Separate deterministic Governor from model judgment. Only Governor authorizes side effects, budgets, credentials, merge/push, run transitions and approvals. Never place control-plane credentials in build sandboxes.
-- Athena: mission orchestrator, dependency-aware critical-path scheduler and cross-slice coordinator.
-- Sol: lead architect, interface contracts, dependency graph and architectural replanning.
-- Jev: shared bounded adaptive decision engine, implemented once under `packages/judgment/` with the verified official TypeSafe SDK/runtime. It selects only among finite authorized alternatives using mission state, dependency/critical-path context, capacity, evidence, promoted lessons and approved budgets. Athena remains the scheduler; Jev is neither another builder nor an unrestricted orchestrator.
-- Every Jev recommendation must pass a fresh deterministic Governor check before execution. Jev cannot alter permissions, budgets, scopes, required verification, merges, lesson promotion or the owner objective, and cannot issue arbitrary commands. Record decision identity, policy version, evidence, authorized action and measured outcome. Noncritical decisions may use explicit deterministic fallback; uncertain effects or authorization/evidence failures fail closed.
-- Elastic pool of DeepSeek builders: configure six concurrent lanes initially, scale by independent work, quotas, throughput and budget. Every lane uses an isolated checkout/workspace and bounded permissions. Production model identifiers and API availability must be verified before activation.
-- Independent adversarial reviewer (Astra role, configurable provider) with separate context and verification evidence.
-- Stuck Resolver: repeated-error, near-identical patch, stagnation, blocked dependency and integration-conflict detection; diagnose, change strategy, replan or escalate under bounded policy.
-- Continuous Learning Engine: extract lessons during each slice, preserve provenance and checks, compare comparable outcomes, publish versioned relevant lessons to subsequent slices and controlled checkpoints, withdraw contradicted lessons. Slice 10 should benefit from earlier lessons; improvement is measured, not assumed.
-- Orloom CI: affected checks during work; final independent clean-workspace build, tests, quality/security checks and evidence anchored to exact commit SHA. Any head change invalidates certification.
-- Living circular Loom: visualizes real mission, agent, dependency, drift, progress, verification and learning events; never invents completion or activity.
-- Preserve Intent → Plan → Implement → Verify → Learn → Update as the canonical engineering loop.
+## Simplicity rule
+Complex intelligence behind a simple UI. Remove duplicate governors, advisory agents, mandatory manual slice approvals, policy-document bureaucracy and disconnected subsystems. A single small deterministic controller may enforce safety and coordination. Keep high-value architect, builders, critic and improvement loop. Optional tools such as Jev or Athena must prove they improve delivery before becoming critical-path dependencies; names are not architecture.
 
-## Integration boundary and historical directive
+## Real safety boundaries
+Isolate untrusted code from control-plane secrets; restrict provider and GitHub credentials; use scoped tokens, finite execution limits, durable cancellation, interruption fencing and safe retries. Checks must not be rewritten by the candidate under test. Preserve truthful state and owner authority for merges, secrets, spending ceilings and deployment.
 
-The 2026-10-13 directive froze PR #2 at `8bbcfffbf631e5ad2972e34b41284198afc566e2` and prohibited modifying, merging, rebasing, closing or continuing that broker while independent components advanced after PR #1. That procedural restriction is historical and superseded by the owner's 2026-10-14 direction to consolidate reviewed work, clean up open PRs and establish a clean foundation. Preserve the broker's original source and evidence rather than create a competing broker. The current successor composes that source with normal startup disabled; its reviewed typed recovery transport is not yet connected to broker execution. The optional controller-owned candidate-admission source has its own bounded acceptance; it is not wired into normal startup. Source inclusion does not establish operational candidate admission, recovery execution, safe cancellation, live providers or deployment. See [foundation status](../FOUNDATION_STATUS.md) for current acceptance; the target architecture below is unchanged.
+## Product acceptance sequence
+1. Demonstrate one real coding agent edits a controlled repository in an isolated environment, tests and opens a PR. Record live evidence.
+2. Demonstrate two concurrent builders, isolated and integrated correctly.
+3. Demonstrate six independent builders with measured throughput, contention and cost.
+4. Demonstrate the architect turns a generic prompt into a product specification and working build.
+5. Demonstrate independent quality critique finds real defects and causes observable improvements.
+6. Demonstrate bounded autonomous recovery, self-improvement across comparable runs and a complete runnable application/preview.
+7. Demonstrate full unattended mission completion within authority, budget and time limits.
 
-Recovery follows Detect → Diagnose → Jev Strategy Selection → Governor Authorization → Execute → Evaluate, with materially different approved strategies, bounded attempts/budgets, durable outcomes and Sol escalation when needed. Interrupted effects retain UNKNOWN quarantine.
+No claim of completion from fixture tests, static source inclusion, agent messages or animations. Do not skip operational acceptance to add more subsystems.
 
-Engineering episodes and lessons distinguish candidates from independently challenged, policy-promoted versions. Repeated comparable evidence, contextual relevance, attribution, metrics and withdrawal conditions govern promotion. Jev may select relevant promoted lessons; it cannot promote them. Subsequent comparable work must follow an observably changed authorized strategy, and contradictory evidence must be able to withdraw it. Fixture demonstrations do not prove live speed, quality or cost improvements.
+## Repository cleanup
+Keep runtime code until dependency-mapped and regression-tested. Retire obsolete documents and duplicate orchestration in reviewable batches. Preserve historical evidence where useful, but archive it outside active instructions. Never delete a capability solely because the prior simplification PR called it unnecessary.
 
-Execution order after PR #1: shared judgment gateway and Governor integration; active recovery; continuous learning; Athena scheduling improvements; independent Orloom CI; integration and evidence-backed PR delivery; actual-event Living Loom; cross-component cloud recovery. Product-generated PRs require owner authorization to merge. Source implementation, deterministic behavior, live provider execution, cloud deployment and independently certified outcomes are separate acceptance states.
+## Success
+A user asks for an app and receives an unexpectedly thoughtful, polished, tested, usable product quickly, with minimal owner intervention and inspectable evidence.
 
-## Engineering execution lifecycle
-1. Capture mission, repo, immutable base SHA, objective, acceptance criteria, constraints, budgets and owner approvals.
-2. Architect decomposes into slices with dependency graph, interface contracts and expected checks.
-3. Athena schedules independent slices concurrently on DeepSeek builder workers; serialize conflicting writes and dependency-bound integration.
-4. Each builder streams durable events, checkpoints, diffs, commands, evidence, cost and status.
-5. Stuck Resolver intervenes on non-progress with bounded repair/replan. It must not loop indefinitely.
-6. Learning Engine publishes verified, scoped lessons across slices with immutable versioned provenance and rollback.
-7. Integration coordinator combines compatible changes, resolves conflicts and reruns affected checks.
-8. Independent verification in a fresh isolated workspace evaluates exact head and objective; adversarial reviewer inspects diff and evidence.
-9. Governor certifies only if policy and evidence pass, publishes results to GitHub, and creates a PR; owner retains final merge authority by default.
-
-## Speed and quality requirements
-- Optimize critical-path completion and useful concurrency, not fixed maximum parallelism.
-- Warm base images, dependency caches and streaming event delivery without sharing unsafe execution state.
-- Incremental affected checks plus mandatory clean final verification.
-- Adaptive resource and provider allocation within owner-approved limits.
-- Measure time-to-verified-PR, completion rate, integrated slices per hour, cost per verified change, stuck recovery success, human interventions, regression rate and improvement across comparable slice cohorts.
-- Learning effectiveness requires controlled comparison and withdrawal on harm; do not claim every subsequent slice is automatically better.
-
-## Repo layout target
-apps/web — owner interface and Loom
-apps/api — control plane and event API
-packages/contracts — typed mission, slice, event and evidence contracts
-packages/governor — deterministic policy and authorization
-packages/orchestrator — Athena scheduler and Sol planning
-packages/judgment — shared typed Jev decision gateway
-packages/agents — provider adapters and DeepSeek worker pool
-packages/stuck-resolver — bounded diagnosis and recovery
-packages/learning — lesson lifecycle and comparable-outcome evaluation
-packages/integration — branch/worktree coordination
-packages/verification — Orloom CI and independent review
-packages/loom — real-event visualization projection
-workers/executor — isolated cloud execution runtime
-infra — DigitalOcean, Cloudflare, PostgreSQL and R2 definitions
-docs/architecture — architecture decisions and threat model
-
-## Security and operations
-Use a secrets manager for provider API keys, GitHub App private keys, database credentials and Cloudflare/DigitalOcean credentials; never commit or paste secrets into source or docs. Use short-lived scoped credentials and isolated workers. Record audit events and recover interrupted jobs using durable leases/fencing. Protect against untrusted repository scripts, prompt injection and credential exfiltration. Do not infer production readiness from unit tests or synthetic visuals.
-
-## Reuse boundary
-Aura and forge-agent are reference repositories, not automatic code imports. Preserve their valuable concepts (Athena/Sol, Governor, DeepSeek lanes, StuckDetector, LessonStore, bounded learning, independent review), but inspect implementations and interfaces before selectively reusing anything.
-
-## Delivery principle
-Build the full coherent product architecture without artificial feature deferral; use vertical integration and executable acceptance criteria so the system delivers real engineering outcomes rather than endless agent activity.
-
+## Frictionless operation and autonomous decision rights — 2026-10-21
+- Onboard once: securely connect GitHub with a scoped App/OAuth grant; persist an authenticated owner session. Routine missions must require no copied tokens or repeated password entry. Refresh short-lived installation credentials server-side. If credentials lapse, present a normal reconnect action instead of a terminal/secret ceremony.
+- Accept either an empty or established GitHub repository. Inspect repo state and conventions. For empty repos scaffold structure, code, package/dependency definitions, tests, assets, build and preview/deployment configuration automatically. Do not require the owner to manually initialize directories or files.
+- Generate, version, and continuously consult a canonical mission PRD from the original intent. The architect can refine features, visual identity and implementation approach autonomously. The critic tests the integrated result against product acceptance and PRD. Maintain a distinct record of changes to intent; do not silently move goalposts.
+- Owner delegates routine actions within a session/account-level policy; do not ask permission for each commit, branch, task, agent allocation, design choice, retry, or test. Sensitive scopes (external spending beyond cap, destructive data changes, privileged external services, production deployment without preauthorization) require explicit authorization.
+- Every mission has durable journal/checkpoints, finite retry/tool/cost ceilings, heartbeat and detection of no progress. When blocked: classify failure, inspect context and PRD, select materially different safe repair, rerun targeted tests, replan dependency graph, route work to another builder or pursue independent tasks. Integrator resumes from last verified checkpoint.
+- Prevent apparent motion without progress: hash/compare repeated failures and diffs; stop repeated identical unsuccessful strategies; escalate to architect/critic for alternate design; preserve evidence and safe state. After all admissible strategies or budget are exhausted, surface a specific actionable blocker and preserve all work. Never imply infinite autonomous recovery is guaranteed.
+- Make completion user-facing: verified runnable preview/deployed application when authorized, working access details, concise summary and optional repository/PR inspection. A PR alone is not the promised final UX.
