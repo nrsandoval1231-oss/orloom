@@ -36,14 +36,15 @@ test("DeepSeek completion omits run_check when no worker-local command is config
   });
   await client.complete(model, [], new AbortController().signal, 32, false);
   await client.complete(model, [], new AbortController().signal, 32, true);
-  assert.deepEqual(toolLists[0], ["read_file", "list_files", "apply_patch"]);
-  assert.deepEqual(toolLists[1], ["read_file", "list_files", "apply_patch", "run_check"], "configured local checks retain the existing tool set");
+  assert.deepEqual(toolLists[0], ["read_file", "list_files", "create_file", "apply_patch"]);
+  assert.deepEqual(toolLists[1], ["read_file", "list_files", "create_file", "apply_patch", "run_check"], "configured local checks retain the existing tool set");
 });
 
 test("worker advertises only configured checks leased to the slice and refuses forged unavailable checks before RPC", async () => {
   const reducedTools = [
     { type: "function", function: { name: "read_file", description: "Read a bounded UTF-8 file in the owned workspace", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
     { type: "function", function: { name: "list_files", description: "List bounded files in a workspace directory", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
+    { type: "function", function: { name: "create_file", description: "Create one new UTF-8 file in an owned workspace path; existing files are never overwritten", parameters: { type: "object", properties: { path: { type: "string" }, text: { type: "string", minLength: 1, maxLength: 8000 } }, required: ["path", "text"], additionalProperties: false } } },
     { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } }
   ];
   const scenarios = [
@@ -52,7 +53,7 @@ test("worker advertises only configured checks leased to the slice and refuses f
   ];
   for (const scenario of scenarios) {
     const expectedMessages = [
-      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch${scenario.includeRunCheck ? ", and run_check for advisory worker-local checks only" : ""}. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
+      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, create_file, apply_patch${scenario.includeRunCheck ? ", and run_check for advisory worker-local checks only" : ""}. create_file may be used only for absent files inside owned scopes; provide a nonempty UTF-8 body of at most 8000 characters. Do not read or list the repository root or scope parents. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
       { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nWorker-local advisory check IDs: ${scenario.advertised.length ? scenario.advertised.join(", ") : "none"}\nMandatory final trusted check IDs: ${scenario.sliceChecks.join(", ")}` }
     ];
     const requiredReservation = Buffer.byteLength(JSON.stringify({ model, messages: expectedMessages, stream: false, thinking: { type: "disabled" }, tools: reducedTools, tool_choice: "auto", max_tokens: 1 }), "utf8") + 512;
@@ -68,7 +69,7 @@ test("worker advertises only configured checks leased to the slice and refuses f
       }
     };
     const workspace: WorkerWorkspace = {
-      async checkout() {}, async readFile() { return ""; }, async listFiles() { return []; }, async replaceText() {},
+      async checkout() {}, async readFile() { return ""; }, async listFiles() { return []; }, async createFile() {}, async replaceText() {},
       async runCheck() { runCheckCalls++; throw new Error("unavailable worker-local check must never reach sandbox RPC"); },
       async commitCandidate() { throw new Error("forged check must not produce a candidate"); }, async close() { closeCalls++; }
     };
@@ -138,10 +139,12 @@ else if(op==='start') {
       const runtime = new DockerWorkerRuntime({ imageRef, installationId: 1, checkoutTokens: { async createCheckoutToken() { throw new Error("test must not request credentials"); } }, checkoutTransport: { async fetchExact(input) { await input.fetch(fixture); } }, checks, scratchRoot: scratch, dockerPath: fakeDocker });
       const workspace = await runtime.create({ ...lease, slice: { ...lease.slice, checks: sliceChecks }, mission: { ...lease.mission, repository: "fixture/repo", baseSha } });
       await workspace.checkout("fixture/repo", baseSha);
+      await assert.rejects(workspace.createFile("outside.txt", "content"), /outside the slice scopes/);
       await workspace.close();
     }
     const requests = (await readFile(trace, "utf8")).split("\n").filter(Boolean).map(line => JSON.parse(line) as { type: string; request?: { op: string; checks: Record<string, unknown> } });
     const initChecks = requests.filter(row => row.type === "rpc" && row.request?.op === "init").map(row => row.request!.checks);
     assert.deepEqual(initChecks, [{}, { [trustedChecks[0]!]: commandMap[trustedChecks[0]!] }, {}]);
+    assert.equal(requests.some(row => row.type === "rpc" && row.request?.op === "create_file"), false, "out-of-scope direct workspace calls fail before sandbox RPC");
   } finally { await rm(root, { recursive: true, force: true }); }
 });

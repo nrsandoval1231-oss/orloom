@@ -120,7 +120,7 @@ export class DeepSeekHttpClient implements DeepSeekClient {
   }
 
   async probeTools(model: string, signal: AbortSignal) {
-    const reply = await this.post(model, PROBE_MESSAGES, signal, PROBE_TOOLS, { type: "function", function: { name: "orloom_tool_probe" } }, 16);
+    const reply = await this.post(model, PROBE_MESSAGES, signal, PROBE_TOOLS, { type: "function", function: { name: "orloom_tool_probe" } }, PROBE_MAX_OUTPUT_TOKENS);
     const calls = reply.message.tool_calls;
     if (!calls || calls.length !== 1 || calls[0]?.function.name !== "orloom_tool_probe" || calls[0].function.arguments.length > 128) throw new ProviderOutcomeUnknown("Configured model/API mode did not return exactly one bounded capability probe call");
     let args: unknown;
@@ -160,6 +160,7 @@ export class DeepSeekHttpClient implements DeepSeekClient {
 const BASE_TOOL_SCHEMAS = [
   { type: "function", function: { name: "read_file", description: "Read a bounded UTF-8 file in the owned workspace", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
   { type: "function", function: { name: "list_files", description: "List bounded files in a workspace directory", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
+  { type: "function", function: { name: "create_file", description: "Create one new UTF-8 file in an owned workspace path; existing files are never overwritten", parameters: { type: "object", properties: { path: { type: "string" }, text: { type: "string", minLength: 1, maxLength: 8000 } }, required: ["path", "text"], additionalProperties: false } } },
   { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } }
 ];
 const RUN_CHECK_SCHEMA = { type: "function", function: { name: "run_check", description: "Run one advisory worker-local check from the operator trusted policy; independent final verification remains mandatory", parameters: { type: "object", properties: { checkId: { type: "string" } }, required: ["checkId"], additionalProperties: false } } };
@@ -169,6 +170,7 @@ const PROBE_MESSAGES: DeepSeekMessage[] = [
   { role: "system", content: "Return the requested function call exactly. This is a bounded capability probe; do not provide prose." },
   { role: "user", content: "Call orloom_tool_probe with {ok:true}." }
 ];
+const PROBE_MAX_OUTPUT_TOKENS = 64;
 const PROBE_TOOLS = [{ type: "function", function: { name: "orloom_tool_probe", description: "Protocol capability probe; do not perform work", parameters: { type: "object", properties: { ok: { type: "boolean" } }, required: ["ok"], additionalProperties: false } } }];
 
 /** UTF-8 request bytes conservatively bound visible input tokens; include framing allowance. */
@@ -203,6 +205,7 @@ export interface WorkerWorkspace {
   checkout(repository: string, baseSha: string, signal?: AbortSignal): Promise<void>;
   readFile(path: string, signal?: AbortSignal): Promise<string>;
   listFiles(path: string, signal?: AbortSignal): Promise<string[]>;
+  createFile(path: string, text: string, signal?: AbortSignal): Promise<void>;
   replaceText(path: string, oldText: string, newText: string, signal?: AbortSignal): Promise<void>;
   runCheck(checkId: string, signal: AbortSignal): Promise<WorkerCheckExecution>;
   commitCandidate(signal?: AbortSignal): Promise<{ candidateSha: string; diff: Uint8Array; bundle: Uint8Array }>;
@@ -227,7 +230,7 @@ export interface WorkerPricingSnapshot {
   safetyMultiplier: number;
 }
 export interface WorkerOptions { allowedModels: string[]; allowedProviders: string[]; trustedChecks: string[]; trustedCheckPolicyDigest: string; trustedCheckCommands: Record<string, WorkerCheckCommand>; sandboxImageRef: string; maxToolCalls: number; pricing: WorkerPricingSnapshot; }
-export type WorkerProgressPhase = "provider-tool-probe" | "provider-completion" | "candidate" | "tool-read_file" | "tool-list_files" | "tool-apply_patch" | "tool-run_check";
+export type WorkerProgressPhase = "provider-tool-probe" | "provider-completion" | "candidate" | "tool-read_file" | "tool-list_files" | "tool-create_file" | "tool-apply_patch" | "tool-run_check";
 export interface WorkerProgressEvent { eventId: string; leaseEpoch: number; ordinal: number; phase: WorkerProgressPhase; status: "started" | "completed"; missionId: string; sliceId: string; model: string; subjectId?: string; candidateSha?: string; providerCalls: number; inputTokens: number; outputTokens: number; artifactDigests: string[]; }
 export interface WorkerProgressSink { append(lease: WorkerLeaseContract, event: WorkerProgressEvent): Promise<{ decision: "CONTINUE" | "STOP"; reference: string; digest: string }>; }
 export class R2WorkerProgressSink implements WorkerProgressSink {
@@ -374,7 +377,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     workspace = await deps.runtime.create(lease);
     await workspace.checkout(lease.mission.repository, lease.mission.baseSha, controller.signal);
-    if (limits.maxOutputTokens < 16 || calls >= limits.maxProviderCalls || conservativeInputReservation(model, PROBE_MESSAGES, true) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Mandatory tool probe does not fit the remaining execution limits");
+    if (limits.maxOutputTokens - outputTokens < PROBE_MAX_OUTPUT_TOKENS || calls >= limits.maxProviderCalls || conservativeInputReservation(model, PROBE_MESSAGES, true) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Mandatory tool probe does not fit the remaining execution limits");
     await recordProviderAttempt(1, "tool-capability-probe");
     await emit("provider-tool-probe", "started");
     if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
@@ -387,7 +390,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     await emit("provider-tool-probe", "completed");
     if (probe.model !== model || calls > limits.maxProviderCalls || inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens) throw new ProviderOutcomeUnknown("Tool protocol probe exceeded the configured model or execution limits");
     const messages: DeepSeekMessage[] = [
-      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch${localCheckIds.length ? ", and run_check for advisory worker-local checks only" : ""}. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
+      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, create_file, apply_patch${localCheckIds.length ? ", and run_check for advisory worker-local checks only" : ""}. create_file may be used only for absent files inside owned scopes; provide a nonempty UTF-8 body of at most 8000 characters. Do not read or list the repository root or scope parents. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
       { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nWorker-local advisory check IDs: ${localCheckIds.length ? localCheckIds.join(", ") : "none"}\nMandatory final trusted check IDs: ${lease.slice.checks.join(", ")}` }
     ];
     for (;;) {
@@ -495,6 +498,11 @@ function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>,
     assertWorkerScopePath(args.path, lease.slice.scopes);
     return;
   }
+  if (tool.function.name === "create_file") {
+    if (keys.length !== 2 || keys.some(key => !["path", "text"].includes(key)) || typeof args.path !== "string" || typeof args.text !== "string" || !args.text || args.text.length > 8_000) throw new WorkerProtocolError("Create-file arguments are invalid");
+    assertWorkerScopePath(args.path, lease.slice.scopes);
+    return;
+  }
   if (tool.function.name === "run_check") {
     if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId) || !localCheckIds.includes(args.checkId)) throw new WorkerProtocolError("Check is not configured for this worker-local advisory run");
     return;
@@ -506,6 +514,7 @@ function toolProgressPhase(name: string): WorkerProgressPhase {
   switch (name) {
     case "read_file": return "tool-read_file";
     case "list_files": return "tool-list_files";
+    case "create_file": return "tool-create_file";
     case "apply_patch": return "tool-apply_patch";
     case "run_check": return "tool-run_check";
     default: throw new WorkerProtocolError("Unknown tool function");
@@ -525,6 +534,12 @@ async function runTool(tool: DeepSeekToolCall, workspace: WorkerWorkspace, lease
       if (Object.keys(a).some(x => x !== "path")) throw new WorkerProtocolError("Unexpected list_files argument");
       const path = withinScope(a.path as string, lease.slice.scopes);
       return { files: (await workspace.listFiles(path, signal)).slice(0, 500).map(x => withinScope(x, lease.slice.scopes)) };
+    }
+    case "create_file": {
+      if (Object.keys(a).some(x => !["path", "text"].includes(x)) || typeof a.text !== "string" || !a.text || a.text.length > 8_000) throw new WorkerProtocolError("Create-file arguments are invalid");
+      const path = withinScope(a.path as string, lease.slice.scopes);
+      await workspace.createFile(path, a.text, signal);
+      return { created: true, path };
     }
     case "apply_patch": {
       if (Object.keys(a).some(x => !["path", "oldText", "newText"].includes(x))) throw new WorkerProtocolError("Unexpected apply_patch argument");

@@ -112,7 +112,7 @@ test("authenticated owner HTTP cancellation aborts the approved service's held c
         },
         async readFile() { throw new Error("unexpected tool read"); },
         async listFiles() { throw new Error("unexpected tool listing"); },
-        async replaceText() { throw new Error("unexpected workspace edit"); },
+        async createFile() {}, async replaceText() { throw new Error("unexpected workspace edit"); },
         async runCheck() { throw new Error("unexpected check execution"); },
         async commitCandidate() { candidateCommits++; throw new Error("candidate commit forbidden"); },
         async close() { workspaceCloses++; },

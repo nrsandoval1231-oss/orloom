@@ -122,7 +122,7 @@ test("controlled approved worker lane submits over HTTP, admits its real Git bun
       const createRuntime = (_journal: TrustedRuntimeJournalBridge) => ({ async create(_lease: WorkerLeaseContract) { let source = "export const value = 1;\n"; return {
         async checkout(repository: string, sha: string) { assert.equal(repository, "owner/repo"); assert.equal(sha, baseSha); },
         async readFile(file: string) { assert.equal(file, "src/a.js"); return source; }, async listFiles() { return ["src/a.js"]; },
-        async replaceText(_file: string, oldText: string, newText: string) { assert.equal(source, oldText); source = newText; },
+        async createFile() {}, async replaceText(_file: string, oldText: string, newText: string) { assert.equal(source, oldText); source = newText; },
         async runCheck(id: string) { assert.equal(id, checkId); const output = "controlled fixture check passed"; return { exitCode: 0, output, outputSha256: hash(output), commandDigest: hash(JSON.stringify(options.trustedCheckCommands[id])), durationMs: 2, imageRef: options.sandboxImageRef }; },
         async commitCandidate() { assert.equal(source, "export const value = 2;\n"); return { candidateSha, diff: Buffer.from("diff --git a/src/a.js b/src/a.js\n-export const value = 1;\n+export const value = 2;\n"), bundle: candidateBundle }; },
         async close() {},

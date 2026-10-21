@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { spawn } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync, spawn } from "node:child_process";
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -206,4 +206,67 @@ test("snapshot rejects case-only output aliases before touching the tracked file
     assert.equal(await git(["hash-object", "apps/control-plane/source.ts"], root), before);
     assert.equal(await git(["status", "--porcelain"], root), "");
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("sandbox RPC creates new files exclusively and snapshots them for exact host application", { skip: process.platform !== "linux" && "sandbox-entry uses Linux filesystem semantics" }, async () => {
+  const temp = await mkdtemp(path.join(tmpdir(), "orloom-create-file-rpc-"));
+  const workspace = path.join(temp, "tree");
+  await mkdir(workspace);
+  const source = await readFile(new URL("../apps/worker/src/sandbox-entry.js", import.meta.url), "utf8");
+  const script = path.join(temp, "sandbox-entry.js");
+  await writeFile(script, source.replace('const root = "/work/tree";', `const root = ${JSON.stringify(workspace)};`));
+  try {
+    const input = [
+      { id: "init", op: "init", files: [
+        { path: "apps/control-plane/source.ts", bytesBase64: Buffer.from("source\n").toString("base64"), sha256: sha(Buffer.from("source\n")) },
+        { path: "existing.ts", bytesBase64: Buffer.from("existing").toString("base64"), sha256: sha(Buffer.from("existing")) },
+        { path: "not-a-dir", bytesBase64: Buffer.from("regular file").toString("base64"), sha256: sha(Buffer.from("regular file")) }
+      ], checks: {} },
+      { id: "create", op: "create_file", path: "apps/control-plane/new.ts", text: "export const draft = true;\n" },
+      { id: "empty", op: "create_file", path: "apps/control-plane/empty.ts", text: "" },
+      { id: "traversal", op: "create_file", path: "../escape.ts", text: "bad" },
+      { id: "duplicate", op: "create_file", path: "apps/control-plane/new.ts", text: "overwrite" },
+      { id: "case", op: "create_file", path: "apps/CONTROL-PLANE/NEW.ts", text: "alias" },
+      { id: "existing", op: "create_file", path: "existing.ts", text: "overwrite" },
+      { id: "non-directory", op: "create_file", path: "not-a-dir/child.ts", text: "bad" },
+      { id: "oversized", op: "create_file", path: "large.ts", text: "x".repeat(8_001) },
+      { id: "snapshot", op: "snapshot" }
+    ].map(row => JSON.stringify(row)).join("\n") + "\n";
+    const stdout = execFileSync(process.execPath, [script], { input, encoding: "utf8", timeout: 10_000 });
+    const replies = stdout.trim().split("\n").map(line => JSON.parse(line) as { id: string; ok: boolean; value?: unknown; error?: string });
+    assert.deepEqual(replies.map(reply => reply.id), ["init", "create", "empty", "traversal", "duplicate", "case", "existing", "non-directory", "oversized", "snapshot"]);
+    assert.equal(replies[1]?.ok, true, replies[1]?.error);
+    for (const reply of replies.slice(2, 9)) assert.equal(reply.ok, false, `${reply.id} must be rejected`);
+    const snapshot = replies[9]?.value as WorkerSnapshot;
+    assert.deepEqual(snapshot.changed.map(row => row.path).sort(), ["apps/control-plane/new.ts"]);
+    assert.equal(Buffer.from(snapshot.changed[0]!.bytesBase64, "base64").toString(), "export const draft = true;\n");
+    const linkWorkspace = path.join(temp, "linked-tree");
+    const outside = path.join(temp, "outside");
+    await mkdir(linkWorkspace);
+    await mkdir(outside);
+    await writeFile(path.join(outside, "target"), "outside");
+    await symlink(outside, path.join(linkWorkspace, "linked-dir"), "dir");
+    await symlink(path.join(outside, "target"), path.join(linkWorkspace, "linked-leaf"), "file");
+    const linkScript = path.join(temp, "sandbox-links.js");
+    await writeFile(linkScript, source.replace('const root = "/work/tree";', `const root = ${JSON.stringify(linkWorkspace)};`));
+    const linkInput = [
+      { id: "init", op: "init", files: [], checks: {} },
+      { id: "parent", op: "create_file", path: "linked-dir/escape.ts", text: "bad" },
+      { id: "leaf", op: "create_file", path: "linked-leaf", text: "bad" },
+      { id: "close", op: "close" }
+    ].map(row => JSON.stringify(row)).join("\n") + "\n";
+    const linkReplies = execFileSync(process.execPath, [linkScript], { input: linkInput, encoding: "utf8", timeout: 10_000 }).trim().split("\n").map(line => JSON.parse(line) as { id: string; ok: boolean });
+    assert.equal(linkReplies[0]?.ok, true);
+    assert.equal(linkReplies[1]?.ok, false, "symlink parent is refused");
+    assert.equal(linkReplies[2]?.ok, false, "symlink leaf is refused");
+    assert.equal(linkReplies[3]?.ok, true);
+    const root = await workerFixture();
+    try {
+      const touched = await applyWorkerSnapshot(root, snapshot, ["apps/control-plane/**"], "orloom-execution-v1");
+      assert.deepEqual(touched, ["apps/control-plane/new.ts"]);
+      assert.equal(await readFile(path.join(root, "apps/control-plane/new.ts"), "utf8"), "export const draft = true;\n");
+      await assert.rejects(applyWorkerSnapshot(root, snapshot, ["apps/control-plane/**"], "orloom-execution-v1"), /unsupported type|case-colliding path|already exists|output/i);
+      assert.equal(await readFile(path.join(root, "apps/control-plane/new.ts"), "utf8"), "export const draft = true;\n");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await rm(temp, { recursive: true, force: true }); }
 });

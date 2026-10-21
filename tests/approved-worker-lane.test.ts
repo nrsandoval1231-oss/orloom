@@ -61,7 +61,7 @@ test("approved worker lane refuses changed binding before executeLease and runs 
       complete: async () => { providerCalls++; return { model: "fixture-model", message: { role: "assistant" as const, content: null }, inputTokens: 1, outputTokens: 1 }; },
     },
     createRuntime: () => ({ create: async () => ({
-      checkout: async () => {}, readFile: async () => "", listFiles: async () => [], replaceText: async () => {},
+      checkout: async () => {}, readFile: async () => "", listFiles: async () => [], createFile: async () => {}, replaceText: async () => {},
       runCheck: async () => ({ exitCode: 0, output: "", outputSha256: hash(""), commandDigest: hash("cmd"), durationMs: 1, imageRef: `sha256:${"d".repeat(64)}` }),
       commitCandidate: async () => ({ candidateSha: "b".repeat(40), diff: new TextEncoder().encode("diff"), bundle: new TextEncoder().encode("bundle") }), close: async () => {},
     }) }),

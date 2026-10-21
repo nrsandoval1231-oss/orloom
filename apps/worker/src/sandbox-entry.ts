@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
-import { lstat, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, open, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = "/work/tree";
@@ -44,6 +44,34 @@ async function filesUnder(relative = ""): Promise<string[]> {
     else throw new Error("unsupported file type in workspace");
   }
   return output;
+}
+
+async function createFile(relative: unknown, text: unknown) {
+  if (typeof text !== "string" || !text || text.length > 8_000 || Buffer.from(text, "utf8").toString("utf8") !== text) throw new Error("invalid create-file text");
+  const bytes = Buffer.from(text, "utf8");
+  if (bytes.byteLength > maxFileBytes) throw new Error("created file exceeds limit");
+  const { key, target } = await safePath(relative);
+  const parts = key.split("/");
+  let cursor = root;
+  for (const [index, part] of parts.entries()) {
+    const entries = await readdir(cursor);
+    const collision = entries.find(name => name.normalize("NFC").toLocaleLowerCase("en-US") === part.normalize("NFC").toLocaleLowerCase("en-US"));
+    if (collision && collision !== part) throw new Error("case-colliding output path");
+    if (index === parts.length - 1) break;
+    cursor = path.join(cursor, part);
+    try {
+      const info = await lstat(cursor);
+      if (info.isSymbolicLink() || !info.isDirectory()) throw new Error("create-file parent is not a safe directory");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      await mkdir(cursor, { mode: 0o700 });
+    }
+    const real = await realpath(cursor);
+    if (real !== root && !real.startsWith(`${root}/`)) throw new Error("create-file parent escaped workspace");
+  }
+  const handle = await open(target, "wx", 0o600);
+  try { await handle.writeFile(bytes); } finally { await handle.close(); }
+  return { created: true, path: key };
 }
 
 function parseLine(line: string) { if (Buffer.byteLength(line) > maxRequestBytes) throw new Error("request exceeds sandbox protocol limit"); return JSON.parse(line) as Record<string, unknown>; }
@@ -117,6 +145,7 @@ async function dispatch(request: Record<string, unknown>) {
   if (!initialized) throw new Error("sandbox has not been initialized");
   if (request.op === "read_file") { const { target } = await safePath(request.path); const bytes = await readFile(target); if (bytes.byteLength > maxFileBytes) throw new Error("file exceeds limit"); return { text: bytes.toString("utf8") }; }
   if (request.op === "list_files") { const files = await filesUnder(typeof request.path === "string" ? request.path : ""); return { files: files.slice(0, 500) }; }
+  if (request.op === "create_file") return createFile(request.path, request.text);
   if (request.op === "replace_text") {
     const { key, target } = await safePath(request.path);
     const oldText = request.oldText, newText = request.newText;

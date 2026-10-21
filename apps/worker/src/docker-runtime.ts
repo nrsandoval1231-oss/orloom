@@ -179,7 +179,14 @@ export async function applyWorkerSnapshot(root: string, snapshot: WorkerSnapshot
     if (existing && existing !== file) throw new WorkerProtocolError("Sandbox output creates a case-colliding path");
   }
   for (const file of valid.removed) await assertSafeHostTarget(root, file, true);
-  for (const row of valid.changed) await assertSafeHostTarget(root, row.path, false);
+  for (const row of valid.changed) {
+    await assertSafeHostTarget(root, row.path, false);
+    const tracked = trackedNames.get(row.path.normalize("NFC").toLocaleLowerCase("en-US")) === row.path;
+    if (!tracked) {
+      try { await lstat(safeRepoPath(root, row.path)); throw new WorkerProtocolError("New sandbox output path already exists in the exact checkout"); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    }
+  }
   for (const file of valid.removed) await rm(safeRepoPath(root, file));
   for (const row of valid.changed) {
     const target = safeRepoPath(root, row.path);
@@ -552,6 +559,11 @@ class DockerWorkspace implements WorkerWorkspace {
   private get client() { if (this.interrupted) throw new WorkerProtocolError("Cancelled workspace is fenced"); if (!this.rpc) throw new WorkerProtocolError("Sandbox is not ready"); return this.rpc; }
   async readFile(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ text: string }>("read_file", { path: filePath }, signal)).text; }
   async listFiles(filePath: string, signal?: AbortSignal) { return (await this.client.request<{ files: string[] }>("list_files", { path: filePath }, signal)).files; }
+  async createFile(filePath: string, text: string, signal?: AbortSignal) {
+    assertWorkerScopePath(filePath, this.lease.slice.scopes);
+    if (typeof text !== "string" || !text || text.length > 8_000 || Buffer.from(text, "utf8").toString("utf8") !== text || Buffer.byteLength(text, "utf8") > maxFileBytes) throw new WorkerProtocolError("Create-file text is invalid or oversized");
+    await this.client.request("create_file", { path: filePath, text }, signal);
+  }
   async replaceText(filePath: string, oldText: string, newText: string, signal?: AbortSignal) { await this.client.request("replace_text", { path: filePath, oldText, newText }, signal); }
   async runCheck(checkId: string, signal: AbortSignal): Promise<WorkerCheckExecution> {
     if (!this.lease.slice.checks.includes(checkId) || !this.options.checks[checkId]) throw new WorkerProtocolError("Worker-local check is not configured for this leased slice");
