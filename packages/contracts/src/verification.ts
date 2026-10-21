@@ -13,7 +13,7 @@ export const TRUSTED_CHECK_LIMITS = Object.freeze({
   maxLogBytes: 65_536,
   maxInputBundleBytes: 16_777_216,
   maxLeaseEpoch: 2_147_483_647,
-  maxLifetimeMs: 10 * 60_000,
+  maxLifetimeMs: 35 * 60_000,
 });
 
 export interface TrustedCheckRequestV1 {

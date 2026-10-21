@@ -1,0 +1,122 @@
+{
+  "packet": "ORL-20261019-PROFILE",
+  "status": "READY_FOR_REVIEW",
+  "base_sha": "6d9ded07088079da88ed0b43dbc1249e26aac2cd",
+  "branch": "fix/approved-worker-profile",
+  "dispatch_start_utc": "2026-10-19T15:50:31Z",
+  "finish_utc": "2026-10-19T15:54:01Z",
+  "planning_start_utc": "UNKNOWN",
+  "lane": "single Luna primary builder",
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "elapsed_seconds": 210,
+  "repair_count": 1,
+  "changed_files": [
+    "apps/worker/src/main.ts",
+    "apps/worker/src/approved-runtime-options.ts",
+    "tests/approved-worker-runtime-options.test.ts",
+    "docs/validation/2026-10-19-approved-worker-profile.md",
+    ".agent/ORL_20261019_PROFILE_COMPLETION.json"
+  ],
+  "red_evidence": {
+    "command": "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js",
+    "exit_code": 1,
+    "result": "1 passed, 1 failed; configured profile was undefined",
+    "raw_output": [
+      "✖ approved runtime options pass the validated profile to builder execution",
+      "✔ approved runtime options preserve the default when no profile is configured",
+      "ℹ tests 2",
+      "ℹ pass 1",
+      "ℹ fail 1",
+      "AssertionError: Expected values to be strictly equal; actual undefined; expected 'orloom-execution-v1'"
+    ]
+  },
+  "green_evidence": {
+    "commands": [
+      "TypeScript 5.9.3: tsc --pretty false",
+      "Node 24.15.0: node scripts/validate.mjs",
+      "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js"
+    ],
+    "exit_codes": [0, 0, 0],
+    "result": "typecheck/build passed, validate passed, profile regression passed 2/2"
+  },
+  "diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0
+  },
+  "environmental_test_attempt": {
+    "command": "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js dist/tests/approved-worker-startup.test.js",
+    "exit_code": 1,
+    "result": "7/8 passed; existing startup private-file fixture rejected the Windows-mounted checkout path/ownership environment"
+  },
+  "snapshot_freeze_followup": {
+    "start_utc": "UNKNOWN",
+    "finish_utc": "2026-10-19T15:56:50Z",
+    "elapsed_seconds": "UNKNOWN",
+    "change": "approvedRuntimeOptions now returns Object.freeze(snapshot) with Readonly typing; focused test checks frozen state, present/absent profile, image, installation ID, checks reference, and checkout-token reference. Adapter objects remain unfrozen.",
+    "commands": [
+      "Node 24.15.0 + TypeScript 5.9.3: tsc --pretty false",
+      "Node 24.15.0: node scripts/validate.mjs",
+      "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js",
+      "git diff --check"
+    ],
+    "exit_codes": [0, 0, 0, 0],
+    "raw_output": [
+      "Foundation structure validation passed.",
+      "✔ approved runtime options are a frozen snapshot with the validated profile and original dependencies",
+      "✔ approved runtime options stay frozen and preserve the default when no profile is configured",
+      "ℹ tests 2",
+      "ℹ pass 2",
+      "ℹ fail 0",
+      "ℹ duration_ms 84.817838"
+    ]
+  },
+  "independent_review_repair": {
+    "review_verdict": "FIX",
+    "finding": "The previous helper-only regression passed even if main stopped passing the snapshot to the executing lane.",
+    "repair": "main.ts now consumes createApprovedRuntimeComposition; its actual executeLane closure passes the factory's shared frozen options to the production lane executor. The test invokes that factory with an inert injected executor and captures its dependencies.",
+    "start_utc": "UNKNOWN",
+    "finish_utc": "2026-10-19T16:03:45Z",
+    "elapsed_seconds": "UNKNOWN",
+    "red_reproduction": {
+      "command": "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js",
+      "exit_code": 1,
+      "raw_output": [
+        "✖ production runtime composition passes one frozen profiled snapshot to reconciliation and execution",
+        "✖ production runtime composition preserves one frozen snapshot when no profile is configured",
+        "ℹ tests 2",
+        "ℹ pass 0",
+        "ℹ fail 2",
+        "AssertionError: Expected actual to be reference-equal to expected; actual lane options lacked executionInputProfile 'orloom-execution-v1'",
+        "AssertionError: Values have same structure but are not reference-equal"
+      ]
+    },
+    "green_validation": {
+      "commands": [
+        "Node 24.15.0 + TypeScript 5.9.3: tsc --pretty false",
+        "Node 24.15.0: node scripts/validate.mjs",
+        "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js"
+      ],
+      "exit_codes": [0, 0, 0],
+      "raw_output": [
+        "Foundation structure validation passed.",
+        "✔ production runtime composition passes one frozen profiled snapshot to reconciliation and execution",
+        "✔ production runtime composition preserves one frozen snapshot when no profile is configured",
+        "ℹ tests 2",
+        "ℹ pass 2",
+        "ℹ fail 0",
+        "ℹ duration_ms 220.978907"
+      ]
+    },
+    "diff_check": { "command": "git diff --check", "exit_code": 0 },
+    "independent_review_after_repair": "PENDING"
+  },
+  "unknown_gates": [
+    "controller frozen-candidate full Linux gates",
+    "independent review",
+    "runtime behavior with Docker/provider credentials"
+  ],
+  "external_actions": "none",
+  "committed": false
+}

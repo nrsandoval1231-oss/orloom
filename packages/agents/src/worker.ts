@@ -14,6 +14,74 @@ export class WorkerProtocolError extends Error {}
 export class ProviderOutcomeUnknown extends Error {}
 class ProgressStop extends WorkerProtocolError {}
 
+type PreToolDiagnosticStage = "model_check" | "execution_budget" | "tool_count" | "arguments" | "identity" | "tool_validation" | "proposal";
+type PreToolDiagnosticCode = "model_mismatch" | "provider_budget_exceeded" | "tool_count_exceeded" | "malformed_arguments" | "arguments_too_large" | "arguments_not_object" | "missing_tool_id" | "duplicate_tool_id" | "unknown_tool" | "invalid_arguments" | "scope_rejected" | "local_check_rejected" | "validated" | "arguments_parsed" | "no_tool_calls" | "not_checked";
+type PreToolNameCategory = "read_file" | "list_files" | "create_file" | "apply_patch" | "run_check" | "unknown";
+
+class PreToolValidationError extends WorkerProtocolError {
+  constructor(readonly diagnosticCode: PreToolDiagnosticCode, message: string) { super(message); }
+}
+
+const preToolMessages: Record<PreToolDiagnosticCode, string> = {
+  model_mismatch: "DeepSeek returned an unexpected model ID",
+  provider_budget_exceeded: "Provider reply exceeded the configured execution limits",
+  tool_count_exceeded: "Provider returned more function calls than the local execution cap",
+  malformed_arguments: "Tool arguments are malformed JSON",
+  arguments_too_large: "Tool arguments exceed the bound",
+  arguments_not_object: "Tool arguments must be an object",
+  missing_tool_id: "Provider returned a missing tool call ID",
+  duplicate_tool_id: "Provider returned duplicate tool call IDs",
+  unknown_tool: "Unknown tool function",
+  invalid_arguments: "Tool arguments are invalid",
+  scope_rejected: "Tool path is outside the slice scopes",
+  local_check_rejected: "Check is not configured for this worker-local advisory run",
+  validated: "Tool proposal validated",
+  arguments_parsed: "Tool arguments parsed",
+  no_tool_calls: "Provider returned no tool calls",
+  not_checked: "Tool call was not checked"
+};
+
+const preToolNameCategories = new Set<PreToolNameCategory>(["read_file", "list_files", "create_file", "apply_patch", "run_check", "unknown"]);
+const preToolDiagnosticCallLimit = 32;
+const preToolDiagnosticArgumentByteLimit = 8_001;
+
+function preToolNameCategory(tool: unknown): PreToolNameCategory {
+  const name = tool && typeof tool === "object" ? (tool as { function?: { name?: unknown } }).function?.name : undefined;
+  return typeof name === "string" && preToolNameCategories.has(name as PreToolNameCategory) ? name as PreToolNameCategory : "unknown";
+}
+
+function preToolDiagnostic(replyModelMatchesConfigured: boolean, tools: DeepSeekToolCall[], availableToolCalls: number, stage: PreToolDiagnosticStage, code: PreToolDiagnosticCode, status: "accepted" | "rejected" | "no_tool_calls", failedIndex?: number) {
+  const calls = tools.slice(0, preToolDiagnosticCallLimit).map((tool, index) => {
+    const args = tool && typeof tool === "object" ? (tool as { function?: { arguments?: unknown } }).function?.arguments : undefined;
+    const actualBytes = typeof args === "string" ? Buffer.byteLength(args, "utf8") : null;
+    const failed = index === failedIndex;
+    const priorValidated = failedIndex !== undefined && index < failedIndex && (stage === "identity" || stage === "tool_validation");
+    const priorParsed = failedIndex !== undefined && index < failedIndex && stage === "arguments";
+    return {
+      toolNameCategory: preToolNameCategory(tool),
+      argumentBytes: actualBytes === null ? null : Math.min(actualBytes, preToolDiagnosticArgumentByteLimit),
+      argumentBytesTruncated: actualBytes !== null && actualBytes > preToolDiagnosticArgumentByteLimit,
+      stage: failed ? stage : priorValidated || status === "accepted" ? "tool_validation" : priorParsed ? "arguments" : "proposal",
+      code: failed ? code : priorValidated || status === "accepted" ? "validated" : priorParsed ? "arguments_parsed" : "not_checked"
+    };
+  });
+  return {
+    schema: "orloom.worker-pretool-diagnostic.v1",
+    status,
+    stage,
+    code,
+    replyModelMatchesConfigured: Boolean(replyModelMatchesConfigured),
+    toolCount: Math.min(tools.length, preToolDiagnosticCallLimit + 1),
+    toolCountTruncated: tools.length > preToolDiagnosticCallLimit + 1,
+    toolCountExceeded: tools.length > availableToolCalls,
+    calls
+  };
+}
+
+function preToolValidationError(code: PreToolDiagnosticCode, message = preToolMessages[code]): PreToolValidationError {
+  return new PreToolValidationError(code, message);
+}
+
 export function validateLease(value: unknown, now = Date.now()): WorkerLeaseContract {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new WorkerProtocolError("Invalid lease envelope");
   const lease = value as WorkerLeaseContract;
@@ -98,7 +166,7 @@ export function monitorCancellation(control: Pick<ControlPlane, "cancellationReq
 export interface DeepSeekMessage { role: "system" | "user" | "assistant" | "tool"; content: string | null; tool_call_id?: string; tool_calls?: DeepSeekToolCall[]; }
 export interface DeepSeekToolCall { id: string; type: "function"; function: { name: string; arguments: string }; }
 export interface DeepSeekReply { model: string; messages: DeepSeekMessage[]; inputTokens: number; outputTokens: number; calls: number; }
-export interface DeepSeekClient { listModels(signal?: AbortSignal): Promise<string[]>; probeTools(model: string, signal: AbortSignal): Promise<{ model: string; inputTokens: number; outputTokens: number }>; complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number): Promise<{ model: string; message: DeepSeekMessage; inputTokens: number; outputTokens: number }>; }
+export interface DeepSeekClient { listModels(signal?: AbortSignal): Promise<string[]>; probeTools(model: string, signal: AbortSignal): Promise<{ model: string; inputTokens: number; outputTokens: number }>; complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number, includeRunCheck?: boolean): Promise<{ model: string; message: DeepSeekMessage; inputTokens: number; outputTokens: number }>; }
 
 /** Minimal official OpenAI-compatible DeepSeek transport. Reasoning is explicitly disabled and never returned to the caller. */
 export class DeepSeekHttpClient implements DeepSeekClient {
@@ -120,7 +188,7 @@ export class DeepSeekHttpClient implements DeepSeekClient {
   }
 
   async probeTools(model: string, signal: AbortSignal) {
-    const reply = await this.post(model, PROBE_MESSAGES, signal, PROBE_TOOLS, { type: "function", function: { name: "orloom_tool_probe" } }, 16);
+    const reply = await this.post(model, PROBE_MESSAGES, signal, PROBE_TOOLS, { type: "function", function: { name: "orloom_tool_probe" } }, PROBE_MAX_OUTPUT_TOKENS);
     const calls = reply.message.tool_calls;
     if (!calls || calls.length !== 1 || calls[0]?.function.name !== "orloom_tool_probe" || calls[0].function.arguments.length > 128) throw new ProviderOutcomeUnknown("Configured model/API mode did not return exactly one bounded capability probe call");
     let args: unknown;
@@ -129,8 +197,8 @@ export class DeepSeekHttpClient implements DeepSeekClient {
     return { model: reply.model, inputTokens: reply.inputTokens, outputTokens: reply.outputTokens };
   }
 
-  async complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number) {
-    return this.post(model, messages, signal, TOOL_SCHEMAS, "auto", Math.min(4096, maxOutputTokens));
+  async complete(model: string, messages: DeepSeekMessage[], signal: AbortSignal, maxOutputTokens: number, includeRunCheck = true) {
+    return this.post(model, messages, signal, workerToolSchemas(includeRunCheck), "auto", Math.min(4096, maxOutputTokens));
   }
 
   private async post(model: string, messages: DeepSeekMessage[], signal: AbortSignal, tools: unknown[], toolChoice: unknown, maxTokens: number) {
@@ -157,22 +225,25 @@ export class DeepSeekHttpClient implements DeepSeekClient {
   }
 }
 
-const TOOL_SCHEMAS = [
+const BASE_TOOL_SCHEMAS = [
   { type: "function", function: { name: "read_file", description: "Read a bounded UTF-8 file in the owned workspace", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
   { type: "function", function: { name: "list_files", description: "List bounded files in a workspace directory", parameters: { type: "object", properties: { path: { type: "string" } }, required: ["path"], additionalProperties: false } } },
-  { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } },
-  { type: "function", function: { name: "run_check", description: "Run one check ID from the operator trusted policy", parameters: { type: "object", properties: { checkId: { type: "string" } }, required: ["checkId"], additionalProperties: false } } }
+  { type: "function", function: { name: "create_file", description: "Create one new UTF-8 file in an owned workspace path; existing files are never overwritten", parameters: { type: "object", properties: { path: { type: "string" }, text: { type: "string", minLength: 1, maxLength: 8000 } }, required: ["path", "text"], additionalProperties: false } } },
+  { type: "function", function: { name: "apply_patch", description: "Replace one exact text fragment in an owned regular file", parameters: { type: "object", properties: { path: { type: "string" }, oldText: { type: "string" }, newText: { type: "string" } }, required: ["path", "oldText", "newText"], additionalProperties: false } } }
 ];
+const RUN_CHECK_SCHEMA = { type: "function", function: { name: "run_check", description: "Run one advisory worker-local check from the operator trusted policy; independent final verification remains mandatory", parameters: { type: "object", properties: { checkId: { type: "string" } }, required: ["checkId"], additionalProperties: false } } };
+function workerToolSchemas(includeRunCheck: boolean) { return includeRunCheck ? [...BASE_TOOL_SCHEMAS, RUN_CHECK_SCHEMA] : BASE_TOOL_SCHEMAS; }
 
 const PROBE_MESSAGES: DeepSeekMessage[] = [
   { role: "system", content: "Return the requested function call exactly. This is a bounded capability probe; do not provide prose." },
   { role: "user", content: "Call orloom_tool_probe with {ok:true}." }
 ];
+const PROBE_MAX_OUTPUT_TOKENS = 64;
 const PROBE_TOOLS = [{ type: "function", function: { name: "orloom_tool_probe", description: "Protocol capability probe; do not perform work", parameters: { type: "object", properties: { ok: { type: "boolean" } }, required: ["ok"], additionalProperties: false } } }];
 
 /** UTF-8 request bytes conservatively bound visible input tokens; include framing allowance. */
-function conservativeInputReservation(model: string, messages: DeepSeekMessage[], probe = false): number {
-  const tools = probe ? PROBE_TOOLS : TOOL_SCHEMAS;
+function conservativeInputReservation(model: string, messages: DeepSeekMessage[], probe = false, includeRunCheck = true): number {
+  const tools = probe ? PROBE_TOOLS : workerToolSchemas(includeRunCheck);
   const toolChoice = probe ? { type: "function", function: { name: "orloom_tool_probe" } } : "auto";
   const body = { model, messages, stream: false, thinking: { type: "disabled" }, tools, tool_choice: toolChoice, max_tokens: 1 };
   return Buffer.byteLength(JSON.stringify(body), "utf8") + 512;
@@ -202,6 +273,7 @@ export interface WorkerWorkspace {
   checkout(repository: string, baseSha: string, signal?: AbortSignal): Promise<void>;
   readFile(path: string, signal?: AbortSignal): Promise<string>;
   listFiles(path: string, signal?: AbortSignal): Promise<string[]>;
+  createFile(path: string, text: string, signal?: AbortSignal): Promise<void>;
   replaceText(path: string, oldText: string, newText: string, signal?: AbortSignal): Promise<void>;
   runCheck(checkId: string, signal: AbortSignal): Promise<WorkerCheckExecution>;
   commitCandidate(signal?: AbortSignal): Promise<{ candidateSha: string; diff: Uint8Array; bundle: Uint8Array }>;
@@ -226,7 +298,7 @@ export interface WorkerPricingSnapshot {
   safetyMultiplier: number;
 }
 export interface WorkerOptions { allowedModels: string[]; allowedProviders: string[]; trustedChecks: string[]; trustedCheckPolicyDigest: string; trustedCheckCommands: Record<string, WorkerCheckCommand>; sandboxImageRef: string; maxToolCalls: number; pricing: WorkerPricingSnapshot; }
-export type WorkerProgressPhase = "provider-tool-probe" | "provider-completion" | "candidate" | "tool-read_file" | "tool-list_files" | "tool-apply_patch" | "tool-run_check";
+export type WorkerProgressPhase = "provider-tool-probe" | "provider-completion" | "candidate" | "tool-read_file" | "tool-list_files" | "tool-create_file" | "tool-apply_patch" | "tool-run_check";
 export interface WorkerProgressEvent { eventId: string; leaseEpoch: number; ordinal: number; phase: WorkerProgressPhase; status: "started" | "completed"; missionId: string; sliceId: string; model: string; subjectId?: string; candidateSha?: string; providerCalls: number; inputTokens: number; outputTokens: number; artifactDigests: string[]; }
 export interface WorkerProgressSink { append(lease: WorkerLeaseContract, event: WorkerProgressEvent): Promise<{ decision: "CONTINUE" | "STOP"; reference: string; digest: string }>; }
 export class R2WorkerProgressSink implements WorkerProgressSink {
@@ -293,9 +365,11 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
   const preflightSignal = deps.signal ? AbortSignal.any([deps.signal, timeoutSignal]) : timeoutSignal;
   const policyDigest = createHash("sha256").update(JSON.stringify(deps.options.trustedChecks)).digest("hex");
   if (policyDigest !== lease.trustedCheckPolicyDigest || policyDigest !== deps.options.trustedCheckPolicyDigest) throw new WorkerProtocolError("Trusted check policy digest does not match the lease");
-  if (Object.keys(deps.options.trustedCheckCommands).sort().join("\n") !== [...deps.options.trustedChecks].sort().join("\n")) throw new WorkerProtocolError("Trusted check command snapshot does not match the leased check IDs");
+  if (Object.keys(deps.options.trustedCheckCommands).some(id => !deps.options.trustedChecks.includes(id))) throw new WorkerProtocolError("Worker-local check commands are outside the leased trusted check IDs");
   if (!/^sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef) && !/^ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_.-]+@sha256:[a-f0-9]{64}$/i.test(deps.options.sandboxImageRef)) throw new WorkerProtocolError("Sandbox image must be an immutable configured content ID or registry digest");
-  const checkSnapshot = canonicalCheckCommands(deps.options.trustedCheckCommands);
+  const configuredCheckSnapshot = canonicalCheckCommands(deps.options.trustedCheckCommands);
+  const checkSnapshot = Object.fromEntries(Object.entries(configuredCheckSnapshot).filter(([id]) => lease.slice.checks.includes(id)));
+  const localCheckIds = Object.keys(checkSnapshot);
   const checkCommandsDigest = createHash("sha256").update(JSON.stringify(checkSnapshot)).digest("hex");
   if (!Number.isSafeInteger(deps.options.maxToolCalls) || deps.options.maxToolCalls < 1) throw new WorkerProtocolError("Local tool call cap is not enabled");
   if (!deps.options.allowedProviders.includes("deepseek") || !limits.allowedProviders.includes("deepseek")) throw new WorkerProtocolError("DeepSeek provider is not enabled by both operator and lease policy");
@@ -328,6 +402,9 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (hash !== out.sha256 || hash !== out.key.slice(7)) throw new WorkerProtocolError("Evidence readback digest mismatch");
     evidenceEntries.push({ name, key: out.key, sha256: hash, reference: `${name}:${out.key}` });
   };
+  const savePreToolDiagnostic = async (completionNumber: number, diagnostic: ReturnType<typeof preToolDiagnostic>) => {
+    await saveEvidence(`pretool-diagnostic-${completionNumber}`, new TextEncoder().encode(JSON.stringify(diagnostic)), "application/json");
+  };
   const terminalEvidenceRefs = () => {
     const preferred = ["candidate-bundle", "candidate-diff", "evidence-index", "provider-usage", "sandbox-policy"];
     return [...new Set(preferred.flatMap(name => evidenceEntries.filter(entry => entry.name === name).map(entry => entry.reference)))].slice(0, 10);
@@ -340,8 +417,17 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     const data = JSON.stringify({ kind: "provider-attempt", index, phase, model, missionId: lease.mission.id, sliceId: lease.slice.id, epoch: lease.leaseEpoch, planDigest: lease.planDigest, policyDigest: lease.trustedCheckPolicyDigest, pricingDigest, maxCalls: limits.maxProviderCalls, maxInputTokens: limits.maxInputTokens, maxOutputTokens: limits.maxOutputTokens, reservedBudgetCents: limits.reservedBudgetCents });
     await saveEvidence(`provider-attempt-${index}`, new TextEncoder().encode(data), "application/json");
   };
-  await saveEvidence("pricing-snapshot", new TextEncoder().encode(JSON.stringify({ ...pricing, digest: pricingDigest })), "application/json");
-  await saveEvidence("sandbox-policy", new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, planDigest: lease.planDigest, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest, checkCommandsDigest, checkCommands: checkSnapshot, sandboxImageRef: deps.options.sandboxImageRef })), "application/json");
+  let initialEvidenceReady = false;
+  try {
+    await saveEvidence("pricing-snapshot", new TextEncoder().encode(JSON.stringify({ ...pricing, digest: pricingDigest })), "application/json");
+    await saveEvidence("sandbox-policy", new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, planDigest: lease.planDigest, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest, checkCommandsDigest, checkCommands: checkSnapshot, sandboxImageRef: deps.options.sandboxImageRef })), "application/json");
+    initialEvidenceReady = true;
+  } finally {
+    if (!initialEvidenceReady) {
+      clearTimeout(timer);
+      deps.signal?.removeEventListener("abort", abortFromParent);
+    }
+  }
   let calls = 0, inputTokens = 0, outputTokens = 0, toolsRun = 0;
   let terminalAttempted = false;
   let progressOrdinal = 0;
@@ -362,7 +448,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
     workspace = await deps.runtime.create(lease);
     await workspace.checkout(lease.mission.repository, lease.mission.baseSha, controller.signal);
-    if (limits.maxOutputTokens < 16 || calls >= limits.maxProviderCalls || conservativeInputReservation(model, PROBE_MESSAGES, true) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Mandatory tool probe does not fit the remaining execution limits");
+    if (limits.maxOutputTokens - outputTokens < PROBE_MAX_OUTPUT_TOKENS || calls >= limits.maxProviderCalls || conservativeInputReservation(model, PROBE_MESSAGES, true) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Mandatory tool probe does not fit the remaining execution limits");
     await recordProviderAttempt(1, "tool-capability-probe");
     await emit("provider-tool-probe", "started");
     if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
@@ -375,39 +461,76 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     await emit("provider-tool-probe", "completed");
     if (probe.model !== model || calls > limits.maxProviderCalls || inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens) throw new ProviderOutcomeUnknown("Tool protocol probe exceeded the configured model or execution limits");
     const messages: DeepSeekMessage[] = [
-      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, apply_patch, and run_check. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
-      { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nCheck IDs: ${lease.slice.checks.join(", ")}` }
+      { role: "system", content: `You are a bounded code builder. Work only in the exact checkout and slice scopes. Use only read_file, list_files, create_file, apply_patch${localCheckIds.length ? ", and run_check for advisory worker-local checks only" : ""}. create_file may be used only for absent files inside owned scopes; provide a nonempty UTF-8 body of at most 8000 characters. Do not read or list the repository root or scope parents. Worker-local checks never replace mandatory independent final verification. No shell, network, credentials, provider policy, verification, integration, or deployment authority. Candidate base is ${lease.mission.baseSha}. Owned scopes: ${lease.slice.scopes.join(", ")}.` },
+      { role: "user", content: `Mission: ${lease.mission.objective}\nSlice: ${lease.slice.objective}\nAcceptance: ${lease.mission.acceptance.join("\n")}\nWorker-local advisory check IDs: ${localCheckIds.length ? localCheckIds.join(", ") : "none"}\nMandatory final trusted check IDs: ${lease.slice.checks.join(", ")}` }
     ];
     for (;;) {
       if (controller.signal.aborted || now() >= deadline) throw new Error("WORKER_DEADLINE_UNKNOWN");
       if (calls >= limits.maxProviderCalls) throw new Error("WORKER_BUDGET_EXHAUSTED");
       const remainingOutput = limits.maxOutputTokens - outputTokens;
       if (remainingOutput <= 0) throw new Error("WORKER_BUDGET_EXHAUSTED");
-      if (conservativeInputReservation(model, messages) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Provider request does not fit the remaining input-token reservation");
+      if (conservativeInputReservation(model, messages, false, localCheckIds.length > 0) > limits.maxInputTokens - inputTokens) throw new WorkerProtocolError("Provider request does not fit the remaining input-token reservation");
       await recordProviderAttempt(calls + 1, "tool-loop");
       await emit("provider-completion", "started");
       if (controller.signal.aborted) throw new Error("WORKER_CANCELLATION_UNKNOWN");
       assertPricingCurrent();
-      const reply = await deps.provider.complete(model, messages, controller.signal, remainingOutput);
+      const reply = await deps.provider.complete(model, messages, controller.signal, remainingOutput, localCheckIds.length > 0);
       calls++;
       inputTokens += reply.inputTokens;
       outputTokens += reply.outputTokens;
       await saveEvidence(`provider-usage-${calls}`, new TextEncoder().encode(JSON.stringify({ model, calls, inputTokens, outputTokens, pricing, pricingDigest })), "application/json");
       await emit("provider-completion", "completed");
-      if (reply.model !== model) throw new ProviderOutcomeUnknown("DeepSeek returned an unexpected model ID");
-      if (inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens || now() - started > limits.maxWallSeconds * 1000) throw new Error("WORKER_BUDGET_EXHAUSTED");
+      const tools = reply.message.tool_calls ?? [];
+      const replyModelMatchesConfigured = reply.model === model;
+      const availableToolCalls = deps.options.maxToolCalls - toolsRun;
+      const recordDiagnostic = (stage: PreToolDiagnosticStage, code: PreToolDiagnosticCode, status: "accepted" | "rejected" | "no_tool_calls", failedIndex?: number) =>
+        savePreToolDiagnostic(calls - 1, preToolDiagnostic(replyModelMatchesConfigured, tools, availableToolCalls, stage, code, status, failedIndex));
+      if (!replyModelMatchesConfigured) {
+        await recordDiagnostic("model_check", "model_mismatch", "rejected");
+        throw new ProviderOutcomeUnknown(preToolMessages.model_mismatch);
+      }
+      if (inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens || now() - started > limits.maxWallSeconds * 1000) {
+        await recordDiagnostic("execution_budget", "provider_budget_exceeded", "rejected");
+        throw new Error("WORKER_BUDGET_EXHAUSTED");
+      }
       const assistant: DeepSeekMessage = { role: "assistant", content: reply.message.content, ...(reply.message.tool_calls ? { tool_calls: reply.message.tool_calls } : {}) };
       messages.push(assistant);
-      const tools = reply.message.tool_calls ?? [];
-      if (!tools.length) break;
-      if (tools.length > deps.options.maxToolCalls - toolsRun) throw new ProviderOutcomeUnknown("Provider returned more function calls than the local execution cap");
-      const prepared = tools.map(tool => ({ tool, args: parseToolArguments(tool) }));
-      const callIds = new Set<string>();
-      for (const { tool, args } of prepared) {
-        if (!tool.id || callIds.has(tool.id)) throw new ProviderOutcomeUnknown("Provider returned missing or duplicate tool call IDs");
-        callIds.add(tool.id);
-        validateToolCall(tool, args, lease);
+      if (!tools.length) {
+        await recordDiagnostic("proposal", "no_tool_calls", "no_tool_calls");
+        break;
       }
+      if (tools.length > availableToolCalls) {
+        await recordDiagnostic("tool_count", "tool_count_exceeded", "rejected");
+        throw new ProviderOutcomeUnknown(preToolMessages.tool_count_exceeded);
+      }
+      const prepared: Array<{ tool: DeepSeekToolCall; args: Record<string, unknown> }> = [];
+      for (const [index, tool] of tools.entries()) {
+        try { prepared.push({ tool, args: parseToolArguments(tool) }); }
+        catch (error) {
+          const code = error instanceof PreToolValidationError ? error.diagnosticCode : "invalid_arguments";
+          await recordDiagnostic("arguments", code, "rejected", index);
+          throw error;
+        }
+      }
+      const callIds = new Set<string>();
+      for (const [index, { tool, args }] of prepared.entries()) {
+        if (!tool.id) {
+          await recordDiagnostic("identity", "missing_tool_id", "rejected", index);
+          throw new ProviderOutcomeUnknown("Provider returned a missing or duplicate tool call ID");
+        }
+        if (callIds.has(tool.id)) {
+          await recordDiagnostic("identity", "duplicate_tool_id", "rejected", index);
+          throw new ProviderOutcomeUnknown("Provider returned a missing or duplicate tool call ID");
+        }
+        callIds.add(tool.id);
+        try { validateToolCall(tool, args, lease, localCheckIds); }
+        catch (error) {
+          const code = error instanceof PreToolValidationError ? error.diagnosticCode : "invalid_arguments";
+          await recordDiagnostic("tool_validation", code, "rejected", index);
+          throw error;
+        }
+      }
+      await recordDiagnostic("tool_validation", "validated", "accepted");
       for (const { tool, args: parsedArgs } of prepared) {
         if (controller.signal.aborted) throw new Error("WORKER_DEADLINE_UNKNOWN");
         toolsRun++;
@@ -416,7 +539,7 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
         const result = await runTool(tool, workspace, lease, deps, controller.signal, parsedArgs);
         if (tool.function.name === "run_check" && subjectId) {
           const check = result as WorkerCheckExecution;
-          await saveEvidence(`check-${subjectId}`, new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, candidateSha: null, checkId: subjectId, commandDigest: check.commandDigest, checkCommandsDigest, exitCode: check.exitCode, durationMs: check.durationMs, outputSha256: check.outputSha256, imageRef: check.imageRef, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest })), "application/json");
+          await saveEvidence(`check-${subjectId}`, new TextEncoder().encode(JSON.stringify({ missionId: lease.mission.id, sliceId: lease.slice.id, leaseEpoch: lease.leaseEpoch, baseSha: lease.mission.baseSha, candidateSha: null, checkId: subjectId, authority: "advisory-worker-local", commandDigest: check.commandDigest, checkCommandsDigest, exitCode: check.exitCode, durationMs: check.durationMs, outputSha256: check.outputSha256, imageRef: check.imageRef, trustedCheckPolicyDigest: lease.trustedCheckPolicyDigest })), "application/json");
         }
         await emit(toolProgressPhase(tool.function.name), "completed", subjectId);
         messages.push({ role: "tool", tool_call_id: tool.id, content: sanitized(JSON.stringify(result)) });
@@ -464,36 +587,47 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
 }
 
 function parseToolArguments(tool: DeepSeekToolCall): Record<string, unknown> {
-  if (tool.function.arguments.length > 8_000) throw new WorkerProtocolError("Tool arguments exceed the bound");
+  if (tool.function.arguments.length > 8_000) throw preToolValidationError("arguments_too_large");
   let args: unknown;
-  try { args = JSON.parse(tool.function.arguments); } catch { throw new WorkerProtocolError("Tool arguments are malformed JSON"); }
-  if (!args || typeof args !== "object" || Array.isArray(args)) throw new WorkerProtocolError("Tool arguments must be an object");
+  try { args = JSON.parse(tool.function.arguments); } catch { throw preToolValidationError("malformed_arguments"); }
+  if (!args || typeof args !== "object" || Array.isArray(args)) throw preToolValidationError("arguments_not_object");
   return args as Record<string, unknown>;
 }
 
-function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>, lease: WorkerLeaseContract): void {
+function assertPreToolScopePath(value: string, scopes: string[]): string {
+  try { return assertWorkerScopePath(value, scopes); }
+  catch { throw preToolValidationError("scope_rejected"); }
+}
+
+function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>, lease: WorkerLeaseContract, localCheckIds: readonly string[] = lease.slice.checks): void {
   const keys = Object.keys(args);
   if (tool.function.name === "read_file" || tool.function.name === "list_files") {
-    if (keys.length !== 1 || keys[0] !== "path" || typeof args.path !== "string") throw new WorkerProtocolError("File tool arguments are invalid");
-    assertWorkerScopePath(args.path, lease.slice.scopes);
+    if (keys.length !== 1 || keys[0] !== "path" || typeof args.path !== "string") throw preToolValidationError("invalid_arguments", "File tool arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
     return;
   }
   if (tool.function.name === "apply_patch") {
-    if (keys.length !== 3 || keys.some(key => !["path", "oldText", "newText"].includes(key)) || typeof args.path !== "string" || typeof args.oldText !== "string" || typeof args.newText !== "string" || !args.oldText || args.oldText.length > 8_000 || args.newText.length > 8_000) throw new WorkerProtocolError("Patch arguments are invalid");
-    assertWorkerScopePath(args.path, lease.slice.scopes);
+    if (keys.length !== 3 || keys.some(key => !["path", "oldText", "newText"].includes(key)) || typeof args.path !== "string" || typeof args.oldText !== "string" || typeof args.newText !== "string" || !args.oldText || args.oldText.length > 8_000 || args.newText.length > 8_000) throw preToolValidationError("invalid_arguments", "Patch arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
+    return;
+  }
+  if (tool.function.name === "create_file") {
+    if (keys.length !== 2 || keys.some(key => !["path", "text"].includes(key)) || typeof args.path !== "string" || typeof args.text !== "string" || !args.text || args.text.length > 8_000) throw preToolValidationError("invalid_arguments", "Create-file arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
     return;
   }
   if (tool.function.name === "run_check") {
-    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId)) throw new WorkerProtocolError("Check is not bound to the lease policy");
+    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId) || !localCheckIds.includes(args.checkId)) throw preToolValidationError("local_check_rejected");
     return;
   }
-  throw new WorkerProtocolError("Unknown tool function");
+  throw preToolValidationError("unknown_tool");
 }
 
 function toolProgressPhase(name: string): WorkerProgressPhase {
   switch (name) {
     case "read_file": return "tool-read_file";
     case "list_files": return "tool-list_files";
+    case "create_file": return "tool-create_file";
     case "apply_patch": return "tool-apply_patch";
     case "run_check": return "tool-run_check";
     default: throw new WorkerProtocolError("Unknown tool function");
@@ -513,6 +647,12 @@ async function runTool(tool: DeepSeekToolCall, workspace: WorkerWorkspace, lease
       if (Object.keys(a).some(x => x !== "path")) throw new WorkerProtocolError("Unexpected list_files argument");
       const path = withinScope(a.path as string, lease.slice.scopes);
       return { files: (await workspace.listFiles(path, signal)).slice(0, 500).map(x => withinScope(x, lease.slice.scopes)) };
+    }
+    case "create_file": {
+      if (Object.keys(a).some(x => !["path", "text"].includes(x)) || typeof a.text !== "string" || !a.text || a.text.length > 8_000) throw new WorkerProtocolError("Create-file arguments are invalid");
+      const path = withinScope(a.path as string, lease.slice.scopes);
+      await workspace.createFile(path, a.text, signal);
+      return { created: true, path };
     }
     case "apply_patch": {
       if (Object.keys(a).some(x => !["path", "oldText", "newText"].includes(x))) throw new WorkerProtocolError("Unexpected apply_patch argument");

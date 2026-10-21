@@ -32,7 +32,7 @@ for (const scenario of ['removed', 'daemon-down', 'wrong-label', 'wrong-image', 
         async inspect(query: string) {
           if (scenario === 'daemon-down') throw new Error('daemon unavailable');
           if (!present) return null;
-          return { id, labels: scenario === 'wrong-label' ? {} : labels, imageRef: scenario === 'wrong-image' ? `sha256:${'f'.repeat(64)}` : imageRef, name: scenario === 'wrong-name' ? '/foreign' : `/${name}`, running: true };
+          return { id, labels: scenario === 'wrong-label' ? {} : labels, imageRef: scenario === 'wrong-image' ? `sha256:${'f'.repeat(64)}` : imageRef, imageId: imageRef, name: scenario === 'wrong-name' ? '/foreign' : `/${name}`, running: true };
         },
         async remove(query: string) {
           assert.equal(query, id);
@@ -115,7 +115,7 @@ test('cancellation during durable create binding never starts the sandbox subpro
 const a=process.argv.slice(2).slice(4); const op=a[0];
 fs.appendFileSync(${JSON.stringify(trace)},JSON.stringify(a)+'\\n');
 const state=${JSON.stringify(state)};
-if(op==='create') { const labels=Object.fromEntries(a.filter(x=>x.startsWith('--label=')).map(x=>{const v=x.slice(8);const i=v.indexOf('=');return [v.slice(0,i),v.slice(i+1)];}));fs.writeFileSync(state,JSON.stringify({Id:${JSON.stringify(id)},Config:{Image:${JSON.stringify(imageRef)},Labels:labels},Name:'/'+a.find(x=>x.startsWith('--name=')).slice(7),State:{Running:false}}));console.log(${JSON.stringify(id)}); }
+if(op==='create') { const labels=Object.fromEntries(a.filter(x=>x.startsWith('--label=')).map(x=>{const v=x.slice(8);const i=v.indexOf('=');return [v.slice(0,i),v.slice(i+1)];}));fs.writeFileSync(state,JSON.stringify({Id:${JSON.stringify(id)},Image:${JSON.stringify(imageRef)},Config:{Image:${JSON.stringify(imageRef)},Labels:labels},Name:'/'+a.find(x=>x.startsWith('--name=')).slice(7),State:{Running:false}}));console.log(${JSON.stringify(id)}); }
 else if(op==='inspect'){if(fs.existsSync(state)) console.log(fs.readFileSync(state,'utf8')); else {console.error('Error: No such object: '+a.at(-1));process.exit(1);} }
 else if(op==='rm') {fs.rmSync(state,{force:true});}
 else if(op==='start'){console.error('UNEXPECTED START');process.exit(9);}

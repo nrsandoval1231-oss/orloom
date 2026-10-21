@@ -18,13 +18,14 @@ import type { Config } from "../../../packages/config/src/config.js";
 import type { IntegrationRequestV1 } from "../../../packages/contracts/src/mission.js";
 import type { DeliveryCommandV1 } from "../../../packages/integration/src/delivery.js";
 import type { AdmittingVerificationRunner } from "../../../packages/verification/src/admitting-runner.js";
+import { executionInputProfileForRepository } from "../../../packages/verification/src/repository.js";
 import { TrustedRuntimeJournalBridge } from "../../control-plane/src/trusted-runtime-journal-bridge.js";
-import { runApprovedDockerWorkerLane } from "../../control-plane/src/approved-worker-lane.js";
 import { controllerRunIdForApprovedTask, reconcileApprovedWorkerRetained, runApprovedWorkerService } from "./approved-service.js";
-import { DockerWorkerRuntime } from "./docker-runtime.js";
+import { createApprovedRuntimeComposition } from "./approved-runtime-options.js";
 import { FileRuntimeJournal } from "./runtime-journal.js";
 import { acquireWorkerServiceLock } from "./service-lock.js";
 import { missingApprovedConfigurationNames, parseApprovedWorkerConfiguration, readApprovedTaskManifest, scheduleApprovedTaskExpiry, validateApprovedPricing, type ApprovedTaskManifest } from "./approved-startup.js";
+import { DockerWorkerRuntime } from "./docker-runtime.js";
 
 const number = (env: NodeJS.ProcessEnv, name: string, min: number, max: number): number => {
   const raw = env[name]?.trim() ?? "", result = Number(raw);
@@ -46,13 +47,14 @@ interface ValidatedWorkerPolicies {
   readonly checkIds: string[];
   readonly checks: Record<string, WorkerCheckCommand>;
   readonly pricing: WorkerPricingSnapshot;
+  readonly executionInputProfile?: "orloom-execution-v1";
   readonly integrationRequest?: IntegrationRequestV1;
   readonly deliveryCommand?: DeliveryCommandV1;
 }
 function checkCommands(value: unknown, ids: string[]): Record<string, WorkerCheckCommand> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("ORLOOM_WORKER_CHECK_COMMANDS_FILE is malformed");
   const rows = value as Record<string, unknown>;
-  if (canonicalJson(Object.keys(rows).sort()) !== canonicalJson([...ids].sort())) throw new Error("Trusted check commands do not match ORLOOM_TRUSTED_CHECK_POLICY_JSON");
+  if (Object.keys(rows).some(id => !ids.includes(id))) throw new Error("Trusted check commands are not a subset of ORLOOM_TRUSTED_CHECK_POLICY_JSON");
   for (const [id, raw] of Object.entries(rows)) {
     if (!/^[A-Za-z0-9_.:-]{1,128}$/.test(id) || !raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("Trusted check command entry is invalid");
     const command = raw as WorkerCheckCommand;
@@ -99,9 +101,10 @@ async function validatePolicyFiles(env: NodeJS.ProcessEnv, task: ApprovedTaskMan
     if (!/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/.test(repository) || !raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
     const config = raw as Record<string, unknown>;
     if (typeof config.objectStore !== "string" || !path.isAbsolute(config.objectStore) || typeof config.approvedRef !== "string" || !/^refs\/(heads|tags)\/[A-Za-z0-9._/-]+$/.test(config.approvedRef) || config.approvedRef.includes("..")) throw new Error("ORLOOM_VERIFIER_REPOSITORIES entry is invalid");
-    if (config.executionInputProfile !== undefined && config.executionInputProfile !== "orloom-execution-v1") throw new Error("unknown execution input profile");
+    executionInputProfileForRepository(config);
     for (const root of [artifactRoot, admissionRoot, process.cwd()]) if (isInside(root, config.objectStore) || isInside(config.objectStore, root)) throw new Error("Verifier object stores must be separate from worker source and artifact roots");
   }
+  const executionInputProfile = executionInputProfileForRepository(repositories[task.repository]);
   const integration = configuredBool(env, "ORLOOM_INTEGRATION_ENABLED"), delivery = configuredBool(env, "ORLOOM_DELIVERY_ENABLED");
   const requestFile = env.ORLOOM_WORKER_INTEGRATION_REQUEST_FILE?.trim(), commandFile = env.ORLOOM_WORKER_DELIVERY_COMMAND_FILE?.trim();
   let integrationRequest: IntegrationRequestV1 | undefined, deliveryCommand: DeliveryCommandV1 | undefined;
@@ -123,7 +126,7 @@ async function validatePolicyFiles(env: NodeJS.ProcessEnv, task: ApprovedTaskMan
       if (!requestFile) throw new Error("ORLOOM_WORKER_INTEGRATION_REQUEST_FILE is required for delivery");
     }
   }
-  return { minimumSliceBudgetCents: worstCaseCost, checkIds: ids, checks, pricing, ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) };
+  return { minimumSliceBudgetCents: worstCaseCost, checkIds: ids, checks, pricing, ...(executionInputProfile ? { executionInputProfile } : {}), ...(integrationRequest ? { integrationRequest } : {}), ...(deliveryCommand ? { deliveryCommand } : {}) };
 }
 function isInside(parent: string, child: string): boolean {
   const relative = path.relative(parent, child);
@@ -227,7 +230,8 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
     }
     const journal = await FileRuntimeJournal.openOperational(env.ORLOOM_WORKER_RUNTIME_JOURNAL_ROOT!);
     const runtimeBridge = new TrustedRuntimeJournalBridge(journal, store);
-    const runtime = new DockerWorkerRuntime({ imageRef: workerImageRef, installationId, checkoutTokens: github, checks, runtimeJournal: runtimeBridge });
+    const runtimeComposition = createApprovedRuntimeComposition({ imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, policies.executionInputProfile, runtimeBridge);
+    const runtime = runtimeComposition.reconciliationRuntime;
     const control: ControlPlane = {
       async claim() { return null; },
       async cancellationRequested(lease) { return Boolean(await store.cancellationStatus?.(lease.mission.id, lease.slice.id, lease.leaseEpoch, lease.leaseToken, lease.capabilityToken)); },
@@ -246,10 +250,10 @@ async function runApproved(task: ApprovedTaskManifest, env: NodeJS.ProcessEnv, s
       reconcileRetained: async (target, leaseEpoch) => reconcileApprovedWorkerRetained(runtimeBridge, target, controllerRunIdForApprovedTask(task, leaseEpoch)),
       ...(integrationAuthority ? { integrationAuthority } : {}), ...(prepareCertifiedIntegration ? { prepareCertifiedIntegration } : {}),
       ...(deliveryController ? { deliveryPolicy: deliveryController.policy, deliveryAuthority: deliveryController.authority } : {}),
-      executeLane: async (lease, _binding, laneSignal, lifecycleGuard) => runApprovedDockerWorkerLane(lease, {
+      executeLane: async (lease, _binding, laneSignal, lifecycleGuard) => runtimeComposition.executeLane(lease, {
         store, binding: { missionId: task.missionId, slice: { id: lease.slice.id, objective: lease.slice.objective, dependencies: lease.slice.dependencies, owner: lease.slice.owner, scopes: lease.slice.scopes, checks: lease.slice.checks, budgetCents: lease.executionLimits.reservedBudgetCents }, baseSha: task.baseSha, planDigest: task.planDigest, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest },
-        control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(checkIds.map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
-        runtimeOptions: { imageRef: workerImageRef, installationId, checkoutTokens: github, checks }, signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
+        control, provider, evidence: artifacts, progress: new R2WorkerProgressSink(artifacts), checks: Object.fromEntries(Object.keys(checks).map(id => [id, [id]])), options: { allowedModels: limits.allowedModels, allowedProviders: limits.allowedProviders, trustedChecks: checkIds, trustedCheckPolicyDigest: task.trustedCheckPolicyDigest, trustedCheckCommands: checks, sandboxImageRef: workerImageRef, maxToolCalls: number(env, "ORLOOM_WORKER_MAX_TOOL_CALLS", 1, 256), pricing: pricing as never }, trustedChecks, runtimeJournal: runtimeBridge,
+        signal: laneSignal, ...(lifecycleGuard ? { lifecycleGuard } : {})
       })
     });
     return serviceResult;

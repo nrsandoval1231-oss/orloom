@@ -1,6 +1,6 @@
 # One explicitly approved worker task
 
-This source path runs one durably approved single-slice mission. It does not plan work or choose another queued task. The default worker entrypoint exits before secrets, database access or provider activity. This document describes configuration; it does not authorize activation.
+This source path runs one durably approved single-slice mission. It does not plan work or choose another queued task. The default worker entrypoint exits before secrets, database access or provider activity. This document describes configuration; it does not authorize activation. The owner-directed target is Hostinger; first complete the [Hostinger worker preparation and qualification gates](hostinger-worker-preparation.md). DigitalOcean-only runtime evidence cannot satisfy them.
 
 Use an already accepted Linux host with preloaded digest-pinned worker and verifier images, runsc isolation evidence, one capacity slot and one lane. Existing private PostgreSQL, GitHub App, R2 and DeepSeek configuration is required. Do not put controller credentials in the sandbox. Keep journal, service lock, admission, verifier evidence, object stores and review artifacts in separate protected persistent locations. The service lock is an existing private regular file in a protected directory; the journal directory is private and owned. Do not use source or temporary directories for retained verifier/admission evidence.
 

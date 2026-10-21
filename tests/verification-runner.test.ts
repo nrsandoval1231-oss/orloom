@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, symlink, writeFile, readFile, chmod, stat, chown } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execFile, spawn } from "node:child_process";
+import { execFile, spawn, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
 import { test } from "node:test";
 import { DurableArtifactStore } from "../packages/verification/src/artifact-store.js";
+import { TrustedVerificationRunner } from "../packages/verification/src/runner.js";
 import { extractCandidateBundle } from "../packages/verification/src/repository.js";
 import { getCheckAttemptLifetimeMs, getCheckPolicy, NODE_REPO_SUITE_BINDING } from "../packages/verification/src/policy.js";
 import { TRUSTED_CHECK_LIMITS } from "../packages/contracts/src/verification.js";
@@ -96,14 +97,14 @@ test("check policy is finite and worker text cannot select commands", () => {
 
 test("repository suite is a separate trusted policy bound to the reviewed lock and fixed profile", async () => {
   const suite = getCheckPolicy("node-repo-suite-v1");
-  assert.equal(suite.version, "orloom.node-repo-suite.v8");
+  assert.equal(suite.version, "orloom.node-repo-suite.v10");
   assert.deepEqual(suite.argv, ["/usr/local/bin/node", "/opt/orloom-verifier/run-check.js"]);
-  assert.equal(suite.timeoutMs, 405_000);
+  assert.equal(suite.timeoutMs, 1_845_000);
   assert.equal(suite.maxConcurrent, 1);
-  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-360s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1");
+  assert.equal(NODE_REPO_SUITE_BINDING.manifestVersion, "node-repo-suite-v1.deadline.serial-tests.diagnostics-v4.resources-2g.deadline-1800s.askpass-copy-v1.tmpdir-work.awaited-result-marker-v1.archive-members-v1");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.memoryBytes, 2 * 1024 * 1024 * 1024);
   assert.equal(suite.digest, getCheckPolicy("node-repo-suite-v1").digest);
-  assert.equal(suite.digest, "9d6d53f336b2719712ed6ba836b090198538ceb790c1f542b5930069353e1417");
+  assert.notEqual(suite.digest, "b5d778e884519f012c1973ae50af15de9fe5e6b0b5dc3528c1c567381172d774", "v10 must invalidate the v9 policy digest");
   assert.notEqual(suite.digest, "12615bff098673e52b4c128d6c556598123d18f9e59ccd1700824d3d97f7c6e8", "suite deadline changes must invalidate the previous policy digest");
   assert.notEqual(suite.digest, getCheckPolicy("node-validate-syntax").digest);
   assert.throws(() => getCheckPolicy("worker supplied npm test"), /finite policy/);
@@ -111,16 +112,16 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.equal(NODE_REPO_SUITE_BINDING.tools.stageEnvironment.HOME, "/nonexistent");
   assert.equal(NODE_REPO_SUITE_BINDING.tools.stageEnvironment.TMPDIR, "/work");
   assert.equal(NODE_REPO_SUITE_BINDING.resources.workTmpfsBytes, 512 * 1024 * 1024);
-  assert.deepEqual(NODE_REPO_SUITE_BINDING.timeouts, { suiteExecutionMs: 360_000, dockerAttachMs: 390_000, hostLauncherMs: 405_000, attemptLifetimeMs: 420_000 });
+  assert.deepEqual(NODE_REPO_SUITE_BINDING.timeouts, { suiteExecutionMs: 1_800_000, dockerAttachMs: 1_830_000, hostLauncherMs: 1_845_000, attemptLifetimeMs: 1_860_000 });
   assert.ok(NODE_REPO_SUITE_BINDING.timeouts.suiteExecutionMs < NODE_REPO_SUITE_BINDING.timeouts.dockerAttachMs);
   assert.ok(NODE_REPO_SUITE_BINDING.timeouts.dockerAttachMs < NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs);
   assert.ok(NODE_REPO_SUITE_BINDING.timeouts.hostLauncherMs < NODE_REPO_SUITE_BINDING.timeouts.attemptLifetimeMs);
-  assert.equal(getCheckAttemptLifetimeMs("node-repo-suite-v1"), 420_000);
-  assert.ok(getCheckAttemptLifetimeMs("node-repo-suite-v1") + 120_000 < TRUSTED_CHECK_LIMITS.maxLifetimeMs, "the unchanged 120-second UNKNOWN settlement stays within the ten-minute request limit");
+  assert.equal(getCheckAttemptLifetimeMs("node-repo-suite-v1"), 1_860_000);
+  assert.ok(getCheckAttemptLifetimeMs("node-repo-suite-v1") + 120_000 < TRUSTED_CHECK_LIMITS.maxLifetimeMs, "the unchanged 120-second UNKNOWN settlement stays within the 35-minute request limit");
   assert.equal(getCheckAttemptLifetimeMs("node-validate-syntax"), 60_000);
   assert.ok(getCheckAttemptLifetimeMs("node-repo-suite-v1") < TRUSTED_CHECK_LIMITS.maxLifetimeMs);
   assert.throws(() => getCheckAttemptLifetimeMs("worker supplied timeout"), /finite policy/);
-  assert.deepEqual(NODE_REPO_SUITE_BINDING.diagnostics, { protocol: "orloom.suite-diagnostics.v4", maxFrames: 64, maxBytes: 16_384, maxElapsedMs: 360_000, maxTestOrdinal: 64, maxTestFileNameBytes: 128, authority: "advisory-only" });
+  assert.deepEqual(NODE_REPO_SUITE_BINDING.diagnostics, { protocol: "orloom.suite-diagnostics.v4", maxFrames: 64, maxBytes: 16_384, maxElapsedMs: 1_800_000, maxTestOrdinal: 64, maxTestFileNameBytes: 128, authority: "advisory-only" });
   assert.equal(getCheckPolicy("node-validate-syntax").timeoutMs, 60_000);
   assert.equal(getCheckPolicy("node-validate-syntax").digest, "e94f014eafb1763402f210b4bd0218f3807aa9e6ca74ccaeda988661670c5cbe", "suite deadline changes do not alter syntax policy meaning or digest");
   const { ADMITTED_DEPENDENCIES } = await import(pathToFileURL(path.join(process.cwd(), "infra/verifier-isolation/suite-policy.js")).href);
@@ -141,10 +142,10 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
     '268435456|268435456|500000000|64|none|true|65532:65532|runsc|["ALL"]|["no-new-privileges:true"]|rw,noexec,nosuid,nodev,size=16m,uid=65532,gid=65532,mode=0700|rw,exec,nosuid,nodev,size=32m,uid=65532,gid=65532,mode=0700',
   ]) assert(isolation.includes(`expected_profile='${profile}'`), "launcher inspects and enforces the exact fixed resource profile");
   for (const bound of ["echo 128", "echo 64", "echo 256m", "echo 1", "echo 0.5", "echo 512m", "--runtime=runsc", "--network=none", "--read-only", "--user=65532:65532", "--cap-drop=ALL", "--security-opt=no-new-privileges:true", "size=16m"]) assert(isolation.includes(bound), `launcher retains ${bound}`);
-  assert.match(isolation, /echo 390s \|\| echo 60s/);
+  assert.match(isolation, /echo 1830s \|\| echo 60s/);
   const suiteRunner = await readFile("infra/verifier-isolation/run-repo-suite.js", "utf8");
   assert.match(suiteRunner, /HOME: '\/nonexistent', TMPDIR: '\/work'/);
-  assert.match(suiteRunner, /const limit = 360_000/);
+  assert.match(suiteRunner, /const limit = 1_800_000/);
   assert.match(suiteRunner, /runSerialTestFiles\(tests/);
   assert.match(suiteRunner, /copy-git-askpass\.js/);
   const trustedCopy = await readFile("infra/verifier-isolation/copy-git-askpass.js", "utf8");
@@ -159,6 +160,32 @@ test("repository suite is a separate trusted policy bound to the reviewed lock a
   assert.match(dockerfile, /^FROM node@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d$/m);
   assert(dockerfile.includes("/usr/local/lib/node_modules/npm"));
   assert.match(dockerfile, /emit-result\.js/);
+});
+
+test("runner rejects a forged extended catalog expiry before sandbox execution", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-lifetime-"));
+  let launches = 0;
+  try {
+    for (const [index, checkId] of ["node-repo-suite-v1", "node-validate-syntax"].entries()) {
+      const policy = getCheckPolicy(checkId);
+      const runner = new TrustedVerificationRunner({
+        repositories: {}, artifacts: new DurableArtifactStore(path.join(root, `artifacts-${index}`)),
+        launcher: { async launch() { launches++; throw new Error("must not execute forged lifetime"); } },
+        verifierId: "fixture-verifier", image: policy.image, imageDigest: policy.imageDigest,
+      });
+      const lifetime = getCheckAttemptLifetimeMs(checkId);
+      const request = {
+        version: "orloom.trusted-check-request.v1" as const, attemptId: `00000000-0000-4000-8000-00000000000${index + 1}`,
+        missionId: "00000000-0000-4000-8000-000000000002", sliceId: "suite", leaseEpoch: 1,
+        repository: "acme/orloom", candidateSha: "b".repeat(40), expectedLocalHeadSha: "b".repeat(40),
+        planDigest: "a".repeat(64), checkId, policyVersion: policy.version,
+        policyDigest: policy.digest, verifierImageDigest: policy.imageDigest, inputBundleDigest: "e".repeat(64),
+        requestedAt: "2026-10-13T12:00:00.000Z", expiresAt: new Date(Date.parse("2026-10-13T12:00:00.000Z") + lifetime + 1).toISOString(),
+      };
+      await assert.rejects(runner.run(request, { digest: request.inputBundleDigest, manifest: Buffer.from("{}"), files: new Map() }), /lifetime/);
+    }
+    assert.equal(launches, 0, "catalog-bound requests with extended expiries cannot reach the sandbox");
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("trusted result marker survives a slow pipe reader beyond OS pipe capacity", async () => {
@@ -440,7 +467,7 @@ test("launcher process-result fixtures reject infrastructure ambiguity and accep
 });
 
 test("UNKNOWN retains only bounded complete diagnostics from the trusted stage and file emitters", async () => {
-  const script = `import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nconst monotonicElapsed = Math.floor(performance.now());\nconst fractionalElapsed = monotonicElapsed + 0.5;\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 360001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }, { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: fractionalElapsed, outcome: 'pass' }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nfor (const value of [{ phase: 'start', elapsedMs: 0, ordinal: 0, testFile: '../x.test.js' }, { phase: 'end', elapsedMs: 4, ordinal: 1, testFile: 'x.test.js', outcome: 'maybe' }, { phase: 'end', elapsedMs: 360001, ordinal: 1, testFile: 'x.test.js', outcome: 'pass' }]) if (emitSuiteTestDiagnostic(value) !== false) process.exitCode = 8;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: monotonicElapsed, outcome: 'pass' })) process.exitCode = 11;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'start', elapsedMs: 0 })) process.exitCode = 12;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'end', elapsedMs: 360000, outcome: 'pass' })) process.exitCode = 13;\nfor (const stage of ['clean-build', 'test-discovery']) { if (!emitSuiteDiagnostic({ stage, phase: 'start', elapsedMs: 0 }) || !emitSuiteDiagnostic({ stage, phase: 'end', elapsedMs: 1, outcome: 'pass' })) process.exitCode = 14; }\nif (!emitSuiteDiagnostic({ stage: 'node-tests', phase: 'start', elapsedMs: 0 })) process.exitCode = 15;\nif (!emitSuiteTestDiagnostic({ phase: 'start', elapsedMs: 0, ordinal: 1, testFile: 'a.test.js' })) process.exitCode = 16;\nif (!emitSuiteTestDiagnostic({ phase: 'end', elapsedMs: 360000, ordinal: 1, testFile: 'a.test.js', outcome: 'pass' })) process.exitCode = 17;\nif (!emitSuiteDiagnostic({ stage: 'node-tests', phase: 'end', elapsedMs: monotonicElapsed, outcome: 'pass' })) process.exitCode = 18;\n`;
+  const script = `import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './infra/verifier-isolation/suite-diagnostics.js';\nconst monotonicElapsed = Math.floor(performance.now());\nconst fractionalElapsed = monotonicElapsed + 0.5;\nfor (const value of [null, [], { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: 1800001, outcome: 'pass' }, { stage: 'dependency-lock-admission', phase: 'start', elapsedMs: NaN }, { stage: 'dependency-lock-admission', phase: 'end', elapsedMs: fractionalElapsed, outcome: 'pass' }]) if (emitSuiteDiagnostic(value) !== false) process.exitCode = 9;\nfor (const value of [{ phase: 'start', elapsedMs: 0, ordinal: 0, testFile: '../x.test.js' }, { phase: 'end', elapsedMs: 4, ordinal: 1, testFile: 'x.test.js', outcome: 'maybe' }, { phase: 'end', elapsedMs: 1800001, ordinal: 1, testFile: 'x.test.js', outcome: 'pass' }]) if (emitSuiteTestDiagnostic(value) !== false) process.exitCode = 8;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'start', elapsedMs: 0 })) process.exitCode = 10;\nif (!emitSuiteDiagnostic({ stage: 'dependency-lock-admission', phase: 'end', elapsedMs: monotonicElapsed, outcome: 'pass' })) process.exitCode = 11;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'start', elapsedMs: 0 })) process.exitCode = 12;\nif (!emitSuiteDiagnostic({ stage: 'typecheck', phase: 'end', elapsedMs: 360000, outcome: 'pass' })) process.exitCode = 13;\nfor (const stage of ['clean-build', 'test-discovery']) { if (!emitSuiteDiagnostic({ stage, phase: 'start', elapsedMs: 0 }) || !emitSuiteDiagnostic({ stage, phase: 'end', elapsedMs: 1, outcome: 'pass' })) process.exitCode = 14; }\nif (!emitSuiteDiagnostic({ stage: 'node-tests', phase: 'start', elapsedMs: 0 })) process.exitCode = 15;\nif (!emitSuiteTestDiagnostic({ phase: 'start', elapsedMs: 0, ordinal: 1, testFile: 'a.test.js' })) process.exitCode = 16;\nif (!emitSuiteTestDiagnostic({ phase: 'end', elapsedMs: 360000, ordinal: 1, testFile: 'a.test.js', outcome: 'pass' })) process.exitCode = 17;\nif (!emitSuiteDiagnostic({ stage: 'node-tests', phase: 'end', elapsedMs: monotonicElapsed, outcome: 'pass' })) process.exitCode = 18;\n`;
   const { stdout: emitted } = await exec(process.execPath, ["--input-type=module", "-e", script], { cwd: process.cwd(), encoding: "utf8", windowsHide: true });
   assert.equal(emitted.split("\n").filter(Boolean).length, 12, "the actual trusted emitters produce fixed ordered stage and file frames");
   const unknown = classifyLauncherOutput(`${emitted}candidate secret output\nORLOOM-DIAG:v4:eyJwYXJ0aWFsIg`, { exitCode: null, timedOut: true, killed: true }, 16_384);
@@ -500,7 +527,7 @@ test("stage diagnostics never classify a partial, forged, malformed, or excessiv
   assert.ok(Buffer.byteLength(retainSuiteDiagnostics(ordered.join("").repeat(8))) <= 16_384, "telemetry stays within the v4 byte cap");
   const legacyFrame = `ORLOOM-DIAG:v3:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v3", stage: "dependency-lock-admission", phase: "start", elapsedMs: 0 })).toString("base64")}\n`;
   assert.equal(retainSuiteDiagnostics(legacyFrame).length, 0, "the prior diagnostic protocol cannot be reinterpreted under the new cap");
-  const overDeadline = `ORLOOM-DIAG:v4:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v4", stage: "dependency-lock-admission", phase: "end", elapsedMs: 360001, outcome: "pass" })).toString("base64")}\n`;
+  const overDeadline = `ORLOOM-DIAG:v4:${Buffer.from(JSON.stringify({ version: "orloom.suite-diagnostics.v4", stage: "dependency-lock-admission", phase: "end", elapsedMs: 1800001, outcome: "pass" })).toString("base64")}\n`;
   assert.equal(retainSuiteDiagnostics(`${validStart}${overDeadline}${frame("dependency-lock-admission", "end", "pass")}`).toString(), `${validStart}${frame("dependency-lock-admission", "end", "pass")}`, "the parser rejects elapsed telemetry above the versioned suite cap");
 });
 
@@ -516,4 +543,103 @@ test("trusted staged archive layout matches launcher extraction, manifest reader
   assert(checkScript.includes("path.join(input, 'source', item.path)"));
   assert(checkScript.includes("cwd: path.join(input, 'source')"));
   assert.equal(getCheckPolicy("node-validate-syntax").cwd, "/work/source");
+});
+
+test("verifier archive extraction preserves writable work and read-only admitted source", async (t) => {
+  const launcher = await readFile("infra/verifier-isolation/launch-verifier.sh", "utf8");
+  const tarLine = launcher.match(/tar -C "(?:\$INPUT_DIR|\/run\/orloom-verifier-input\/\$NAME)" -cf - (?:-- )?([^|\n]+)\|/);
+  assert.ok(tarLine, "launcher has a bounded staged-input archive command");
+  const members = tarLine[1]!.trim().split(/\s+/).filter(value => value !== "--");
+
+  if (process.platform === "win32") {
+    assert.deepEqual(members, ["manifest.json", "source"], "launcher must archive only the two staged entries, never the read-only staging root");
+    assert.match(launcher, /find .* -mindepth 1 -maxdepth 1 .*manifest\.json.*source/s, "launcher rejects unexpected staged root entries");
+    t.skip("POSIX tar mode and unprivileged extraction semantics require Linux");
+    return;
+  }
+
+  const root = await mkdtemp(path.join(os.tmpdir(), "orl-verifier-archive-mode-"));
+  try {
+    const staged = path.join(root, "staged"), source = path.join(staged, "source"), destination = path.join(root, "work");
+    // Populate the fixture while its ancestors are writable, then freeze the
+    // staged input to the same modes the production launcher presents.
+    await mkdir(staged, { mode: 0o700 });
+    await mkdir(source, { mode: 0o700 });
+    await writeFile(path.join(staged, "manifest.json"), "{}\n", { mode: 0o444 });
+    await writeFile(path.join(source, "input.txt"), "admitted\n", { mode: 0o444 });
+    await chmod(source, 0o555); await chmod(staged, 0o555);
+    // In the root-only setpriv branch, uid 65532 must traverse this unique
+    // fixture root. Keep the permission change on this test-owned directory.
+    if (process.getuid?.() === 0) await chmod(root, 0o711);
+
+    const guardStart = launcher.indexOf("input_entries=$(find "), guardEnd = launcher.indexOf("\n\nconfig=", guardStart);
+    assert.ok(guardStart >= 0 && guardEnd > guardStart, "production staged-root guard is present");
+    const guard = launcher.slice(guardStart, guardEnd);
+    const checkRoot = () => spawnSync("bash", ["-c", `INPUT_DIR="$1"\n${guard}`, "--", staged], { encoding: "utf8" });
+    assert.equal(checkRoot().status, 0, "the two expected staged entries pass the production root guard");
+    await chmod(staged, 0o755);
+    await symlink("/etc", path.join(staged, "unexpected"));
+    await chmod(staged, 0o555);
+    const hostileRoot = checkRoot();
+    assert.equal(hostileRoot.status, 69, "an unexpected symlink at the staged root is rejected before archiving");
+    await chmod(staged, 0o755);
+    await rm(path.join(staged, "unexpected"));
+    await chmod(staged, 0o555);
+
+    const archiveResult = spawnSync("tar", ["-C", staged, "-cf", "-", "--", ...members], { encoding: null, maxBuffer: 1024 * 1024 });
+    assert.equal(archiveResult.status, 0, archiveResult.stderr.toString());
+    const archive = path.join(root, "input.tar");
+    await writeFile(archive, archiveResult.stdout, { mode: 0o444 });
+    const listing = spawnSync("tar", ["-tf", archive], { encoding: "utf8" });
+    assert.equal(listing.status, 0, listing.stderr);
+
+    const asVerifier = (command: string, args: string[]) => process.getuid?.() === 0
+      ? spawnSync("setpriv", ["--reuid=65532", "--regid=65532", "--clear-groups", "--", command, ...args], { encoding: "utf8" })
+      : spawnSync(command, args, { encoding: "utf8" });
+    if (process.getuid?.() === 0 && spawnSync("setpriv", ["--version"], { encoding: "utf8" }).status !== 0) {
+      t.skip("setpriv is unavailable for nonroot extraction");
+      return;
+    }
+    const legacyArchive = path.join(root, "legacy.tar");
+    const legacyTar = spawnSync("tar", ["-C", staged, "-cf", legacyArchive, "."], { encoding: "utf8" });
+    assert.equal(legacyTar.status, 0, legacyTar.stderr);
+    await chmod(legacyArchive, 0o444);
+    const legacyWork = path.join(root, "legacy-work");
+    await mkdir(legacyWork, { mode: 0o700 }); await chmod(legacyWork, 0o700);
+    if (process.getuid?.() === 0) await chown(legacyWork, 65532, 65532);
+    const legacyExtract = asVerifier("tar", ["-xf", legacyArchive, "-C", legacyWork]);
+    assert.equal(legacyExtract.status, 0, legacyExtract.stderr);
+    assert.equal((await stat(legacyWork)).mode & 0o777, 0o555, "archiving the staging root reproduces its mode on the work mount");
+    assert.notEqual(asVerifier("mkdir", [path.join(legacyWork, "probe")]).status, 0, "the root-inclusive archive blocks TMPDIR writes by the verifier identity");
+
+    await mkdir(destination, { mode: 0o700 });
+    await chmod(destination, 0o700);
+    let extraction: string[];
+    if (process.getuid?.() === 0) {
+      await chown(destination, 65532, 65532);
+      extraction = ["setpriv", "--reuid=65532", "--regid=65532", "--clear-groups", "--", "tar", "-xf", archive, "-C", destination];
+    } else {
+      extraction = ["tar", "-xf", archive, "-C", destination];
+    }
+    const extracted = spawnSync(extraction[0]!, extraction.slice(1), { encoding: "utf8" });
+    assert.equal(extracted.status, 0, extracted.stderr);
+    assert.equal((await stat(destination)).mode & 0o777, 0o700, "extracting staged source cannot replace the trusted writable work mount mode");
+    assert.equal((await stat(path.join(destination, "source"))).mode & 0o222, 0, "admitted source directories remain read-only");
+    assert.equal((await stat(path.join(destination, "source", "input.txt"))).mode & 0o222, 0, "admitted source files remain read-only");
+    const writable = spawnSync(extraction[0] === "setpriv" ? "setpriv" : "sh", extraction[0] === "setpriv"
+      ? ["--reuid=65532", "--regid=65532", "--clear-groups", "--", "sh", "-c", `mkdir "${destination}/probe"`]
+      : ["-c", `mkdir "${destination}/probe"`], { encoding: "utf8" });
+    assert.equal(writable.status, 0, writable.stderr);
+    const names = listing.stdout.split(/\r?\n/).filter(Boolean).map(value => value.replace(/\/$/, ""));
+    assert.deepEqual(names.sort(), ["manifest.json", "source", "source/input.txt"], "archive contains only manifest and admitted source entries, without an archived root directory");
+    assert.deepEqual(members, ["manifest.json", "source"], "launcher archive selection excludes the read-only staging root");
+    assert.match(launcher, /input_entries=.*find .* -mindepth 1 -maxdepth 1 .*\[\[ \$input_entries == \$'manifest\.json\\nsource'/s, "launcher rejects unexpected staged root entries");
+  } finally {
+    // Extraction intentionally leaves selected directories read-only; restore
+    // only this test's known fixture directories so its owner can clean up.
+    for (const directory of ["staged", "staged/source", "work", "work/source", "legacy-work", "legacy-work/source"]) {
+      await chmod(path.join(root, directory), 0o700).catch(() => {});
+    }
+    await rm(root, { recursive: true, force: true });
+  }
 });

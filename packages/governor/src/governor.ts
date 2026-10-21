@@ -30,6 +30,7 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
   private readonly pending=new Map<string,{capability:string;bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};runner:TrustedCheckRunner}>();
   constructor(private readonly store:MissionStore,private readonly runner:TrustedCheckRunner,private readonly settings:{imageDigest:string;verifierId:string;policyDigest:string;leasePolicyDigest:string;policyVersion:string;allowedChecks:string[];attemptLifetimeMs:number},private readonly clock=()=>new Date()){
     if(!Number.isSafeInteger(settings.attemptLifetimeMs)||settings.attemptLifetimeMs<1||settings.attemptLifetimeMs>TRUSTED_CHECK_LIMITS.maxLifetimeMs)throw new Error("trusted check attempt lifetime is outside contract bounds");
+    if(settings.allowedChecks.includes("node-repo-suite-v1")&&(settings.policyVersion!=="orloom.node-repo-suite.v10"||settings.attemptLifetimeMs!==1_860_000))throw new Error("repository-suite attempt lifetime must match the finite v10 policy");
   }
   integrationBinding():TrustedCheckIntegrationBinding {
     return Object.freeze({allowedChecks:Object.freeze([...this.settings.allowedChecks]),policyDigest:this.settings.policyDigest,policyVersion:this.settings.policyVersion,imageDigest:this.settings.imageDigest,verifierId:this.settings.verifierId,leasePolicyDigest:this.settings.leasePolicyDigest});
@@ -37,35 +38,43 @@ export class TrustedCheckCoordinator implements TrustedCheckService {
   async prepare(missionId:string,sliceId:string,checkId:string,guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
     return this.prepareShared({missionId,sliceId,checkId,purpose:"final"},guard);
   }
-  private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string},guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
+  async verifyUnknownFinal(missionId:string,sliceId:string,checkId:string,priorAttemptId:string,priorReceiptDigest:string,guard?:LifecycleGuard):Promise<void>{
+    if(!this.store.createFinalReverificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Explicit final reverification is disabled without the PostgreSQL certification store");
+    const request=await this.prepareShared({missionId,sliceId,checkId,purpose:"final-reverification",priorAttemptId,priorReceiptDigest},guard);
+    const receipt=await this.run(request,guard),pending=this.pending.get(request.attemptId);
+    if(!pending)throw new MissionConflictError("Trusted verifier capability was lost");
+    await this.submit(receipt,pending.capability,guard);
+  }
+  private async prepareShared(input:{missionId:string;sliceId:string;checkId:string;purpose:"final"}|{missionId:string;sliceId:string;checkId:string;purpose:"final-reverification";priorAttemptId:string;priorReceiptDigest:string}|{missionId:string;sliceId:string;checkId:string;purpose:"recovery";epoch:number;leaseToken:string;capabilityToken:string;candidateSha:string;targetCheckId:string;strategyId:string;ordinal:number;recoveryPolicyDigest:string},guard?:LifecycleGuard):Promise<TrustedCheckRequestV1>{
     await guard?.();
+    if((input.checkId==="node-repo-suite-v1"&&this.settings.attemptLifetimeMs!==1_860_000)||(input.checkId==="node-validate-syntax"&&this.settings.attemptLifetimeMs!==60_000))throw new MissionConflictError("Trusted check lifetime does not match its finite catalog policy");
     if(!this.store.createVerificationAttempt||!this.store.submitVerification)throw new MissionConflictError("Trusted verification is disabled without the PostgreSQL certification store");
     if(!this.settings.allowedChecks.includes(input.checkId))throw new MissionConflictError("Check is outside trusted operator policy");
     const record=await this.store.getMission(input.missionId);await guard?.();const slice=record?.slices.find(x=>x.id===input.sliceId);
     if(!record||!slice||!record.plan?.approvedAt)throw new MissionConflictError("Mission slice is not ready for trusted verification");
-    if(input.purpose==="final"&& (slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(input.checkId)))throw new MissionConflictError("Mission slice is not ready for final trusted verification");
+    if(input.purpose!=="recovery"&& (slice.status!=="awaiting_verification"||!slice.candidateSha||!slice.checks.includes(input.checkId)))throw new MissionConflictError("Mission slice is not ready for final trusted verification");
     if(input.purpose==="recovery"&&(slice.status!=="running"||slice.leaseEpoch!==input.epoch||!slice.checks.includes(input.strategyId)||!/^[a-f0-9]{40}$/i.test(input.candidateSha)))throw new MissionConflictError("Mission slice is not ready for recovery trusted verification");
     if(input.purpose==="recovery"){await this.store.recoveryPolicyLease(input.missionId,input.sliceId,input.epoch,input.leaseToken,input.capabilityToken);await guard?.();}
     let bundle:{digest:string;manifest:Buffer;files:Map<string,Buffer>};
-    const candidateSha=input.purpose==="final"?slice.candidateSha!:input.candidateSha;
+    const candidateSha=input.purpose!=="recovery"?slice.candidateSha!:input.candidateSha;
     let runner=this.runner;
     try{
       if(this.runner.forCandidate){
-        if(input.purpose!=="final")throw new MissionConflictError("Recovery candidate checkpoint admission is not configured");
+        if(input.purpose==="recovery")throw new MissionConflictError("Recovery candidate checkpoint admission is not configured");
         runner=await this.runner.forCandidate(this.candidateBinding(record,slice,candidateSha));
         await guard?.();
       }
       bundle=await runner.prepareBundle(record.mission.repository,record.mission.baseSha,candidateSha);
       await guard?.();
-    }catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
+    }catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose!=="recovery"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"candidate_unavailable");throw new MissionConflictError("Trusted candidate bundle is unavailable; verification is UNKNOWN");}
     let head:{sha:string;observedAt:string;digest:string};
-    try{head=await runner.observeHead(record.mission.repository);await guard?.();}catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose==="final"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
-    if(head.sha!==candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){if(input.purpose==="final")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
+    try{head=await runner.observeHead(record.mission.repository);await guard?.();}catch(error){if(error instanceof LifecycleStoppedError)throw error;if(input.purpose!=="recovery"&&!(error instanceof CandidateAdmissionTransientError))await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted local head is unavailable; verification is UNKNOWN");}
+    if(head.sha!==candidateSha||!/^[a-f0-9]{64}$/.test(bundle.digest)||!/^[a-f0-9]{64}$/.test(head.digest)){if(input.purpose!=="recovery")await this.store.recordVerificationUnavailable?.(input.missionId,input.sliceId,slice.leaseEpoch,input.checkId,"local_head_unavailable");throw new MissionConflictError("Trusted candidate or local head binding failed; verification is UNKNOWN");}
     const now=this.clock(),expires=new Date(now.getTime()+this.settings.attemptLifetimeMs),attemptId=randomUUID();
     const request=parseTrustedCheckRequestV1({version:"orloom.trusted-check-request.v1",attemptId,missionId:input.missionId,sliceId:input.sliceId,leaseEpoch:slice.leaseEpoch,repository:record.mission.repository,candidateSha,expectedLocalHeadSha:head.sha,planDigest:createHash("sha256").update(canonicalJson(record.plan.slices)).digest("hex"),checkId:input.checkId,policyVersion:this.settings.policyVersion,policyDigest:this.settings.policyDigest,verifierImageDigest:this.settings.imageDigest,inputBundleDigest:bundle.digest,requestedAt:now.toISOString(),expiresAt:expires.toISOString()});
     const capability=randomBytes(32).toString("base64url");
     const binding={request,capabilityHash:createHash("sha256").update(capability).digest("hex"),capabilityExpiresAt:new Date(expires.getTime()+120_000).toISOString(),leasePolicyDigest:this.settings.leasePolicyDigest,headObservedAt:head.observedAt,headObservationDigest:head.digest};
-    await guard?.();if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}await guard?.();
+    await guard?.();if(input.purpose==="final")await this.store.createVerificationAttempt(binding);else if(input.purpose==="final-reverification")await this.store.createFinalReverificationAttempt!(binding,input.priorAttemptId,input.priorReceiptDigest);else{if(!this.store.createRecoveryAttempt)throw new MissionConflictError("Trusted recovery attempts are unavailable in this store");await this.store.createRecoveryAttempt({...binding,purpose:"recovery",recoveryOrdinal:input.ordinal,targetCheckId:input.targetCheckId,strategyId:input.strategyId,recoveryPolicyDigest:input.recoveryPolicyDigest},input.leaseToken,input.capabilityToken);}await guard?.();
     this.pending.set(attemptId,{capability,bundle,runner});return request;
   }
   async run(value:TrustedCheckRequestV1,guard?:LifecycleGuard):Promise<TrustedCheckReceiptV1>{

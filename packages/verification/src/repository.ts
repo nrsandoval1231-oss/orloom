@@ -13,6 +13,14 @@ export interface InputFile { path: string; sha256: Sha256; bytes: number; }
 export interface InputBundle { digest: Sha256; manifest: Buffer; files: Map<string, Buffer>; }
 const MAX_FILES = 4_000, MAX_FILE_BYTES = 4 * 1024 * 1024, MAX_INPUT = TRUSTED_CHECK_LIMITS.maxInputBundleBytes;
 const digest = (value: Uint8Array): Sha256 => createHash("sha256").update(value).digest("hex");
+
+/** Resolve only the existing operator-owned repository profile value. */
+export function executionInputProfileForRepository(value: unknown): RepositoryConfig["executionInputProfile"] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("repository configuration is invalid");
+  const profile = (value as Record<string, unknown>).executionInputProfile;
+  if (profile === undefined || profile === "orloom-execution-v1") return profile;
+  throw new Error("unknown execution input profile");
+}
 export type RepositoryGit = (repo: string, args: string[], maxBuffer?: number) => Promise<Buffer>;
 const git: RepositoryGit = async (repo, args, maxBuffer = MAX_INPUT + 1024 * 1024): Promise<Buffer> => {
   const { stdout } = await exec("git", ["--git-dir", repo, "-c", "core.hooksPath=/dev/null", "-c", "core.attributesFile=/dev/null", "-c", "core.fsmonitor=false", "-c", "diff.external=", "-c", "submodule.recurse=false", ...args], { encoding: "buffer", maxBuffer, windowsHide: true, env: { PATH: process.env.PATH ?? "", HOME: process.env.HOME ?? process.env.USERPROFILE ?? "", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: process.platform === "win32" ? "NUL" : "/dev/null", GIT_TERMINAL_PROMPT: "0", GIT_NO_REPLACE_OBJECTS: "1" } });
@@ -97,6 +105,15 @@ function executionPath(name: string): boolean {
   if ([".agent/", "docs/evidence/", "docs/validation/", "work/", "prototypes/", "forge/"].some(prefix => name.startsWith(prefix)) || ["forge", "PR23-receipt-sha256.txt", "PR23-source-sha256.txt"].includes(name)) return false;
   if (["apps/", "packages/", "tests/", "scripts/", "db/", "deploy/", "infra/", "docs/"].some(prefix => name.startsWith(prefix)) || [".dockerignore", ".env.example", ".gitattributes", ".gitignore", "README.md", "package.json", "package-lock.json", "tsconfig.json"].includes(name)) return true;
   throw new Error(`unclassified execution input path: ${name}`);
+}
+
+/** The worker receives this fixed projection of the trusted execution profile.
+ * The bootstrap script is retained in Git and remains eligible for independent
+ * verifier checks, but it has no execution value in the worker sandbox. */
+export function workerExecutionInputPath(name: string): boolean {
+  const bootstrap = "deploy/hostinger/init-secrets.sh";
+  if (name === bootstrap || name.startsWith(`${bootstrap}/`)) return false;
+  return executionPath(name);
 }
 
 /** Mirrors the unchanged hasForbiddenPath predicate in the baked suite-policy.js. */

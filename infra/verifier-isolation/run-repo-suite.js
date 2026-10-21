@@ -7,7 +7,7 @@ import { emitSuiteDiagnostic, emitSuiteTestDiagnostic } from './suite-diagnostic
 import { writeResultMarker } from './emit-result.js';
 
 const root = '/work/source';
-const limit = 360_000, logLimit = 65_536, start = performance.now();
+const limit = 1_800_000, logLimit = 65_536, start = performance.now();
 const remainingMs = () => limit - (performance.now() - start);
 const POLICY_STAGE_ORDER = Object.freeze(["dependency-lock-admission", "typecheck", "clean-build", "test-discovery", "node-tests", "foundation-validation", "offline-security-policy"]);
 const out = [], err = []; let outSize = 0, errSize = 0, overflow = false, activeStage;

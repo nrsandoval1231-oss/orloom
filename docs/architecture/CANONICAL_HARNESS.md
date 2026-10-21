@@ -6,7 +6,7 @@ Status: architecture decision record. This document specifies the target system;
 Orloom is a commercial cloud-native autonomous software engineering platform. Start with a single owner and GitHub repositories. Convert an approved engineering objective into verified, integrated code and a GitHub pull request. Speed means time to verified integrated functionality, not token volume, agent count, or commits.
 
 ## Non-negotiable architecture
-- GitHub is source control, branch and PR delivery. GitHub Actions is NOT the CI executor. Orloom executes checks on its own isolated DigitalOcean workers and may publish commit-specific GitHub Checks API results.
+- GitHub is source control, branch and PR delivery. GitHub Actions is NOT the CI executor. Owner-directed hosting places the control plane, database and engineering workers on Hostinger; Orloom executes checks on its own isolated workers and may publish commit-specific GitHub Checks API results. Historical DigitalOcean qualification does not establish Hostinger runtime readiness; each Hostinger runtime/release gate needs its own evidence.
 - Cloudflare web edge; PostgreSQL durable state and work scheduling; R2 evidence and artifact storage.
 - Separate deterministic Governor from model judgment. Only Governor authorizes side effects, budgets, credentials, merge/push, run transitions and approvals. Never place control-plane credentials in build sandboxes.
 - Athena: mission orchestrator, dependency-aware critical-path scheduler and cross-slice coordinator.
@@ -64,11 +64,11 @@ packages/integration — branch/worktree coordination
 packages/verification — Orloom CI and independent review
 packages/loom — real-event visualization projection
 workers/executor — isolated cloud execution runtime
-infra — DigitalOcean, Cloudflare, PostgreSQL and R2 definitions
+infra — Hostinger, Cloudflare, PostgreSQL and R2 definitions; DigitalOcean remains historical qualification evidence only
 docs/architecture — architecture decisions and threat model
 
 ## Security and operations
-Use a secrets manager for provider API keys, GitHub App private keys, database credentials and Cloudflare/DigitalOcean credentials; never commit or paste secrets into source or docs. Use short-lived scoped credentials and isolated workers. Record audit events and recover interrupted jobs using durable leases/fencing. Protect against untrusted repository scripts, prompt injection and credential exfiltration. Do not infer production readiness from unit tests or synthetic visuals.
+Use a secrets manager for provider API keys, GitHub App private keys, database credentials and Cloudflare/Hostinger credentials; never commit or paste secrets into source or docs. Use short-lived scoped credentials and isolated workers. Record audit events and recover interrupted jobs using durable leases/fencing. Protect against untrusted repository scripts, prompt injection and credential exfiltration. Do not infer production readiness from unit tests or synthetic visuals.
 
 ## Reuse boundary
 Aura and forge-agent are reference repositories, not automatic code imports. Preserve their valuable concepts (Athena/Sol, Governor, DeepSeek lanes, StuckDetector, LessonStore, bounded learning, independent review), but inspect implementations and interfaces before selectively reusing anything.

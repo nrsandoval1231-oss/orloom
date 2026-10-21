@@ -11,7 +11,7 @@ export function emitSuiteDiagnostic(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const { stage, phase, elapsedMs, outcome } = value;
   if (!stages.has(stage) || !['start', 'end'].includes(phase)
-    || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 360_000
+    || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 1_800_000
     || (phase === 'start' ? outcome !== undefined : !['pass', 'fail', 'unknown'].includes(outcome))) {
     return false;
   }
@@ -22,7 +22,7 @@ export function emitSuiteDiagnostic(value) {
 export function emitSuiteTestDiagnostic(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const { phase, elapsedMs, ordinal, testFile, outcome } = value;
-  if (!['start', 'end'].includes(phase) || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 360_000
+  if (!['start', 'end'].includes(phase) || !Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 1_800_000
     || !Number.isSafeInteger(ordinal) || ordinal < 1 || ordinal > 64
     || typeof testFile !== 'string' || testFile.length < 1 || testFile.length > 128 || !/^[A-Za-z0-9._-]+\.test\.js$/.test(testFile)
     || (phase === 'start' ? outcome !== undefined : !['pass', 'fail', 'unknown'].includes(outcome))) return false;

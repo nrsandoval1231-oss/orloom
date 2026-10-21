@@ -1,0 +1,127 @@
+{
+  "packet": "ORL_20261019_COMBINED_V10_PACKET.md",
+  "status": "HISTORICAL_BUILDER_HANDOFF_BEFORE_CONTROLLER_FREEZE",
+  "branch": "feat/combined-v10-profile",
+  "dispatch_start_utc": "2026-10-19T16:44:13Z",
+  "finish_utc": "2026-10-19T16:51:27Z",
+  "elapsed_seconds": "UNKNOWN",
+  "planning_seconds": "UNKNOWN",
+  "build_seconds": "UNKNOWN",
+  "validation_seconds": "UNKNOWN",
+  "repair_count": "UNKNOWN",
+  "lane": "single Luna primary builder",
+  "model": "UNKNOWN",
+  "config_identity": "UNKNOWN",
+  "tokens": "UNKNOWN",
+  "merge": {
+    "command": "git merge --no-commit --no-ff recovered/v10-dfc06fd",
+    "graph_archive": ".agent/archive/2026-10-19-before-combined-v10-WORK_GRAPH.md",
+    "committed": false,
+    "exit_code": 1,
+    "conflicts": [
+      "apps/worker/src/main.ts",
+      ".agent/CURRENT_STATE.md",
+      ".agent/WORK_GRAPH.md"
+    ],
+    "parents": [
+      "a80f2e75cf1388bde232915d4d1a68c4e5b05dd4",
+      "dfc06fd09f76eb20b163f0d7aaff1e0b91182b31"
+    ],
+    "state_archive": ".agent/archive/2026-10-19-before-combined-v10-CURRENT_STATE.md",
+    "resolution": "Preserved frozen createApprovedRuntimeComposition and runtimeComposition.executeLane with v10 leased local-check subset projection; removed raw runtimeOptions injection. Archived old state and graph bytes; rewrote current status to candidate-specific truth."
+  },
+  "validation": [
+    {
+      "result": "99 packages installed, 0 vulnerabilities",
+      "command": "Node 24.15.0: npm ci",
+      "exit_code": 0
+    },
+    {
+      "command": "Node 24.15.0: npm run typecheck",
+      "exit_code": 0
+    },
+    {
+      "command": "Node 24.15.0: npm run build",
+      "exit_code": 0
+    },
+    {
+      "result": "Foundation structure validation passed",
+      "command": "Node 24.15.0: npm run validate",
+      "exit_code": 0
+    },
+    {
+      "tests": 37,
+      "skipped": 1,
+      "failed": 0,
+      "exit_code": 0,
+      "skip": "existing local npm-config path acceptance test",
+      "passed": 36,
+      "command": "Node 24.15.0: node --test dist/tests/approved-worker-runtime-options.test.js dist/tests/worker-optional-checks.test.js dist/tests/owner-http-approved-service-cancellation.test.js dist/tests/verification-runner.test.js dist/tests/verification-coordinator-lifecycle.test.js dist/tests/approved-worker-startup.test.js dist/tests/approved-worker-expiry.test.js"
+    },
+    {
+      "result": "passed after removing one inherited extra blank EOF line in tests/owner-http-approved-service-cancellation.test.ts",
+      "exit_code": 0,
+      "command": "git diff --cached --check"
+    },
+    {
+      "result": "passed",
+      "exit_code": 0,
+      "command": "git diff --check"
+    }
+  ],
+  "changed_files": [
+    ".agent/CURRENT_STATE.md",
+    ".agent/WORK_GRAPH.md",
+    ".agent/archive/2026-10-19-before-combined-v10-CURRENT_STATE.md",
+    ".agent/archive/2026-10-19-before-combined-v10-WORK_GRAPH.md",
+    "apps/worker/src/docker-runtime.ts",
+    "apps/worker/src/main.ts",
+    "docs/adr/0002-finite-trusted-suite-lifetime.md",
+    "docs/verification.md",
+    "infra/verifier-isolation/README.md",
+    "infra/verifier-isolation/launch-verifier.sh",
+    "infra/verifier-isolation/run-repo-suite.js",
+    "infra/verifier-isolation/suite-diagnostics.js",
+    "packages/agents/src/worker.ts",
+    "packages/contracts/src/verification.ts",
+    "packages/governor/src/governor.ts",
+    "packages/verification/src/policy.ts",
+    "packages/verification/src/runner.ts",
+    "packages/verification/src/runsc-launcher.ts",
+    "tests/approved-worker-integration.test.ts",
+    "tests/approved-worker-startup.test.ts",
+    "tests/delivery-c4-flow.test.ts",
+    "tests/integration-replay-race.test.ts",
+    "tests/local-integration.test.ts",
+    "tests/owner-http-approved-service-cancellation.test.ts",
+    "tests/startup-policy-flow.test.ts",
+    "tests/verification-certification.test.ts",
+    "tests/verification-contract.test.ts",
+    "tests/verification-coordinator-lifecycle.test.ts",
+    "tests/verification-runner.test.ts",
+    "tests/worker-broker.test.ts",
+    "tests/worker-optional-checks.test.ts",
+    "docs/validation/2026-10-19-combined-v10.md",
+    ".agent/ORL_20261019_COMBINED_V10_COMPLETION.json"
+  ],
+  "unknowns": [
+    "controller frozen-candidate npm ci/typecheck/npm test/build/validate/syntax/diff gates",
+    "independent Sol review",
+    "runsc image/runtime behavior",
+    "deployment/provider behavior",
+    "exact per-command durations",
+    "planning/build/validation duration split",
+    "model/config identity",
+    "token usage"
+  ],
+  "external_actions": "none",
+  "runtime_acceptance": "none; genuine runsc/image/deployment/provider gates OPEN",
+  "controller_provenance_correction": {
+    "recorded_at_utc": "2026-10-19T16:54:00.173571+00:00",
+    "rejected_candidate": "03a57886544dee35a189fd1635b51209681ff247",
+    "preserved_evidence": "work/evidence/combined-v10/rejected-source1-artifacts",
+    "source_code_changed": false,
+    "full_candidate_diff_check_required": true
+  },
+  "record_scope": "Builder observations before controller merge03a5788; not current candidate acceptance"
+}

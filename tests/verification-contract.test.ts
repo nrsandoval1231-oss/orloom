@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { canonicalJson } from "../packages/judgment/src/canonical.js";
-import { ArtifactReceiptV1, parseCheckCertificateV1, parseTrustedCheckReceiptV1, parseTrustedCheckRequestV1, parseTrustedVerifierCapabilityV1, receiptDigestV1, trustedCheckRequestDigestV1, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
+import { ArtifactReceiptV1, parseCheckCertificateV1, parseTrustedCheckReceiptV1, parseTrustedCheckRequestV1, parseTrustedVerifierCapabilityV1, receiptDigestV1, trustedCheckRequestDigestV1, TRUSTED_CHECK_LIMITS, TrustedCheckReceiptV1, TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 
 const h = "a".repeat(64), commit = "b".repeat(40);
 const request: TrustedCheckRequestV1 = {
@@ -37,12 +37,18 @@ test("rejects unknown top-level and nested fields and malformed values", () => {
   assert.throws(() => parseTrustedCheckReceiptV1({ ...receipt(), stdout: { ...empty, url: "https://example.test" } }), /unknown fields/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, policyDigest: "A".repeat(64) }), /lowercase SHA-256/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, requestedAt: "2026-10-13T12:00:00-00:00" }), /UTC ISO-8601/);
-  assert.throws(() => parseTrustedCheckRequestV1({ ...request, expiresAt: "2026-10-13T12:20:00.000Z" }), /expiry window/);
+  assert.throws(() => parseTrustedCheckRequestV1({ ...request, expiresAt: "2026-10-13T12:35:00.001Z" }), /expiry window/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, sliceId: "bad/slice" }), /slice ID format/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, sliceId: "x".repeat(65) }), /sliceId is invalid/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, repository: "Acme/orloom" }), /canonical lowercase/);
   assert.throws(() => parseTrustedCheckRequestV1({ ...request, leaseEpoch: 0 }), /leaseEpoch is invalid/);
   assert.throws(() => parseTrustedCheckReceiptV1({ ...receipt(), finishedAt: "2026-10-13T12:00:02.001Z" }), /digest mismatch/);
+});
+
+test("V1 contract admits the finite 35-minute ceiling and rejects larger expiry windows", () => {
+  assert.equal(TRUSTED_CHECK_LIMITS.maxLifetimeMs, 2_100_000);
+  assert.equal(parseTrustedCheckRequestV1({ ...request, expiresAt: "2026-10-13T12:35:00.000Z" }).expiresAt, "2026-10-13T12:35:00.000Z");
+  assert.throws(() => parseTrustedCheckRequestV1({ ...request, expiresAt: "2026-10-13T12:35:00.001Z" }), /expiry window/);
 });
 
 test("receipt outcome, exit code, time range, and nested artifact bounds must agree", () => {
