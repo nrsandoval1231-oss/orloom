@@ -14,6 +14,74 @@ export class WorkerProtocolError extends Error {}
 export class ProviderOutcomeUnknown extends Error {}
 class ProgressStop extends WorkerProtocolError {}
 
+type PreToolDiagnosticStage = "model_check" | "execution_budget" | "tool_count" | "arguments" | "identity" | "tool_validation" | "proposal";
+type PreToolDiagnosticCode = "model_mismatch" | "provider_budget_exceeded" | "tool_count_exceeded" | "malformed_arguments" | "arguments_too_large" | "arguments_not_object" | "missing_tool_id" | "duplicate_tool_id" | "unknown_tool" | "invalid_arguments" | "scope_rejected" | "local_check_rejected" | "validated" | "arguments_parsed" | "no_tool_calls" | "not_checked";
+type PreToolNameCategory = "read_file" | "list_files" | "create_file" | "apply_patch" | "run_check" | "unknown";
+
+class PreToolValidationError extends WorkerProtocolError {
+  constructor(readonly diagnosticCode: PreToolDiagnosticCode, message: string) { super(message); }
+}
+
+const preToolMessages: Record<PreToolDiagnosticCode, string> = {
+  model_mismatch: "DeepSeek returned an unexpected model ID",
+  provider_budget_exceeded: "Provider reply exceeded the configured execution limits",
+  tool_count_exceeded: "Provider returned more function calls than the local execution cap",
+  malformed_arguments: "Tool arguments are malformed JSON",
+  arguments_too_large: "Tool arguments exceed the bound",
+  arguments_not_object: "Tool arguments must be an object",
+  missing_tool_id: "Provider returned a missing tool call ID",
+  duplicate_tool_id: "Provider returned duplicate tool call IDs",
+  unknown_tool: "Unknown tool function",
+  invalid_arguments: "Tool arguments are invalid",
+  scope_rejected: "Tool path is outside the slice scopes",
+  local_check_rejected: "Check is not configured for this worker-local advisory run",
+  validated: "Tool proposal validated",
+  arguments_parsed: "Tool arguments parsed",
+  no_tool_calls: "Provider returned no tool calls",
+  not_checked: "Tool call was not checked"
+};
+
+const preToolNameCategories = new Set<PreToolNameCategory>(["read_file", "list_files", "create_file", "apply_patch", "run_check", "unknown"]);
+const preToolDiagnosticCallLimit = 32;
+const preToolDiagnosticArgumentByteLimit = 8_001;
+
+function preToolNameCategory(tool: unknown): PreToolNameCategory {
+  const name = tool && typeof tool === "object" ? (tool as { function?: { name?: unknown } }).function?.name : undefined;
+  return typeof name === "string" && preToolNameCategories.has(name as PreToolNameCategory) ? name as PreToolNameCategory : "unknown";
+}
+
+function preToolDiagnostic(replyModelMatchesConfigured: boolean, tools: DeepSeekToolCall[], availableToolCalls: number, stage: PreToolDiagnosticStage, code: PreToolDiagnosticCode, status: "accepted" | "rejected" | "no_tool_calls", failedIndex?: number) {
+  const calls = tools.slice(0, preToolDiagnosticCallLimit).map((tool, index) => {
+    const args = tool && typeof tool === "object" ? (tool as { function?: { arguments?: unknown } }).function?.arguments : undefined;
+    const actualBytes = typeof args === "string" ? Buffer.byteLength(args, "utf8") : null;
+    const failed = index === failedIndex;
+    const priorValidated = failedIndex !== undefined && index < failedIndex && (stage === "identity" || stage === "tool_validation");
+    const priorParsed = failedIndex !== undefined && index < failedIndex && stage === "arguments";
+    return {
+      toolNameCategory: preToolNameCategory(tool),
+      argumentBytes: actualBytes === null ? null : Math.min(actualBytes, preToolDiagnosticArgumentByteLimit),
+      argumentBytesTruncated: actualBytes !== null && actualBytes > preToolDiagnosticArgumentByteLimit,
+      stage: failed ? stage : priorValidated || status === "accepted" ? "tool_validation" : priorParsed ? "arguments" : "proposal",
+      code: failed ? code : priorValidated || status === "accepted" ? "validated" : priorParsed ? "arguments_parsed" : "not_checked"
+    };
+  });
+  return {
+    schema: "orloom.worker-pretool-diagnostic.v1",
+    status,
+    stage,
+    code,
+    replyModelMatchesConfigured: Boolean(replyModelMatchesConfigured),
+    toolCount: Math.min(tools.length, preToolDiagnosticCallLimit + 1),
+    toolCountTruncated: tools.length > preToolDiagnosticCallLimit + 1,
+    toolCountExceeded: tools.length > availableToolCalls,
+    calls
+  };
+}
+
+function preToolValidationError(code: PreToolDiagnosticCode, message = preToolMessages[code]): PreToolValidationError {
+  return new PreToolValidationError(code, message);
+}
+
 export function validateLease(value: unknown, now = Date.now()): WorkerLeaseContract {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new WorkerProtocolError("Invalid lease envelope");
   const lease = value as WorkerLeaseContract;
@@ -334,6 +402,9 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
     if (hash !== out.sha256 || hash !== out.key.slice(7)) throw new WorkerProtocolError("Evidence readback digest mismatch");
     evidenceEntries.push({ name, key: out.key, sha256: hash, reference: `${name}:${out.key}` });
   };
+  const savePreToolDiagnostic = async (completionNumber: number, diagnostic: ReturnType<typeof preToolDiagnostic>) => {
+    await saveEvidence(`pretool-diagnostic-${completionNumber}`, new TextEncoder().encode(JSON.stringify(diagnostic)), "application/json");
+  };
   const terminalEvidenceRefs = () => {
     const preferred = ["candidate-bundle", "candidate-diff", "evidence-index", "provider-usage", "sandbox-policy"];
     return [...new Set(preferred.flatMap(name => evidenceEntries.filter(entry => entry.name === name).map(entry => entry.reference)))].slice(0, 10);
@@ -409,20 +480,57 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
       outputTokens += reply.outputTokens;
       await saveEvidence(`provider-usage-${calls}`, new TextEncoder().encode(JSON.stringify({ model, calls, inputTokens, outputTokens, pricing, pricingDigest })), "application/json");
       await emit("provider-completion", "completed");
-      if (reply.model !== model) throw new ProviderOutcomeUnknown("DeepSeek returned an unexpected model ID");
-      if (inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens || now() - started > limits.maxWallSeconds * 1000) throw new Error("WORKER_BUDGET_EXHAUSTED");
+      const tools = reply.message.tool_calls ?? [];
+      const replyModelMatchesConfigured = reply.model === model;
+      const availableToolCalls = deps.options.maxToolCalls - toolsRun;
+      const recordDiagnostic = (stage: PreToolDiagnosticStage, code: PreToolDiagnosticCode, status: "accepted" | "rejected" | "no_tool_calls", failedIndex?: number) =>
+        savePreToolDiagnostic(calls - 1, preToolDiagnostic(replyModelMatchesConfigured, tools, availableToolCalls, stage, code, status, failedIndex));
+      if (!replyModelMatchesConfigured) {
+        await recordDiagnostic("model_check", "model_mismatch", "rejected");
+        throw new ProviderOutcomeUnknown(preToolMessages.model_mismatch);
+      }
+      if (inputTokens > limits.maxInputTokens || outputTokens > limits.maxOutputTokens || now() - started > limits.maxWallSeconds * 1000) {
+        await recordDiagnostic("execution_budget", "provider_budget_exceeded", "rejected");
+        throw new Error("WORKER_BUDGET_EXHAUSTED");
+      }
       const assistant: DeepSeekMessage = { role: "assistant", content: reply.message.content, ...(reply.message.tool_calls ? { tool_calls: reply.message.tool_calls } : {}) };
       messages.push(assistant);
-      const tools = reply.message.tool_calls ?? [];
-      if (!tools.length) break;
-      if (tools.length > deps.options.maxToolCalls - toolsRun) throw new ProviderOutcomeUnknown("Provider returned more function calls than the local execution cap");
-      const prepared = tools.map(tool => ({ tool, args: parseToolArguments(tool) }));
-      const callIds = new Set<string>();
-      for (const { tool, args } of prepared) {
-        if (!tool.id || callIds.has(tool.id)) throw new ProviderOutcomeUnknown("Provider returned missing or duplicate tool call IDs");
-        callIds.add(tool.id);
-        validateToolCall(tool, args, lease, localCheckIds);
+      if (!tools.length) {
+        await recordDiagnostic("proposal", "no_tool_calls", "no_tool_calls");
+        break;
       }
+      if (tools.length > availableToolCalls) {
+        await recordDiagnostic("tool_count", "tool_count_exceeded", "rejected");
+        throw new ProviderOutcomeUnknown(preToolMessages.tool_count_exceeded);
+      }
+      const prepared: Array<{ tool: DeepSeekToolCall; args: Record<string, unknown> }> = [];
+      for (const [index, tool] of tools.entries()) {
+        try { prepared.push({ tool, args: parseToolArguments(tool) }); }
+        catch (error) {
+          const code = error instanceof PreToolValidationError ? error.diagnosticCode : "invalid_arguments";
+          await recordDiagnostic("arguments", code, "rejected", index);
+          throw error;
+        }
+      }
+      const callIds = new Set<string>();
+      for (const [index, { tool, args }] of prepared.entries()) {
+        if (!tool.id) {
+          await recordDiagnostic("identity", "missing_tool_id", "rejected", index);
+          throw new ProviderOutcomeUnknown("Provider returned a missing or duplicate tool call ID");
+        }
+        if (callIds.has(tool.id)) {
+          await recordDiagnostic("identity", "duplicate_tool_id", "rejected", index);
+          throw new ProviderOutcomeUnknown("Provider returned a missing or duplicate tool call ID");
+        }
+        callIds.add(tool.id);
+        try { validateToolCall(tool, args, lease, localCheckIds); }
+        catch (error) {
+          const code = error instanceof PreToolValidationError ? error.diagnosticCode : "invalid_arguments";
+          await recordDiagnostic("tool_validation", code, "rejected", index);
+          throw error;
+        }
+      }
+      await recordDiagnostic("tool_validation", "validated", "accepted");
       for (const { tool, args: parsedArgs } of prepared) {
         if (controller.signal.aborted) throw new Error("WORKER_DEADLINE_UNKNOWN");
         toolsRun++;
@@ -479,35 +587,40 @@ async function executeValidatedLease(leaseInput: WorkerLeaseContract, deps: { co
 }
 
 function parseToolArguments(tool: DeepSeekToolCall): Record<string, unknown> {
-  if (tool.function.arguments.length > 8_000) throw new WorkerProtocolError("Tool arguments exceed the bound");
+  if (tool.function.arguments.length > 8_000) throw preToolValidationError("arguments_too_large");
   let args: unknown;
-  try { args = JSON.parse(tool.function.arguments); } catch { throw new WorkerProtocolError("Tool arguments are malformed JSON"); }
-  if (!args || typeof args !== "object" || Array.isArray(args)) throw new WorkerProtocolError("Tool arguments must be an object");
+  try { args = JSON.parse(tool.function.arguments); } catch { throw preToolValidationError("malformed_arguments"); }
+  if (!args || typeof args !== "object" || Array.isArray(args)) throw preToolValidationError("arguments_not_object");
   return args as Record<string, unknown>;
+}
+
+function assertPreToolScopePath(value: string, scopes: string[]): string {
+  try { return assertWorkerScopePath(value, scopes); }
+  catch { throw preToolValidationError("scope_rejected"); }
 }
 
 function validateToolCall(tool: DeepSeekToolCall, args: Record<string, unknown>, lease: WorkerLeaseContract, localCheckIds: readonly string[] = lease.slice.checks): void {
   const keys = Object.keys(args);
   if (tool.function.name === "read_file" || tool.function.name === "list_files") {
-    if (keys.length !== 1 || keys[0] !== "path" || typeof args.path !== "string") throw new WorkerProtocolError("File tool arguments are invalid");
-    assertWorkerScopePath(args.path, lease.slice.scopes);
+    if (keys.length !== 1 || keys[0] !== "path" || typeof args.path !== "string") throw preToolValidationError("invalid_arguments", "File tool arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
     return;
   }
   if (tool.function.name === "apply_patch") {
-    if (keys.length !== 3 || keys.some(key => !["path", "oldText", "newText"].includes(key)) || typeof args.path !== "string" || typeof args.oldText !== "string" || typeof args.newText !== "string" || !args.oldText || args.oldText.length > 8_000 || args.newText.length > 8_000) throw new WorkerProtocolError("Patch arguments are invalid");
-    assertWorkerScopePath(args.path, lease.slice.scopes);
+    if (keys.length !== 3 || keys.some(key => !["path", "oldText", "newText"].includes(key)) || typeof args.path !== "string" || typeof args.oldText !== "string" || typeof args.newText !== "string" || !args.oldText || args.oldText.length > 8_000 || args.newText.length > 8_000) throw preToolValidationError("invalid_arguments", "Patch arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
     return;
   }
   if (tool.function.name === "create_file") {
-    if (keys.length !== 2 || keys.some(key => !["path", "text"].includes(key)) || typeof args.path !== "string" || typeof args.text !== "string" || !args.text || args.text.length > 8_000) throw new WorkerProtocolError("Create-file arguments are invalid");
-    assertWorkerScopePath(args.path, lease.slice.scopes);
+    if (keys.length !== 2 || keys.some(key => !["path", "text"].includes(key)) || typeof args.path !== "string" || typeof args.text !== "string" || !args.text || args.text.length > 8_000) throw preToolValidationError("invalid_arguments", "Create-file arguments are invalid");
+    assertPreToolScopePath(args.path, lease.slice.scopes);
     return;
   }
   if (tool.function.name === "run_check") {
-    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId) || !localCheckIds.includes(args.checkId)) throw new WorkerProtocolError("Check is not configured for this worker-local advisory run");
+    if (keys.length !== 1 || keys[0] !== "checkId" || typeof args.checkId !== "string" || !lease.slice.checks.includes(args.checkId) || !localCheckIds.includes(args.checkId)) throw preToolValidationError("local_check_rejected");
     return;
   }
-  throw new WorkerProtocolError("Unknown tool function");
+  throw preToolValidationError("unknown_tool");
 }
 
 function toolProgressPhase(name: string): WorkerProgressPhase {
