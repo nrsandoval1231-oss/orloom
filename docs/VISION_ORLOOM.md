@@ -1,52 +1,33 @@
 # Orloom — Canonical Product Vision
-Status: **AUTHORITATIVE PRODUCT DIRECTION** — 2026-10-21. Supersedes the 2026-10-12 vision and any conflicting multi-agent/visual-first product requirements. This is a design decision, **not proof of implemented functionality**.
+**Status: AUTHORITATIVE — 2026-10-21.** Supersedes the single-agent simplification proposal and prior implementation-specific mandates. Vision is not operational proof.
 
-## Essence
-**Orloom turns an idea into working software.**
+## The promise
+**An idea in. An exceptional finished software product out.**
 
-The owner selects a repository and describes an outcome. Orloom understands relevant code, makes changes using an established coding agent, runs appropriate checks in a disposable isolated workspace, repairs mistakes within clear limits, and delivers an inspectable GitHub pull request. The owner controls acceptance and merge.
+The owner can say “Build me a note-taking app.” Orloom autonomously develops the product concept beyond the generic prompt, defines a coherent experience, architects it, builds in parallel, integrates, runs and evaluates the actual application, fixes failures, refines usability and aesthetics, and delivers a working, polished product. The owner directs intent and may intervene but does not manage builders, prompts, branches, approvals or technical process.
 
-The product should feel like delegating work to one excellent software engineer, not operating an engineering organization.
+## Intelligence and speed
+- **One lead architect/product director** (high-reasoning model) owns intent interpretation, product quality bar, architecture, decomposition, interfaces, and priority.
+- **Six fast coding builders** are the initial target capacity, working concurrently on independently scoped work in isolated workspaces; scale useful parallelism to actual dependencies rather than forcing six busy workers.
+- **One independent quality director/critic** (high-reasoning model) inspects integrated software, user experience, architecture, functionality and evidence; can reject and request targeted improvements.
+- **One orchestrator** assigns bounded work, integrates changes, handles conflicts, retries and failures. This is deterministic software wherever possible, not another conversational manager.
+- **Self-improvement harness** records verified failures, fixes, outcomes and reusable lessons; promotes only demonstrably useful changes and withdraws harmful ones. Never equate reflection with measured improvement.
+- The system runs autonomously within owner-defined authority and spend/time boundaries, including iterative improvement and recovery. It escalates only material product decisions, unavailable credentials, exhausted limits or irreversible high-risk actions.
 
-## The only primary workflow
-1. **Ask:** Choose repository; describe change; optionally specify acceptance criteria.
-2. **Build:** A single coding-agent session reads relevant code, edits, tests, and retries with a finite budget.
-3. **Review:** Show a human-readable summary, changed files, commands/tests and their results, remaining risks, and PR link.
-4. **Decide:** Owner reviews and merges. Never deploy or merge to production without explicit authorization.
+## Completion
+100% means a versioned, agreed scope is delivered and independently assessed, not perfection or infinite autonomous iteration. A real runnable application, integrated code, successful relevant tests, reviewed UI/UX, documented limitations, and delivery/deployment evidence are required. The system may discover and implement high-value improvements within its budget; it must distinguish new scope from defects. No invented progress or unsupported claims.
 
-One mission, one current state, one understandable next action. Support cancellation and truthful failure reporting.
+## User experience
+An elegant, frictionless interface: describe an idea, watch meaningful progress, preview the real product, see what improved and what remains, and receive a finished deliverable. Hide engineering hierarchy, complexity, credentials and recovery mechanics. Meaningful optional visualization is allowed but never blocks functionality or replaces a real preview.
 
-## Product non-goals — do not rebuild
-- No architect/manager/parallel-builder agent hierarchy as a prerequisite for one coding mission.
-- No Athena/Sol/Jev/Astra tribunal or multiparty judgment pipeline on the critical path.
-- No learning/promotion engine, purpose graph, elaborate dependency scheduler, or multi-slice enterprise orchestration in the MVP.
-- No six-worker target, simultaneous agent fleet, or automatic scaling requirement.
-- No cinematic Loom, torus, visualization sectors, progress theater, or agent-status page as the primary UI.
-- No manual budget-policy authoring, check-policy assembly, lease management, or infrastructure configuration exposed to the owner.
-- No invented acceptance scores, fake agent activity, or claims that unit tests prove real execution.
-- No building a proprietary coding model or coding runtime where a mature coding-agent engine can be integrated.
+## Guardrails
+Disposable isolated builders; least-privilege credentials; bounded time, tools and cost; durable cancellation and unknown-state recovery; trusted independent checks; no self-authorized production deployment or irreversible operations. Default delivery is a reviewable PR and runnable preview; production publication requires owner authorization or explicitly predelegated scoped authority.
 
-These ideas are historical, not standing requirements. Restore only when demonstrated user value justifies their operational and maintenance cost.
+## What to remove
+Duplicate governance and approvals, policy theater, redundant services, inactive historical workflows, agent paperwork, speculative frameworks, false progress dashboards and infrastructure that does not contribute to autonomous high-quality delivery. **Do not delete parallel builders, architect, independent critic, orchestration, recovery or verified learning merely to make the architecture appear simpler.**
 
-## Essential boundaries — keep them
-- Run repository code in an isolated disposable environment; never on the web/control-plane host.
-- Keep provider, GitHub and database credentials out of the untrusted checkout; use narrowly scoped short-lived authority.
-- Enforce finite runtime, spend/tool limits, cancellation and safe treatment of interrupted/unknown execution.
-- Keep trusted verification policy outside the target repository's control; report honestly what checks did and did not prove.
-- Keep GitHub as source of truth. Produce a PR by default; no automatic merge or production deployment.
-- Keep durable mission state and minimum useful logs for recovery and troubleshooting.
-- Host it in the cloud so the owner's PC can be off.
+## Primary metrics
+Time to accepted, working product; owner interventions; quality/defect rates; integrated parallel throughput; cost per accepted feature; and measured improvement across comparable tasks. Optimize outcomes, not agent count or ceremony.
 
-## Implementation rule
-**Simplify by subtraction.** Prefer the least number of deployable services and operational concepts capable of safely completing one real mission. Reuse the existing control plane, worker, storage and UI if their simpler form works. Keep code temporarily when removal would risk an unverified execution path, but remove it from product-critical workflows and retire it after characterization tests.
-
-Do not add new security bureaucracy: retain actual isolation and authority boundaries while removing duplicate policy and ceremony.
-
-## Definition of done
-A real task on a controlled repository, launched from the UI, must: obtain the intended base revision; run a real coding model in an isolated workspace; make a nontrivial source change; run meaningful checks; correct an intentionally introduced failure or clearly report why it cannot; publish a real PR; and display accurate logs, diffs, checks, and failure state. Reproduce the demonstration from a fresh mission. Evidence must identify the commit, run, environment, and PR. Simulated tests or fixture replay are not sufficient.
-
-## Measures
-Primary: successfully delivered, owner-accepted PRs; time from request to working PR; owner interventions per task; cost per accepted change; regression rate. Do not optimize number of agents, steps, policies, evidence documents, or lines of code.
-
-## Change discipline
-No new platform features until the end-to-end coding delivery is verified. Remove unused layers in safe, testable slices. Historical records may be archived but cannot override this canonical product direction.
+## Current truth
+The repository contains components of this vision, but a verified full autonomous build-to-delivery run is not established by this document. Real acceptance remains the next engineering priority.
