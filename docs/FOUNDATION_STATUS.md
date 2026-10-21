@@ -1,37 +1,14 @@
-# Foundation acceptance and next steps
+# Orloom — Foundation and Acceptance Status
+Updated 2026-10-21. Canonical direction: [Product Vision](VISION_ORLOOM.md), [Harness](architecture/CANONICAL_HARNESS.md), [Finish Contract](FINISH_CONTRACT.md).
 
-Updated 2026-10-14 after merged repair PR #18 and worker PR #19. Orloom's canonical architecture and product vision are unchanged. The goal is a clean, verified foundation with explicit next steps, not a new architecture or an implicit live rollout.
+## Established from historical records
+The repository contains controller, mission, worker, verifier, provider, integration, learning and UI code with bounded source/fixture test results documented under docs/validation and docs/evidence. Historical results are scoped to their original commits and do not establish the current full autonomous product.
 
-## Accepted source groundwork
+## Not yet verified here
+No new live model coding execution, six-worker integrated throughput, quality-directed product refinement, learning effectiveness or full build-to-delivery acceptance was performed during this documentation update. Treat operational readiness as **unverified**, not assumed.
 
-- [x] Seven audited correctness repairs merged through [PR #18](https://github.com/nrsandoval1231-oss/orloom/pull/18), commit `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, reviewed tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`.
-- [x] Independent repair suite and clean locked-install repeat: 167/167 tests, zero failures/skips; [original validation preserved](validation/2026-10-14-consolidation.md).
-- [x] Worker broker/runtime/checkout source composed with hardened typed recovery receipts; independent [worker-source acceptance](validation/2026-10-14-worker-composition.md), 188/188 tests, zero failures/skips; build/typecheck/validate passed.
-- [x] Normal worker startup remains fail-closed before credentials, claims or provider calls. No environment-variable bypass or new execution authority.
-- [x] Historical evidence has explicit provenance; current-facing docs distinguish source acceptance from runtime and product outcomes.
-- [x] Worker [PR #19](https://github.com/nrsandoval1231-oss/orloom/pull/19) merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, exact reviewed tree `6f538b0690f673d49752fa90bb1b123762b97cfe`; source, documentation and historical-evidence publication readback verified.
-- [x] All 16 original open PRs (#2–17) resolved, including PR #2 closed as superseded; zero open PRs at the verified 2026-10-14 04:40 UTC cleanup checkpoint. Later foundation work is a separate successor.
+## Immediate next action
+Prove one real isolated coding run and PR with reproducible evidence; then prove two and six parallel builders, integration, independent critique, iterative improvement and unattended app completion. Remove redundant controls only after mapping dependencies and running regression checks. Keep actual isolation and owner authority.
 
-## Candidate-admission successor
-
-The optional controller-owned source bridge admits persisted final candidates through hash-checked bundle/index artifacts, strict base/direct-child/scoped Git validation, a private immutable object store and per-candidate verifier observation. It retains the existing trusted check/certificate boundary. See [the separate validation record](validation/2026-10-14-foundation.md) and [composition limits](verification.md#controller-owned-candidate-admission-source). It has no startup wiring, live artifact transport proof or recovery checkpoint support.
-
-- [x] Slice 0 baseline recheck, 2026-10-14: `main` `86a972300708f9bc05f557c5c09efd1c0f7e2ba6`, tree `10de087b4999e1d3264c644a752d651df04a3927`, zero open PRs; fresh locked install, typecheck, build and validation exit 0; suite 189/202 on Windows with all 13 failures classified as the documented Linux/POSIX candidate-admission platform guard; retained 119-file manifest re-verified byte-for-byte. [Baseline record](validation/2026-10-14-slice0-baseline.md). No runtime gate closed.
-- [x] Slice 1a, 2026-10-14: durable controller-owned runtime intent is persisted before container creation, retaining the exact container ID, with regressions for intent-before-create ordering, partial creation, binding failure, restart identity refusal, expiry-stable run identity and digest stability. Reuses the preserved successor journal (`5c59eb3`) with review-driven fixes: the persisted ownership-labels digest no longer depends on host locale, lease expiry is excluded from the derived run identity, and the image-ref gate matches the runtime. Full suite 229 tests / 215 pass / 13 unchanged Linux-POSIX platform failures / 1 declared Windows symlink skip; three further tests flaked intermittently across four retained runs and pass in isolation. [Slice 1a record](validation/2026-10-14-slice1a-runtime-intent.md). Slice 1b (durable authenticated owner cancellation with epoch fencing) is NOT started.
-- [x] Slice 1b, 2026-10-14: durable owner-authenticated cancellation via `POST /api/missions/{id}/cancel`, routed through the Governor, with the fence in the store: a cancelled slice retains its lease proof, keeps its capacity slot, blocks new claims, integration and delivery, and cannot be resurrected by `expire()` or status reconciliation. Includes an interleaved claim/cancel race regression. A pre-existing startup defect was found and fixed: `005_learning.sql` was not idempotent, so re-executing the migration directory at startup failed on the second run (now 3× clean). Full suite 244 tests / 230 pass / 13 unchanged Linux-POSIX platform failures / 1 declared skip. [Slice 1b record](validation/2026-10-14-slice1b-owner-cancellation.md). Propagating cancellation to a running worker and proving absence remain Slice 2.
-- [x] Independent inactive-boundary review accepted the bridge with no remaining blocking finding.
-- [x] Fresh locked install, build/typecheck/validate and full serial suite: 202/202 tests, zero failures/skips/cancellations; 119-file source manifest verified unchanged before/after. Original harness failure and clean rerun are preserved in the separate ledger.
-
-## Active-worker cancellation successor (2026-10-15, draft)
-
-The [active-worker cancellation source record](validation/2026-10-15-active-worker-cancellation.md) adds authenticated polling, local abort fencing, exact-container termination/absence reconciliation and an exclusive Linux broker lifetime lock. Source and simulated-runtime acceptance are separate from genuine Docker/runsc proof. **Operational acceptance remains OPEN:** trusted controller settlement is not composed; capacity and budgets remain retained, and normal worker startup remains disabled. This successor does not close the next-step gates below.
-
-## Ordered next-step map
-
-1. Operational admission composition: explicitly compose the optional controller-owned final-candidate bridge with protected artifact transport and the independent verifier. Establish authentic runtime handoff and durable retention/reconciliation. The source bridge alone does not activate the worker or certify live candidates.
-2. Recovery and interruption execution: connect bounded recovery/checkpoint strategies, owner cancellation, exact-container reconciliation and conservative spend/capacity handling. Preserve UNKNOWN quarantine until safe reconciliation; no blind retry or refund.
-3. Authentic integrated validation: clean deployment image, trusted runsc full suite, live PostgreSQL and an independently verified one-mission delivery path. Fixtures and PGlite do not close these gates.
-4. Authorized operation: secure provider/App/R2 configuration and explicit deployment/activation prerequisites, followed by measured fresh-task baseline-versus-strategy evaluation. No live Jev/DeepSeek, productive six-lane capacity or learning-gain claim exists here.
-
-A ready source foundation means known invariants are reviewed, source tests pass, historical evidence is preserved and unfinished capabilities stay disabled. It does not mean the autonomous engineering product is complete. This checklist grants no credentials, new spending, deployment or provider authority.
-
+## Supersession
+Previous language requiring permanent single-agent operation or removing the architect, critic, parallel builders and verified learning is superseded. Previous mandatory agent bureaucracy is also superseded. Historical artifacts remain for audit, not as active product instructions.
