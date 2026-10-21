@@ -31,3 +31,14 @@ Time to accepted, working product; owner interventions; quality/defect rates; in
 
 ## Current truth
 The repository contains components of this vision, but a verified full autonomous build-to-delivery run is not established by this document. Real acceptance remains the next engineering priority.
+
+## Owner autonomy contract — 2026-10-21
+**Orloom makes all routine creative, product, architecture, design, folder-structure, implementation, testing, quality, and recovery decisions on its own.** The owner supplies an idea, optionally chooses or connects a repository, and receives a runnable finished application. No obligatory PRD approval, implementation plan review, per-task tokens, passwords or approval loops. The product goal is: **“Link my repo. Build it. Tell me when I can use it.”**
+
+For empty repositories, Orloom creates the entire file and folder structure, initializes the application, configures tests and tooling, builds, integrates, previews and delivers. For existing repositories, it detects conventions and preserves existing work.
+
+An internally versioned canonical PRD is the durable north star: the Visionary autonomously creates and maintains it, recording intended outcomes, non-goals, acceptance criteria, and rationale for consequential decisions. Every agent retrieves relevant PRD context before work or recovery; an agent cannot quietly redefine core intent to make a task appear complete.
+
+**Low-friction access, not absent security:** one-time GitHub app/OAuth connection and persistent secure owner session; no repeated copy-pasted secret token to launch routine missions. Keep provider secrets server-side and invisible to the UI. Use least-privilege repository access, isolated execution, bounded cost and rate limits. Ask the owner only for a genuine external consent/credential requirement, high-risk irreversible action, or exceptional spend beyond delegated authority.
+
+**Forward-progress principle:** every detected blockage triggers automatic diagnosis, strategy change, retry within limits, alternate implementation path, safe replan, or independent work that remains useful. Persist checkpoint and failure causes so restarts resume safely. Never spin endlessly, fabricate success, bypass critical tests, or claim an impossible “never stuck” guarantee. If all safe paths are exhausted, explain the exact blocker and single necessary owner action while preserving all completed work. A mission cannot quietly die halfway.
