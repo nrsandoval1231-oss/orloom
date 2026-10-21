@@ -91,8 +91,3 @@ test("migration 011 preserves a populated pre-upgrade terminal UNKNOWN before al
     assert.deepEqual(historyAfterReplay.slice(0,historyBefore.length),historyBefore);assert.equal(historyAfterReplay.length,historyBefore.length+1);assert.equal((historyAfterReplay.at(-1) as Record<string,unknown>).type,"check.final_reverification_attempted");
   }finally{await db.close();}
 });
-
-
-
-
-
