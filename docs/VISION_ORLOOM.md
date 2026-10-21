@@ -1,32 +1,52 @@
 # Orloom — Canonical Product Vision
-Status: proposed product direction, not implementation acceptance. Updated 2026-10-12.
+Status: **AUTHORITATIVE PRODUCT DIRECTION** — 2026-10-21. Supersedes the 2026-10-12 vision and any conflicting multi-agent/visual-first product requirements. This is a design decision, **not proof of implemented functionality**.
 
-## Mission
-Orloom is a **commercial, cloud-first, autonomous engineering platform** that converts an owner's idea into independently verified software. It preserves the owner's purpose, execution authority, and evidence while specialist agents design, build, test, repair, and learn. The first release is a single-operator cloud MVP.
+## Essence
+**Orloom turns an idea into working software.**
 
-## Differentiator
-The **Living Loom** makes engineering state visible as an evolving 3D torus. The project begins as a luminous idea, gains structural threads as requirements and architecture form, and receives streams of work from surrounding agents. Verified strands settle only when independent acceptance evidence supports the corresponding versioned requirement. The ring closes at 100% verified coverage of the **approved mission scope**. New requirements may reopen it.
+The owner selects a repository and describes an outcome. Orloom understands relevant code, makes changes using an established coding agent, runs appropriate checks in a disposable isolated workspace, repairs mistakes within clear limits, and delivers an inspectable GitHub pull request. The owner controls acceptance and merge.
 
-## Key product concepts
-- Purpose Graph: versioned mission → requirements → architecture → source symbols/modules → evidence and outcomes.
-- Agent harness: architect, builder(s), validator, reviewer, recovery, orchestrator, with independent checks and bounded authority.
-- Living Loom: full-screen cinematic visual instrument, separate from a practical minimal workbench.
-- Athena: reusable decision intelligence that learns from verified outcomes and can challenge strategy without changing the owner's mission.
-- Jev: bounded active judgment, routed through host-authorized finite actions. Deterministic host code retains budget, permission, acceptance, and merge authority.
-- Engineering Loop: Intent → Plan → Implement → Verify → Learn → Update.
-- Reflection Loop: Observe → Measure → Compare → Propose → Challenge → Validate → Promote (only through approved gates).
+The product should feel like delegating work to one excellent software engineer, not operating an engineering organization.
 
-## Commercial position
-Do not compete primarily as another code editor or coding model. The defensible value is **verified autonomous engineering**, with traceability from mission to implementation, trustworthy outcomes, and compounding engineering experience.
+## The only primary workflow
+1. **Ask:** Choose repository; describe change; optionally specify acceptance criteria.
+2. **Build:** A single coding-agent session reads relevant code, edits, tests, and retries with a finite budget.
+3. **Review:** Show a human-readable summary, changed files, commands/tests and their results, remaining risks, and PR link.
+4. **Decide:** Owner reviews and merges. Never deploy or merge to production without explicit authorization.
 
-## Experience
-Dark cinematic visual canvas, elegant ivory/gold/steel/muted blue accents, luminous thin fibers, subtle organic movement, depth, density, and meaningful drift. No neon-cyberpunk redesign. Five sectors: Interface, Services, Data/Memory, Infrastructure/Integrations, Verification. Agents surround and feed the center. Selecting a sector/bundle/strand reveals code, requirement, relationships, provenance, and independent evidence.
+One mission, one current state, one understandable next action. Support cancellation and truthful failure reporting.
 
-## Truth rules
-Code volume ≠ progress; activity ≠ acceptance; passing tests ≠ full requirement verification; AI confidence ≠ evidence. Differentiate observed source, inferred semantic links, curated intent, and verified acceptance. No misleading animations or fabricated percentages in live mode.
+## Product non-goals — do not rebuild
+- No architect/manager/parallel-builder agent hierarchy as a prerequisite for one coding mission.
+- No Athena/Sol/Jev/Astra tribunal or multiparty judgment pipeline on the critical path.
+- No learning/promotion engine, purpose graph, elaborate dependency scheduler, or multi-slice enterprise orchestration in the MVP.
+- No six-worker target, simultaneous agent fleet, or automatic scaling requirement.
+- No cinematic Loom, torus, visualization sectors, progress theater, or agent-status page as the primary UI.
+- No manual budget-policy authoring, check-policy assembly, lease management, or infrastructure configuration exposed to the owner.
+- No invented acceptance scores, fake agent activity, or claims that unit tests prove real execution.
+- No building a proprietary coding model or coding runtime where a mature coding-agent engine can be integrated.
 
-## Scope boundaries
-GitHub is the source of truth for repositories and PRs, **not the CI provider**. Orloom/Forge-owned isolated workers execute trusted verification. Keep source-control history and evidence. No bespoke coding runtime, no self-authorizing agents, no giant ERP/IDE, no unsafe automatic promotion. Browser and phone use must not require the owner's PC to stay on.
+These ideas are historical, not standing requirements. Restore only when demonstrated user value justifies their operational and maintenance cost.
 
-## Relationship to historical projects
-Earlier prototypes were named Forge Living Loom; Orloom is the clean-slate product name. Aura/Forge and Athena repositories provide conceptual history and potential reusable contracts, not a mandate to import legacy code or couple products. Existing Orloom ORL-001 foundation remains authoritative for implemented capabilities; this document sets future product direction.
+## Essential boundaries — keep them
+- Run repository code in an isolated disposable environment; never on the web/control-plane host.
+- Keep provider, GitHub and database credentials out of the untrusted checkout; use narrowly scoped short-lived authority.
+- Enforce finite runtime, spend/tool limits, cancellation and safe treatment of interrupted/unknown execution.
+- Keep trusted verification policy outside the target repository's control; report honestly what checks did and did not prove.
+- Keep GitHub as source of truth. Produce a PR by default; no automatic merge or production deployment.
+- Keep durable mission state and minimum useful logs for recovery and troubleshooting.
+- Host it in the cloud so the owner's PC can be off.
+
+## Implementation rule
+**Simplify by subtraction.** Prefer the least number of deployable services and operational concepts capable of safely completing one real mission. Reuse the existing control plane, worker, storage and UI if their simpler form works. Keep code temporarily when removal would risk an unverified execution path, but remove it from product-critical workflows and retire it after characterization tests.
+
+Do not add new security bureaucracy: retain actual isolation and authority boundaries while removing duplicate policy and ceremony.
+
+## Definition of done
+A real task on a controlled repository, launched from the UI, must: obtain the intended base revision; run a real coding model in an isolated workspace; make a nontrivial source change; run meaningful checks; correct an intentionally introduced failure or clearly report why it cannot; publish a real PR; and display accurate logs, diffs, checks, and failure state. Reproduce the demonstration from a fresh mission. Evidence must identify the commit, run, environment, and PR. Simulated tests or fixture replay are not sufficient.
+
+## Measures
+Primary: successfully delivered, owner-accepted PRs; time from request to working PR; owner interventions per task; cost per accepted change; regression rate. Do not optimize number of agents, steps, policies, evidence documents, or lines of code.
+
+## Change discipline
+No new platform features until the end-to-end coding delivery is verified. Remove unused layers in safe, testable slices. Historical records may be archived but cannot override this canonical product direction.
