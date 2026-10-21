@@ -1,48 +1,23 @@
-# Finish contract
+# Orloom — Product Completion Contract
+**Canonical as of 2026-10-21.** Historical validation is preserved in docs/validation and docs/evidence, but does not override this contract.
 
-## Current foundation acceptance boundary: 2026-10-14
+## Definition of finished
+A generic owner idea becomes a runnable, polished application through autonomous product refinement, high-reasoning architecture, up to six fast parallel builders, integration, independent quality critique, bounded repair, and verified improvement. Deliver a PR, preview or runnable artifact, acceptance evidence, known limitations and a concise owner summary. Production deployment remains owner-authorized or narrowly predelegated.
 
-Repair PR #18 is merged at `dca7ac78df8f1c26a7c5cd2e8c9cfcb904297c2c`, tree `89a4ce7510699f993ce807fc4fdd71d0dceb606a`. Worker PR #19 is merged at `d99b26ec828495b7648179a144bc4e38f5c5f80c`, tree `6f538b0690f673d49752fa90bb1b123762b97cfe`, composing PR #2 source onto that repaired baseline. Publication readback verified the reviewed source/evidence bindings; all 16 original open PRs (#2–17) are resolved. Independent v2 review accepted bounded source merge with startup disabled after 188/188 tests and build/typecheck/validate passed. See [worker validation](validation/2026-10-14-worker-composition.md) for its separate results; the repair's 167-test proof remains historical and unchanged.
+## Operational acceptance ladder
+- [ ] A real isolated builder completes a nontrivial change and opens a real PR.
+- [ ] Two builders produce independent work integrated and retested.
+- [ ] Six builders operate concurrently with measured speed/cost and conflict controls.
+- [ ] Lead architect transforms a vague product request into usable specification and design.
+- [ ] Independent quality director evaluates the actual running application and drives a verified refinement.
+- [ ] Autonomous failure recovery works within limits.
+- [ ] Evidence-backed learning improves comparable work without unverified self-promotion.
+- [ ] A complete app is built, polished, tested and delivered with minimal owner intervention.
 
-A separate optional candidate-admission bridge now implements controller-derived immutable artifact bindings, bounded private Git import, source extraction and candidate-specific verifier observation. It is not wired into normal startup. Its [foundation validation record](validation/2026-10-14-foundation.md) must be read separately from the preserved repair and worker ledgers.
+Mark items complete only with linked, reproducible run evidence; passing source tests alone is insufficient. Optimize speed to accepted product, not activity or agent count.
 
-Independent boundary review accepted the inactive bridge; fresh locked-install validation passed 202/202 tests with zero failures/skips/cancellations and build/typecheck/validate. The 119-file source manifest binds this successor without extending earlier evidence.
+## Required safety
+Isolated code execution, limited credentials, cost/time bounds, cancellation, unknown-state recovery, independent checks and owner-controlled irreversible deployment. Simplify duplicate controls; do not remove the underlying protection.
 
-Source inclusion is not worker activation. Normal worker startup must continue to refuse before secret reads, work claims or provider calls. The preserved broker executable is not an approved deployment entrypoint. Acceptance of live execution still requires operational composition and authentic runtime proof of the optional candidate-bundle admission path; recovery checkpoint and strategy execution; cancellation propagation and exact-container reconciliation; conservative interrupted-spend accounting and quarantine release; and a composed, independently verified goal-to-delivery proof. Typed HTTP recovery receipts and builder telemetry cannot replace trusted verification.
-
-The [foundation checklist](FOUNDATION_STATUS.md) is the current next-step map. Foundation source acceptance must not be reported as live autonomous product completion.
-
-## Historical repair-source acceptance boundary: 2026-10-14
-
-The [consolidation validation record](validation/2026-10-14-consolidation.md) governs the current repair candidate based on PR #17 at `410882d4afff33e028be50b816ad69eb387eae6d`. Independent review accepted the combined bounded source: 167/167 tests, zero failures/skips, plus passing typecheck, build and structure validation. A separate clean locked-install run repeated all 167 tests and validation gates successfully. The retained source manifest binds the reviewed files; publication and merge are recorded by PR #18 and the repair commit above; that result does not cover successor worker source. Seven audited correctness repairs are consolidated; source/regression acceptance is separate from operational acceptance. The latest owner direction authorizes open-PR cleanup and advancing reviewed, ready work, superseding earlier no-merge/frozen-head restrictions. PR #2 broker composition was outside that repair review. It is included only in the separate successor scope, whose normal execution remains disabled.
-
-Completion still requires authentic exact-source full-suite isolation proof, real PostgreSQL acceptance of the combined changes, secure provider/App/R2 configuration, live worker and bounded Jev execution, measured comparable learning outcomes, deployment and cross-component recovery. Neither a merge nor passing PGlite tests satisfy those gates. The canonical specification and original visual/engineering vision remain unchanged.
-
-## Historical ORL-001 foundation acceptance
-
-- Node 24 installation from the committed lockfile, typecheck, tests, build, and structure validation pass.
-- Local HTTP status and authenticated queue-only job submission behave as documented.
-- PostgreSQL migration constraints and job transitions run against PGlite; stale completion is fenced and interrupted running work becomes `unknown`.
-- Worker startup fails closed; there is no arbitrary shell or live provider endpoint.
-- Provider seams use server-side credentials, have no live calls in tests, and the Codex SDK package is pinned.
-- GitHub installation-token requests explicitly restrict repositories and permissions; R2 writes are conditional and reads verify content digests.
-- Local startup loads an ignored `.env` file; role-specific configuration checks reveal field names only.
-- Credential guidance, architecture, deployment prerequisites, and external Forge policy are documented.
-
-## Historical deployment baseline and remaining product finish line
-
-The ORL-004 queue-only service is deployed on Hostinger. ORL-005A was independently revalidated and merged through PR #1 at historical main `6110c692f47202978b2d22d22f6522aa4aa59277`; it has not been rolled out. [The revalidation record](evidence/pr1-revalidation/EVIDENCE.md) includes a fresh disposable PostgreSQL concurrency/restart proof. ORL-ISO-001 has independent bounded evidence for two credential-free concurrent gVisor smoke sandboxes and launcher denial checks; this is configuration/isolation smoke proof, not live worker build capacity or six-lane readiness. Production migration/concurrency, GitHub App installation flow, worker job execution, network/credential confinement for real jobs, Orloom-owned trusted CI, audit retention, monitoring, backups, and recovery remain unbuilt or unproven. GitHub and R2 adapters have not made live requests. Do not infer product readiness from the deployed queue, local gates, PGlite, or the bounded isolation smoke.
-
-## Historical ORL-005A mission control spine acceptance
-
-This implementation slice is accepted only when the authenticated HTTP mission path, immutable mission data, validated owner-authored DAG, separate approval, transactional PostgreSQL storage/claim fencing, durable event replay, cumulative budget reservations, attested capacity slots, and fenced worker authority boundaries pass deterministic gates. The browser must display API-backed mission and event state. Planned dependency waits use `waiting_dependency` and do not reserve a slot or quarantine a scope. At that mission-spine checkpoint, candidate callbacks stopped at `awaiting_verification`; there was no verifier integration endpoint and dependents remained `waiting_dependency`. The current composed source adds trusted verification and Governor-controlled integration; its separate exact-source acceptance must not be inferred from the earlier spine proof. A bounded startup and periodic reconciler, also invoked before claims, turns expired running work into durable `unknown` without releasing reservations, slots, or scopes.
-
-This slice does not complete the product. Disposable real PostgreSQL pool concurrency is proven within the retained test scope; production migration rollout, worker execution isolation, actual provider metering, credential/network confinement, Orloom-owned checks, verifier evidence inspection, real Git integration, and remote/browser runtime acceptance remain open. BLOCKED/UNKNOWN outcomes and expired leases retain budget and quarantine their capacity slot and overlapping repository scope. Local/PGlite checks do not establish live readiness.
-
-## Historical C1a checkpoint and continuing harness requirements
-
-C1a source `545279c7b53fef8453c8e50ae0bc7f0d790959af` has independent source review, 51 deterministic tests, and a real PostgreSQL HTTP proof retained in [C1a evidence](evidence/c1a-runtime/EVIDENCE.md). Final evidence review qualifies only the bounded checkpoint: finite authorized recovery and durable candidate episodes. Independent lesson validation/promotion, application to later comparable tasks, withdrawal, broader stuck detection and measured benefits remain mandatory C1b acceptance. The next C3 prerequisite at that checkpoint was a real isolated exact-commit check with durable artifacts and fenced certification; bounded syntax-check evidence was subsequently retained, but a syntax-only certificate cannot satisfy full CI build/test/lint/typecheck/security requirements or authorize lesson promotion by itself.
-
-The canonical specification governs subsequent work. PR #2's earlier frozen checkpoint `8bbcfffbf631e5ad2972e34b41284198afc566e2` is historical; its subsequently observed head was `639bff0759870d3522ae38d2887b75fe6c4297c7`. The latest owner direction permits reviewed composition, but incomplete broker behavior must not be counted as a completed live capability. Jev judgment, active recovery, evidence-governed learning, adaptive Athena scheduling, independent exact-commit CI, integration/PR delivery, and real-event Living Loom require their own integrated implementation and retained behavioral evidence. Injected provider fixtures are not live Jev execution. A controlled recovery scenario is not measured production learning improvement. A repository merge is not a cloud deployment or certified engineering outcome.
-
-
+## No-go
+No more speculative architecture, duplicate governance, mandatory owner micro-approvals, agent theater or visualization-first delivery. The first priority is proving real execution, then scaling to six builders and product-level autonomy.
