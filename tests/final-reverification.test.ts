@@ -7,6 +7,7 @@ import { SqlMissionStore, type TransactionalSql } from "../packages/contracts/sr
 import type { SliceInput } from "../packages/contracts/src/mission.js";
 import { receiptDigestV1, type TrustedCheckReceiptV1, type TrustedCheckRequestV1 } from "../packages/contracts/src/verification.js";
 import { TrustedCheckCoordinator } from "../packages/governor/src/governor.js";
+import { canonicalJson } from "../packages/judgment/src/canonical.js";
 
 const hash=(value:string)=>createHash("sha256").update(value).digest("hex");
 const baseSha="a".repeat(40),candidateSha="d".repeat(40),policyDigest="c".repeat(64);
@@ -50,6 +51,44 @@ test("explicit final reverification preserves UNKNOWN, certifies once, and remai
     assert.equal(await coordinator.reconcile(),0);assert.equal(runs,2,"automatic reconciliation does not redispatch the terminal retry");
     await db.exec(await readFile("db/migrations/005_learning.sql","utf8"));
     const idx=await db.query("SELECT indexdef FROM pg_indexes WHERE indexname='verification_attempts_final_unique'");assert.match(String((idx.rows[0] as Record<string,unknown>)?.["indexdef"]),/final_retry_ordinal/);
+  }finally{await db.close();}
+});
+
+test("migration 011 preserves a populated pre-upgrade terminal UNKNOWN before allowing ordinal one",async()=>{
+  const db=new PGlite();
+  try{
+    const migrations=(await readdir("db/migrations")).filter(x=>x.endsWith(".sql")).sort();
+    for(const file of migrations.filter(x=>x<="010_cancellation_settlement.sql"))await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
+    let gate=Promise.resolve();const sql:TransactionalSql={query:async(text,values)=>await db.query(text,values as never) as never,transaction:async work=>{let release!:()=>void;const prior=gate;gate=new Promise<void>(resolve=>release=resolve);await prior;try{await db.exec("BEGIN");const value=await work({query:async(text,values)=>await db.query(text,values as never) as never});await db.exec("COMMIT");return value;}catch(error){await db.exec("ROLLBACK");throw error;}finally{release();}}};
+    const store=new SqlMissionStore(sql);await store.configureCapacity(1,"b".repeat(64),new Date(Date.now()+120_000).toISOString());
+    const mission=await store.submit({repository:"owner/repo",baseSha,objective:"preserve pre-011 UNKNOWN",acceptance:["retain terminal receipt"],budgetCents:100});await store.recommendPlan(mission.id,[slice],"owner-session");await store.approvePlan(mission.id);
+    const grant=await store.claim(300,policyDigest,["check:unit"]);assert(grant);await store.complete(mission.id,slice.id,grant.epoch,grant.leaseToken,grant.capabilityToken,candidateSha,[]);
+    const record=await store.getMission(mission.id);assert(record?.plan);const now=new Date(),attemptId="11111111-1111-4111-8111-111111111111";
+    const request:TrustedCheckRequestV1={version:"orloom.trusted-check-request.v1",attemptId,missionId:mission.id,sliceId:slice.id,leaseEpoch:grant.epoch,repository:"owner/repo",candidateSha,expectedLocalHeadSha:candidateSha,planDigest:hash(canonicalJson(record.plan.slices)),checkId:"check:unit",policyVersion:"fixture-v1",policyDigest,verifierImageDigest:"f".repeat(64),inputBundleDigest:"e".repeat(64),requestedAt:now.toISOString(),expiresAt:new Date(now.getTime()+60_000).toISOString()};
+    const capabilityHash=hash("pre-upgrade-capability");await store.createVerificationAttempt!({request,capabilityHash,capabilityExpiresAt:new Date(now.getTime()+120_000).toISOString(),leasePolicyDigest:policyDigest,headObservedAt:now.toISOString(),headObservationDigest:"9".repeat(64)});
+    const artifact={key:`sha256/${"1".repeat(64)}` as `sha256/${string}`,sha256:"1".repeat(64),bytes:0},manifest={...artifact,key:`sha256/${"2".repeat(64)}` as `sha256/${string}`,sha256:"2".repeat(64)};
+    const body={version:"orloom.trusted-check-receipt.v1" as const,request,verifierId:"fixture-verifier",runtime:"runsc" as const,sandboxId:"pre-upgrade",outcome:"unknown" as const,exitCode:null,startedAt:now.toISOString(),finishedAt:new Date(now.getTime()+1).toISOString(),stdout:artifact,stderr:artifact,inputManifest:manifest};
+    const receipt:TrustedCheckReceiptV1={...body,receiptDigest:receiptDigestV1(body)};await store.submitVerification!(receipt,capabilityHash,candidateSha,now.toISOString(),"9".repeat(64),"22222222-2222-4222-8222-222222222222");
+    const before=(await db.query("SELECT attempt_id,mission_id,slice_id,lease_epoch,check_id,request,capability_hash,capability_expires_at,request_digest,outcome,receipt,terminal_at,purpose,lease_policy_digest,head_observed_at,head_observation_digest FROM verification_attempts WHERE attempt_id=$1",[attemptId])).rows[0] as Record<string,unknown>;
+    const certificatesBefore=(await db.query("SELECT * FROM check_certificates WHERE mission_id=$1 ORDER BY certificate_id",[mission.id])).rows;
+    const historyBefore=(await db.query("SELECT cursor,type,data,created_at FROM mission_events WHERE mission_id=$1 ORDER BY cursor",[mission.id])).rows;
+    assert.equal(before.outcome,"unknown");assert(before.terminal_at);assert.deepEqual(before.receipt,receipt);assert.equal(certificatesBefore.length,0);
+
+    await db.exec(await readFile("db/migrations/011_final_reverification.sql","utf8"));
+    const upgraded=(await db.query("SELECT attempt_id,mission_id,slice_id,lease_epoch,check_id,request,capability_hash,capability_expires_at,request_digest,outcome,receipt,terminal_at,purpose,lease_policy_digest,head_observed_at,head_observation_digest,final_retry_ordinal FROM verification_attempts WHERE attempt_id=$1",[attemptId])).rows[0] as Record<string,unknown>;
+    for(const key of Object.keys(before))assert.deepEqual(upgraded[key],before[key],`migration changed populated attempt field ${key}`);
+    assert.equal(upgraded.final_retry_ordinal,0);assert.deepEqual((await db.query("SELECT * FROM check_certificates WHERE mission_id=$1 ORDER BY certificate_id",[mission.id])).rows,certificatesBefore);
+    assert.deepEqual((await db.query("SELECT cursor,type,data,created_at FROM mission_events WHERE mission_id=$1 ORDER BY cursor",[mission.id])).rows,historyBefore);
+
+    const retryRequest={...request,attemptId:"33333333-3333-4333-8333-333333333333",requestedAt:new Date(now.getTime()+2).toISOString(),expiresAt:new Date(now.getTime()+60_002).toISOString()};
+    await store.createFinalReverificationAttempt!({request:retryRequest,capabilityHash:hash("upgrade-retry-capability"),capabilityExpiresAt:new Date(now.getTime()+120_002).toISOString(),leasePolicyDigest:policyDigest,headObservedAt:now.toISOString(),headObservationDigest:"9".repeat(64)},attemptId,receipt.receiptDigest);
+    assert.equal(((await db.query("SELECT final_retry_ordinal FROM verification_attempts WHERE attempt_id=$1",[retryRequest.attemptId])).rows[0] as Record<string,unknown>).final_retry_ordinal,1);
+    for(const file of migrations)await db.exec(await readFile(`db/migrations/${file}`,"utf8"));
+    const afterReplay=(await db.query("SELECT attempt_id,outcome,receipt,terminal_at,final_retry_ordinal FROM verification_attempts WHERE mission_id=$1 ORDER BY final_retry_ordinal",[mission.id])).rows as Record<string,unknown>[];
+    assert.deepEqual(afterReplay.map(x=>[x.attempt_id,x.outcome,x.receipt,x.terminal_at,x.final_retry_ordinal]),[[attemptId,"unknown",before.receipt,before.terminal_at,0],[retryRequest.attemptId,null,null,null,1]]);
+    const index=await db.query("SELECT indexdef FROM pg_indexes WHERE indexname='verification_attempts_final_unique'");assert.match(String((index.rows[0] as Record<string,unknown>).indexdef),/final_retry_ordinal/);
+    const historyAfterReplay=(await db.query("SELECT cursor,type,data,created_at FROM mission_events WHERE mission_id=$1 ORDER BY cursor",[mission.id])).rows;
+    assert.deepEqual(historyAfterReplay.slice(0,historyBefore.length),historyBefore);assert.equal(historyAfterReplay.length,historyBefore.length+1);assert.equal((historyAfterReplay.at(-1) as Record<string,unknown>).type,"check.final_reverification_attempted");
   }finally{await db.close();}
 });
 
